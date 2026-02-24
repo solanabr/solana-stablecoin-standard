@@ -1,0 +1,12 @@
+[package]
+name = "sss-fuzz-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+sss-core = { path = "../programs/sss-core", features = ["no-entrypoint"] }
+sss-transfer-hook = { path = "../programs/sss-transfer-hook", features = ["no-entrypoint"] }
+anchor-lang = { workspace = true }
+solana-sdk = { workspace = true }
+proptest = "1.6"

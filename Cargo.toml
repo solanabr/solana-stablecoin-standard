@@ -4,6 +4,7 @@ members = [
     "programs/sss-transfer-hook",
     "cli",
     "tui",
+    "trident-tests",
 ]
 resolver = "2"
 
