@@ -28,7 +28,7 @@ export { generateTestElGamalKeypair, generateTestAesKey, deriveElGamalKeypair } 
  */
 export class ConfidentialOps {
   constructor(
-    private connection: Connection,
+    private _connection: Connection,
     private mint: PublicKey,
     private owner: PublicKey,
   ) {}

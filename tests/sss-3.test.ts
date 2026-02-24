@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN } from "@coral-xyz/anchor";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import {
   TOKEN_2022_PROGRAM_ID,
   getMint,
@@ -11,9 +11,7 @@ import { expect } from "chai";
 import { SssCore } from "../target/types/sss_core";
 import {
   createSss3Mint,
-  deriveConfigPda,
   fetchConfig,
-  airdropSol,
   CreateSss3MintResult,
 } from "./helpers";
 
@@ -83,7 +81,7 @@ describe("SSS-3: Confidential Stablecoin", () => {
     expect(pdExtensionData).to.not.be.null;
 
     // The PermanentDelegate extension data is just the 32-byte delegate pubkey
-    const delegatePubkey = new PublicKey(pdExtensionData!.slice(0, 32));
+    const delegatePubkey = new PublicKey(pdExtensionData!.subarray(0, 32));
     expect(delegatePubkey.toBase58()).to.equal(
       mintResult.configPda.toBase58(),
     );
@@ -104,7 +102,7 @@ describe("SSS-3: Confidential Stablecoin", () => {
     expect(mpExtensionData).to.not.be.null;
 
     // MetadataPointer data: [32 bytes authority] [32 bytes metadata address]
-    const metadataAddress = new PublicKey(mpExtensionData!.slice(32, 64));
+    const metadataAddress = new PublicKey(mpExtensionData!.subarray(32, 64));
     expect(metadataAddress.toBase58()).to.equal(
       mintResult.mint.publicKey.toBase58(),
     );
