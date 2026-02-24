@@ -468,6 +468,176 @@ export async function createSss2Mint(
 }
 
 // ─────────────────────────────────────────────────────────────
+// SSS-3 Mint Creation (with confidential transfers)
+// ─────────────────────────────────────────────────────────────
+
+export type CreateSss3MintResult = CreateSss1MintResult;
+
+/**
+ * Creates an SSS-3 (confidential) stablecoin mint with:
+ * - MetadataPointer
+ * - PermanentDelegate
+ * - ConfidentialTransferMint
+ *
+ * Same flow as SSS-1 but adds the ConfidentialTransferMint extension
+ * via a manually-built instruction. No TransferHook, no DefaultAccountState.
+ */
+export async function createSss3Mint(
+  provider: anchor.AnchorProvider,
+  coreProgram: Program<SssCore>,
+  args: {
+    name: string;
+    symbol: string;
+    uri: string;
+    decimals: number;
+    supplyCap: BN | null;
+    auditorElGamalPubkey?: Uint8Array;
+    autoApproveNewAccounts?: boolean;
+  },
+): Promise<CreateSss3MintResult> {
+  const mint = Keypair.generate();
+  const authority = provider.wallet.publicKey;
+
+  const [configPda, configBump] = deriveConfigPda(
+    mint.publicKey,
+    coreProgram.programId,
+  );
+  const [adminRolePda] = deriveRolePda(
+    configPda,
+    authority,
+    ROLE_ADMIN,
+    coreProgram.programId,
+  );
+
+  const autoApprove = args.autoApproveNewAccounts ?? true;
+  const auditorKey = args.auditorElGamalPubkey ?? new Uint8Array(32);
+
+  // SSS-3 extensions: MetadataPointer + PermanentDelegate + ConfidentialTransferMint
+  const extensions = [
+    ExtensionType.MetadataPointer,
+    ExtensionType.PermanentDelegate,
+    ExtensionType.ConfidentialTransferMint,
+  ];
+  const mintLen = getMintLen(extensions);
+  const lamports = await provider.connection.getMinimumBalanceForRentExemption(
+    mintLen,
+  );
+
+  // Build the InitializeConfidentialTransferMint instruction data manually.
+  // Pod layout (fixed size): [27, 0, authority(32), auto_approve(1), auditor(32)]
+  // OptionalNonZeroPubkey/ElGamalPubkey: all zeros = None, non-zero = Some
+  const ctData = Buffer.alloc(67); // 2 + 32 + 1 + 32
+  let offset = 0;
+  ctData.writeUInt8(27, offset); offset += 1; // ConfidentialTransfer discriminator
+  ctData.writeUInt8(0, offset); offset += 1;  // InitializeMint sub-instruction
+  // OptionalNonZeroPubkey authority (32 bytes)
+  configPda.toBuffer().copy(ctData, offset); offset += 32;
+  // PodBool auto_approve_new_accounts (1 byte)
+  ctData.writeUInt8(autoApprove ? 1 : 0, offset); offset += 1;
+  // OptionalNonZeroElGamalPubkey auditor (32 bytes)
+  Buffer.from(auditorKey).copy(ctData, offset); offset += 32;
+
+  const initConfidentialIx = {
+    programId: TOKEN_2022_PROGRAM_ID,
+    keys: [{ pubkey: mint.publicKey, isSigner: false, isWritable: true }],
+    data: ctData,
+  };
+
+  // Transaction 1: Create mint with all extensions (no metadata yet)
+  const tx1 = new Transaction();
+
+  tx1.add(
+    SystemProgram.createAccount({
+      fromPubkey: authority,
+      newAccountPubkey: mint.publicKey,
+      space: mintLen,
+      lamports,
+      programId: TOKEN_2022_PROGRAM_ID,
+    }),
+  );
+
+  tx1.add(
+    createInitializeMetadataPointerInstruction(
+      mint.publicKey,
+      authority,
+      mint.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+    ),
+  );
+
+  tx1.add(
+    createInitializePermanentDelegateInstruction(
+      mint.publicKey,
+      configPda,
+      TOKEN_2022_PROGRAM_ID,
+    ),
+  );
+
+  tx1.add(initConfidentialIx);
+
+  tx1.add(
+    createInitializeMint2Instruction(
+      mint.publicKey,
+      args.decimals,
+      authority, // temporary mint authority = wallet
+      authority, // temporary freeze authority = wallet
+      TOKEN_2022_PROGRAM_ID,
+    ),
+  );
+
+  await provider.sendAndConfirm(tx1, [mint]);
+
+  // Transaction 2: Transfer mint and freeze authorities to the config PDA
+  const tx2 = new Transaction();
+
+  tx2.add(
+    createSetAuthorityInstruction(
+      mint.publicKey,
+      authority,
+      AuthorityType.MintTokens,
+      configPda,
+      [],
+      TOKEN_2022_PROGRAM_ID,
+    ),
+  );
+
+  tx2.add(
+    createSetAuthorityInstruction(
+      mint.publicKey,
+      authority,
+      AuthorityType.FreezeAccount,
+      configPda,
+      [],
+      TOKEN_2022_PROGRAM_ID,
+    ),
+  );
+
+  await provider.sendAndConfirm(tx2);
+
+  // Transaction 3: Call sss-core initialize with preset=3
+  await coreProgram.methods
+    .initialize({
+      preset: 3,
+      name: args.name,
+      symbol: args.symbol,
+      uri: args.uri,
+      decimals: args.decimals,
+      supplyCap: args.supplyCap,
+    })
+    .accounts({
+      authority,
+      config: configPda,
+      mint: mint.publicKey,
+      adminRole: adminRolePda,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .rpc();
+
+  return { mint, configPda, configBump, adminRolePda };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Grant Role Helper
 // ─────────────────────────────────────────────────────────────
 
