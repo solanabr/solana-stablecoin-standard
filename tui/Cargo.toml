@@ -1,11 +1,21 @@
 [package]
 name = "sss-tui"
 version = "0.1.0"
-description = "Solana Stablecoin Standard - TUI"
 edition = "2021"
+description = "Solana Stablecoin Standard Admin TUI"
 
 [[bin]]
 name = "sss-tui"
 path = "src/main.rs"
 
 [dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+tokio = { version = "1", features = ["full"] }
+solana-sdk = { workspace = true }
+solana-client = { workspace = true }
+sss-core = { path = "../programs/sss-core", features = ["no-entrypoint"] }
+sss-transfer-hook = { path = "../programs/sss-transfer-hook", features = ["no-entrypoint"] }
+anyhow = "1"
+anchor-lang = { workspace = true }
+serde_json = "1"
