@@ -1,0 +1,210 @@
+# Solana Stablecoin Standard (SSS)
+
+A production-grade framework for creating, managing, and operating stablecoins on Solana using Token-2022. Three preset tiers cover everything from simple internal tokens to fully regulated, privacy-preserving digital currencies.
+
+```
+                    +-----------------------+
+                    |      Your App         |
+                    |  (Frontend / Backend) |
+                    +-----------+-----------+
+                                |
+                    +-----------v-----------+
+                    |      @sss/sdk         |
+                    |  TypeScript SDK       |
+                    +---+-------+-------+---+
+                        |       |       |
+               +--------+  +---+---+  +--------+
+               | SSS-1  |  | SSS-2 |  | SSS-3  |
+               |Minimal |  |Comply |  |Private |
+               +---+----+  +---+---+  +---+----+
+                   |            |          |
+            +------v------+    |   +------v------+
+            |  sss-core   |    |   |  sss-core   |
+            | (Anchor)    |    |   | + Confid.    |
+            +-------------+    |   |   Transfers  |
+                               |   +-------------+
+                        +------v------+
+                        |  sss-core   |
+                        | + transfer  |
+                        |   hook      |
+                        +-------------+
+```
+
+## Preset Comparison
+
+| Feature | SSS-1 (Minimal) | SSS-2 (Compliant) | SSS-3 (Private) |
+|---|---|---|---|
+| Mint / Burn | ✅ | ✅ | ✅ |
+| Freeze / Thaw | ✅ | ✅ | ✅ |
+| Pause / Unpause | ✅ | ✅ | ✅ |
+| Seize (permanent delegate) | ✅ | ✅ | ✅ |
+| Role-based access control | ✅ | ✅ | ✅ |
+| On-chain metadata | ✅ | ✅ | ✅ |
+| Supply cap enforcement | ✅ | ✅ | ✅ |
+| Transfer hook (blacklist) | -- | ✅ | -- |
+| Default frozen accounts | -- | ✅ | -- |
+| Confidential transfers | -- | -- | ✅ |
+| Auditor key (regulatory) | -- | -- | ✅ |
+| **Use case** | Internal tokens | Regulated stablecoins | Privacy-preserving |
+
+## Quick Start
+
+### Prerequisites
+
+- [Rust](https://rustup.rs/) 1.75+
+- [Solana CLI](https://docs.solanalabs.com/cli/install) 1.18+
+- [Anchor](https://www.anchor-lang.com/docs/installation) 0.32+
+- [Node.js](https://nodejs.org/) 20+ with pnpm
+
+### Build and Test
+
+```bash
+# Clone and install
+git clone https://github.com/solanabr/solana-stablecoin-standard.git
+cd solana-stablecoin-standard
+pnpm install
+
+# Build Anchor programs
+anchor build
+
+# Run integration tests (46 tests)
+anchor test
+
+# Run SDK unit tests (31 tests)
+pnpm test:sdk
+
+# Run Rust unit tests
+cargo test
+```
+
+### Create Your First Stablecoin (TypeScript)
+
+```typescript
+import { SSS } from "@sss/sdk";
+import { AnchorProvider } from "@coral-xyz/anchor";
+
+// Set up provider (wallet + connection)
+const provider = AnchorProvider.env();
+
+// Create an SSS-1 stablecoin
+const sss = await SSS.create(provider, {
+  preset: "sss-1",
+  name: "My Stablecoin",
+  symbol: "MUSD",
+  uri: "https://example.com/metadata.json",
+  decimals: 6,
+  supplyCap: 1_000_000_000n, // 1B tokens (optional)
+});
+
+// Grant minter role, then mint tokens
+await sss.roles.grant(minterWallet.publicKey, "minter");
+await sss.mintTokens(recipientTokenAccount, 1_000_000n);
+
+// Check stablecoin info
+const info = await sss.info();
+console.log(`Supply: ${info.currentSupply}`);
+```
+
+### Create via CLI
+
+```bash
+# Build the CLI
+cargo build --release --bin sss
+
+# Initialize a new SSS-2 stablecoin
+sss init \
+  --preset sss-2 \
+  --name "Regulated USD" \
+  --symbol "rUSD" \
+  --decimals 6 \
+  --supply-cap 1000000000
+
+# Mint tokens
+sss mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
+```
+
+## Features
+
+**On-chain Programs (Anchor)**
+- `sss-core` -- Universal stablecoin management with role-based access control, supply cap enforcement, pause/unpause, and permanent delegate seizure
+- `sss-transfer-hook` -- Token-2022 transfer hook for blacklist enforcement with cross-program admin verification
+
+**TypeScript SDK (`@sss/sdk`)**
+- Preset-based stablecoin creation (SSS-1, SSS-2, SSS-3)
+- Full token lifecycle operations (mint, burn, freeze, thaw, pause, seize)
+- Role management (admin, minter, freezer, pauser)
+- Blacklist management for SSS-2
+- Confidential transfer support for SSS-3 (deposit, apply pending)
+- Typed error handling with error mapping
+
+**Rust CLI (`sss`)**
+- 11 subcommands covering all stablecoin operations
+- Environment variable support for RPC URL and keypair
+- Configurable commitment level
+
+**Backend (Express)**
+- REST API for all stablecoin operations
+- API key authentication
+- Rate limiting (30 req/min)
+- WebSocket event listener with webhook notifications
+- Health check endpoint
+
+**TUI (ratatui)**
+- Terminal-based dashboard for stablecoin management
+
+**Frontend (Next.js 15)**
+- Web interface for stablecoin operations
+
+## Project Structure
+
+```
+solana-stablecoin-standard/
+  programs/
+    sss-core/              # Core stablecoin program (Anchor)
+    sss-transfer-hook/     # Transfer hook program (Anchor)
+  sdk/                     # TypeScript SDK (@sss/sdk)
+  cli/                     # Rust CLI (sss)
+  backend/                 # Express REST API
+  tui/                     # ratatui terminal UI
+  frontend/                # Next.js 15 frontend
+  tests/                   # Integration tests (46 tests)
+  trident-tests/           # Fuzz tests (Trident)
+  scripts/                 # Utility scripts
+  deployments/             # Deployment artifacts
+  docs/                    # Documentation
+```
+
+## Program IDs
+
+| Program | Address |
+|---|---|
+| sss-core | `Corep3pXJzUGaqpw2xzWQi4q63cn1STABiCDMJhMECB` |
+| sss-transfer-hook | `hookXMsC9txN6T8hyS9GCyubBL4nvp9XPWg5wW3z3pH` |
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | System design, PDA derivation, data flows |
+| [SDK Reference](docs/SDK.md) | TypeScript SDK usage and API |
+| [CLI Reference](docs/CLI.md) | Command-line tool reference |
+| [API Reference](docs/API.md) | Backend REST API endpoints |
+| [SSS-1 Spec](docs/SSS-1.md) | Minimal preset specification |
+| [SSS-2 Spec](docs/SSS-2.md) | Compliant preset specification |
+| [SSS-3 Spec](docs/SSS-3.md) | Private preset specification |
+| [Operations](docs/OPERATIONS.md) | Operator runbook and procedures |
+| [Security](docs/SECURITY.md) | Threat model and access control |
+| [Compliance](docs/COMPLIANCE.md) | Regulatory considerations |
+
+## Testing
+
+The project includes comprehensive test coverage across multiple layers:
+
+- **46 integration tests** -- Full program interaction tests covering SSS-1, SSS-2, SSS-3 presets, role management, and edge cases
+- **31 SDK unit tests** -- PDA derivation, error mapping, type validation
+- **Rust unit tests** -- Config logic (supply cap, mint validation)
+- **Fuzz tests** -- Trident-based fuzzing for program security
+
+## License
+
+MIT -- see [LICENSE](LICENSE).
