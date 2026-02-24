@@ -21,4 +21,4 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "pnpm run test:integration"
+test = "./tests/node_modules/.bin/ts-mocha -p ./tests/tsconfig.json -t 120000 ./tests/**/*.test.ts"
