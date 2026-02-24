@@ -1,0 +1,11 @@
+[package]
+name = "sss-cli"
+version = "0.1.0"
+description = "Solana Stablecoin Standard - CLI"
+edition = "2021"
+
+[[bin]]
+name = "sss-cli"
+path = "src/main.rs"
+
+[dependencies]

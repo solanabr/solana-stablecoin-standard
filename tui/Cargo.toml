@@ -1,0 +1,11 @@
+[package]
+name = "sss-tui"
+version = "0.1.0"
+description = "Solana Stablecoin Standard - TUI"
+edition = "2021"
+
+[[bin]]
+name = "sss-tui"
+path = "src/main.rs"
+
+[dependencies]

@@ -1,0 +1,27 @@
+[workspace]
+members = [
+    "programs/sss-core",
+    "programs/sss-transfer-hook",
+    "cli",
+    "tui",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.32.0"
+anchor-spl = "0.32.0"
+spl-token-2022 = "7"
+spl-transfer-hook-interface = "0.9"
+spl-tlv-account-resolution = "0.9"
+solana-sdk = "2.2"
+solana-client = "2.2"
+solana-program = "2.2"
+
+# Pin blake3 to avoid pulling constant_time_eq 0.4.2 which requires
+# edition2024, incompatible with Anchor's bundled Cargo 1.84.0.
+# blake3 1.8.3 requires constant_time_eq ^0.4.2 (edition2024),
+# blake3 1.5.5 uses constant_time_eq ^0.3 (edition2021).
+blake3 = "=1.5.5"
+
+[profile.release]
+overflow-checks = true

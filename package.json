@@ -1,0 +1,16 @@
+{
+  "name": "solana-stablecoin-standard",
+  "private": true,
+  "scripts": {
+    "build": "anchor build",
+    "test:integration": "anchor test --skip-build",
+    "test:sdk": "pnpm --filter @sss/sdk test",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.32.0",
+    "typescript": "^5.7",
+    "vitest": "^3"
+  }
+}

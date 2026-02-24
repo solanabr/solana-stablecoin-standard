@@ -1,0 +1,24 @@
+[toolchain]
+anchor_version = "0.32.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+sss_core = "Corep3pXJzUGaqpw2xzWQi4q63cn1STABiCDMJhMECB"
+sss_transfer_hook = "hookXMsC9txN6T8hyS9GCyubBL4nvp9XPWg5wW3z3pH"
+
+[programs.devnet]
+sss_core = "Corep3pXJzUGaqpw2xzWQi4q63cn1STABiCDMJhMECB"
+sss_transfer_hook = "hookXMsC9txN6T8hyS9GCyubBL4nvp9XPWg5wW3z3pH"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "pnpm run test:integration"
