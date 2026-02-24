@@ -22,6 +22,8 @@ import * as coreix from "./instructions/core";
 import * as hookix from "./instructions/hook";
 import { createSss1MintTransaction } from "./presets/sss1";
 import { createSss2MintTransaction } from "./presets/sss2";
+import { createSss3MintTransaction } from "./presets/sss3";
+import { ConfidentialOps } from "./confidential";
 
 export class SSS {
   readonly mint: PublicKey;
@@ -125,7 +127,19 @@ export class SSS {
         );
         break;
       case "sss-3":
-        throw new Error("SSS-3 not yet implemented");
+        mintTx = await createSss3MintTransaction(
+          provider.connection,
+          payer,
+          mint,
+          {
+            name: options.name,
+            symbol: options.symbol,
+            uri: options.uri,
+            decimals,
+          },
+          coreProgram.programId,
+        );
+        break;
       default:
         throw new Error(`Unknown preset: ${options.preset}`);
     }
@@ -566,23 +580,48 @@ export class SSS {
   // ---------------------------------------------------------------------------
 
   confidential = {
-    configureAccount: async (_tokenAccount: PublicKey): Promise<string> => {
-      throw new Error("SSS-3 not yet implemented");
+    /**
+     * Deposit tokens from public balance into confidential pending balance.
+     * No ZK proofs required.
+     */
+    deposit: async (tokenAccount: PublicKey, amount: bigint, decimals: number): Promise<string> => {
+      const ops = new ConfidentialOps(this.provider.connection, this.mint, this.provider.publicKey);
+      const ix = ops.buildDepositInstruction(tokenAccount, amount, decimals);
+      try {
+        return await this.provider.sendAndConfirm(new Transaction().add(ix));
+      } catch (err) {
+        throw mapAnchorError(err);
+      }
     },
-    deposit: async (_amount: bigint): Promise<string> => {
-      throw new Error("SSS-3 not yet implemented");
+
+    /**
+     * Apply pending confidential balance to available confidential balance.
+     * No ZK proofs required.
+     */
+    applyPending: async (tokenAccount: PublicKey): Promise<string> => {
+      const ops = new ConfidentialOps(this.provider.connection, this.mint, this.provider.publicKey);
+      const ix = ops.buildApplyPendingBalanceInstruction(tokenAccount);
+      try {
+        return await this.provider.sendAndConfirm(new Transaction().add(ix));
+      } catch (err) {
+        throw mapAnchorError(err);
+      }
     },
-    applyPending: async (): Promise<string> => {
-      throw new Error("SSS-3 not yet implemented");
+
+    /**
+     * Confidential transfer. Requires Rust proof service for ZK proof generation.
+     * @throws Always throws - ZK proofs not available in TypeScript
+     */
+    transfer: async (_senderAccount: PublicKey, _recipientAccount: PublicKey, _amount: bigint): Promise<string> => {
+      throw new Error("Confidential transfer requires Rust proof service. See docs/SSS-3.md");
     },
-    transfer: async (
-      _recipient: PublicKey,
-      _amount: bigint,
-    ): Promise<string> => {
-      throw new Error("SSS-3 not yet implemented");
-    },
-    withdraw: async (_amount: bigint): Promise<string> => {
-      throw new Error("SSS-3 not yet implemented");
+
+    /**
+     * Confidential withdraw. Requires Rust proof service for ZK proof generation.
+     * @throws Always throws - ZK proofs not available in TypeScript
+     */
+    withdraw: async (_tokenAccount: PublicKey, _amount: bigint, _decimals: number): Promise<string> => {
+      throw new Error("Confidential withdraw requires Rust proof service. See docs/SSS-3.md");
     },
   };
 }
