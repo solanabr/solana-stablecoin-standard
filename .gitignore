@@ -10,6 +10,7 @@ dist/
 
 # Solana
 *.so
+programs/*/keypair.json
 
 # Environment
 .env

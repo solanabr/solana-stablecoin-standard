@@ -6,6 +6,11 @@ use crate::error::SssError;
 use crate::events::TokensMinted;
 use crate::state::{Role, RoleAccount, StablecoinConfig};
 
+/// Known Pyth v2 oracle program IDs.
+/// Validates price feed ownership to prevent forged oracle accounts.
+const PYTH_V2_MAINNET: Pubkey = anchor_lang::pubkey!("FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH");
+const PYTH_V2_DEVNET: Pubkey = anchor_lang::pubkey!("gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s");
+
 #[derive(Accounts)]
 pub struct MintTokens<'info> {
     pub minter: Signer<'info>,
@@ -132,6 +137,15 @@ fn adjust_cap_with_oracle(
         return Ok(None);
     };
 
+    // Validate price feed is owned by a known Pyth oracle program.
+    // Without this check, an attacker could pass a forged account with
+    // crafted data at the expected offsets to manipulate the supply cap.
+    let owner = price_feed.owner;
+    require!(
+        *owner == PYTH_V2_MAINNET || *owner == PYTH_V2_DEVNET,
+        SssError::InvalidOracleData
+    );
+
     let data = price_feed.try_borrow_data()
         .map_err(|_| error!(SssError::InvalidOracleData))?;
     require!(data.len() >= 216, SssError::InvalidOracleData);
@@ -142,19 +156,37 @@ fn adjust_cap_with_oracle(
     require!(price > 0, SssError::InvalidOraclePrice);
 
     // Convert USD cap to token amount:
-    // token_cap = cap * 10^mint_decimals / (price * 10^expo)
-    // Since expo is typically negative (e.g., -8), we use |expo|:
-    // token_cap = cap * 10^mint_decimals / (price / 10^|expo|)
-    //           = cap * 10^mint_decimals * 10^|expo| / price
-    let abs_expo = expo.unsigned_abs();
-    let numerator = (cap as u128)
-        .checked_mul(10u128.pow(mint_decimals as u32))
-        .and_then(|v| v.checked_mul(10u128.pow(abs_expo)))
-        .ok_or(error!(SssError::ArithmeticOverflow))?;
+    //   token_cap = cap * 10^mint_decimals / (price * 10^expo)
+    //
+    // When expo < 0 (typical, e.g., -8):
+    //   token_cap = cap * 10^decimals * 10^|expo| / price
+    //
+    // When expo >= 0 (rare):
+    //   token_cap = cap * 10^decimals / (price * 10^expo)
+    let price_u128 = price as u128;
+    let decimals_pow = 10u128.pow(mint_decimals as u32);
 
-    let token_cap = numerator
-        .checked_div(price as u128)
-        .ok_or(error!(SssError::ArithmeticOverflow))?;
+    let token_cap = if expo < 0 {
+        let abs_expo = expo.unsigned_abs();
+        let numerator = (cap as u128)
+            .checked_mul(decimals_pow)
+            .and_then(|v| v.checked_mul(10u128.pow(abs_expo)))
+            .ok_or(error!(SssError::ArithmeticOverflow))?;
+        numerator
+            .checked_div(price_u128)
+            .ok_or(error!(SssError::ArithmeticOverflow))?
+    } else {
+        let expo_pow = 10u128.pow(expo as u32);
+        let numerator = (cap as u128)
+            .checked_mul(decimals_pow)
+            .ok_or(error!(SssError::ArithmeticOverflow))?;
+        let denominator = price_u128
+            .checked_mul(expo_pow)
+            .ok_or(error!(SssError::ArithmeticOverflow))?;
+        numerator
+            .checked_div(denominator)
+            .ok_or(error!(SssError::ArithmeticOverflow))?
+    };
 
     // Safe downcast — if it exceeds u64, cap at u64::MAX (effectively unlimited)
     Ok(Some(token_cap.min(u64::MAX as u128) as u64))

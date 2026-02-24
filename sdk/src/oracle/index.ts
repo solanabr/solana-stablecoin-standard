@@ -96,15 +96,21 @@ export function usdToTokenAmount(
   price: OraclePrice,
   tokenDecimals: number,
 ): bigint {
-  const absExpo = Math.abs(price.exponent);
+  const decimalsPow = BigInt(10 ** tokenDecimals);
 
-  // token_amount = usd_amount * 10^token_decimals * 10^|expo| / price
-  const numerator =
-    usdAmount *
-    BigInt(10 ** tokenDecimals) *
-    BigInt(10 ** absExpo);
-
-  return numerator / price.price;
+  if (price.exponent < 0) {
+    // Typical case: expo = -8 means price has 8 decimal places
+    // token_amount = usd_amount * 10^decimals * 10^|expo| / price
+    const absExpo = Math.abs(price.exponent);
+    const numerator = usdAmount * decimalsPow * BigInt(10 ** absExpo);
+    return numerator / price.price;
+  } else {
+    // Rare case: positive exponent
+    // token_amount = usd_amount * 10^decimals / (price * 10^expo)
+    const numerator = usdAmount * decimalsPow;
+    const denominator = price.price * BigInt(10 ** price.exponent);
+    return numerator / denominator;
+  }
 }
 
 /**
@@ -120,13 +126,19 @@ export function tokenAmountToUsd(
   price: OraclePrice,
   tokenDecimals: number,
 ): number {
-  const absExpo = Math.abs(price.exponent);
+  const decimalsPow = BigInt(10 ** tokenDecimals);
 
-  // usd = token_amount * price / (10^token_decimals * 10^|expo|)
-  const numerator = tokenAmount * price.price;
-  const denominator = BigInt(10 ** tokenDecimals) * BigInt(10 ** absExpo);
-
-  return Number(numerator) / Number(denominator);
+  if (price.exponent < 0) {
+    // usd = token_amount * price / (10^decimals * 10^|expo|)
+    const absExpo = Math.abs(price.exponent);
+    const numerator = tokenAmount * price.price;
+    const denominator = decimalsPow * BigInt(10 ** absExpo);
+    return Number(numerator) / Number(denominator);
+  } else {
+    // usd = token_amount * price * 10^expo / 10^decimals
+    const numerator = tokenAmount * price.price * BigInt(10 ** price.exponent);
+    return Number(numerator) / Number(decimalsPow);
+  }
 }
 
 /**
