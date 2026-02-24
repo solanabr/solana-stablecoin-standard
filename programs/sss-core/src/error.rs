@@ -1,0 +1,27 @@
+use anchor_lang::prelude::*;
+
+#[error_code]
+pub enum SssError {
+    #[msg("Operations are paused")]
+    Paused,
+    #[msg("Operations are not paused")]
+    NotPaused,
+    #[msg("Supply cap exceeded")]
+    SupplyCapExceeded,
+    #[msg("Unauthorized: missing required role")]
+    Unauthorized,
+    #[msg("Invalid preset value")]
+    InvalidPreset,
+    #[msg("Cannot remove the last admin")]
+    LastAdmin,
+    #[msg("Overflow in arithmetic operation")]
+    ArithmeticOverflow,
+    #[msg("Mint mismatch")]
+    MintMismatch,
+    #[msg("Invalid supply cap: must be >= current supply")]
+    InvalidSupplyCap,
+    #[msg("Amount must be greater than zero")]
+    ZeroAmount,
+    #[msg("Invalid role value")]
+    InvalidRole,
+}
