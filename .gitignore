@@ -1,0 +1,18 @@
+node_modules/
+dist/
+target/
+.anchor/
+.env
+keys/
+*.json.bak
+*.pem
+*.key
+
+# Solana
+test-ledger/
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp

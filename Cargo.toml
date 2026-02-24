@@ -1,0 +1,22 @@
+[workspace]
+members = [
+    "programs/sss-token",
+    "programs/transfer-hook",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.32.1", features = ["token_2022", "token_2022_extensions", "metadata"] }
+spl-token-2022 = { version = "=8.0.1", features = ["no-entrypoint"] }
+spl-tlv-account-resolution = { version = "0.7.0" }
+spl-transfer-hook-interface = { version = "0.7.0" }
+spl-type-length-value = { version = "0.4.2" }
+
+[profile.release]
+overflow-checks = true
+lto = "thin"
+
+[profile.test]
+overflow-checks = true
+

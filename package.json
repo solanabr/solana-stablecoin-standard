@@ -1,0 +1,35 @@
+{
+  "name": "solana-stablecoin-standard",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard — modular SDK and standards for stablecoin issuers",
+  "private": true,
+  "workspaces": [
+    "sdk",
+    "cli"
+  ],
+  "scripts": {
+    "build": "anchor build && npm run build:sdk && npm run build:cli",
+    "build:sdk": "cd sdk && npm run build",
+    "build:cli": "cd cli && npm run build",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "ts-mocha -p tests/tsconfig.json -t 60000 tests/unit/**/*.ts",
+    "test:integration": "anchor test",
+    "deploy:devnet": "anchor deploy --provider.cluster devnet",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down",
+    "services:logs": "docker compose logs -f",
+    "lint": "cd sdk && npm run lint && cd ../cli && npm run lint"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@solana/web3.js": "^1.95.3",
+    "@solana/spl-token": "^0.4.9",
+    "typescript": "^5.3.0",
+    "ts-mocha": "^10.0.0",
+    "@types/mocha": "^10.0.0",
+    "@types/chai": "^4.3.0",
+    "@types/node": "^20.0.0",
+    "chai": "^4.3.0",
+    "mocha": "^10.0.0"
+  }
+}
