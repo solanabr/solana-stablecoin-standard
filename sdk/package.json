@@ -1,0 +1,24 @@
+{
+  "name": "@sss/sdk",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.0",
+    "@solana/web3.js": "^1.98",
+    "@solana/spl-token": "^0.4",
+    "@solana/spl-token-metadata": "^0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.7",
+    "vitest": "^3"
+  }
+}
