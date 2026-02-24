@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["mocha", "chai"]
+    "types": ["mocha", "chai", "node"]
   },
   "include": ["./**/*.ts"]
 }

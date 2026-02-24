@@ -6,14 +6,15 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.0",
-    "@solana/web3.js": "^1.98",
     "@solana/spl-token": "^0.4",
     "@solana/spl-token-metadata": "^0.1",
+    "@solana/web3.js": "^1.98",
     "chai": "^4"
   },
   "devDependencies": {
     "@types/chai": "^4",
     "@types/mocha": "^10",
+    "@types/node": "^25.3.0",
     "mocha": "^10",
     "ts-mocha": "^10",
     "typescript": "^5.7"
