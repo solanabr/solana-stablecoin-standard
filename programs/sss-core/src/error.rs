@@ -24,4 +24,8 @@ pub enum SssError {
     ZeroAmount,
     #[msg("Invalid role value")]
     InvalidRole,
+    #[msg("Invalid oracle price feed data")]
+    InvalidOracleData,
+    #[msg("Oracle price is stale or non-positive")]
+    InvalidOraclePrice,
 }

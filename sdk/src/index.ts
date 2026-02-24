@@ -13,3 +13,12 @@ export { generateTestElGamalKeypair, generateTestAesKey } from "./confidential";
 export * from "./instructions";
 export type { SssCore } from "./idl/sss_core";
 export type { SssTransferHook } from "./idl/sss_transfer_hook";
+export {
+  parsePythPrice,
+  fetchPythPrice,
+  usdToTokenAmount,
+  tokenAmountToUsd,
+  buildOracleRemainingAccount,
+  PYTH_FEEDS,
+} from "./oracle";
+export type { OraclePrice } from "./oracle";

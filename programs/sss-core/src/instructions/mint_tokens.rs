@@ -56,9 +56,32 @@ pub fn handler_mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> 
     let mint_key = ctx.accounts.mint.key();
     let to_key = ctx.accounts.to.key();
     let minter_key = ctx.accounts.minter.key();
+    let decimals = ctx.accounts.mint.decimals;
 
     let config = &mut ctx.accounts.config;
-    require!(config.can_mint(amount), SssError::SupplyCapExceeded);
+
+    // Oracle-aware supply cap check:
+    // If remaining_accounts[0] is a price feed, adjust the supply cap from
+    // USD-denominated to token-denominated using the oracle price.
+    // This is backward-compatible — omitting the oracle uses the raw cap.
+    let effective_cap = if !ctx.remaining_accounts.is_empty() {
+        let price_feed = &ctx.remaining_accounts[0];
+        adjust_cap_with_oracle(config.supply_cap, price_feed, decimals)?
+    } else {
+        config.supply_cap
+    };
+
+    // Check supply cap (oracle-adjusted or raw)
+    let can_mint = match effective_cap {
+        Some(cap) => {
+            let new_supply = config.current_supply()
+                .checked_add(amount)
+                .ok_or(SssError::ArithmeticOverflow)?;
+            new_supply <= cap
+        }
+        None => config.current_supply().checked_add(amount).is_some(),
+    };
+    require!(can_mint, SssError::SupplyCapExceeded);
 
     config.total_minted = config
         .total_minted
@@ -90,4 +113,49 @@ pub fn handler_mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> 
     });
 
     Ok(())
+}
+
+/// Adjust a USD-denominated supply cap to token units using an oracle price feed.
+///
+/// Compatible with Pyth v2 price accounts:
+///   - Exponent (i32) at byte offset 20
+///   - Aggregate price (i64) at byte offset 208
+///
+/// If no supply cap is set, returns None (unlimited).
+/// If the price feed is invalid or price is non-positive, returns an error.
+fn adjust_cap_with_oracle(
+    usd_cap: Option<u64>,
+    price_feed: &AccountInfo,
+    mint_decimals: u8,
+) -> Result<Option<u64>> {
+    let Some(cap) = usd_cap else {
+        return Ok(None);
+    };
+
+    let data = price_feed.try_borrow_data()
+        .map_err(|_| error!(SssError::InvalidOracleData))?;
+    require!(data.len() >= 216, SssError::InvalidOracleData);
+
+    // Pyth v2: exponent at offset 20 (i32 LE), aggregate price at offset 208 (i64 LE)
+    let expo = i32::from_le_bytes(data[20..24].try_into().unwrap());
+    let price = i64::from_le_bytes(data[208..216].try_into().unwrap());
+    require!(price > 0, SssError::InvalidOraclePrice);
+
+    // Convert USD cap to token amount:
+    // token_cap = cap * 10^mint_decimals / (price * 10^expo)
+    // Since expo is typically negative (e.g., -8), we use |expo|:
+    // token_cap = cap * 10^mint_decimals / (price / 10^|expo|)
+    //           = cap * 10^mint_decimals * 10^|expo| / price
+    let abs_expo = expo.unsigned_abs();
+    let numerator = (cap as u128)
+        .checked_mul(10u128.pow(mint_decimals as u32))
+        .and_then(|v| v.checked_mul(10u128.pow(abs_expo)))
+        .ok_or(error!(SssError::ArithmeticOverflow))?;
+
+    let token_cap = numerator
+        .checked_div(price as u128)
+        .ok_or(error!(SssError::ArithmeticOverflow))?;
+
+    // Safe downcast — if it exceeds u64, cap at u64::MAX (effectively unlimited)
+    Ok(Some(token_cap.min(u64::MAX as u128) as u64))
 }
