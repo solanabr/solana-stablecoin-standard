@@ -1,0 +1,122 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Solana Stablecoin Standard — Backend Services
+#
+# Quick start:
+#   docker compose up --build
+#
+# Requires a running Solana node at SOLANA_RPC_URL (default: host.docker.internal:8899).
+# For devnet set:  SOLANA_RPC_URL=https://api.devnet.solana.com
+#                  SOLANA_WS_URL=wss://api.devnet.solana.com
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-common-env: &common-env
+  SOLANA_RPC_URL: ${SOLANA_RPC_URL:-http://host.docker.internal:8899}
+  SOLANA_WS_URL:  ${SOLANA_WS_URL:-ws://host.docker.internal:8900}
+  SSS_TOKEN_PROGRAM_ID: ${SSS_TOKEN_PROGRAM_ID:-E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP}
+  HOOK_PROGRAM_ID:      ${HOOK_PROGRAM_ID:-6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY}
+  API_SECRET: ${API_SECRET:-}
+  REDIS_URL:  redis://redis:6379
+  DATABASE_URL: postgres://sss:sss@postgres:5432/sss
+
+services:
+  # ─── Infrastructure ────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sss
+      POSTGRES_PASSWORD: sss
+      POSTGRES_DB: sss
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sss -d sss"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Mint Service (port 3001) ───────────────────────────────────────────────
+  mint-service:
+    build:
+      context: ./services/mint-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      <<: *common-env
+      SERVICE_PORT: "3001"
+      MOCK_EXECUTION: "${MOCK_EXECUTION:-true}"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ─── Indexer (port 3002) ────────────────────────────────────────────────────
+  indexer:
+    build:
+      context: ./services/indexer
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      <<: *common-env
+      SERVICE_PORT: "3002"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3002/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ─── Compliance Service (port 3003) ────────────────────────────────────────
+  compliance:
+    build:
+      context: ./services/compliance
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      <<: *common-env
+      SERVICE_PORT: "3003"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3003/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  postgres_data:

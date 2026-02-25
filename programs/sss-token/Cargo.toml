@@ -1,0 +1,28 @@
+[package]
+name = "sss-token"
+version = "0.1.0"
+description = "SSS Token: Solana Stablecoin Standard — SSS-1 and SSS-2 preset support"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_token"
+
+[lints]
+workspace = true
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token", "token_2022", "associated_token", "metadata"] }
+spl-token-2022 = { version = "6.0.0", features = ["no-entrypoint"] }
+spl-token-metadata-interface = "0.5.1"
+transfer-hook = { path = "../transfer-hook", features = ["cpi"] }

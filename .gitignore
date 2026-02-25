@@ -1,0 +1,35 @@
+# Build artifacts
+target/
+dist/
+
+# Anchor local ledger + test data
+.anchor/
+test-ledger/
+*.log
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# CLI local state
+.sss-config.json
+
+# Solana keypairs — never commit private keys
+id.json
+*.keypair.json
+
+# Environment / secrets
+.env
+.env.*
+.env.local
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
