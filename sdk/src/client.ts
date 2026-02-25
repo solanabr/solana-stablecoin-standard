@@ -410,6 +410,27 @@ export class SSS {
     }
   }
 
+  /**
+   * Transfer admin authority to a new address.
+   * Atomically closes caller's admin PDA and creates one for newAuthority.
+   */
+  async transferAuthority(newAuthority: PublicKey): Promise<string> {
+    const admin = this.provider.publicKey;
+    const ix = await coreix.buildTransferAuthorityIx(
+      this.coreProgram,
+      this.configPda,
+      admin,
+      newAuthority,
+    );
+    try {
+      return await this.provider.sendAndConfirm(
+        new Transaction().add(ix),
+      );
+    } catch (err) {
+      throw mapAnchorError(err);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Info
   // ---------------------------------------------------------------------------

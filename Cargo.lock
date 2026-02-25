@@ -6566,6 +6566,7 @@ dependencies = [
  "colored",
  "serde",
  "serde_json",
+ "solana-account-decoder",
  "solana-client",
  "solana-sdk",
  "solana-zk-sdk",

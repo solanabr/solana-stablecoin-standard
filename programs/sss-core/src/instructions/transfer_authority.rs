@@ -14,6 +14,7 @@ pub struct TransferAuthority<'info> {
     pub admin: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [SSS_CONFIG_SEED, config.mint.as_ref()],
         bump = config.bump,
     )]
@@ -62,6 +63,9 @@ pub fn handler_transfer_authority(ctx: Context<TransferAuthority>) -> Result<()>
     new_role.granted_by = ctx.accounts.admin.key();
     new_role.granted_at = Clock::get()?.unix_timestamp;
     new_role.bump = ctx.bumps.new_admin_role;
+
+    // Update config.authority so on-chain queries reflect the new admin
+    ctx.accounts.config.authority = ctx.accounts.new_authority.key();
 
     emit!(AuthorityTransferred {
         config: ctx.accounts.config.key(),

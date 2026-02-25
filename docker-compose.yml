@@ -1,3 +1,5 @@
+name: sss-backend
+
 services:
   backend:
     build:
@@ -9,7 +11,7 @@ services:
       - PORT=3000
       - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
       - SOLANA_WS_URL=${SOLANA_WS_URL:-}
-      - SOLANA_KEYPAIR=${SOLANA_KEYPAIR:-}
+      - KEYPAIR_PATH=${KEYPAIR_PATH:-}
       - SSS_CORE_PROGRAM_ID=${SSS_CORE_PROGRAM_ID:-Corep3pXJzUGaqpw2xzWQi4q63cn1STABiCDMJhMECB}
       - SSS_HOOK_PROGRAM_ID=${SSS_HOOK_PROGRAM_ID:-hookXMsC9txN6T8hyS9GCyubBL4nvp9XPWg5wW3z3pH}
       - API_KEY=${API_KEY:?Set API_KEY in .env}

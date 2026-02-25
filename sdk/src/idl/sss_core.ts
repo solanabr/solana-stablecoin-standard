@@ -600,6 +600,76 @@ export type SssCore = {
       "args": []
     },
     {
+      "name": "transferAuthority",
+      "discriminator": [
+        48,
+        169,
+        76,
+        72,
+        229,
+        180,
+        55,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  115,
+                  115,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "stablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "adminRole",
+          "docs": [
+            "The caller's admin role PDA — will be closed."
+          ],
+          "writable": true
+        },
+        {
+          "name": "newAuthority"
+        },
+        {
+          "name": "newAdminRole",
+          "docs": [
+            "The new authority's admin role PDA — will be created."
+          ],
+          "writable": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "unpause",
       "discriminator": [
         169,
@@ -762,6 +832,19 @@ export type SssCore = {
         190,
         40,
         119
+      ]
+    },
+    {
+      "name": "authorityTransferred",
+      "discriminator": [
+        245,
+        109,
+        179,
+        54,
+        135,
+        92,
+        22,
+        64
       ]
     },
     {
@@ -937,6 +1020,16 @@ export type SssCore = {
       "code": 6010,
       "name": "invalidRole",
       "msg": "Invalid role value"
+    },
+    {
+      "code": 6011,
+      "name": "invalidOracleData",
+      "msg": "Invalid oracle price feed data"
+    },
+    {
+      "code": 6012,
+      "name": "invalidOraclePrice",
+      "msg": "Oracle price is stale or non-positive"
     }
   ],
   "types": [
@@ -975,6 +1068,26 @@ export type SssCore = {
           },
           {
             "name": "freezer",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "authorityTransferred",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "config",
+            "type": "pubkey"
+          },
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
             "type": "pubkey"
           }
         ]

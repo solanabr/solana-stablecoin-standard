@@ -251,6 +251,70 @@ List roles for the current keypair on a given stablecoin.
 sss roles list --mint <MINT_ADDRESS>
 ```
 
+### holders
+
+List all token holders for a given mint, sorted by balance descending.
+
+```bash
+sss holders \
+  --mint <MINT_ADDRESS> \
+  --min-balance 1000000
+```
+
+| Argument | Required | Default | Description |
+|---|---|---|---|
+| `--mint` | Yes | -- | Base58 mint address |
+| `--min-balance` | No | 0 | Only show holders with balance >= this amount |
+
+### audit-log
+
+Display transaction history for a stablecoin (from the config PDA).
+
+```bash
+sss audit-log \
+  --mint <MINT_ADDRESS> \
+  --action mint \
+  --limit 50
+```
+
+| Argument | Required | Default | Description |
+|---|---|---|---|
+| `--mint` | Yes | -- | Base58 mint address |
+| `--action` | No | All | Filter by action type (mint, burn, freeze, thaw, etc.) |
+| `--limit` | No | 25 | Maximum number of entries to display |
+
+### minters
+
+Manage minter role assignments.
+
+#### minters list
+
+List all addresses with the minter role.
+
+```bash
+sss minters list --mint <MINT_ADDRESS>
+```
+
+#### minters add
+
+Grant the minter role to an address. Admin-only.
+
+```bash
+sss minters add \
+  --mint <MINT_ADDRESS> \
+  --address <WALLET_ADDRESS>
+```
+
+#### minters remove
+
+Revoke the minter role from an address. Admin-only.
+
+```bash
+sss minters remove \
+  --mint <MINT_ADDRESS> \
+  --address <WALLET_ADDRESS>
+```
+
 ### info
 
 Display stablecoin configuration and status.

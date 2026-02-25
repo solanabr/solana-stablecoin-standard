@@ -138,7 +138,7 @@ sss mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
 - Typed error handling with error mapping
 
 **Rust CLI (`sss`)**
-- 11 subcommands covering all stablecoin operations
+- 15 subcommands covering all stablecoin operations
 - Environment variable support for RPC URL and keypair
 - Configurable commitment level
 

@@ -13,9 +13,9 @@ pub async fn execute(ctx: &CliContext, mint_str: &str, min_balance: Option<u64>)
   println!();
 
   // Token-2022 account layout: first 32 bytes = mint pubkey
+  // No DataSize filter — Token-2022 accounts vary in size due to extensions
   let filters = vec![
     RpcFilterType::Memcmp(Memcmp::new_raw_bytes(0, mint.to_bytes().to_vec())),
-    RpcFilterType::DataSize(165), // Standard token account size
   ];
 
   let config = RpcProgramAccountsConfig {

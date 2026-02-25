@@ -156,9 +156,9 @@ router.get("/audit-trail/:mint", async (req: Request, res: Response) => {
 
     const entries = signatures.map((sig: ConfirmedSignatureInfo) => {
       const memo = sig.memo ?? "";
-      const detectedAction = EVENT_NAMES.find((name) =>
-        memo.includes(name) || (sig.err === null && memo === ""),
-      );
+      const detectedAction = memo
+        ? EVENT_NAMES.find((name) => memo.includes(name))
+        : undefined;
 
       return {
         signature: sig.signature,

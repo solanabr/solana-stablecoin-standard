@@ -30,6 +30,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/sdk/dist ./sdk/dist
 
+RUN addgroup -S sss && adduser -S sss -G sss
+USER sss
+
 EXPOSE 3000
 
 CMD ["node", "dist/main.js"]

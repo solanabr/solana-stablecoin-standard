@@ -22,6 +22,15 @@ pub async fn execute(
   supply_cap: Option<u64>,
 ) -> Result<()> {
   let preset_u8 = utils::parse_preset(preset)?;
+
+  if preset_u8 == 3 {
+    anyhow::bail!(
+      "SSS-3 (Private) initialization requires the TypeScript SDK for \
+       ConfidentialTransferMint extension setup. Use the @sss/sdk package instead.\n\
+       See: docs/SSS-3.md"
+    );
+  }
+
   let payer = ctx.payer_pubkey();
 
   // Generate a new mint keypair

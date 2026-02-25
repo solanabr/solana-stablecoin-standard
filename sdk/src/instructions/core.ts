@@ -343,6 +343,44 @@ export function buildRevokeRoleIx(
 }
 
 /**
+ * Build the `transferAuthority` instruction.
+ * Atomically transfers admin authority: closes caller's admin PDA and creates
+ * a new admin PDA for the new authority. Also updates config.authority.
+ *
+ * Auto-resolved by Anchor: config (PDA), systemProgram (known address)
+ */
+export function buildTransferAuthorityIx(
+  program: Program<SssCore>,
+  configPda: PublicKey,
+  admin: PublicKey,
+  newAuthority: PublicKey,
+) {
+  const [adminRolePda] = deriveRolePda(
+    configPda,
+    admin,
+    "admin",
+    program.programId,
+  );
+  const [newAdminRolePda] = deriveRolePda(
+    configPda,
+    newAuthority,
+    "admin",
+    program.programId,
+  );
+
+  return program.methods
+    .transferAuthority()
+    .accountsPartial({
+      admin,
+      config: configPda,
+      adminRole: adminRolePda,
+      newAuthority,
+      newAdminRole: newAdminRolePda,
+    })
+    .instruction();
+}
+
+/**
  * Build the `updateSupplyCap` instruction.
  * Updates the supply cap for the stablecoin. Admin-only.
  * Pass null to remove the supply cap.
