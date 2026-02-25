@@ -137,6 +137,11 @@ pub enum Commands {
     #[arg(long)]
     mint: String,
   },
+  /// SSS-3 confidential transfer operations
+  Confidential {
+    #[command(subcommand)]
+    action: ConfidentialAction,
+  },
 }
 
 #[derive(Subcommand)]
@@ -207,6 +212,47 @@ pub enum RoleAction {
   },
 }
 
+#[derive(Subcommand)]
+pub enum ConfidentialAction {
+  /// Configure a token account for confidential transfers
+  ConfigureAccount {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+    /// Base58 token account address
+    #[arg(long)]
+    account: String,
+  },
+  /// Deposit tokens from public balance to confidential pending balance
+  Deposit {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+    /// Base58 token account address
+    #[arg(long)]
+    account: String,
+    /// Amount in base units
+    #[arg(long)]
+    amount: u64,
+    /// Token decimals
+    #[arg(long, default_value_t = 6)]
+    decimals: u8,
+  },
+  /// Apply pending balance to available confidential balance
+  ApplyPending {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+    /// Base58 token account address
+    #[arg(long)]
+    account: String,
+  },
+  /// Confidential transfer (requires ZK proof generation)
+  Transfer,
+  /// Withdraw from confidential balance (requires ZK proof generation)
+  Withdraw,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
   let cli = Cli::parse();
@@ -245,6 +291,9 @@ async fn main() -> Result<()> {
     }
     Commands::Info { mint } => {
       commands::info::execute(&ctx, &mint).await
+    }
+    Commands::Confidential { action } => {
+      commands::confidential::execute(&ctx, action).await
     }
   }
 }

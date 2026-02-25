@@ -1,5 +1,6 @@
 pub mod blacklist;
 pub mod burn;
+pub mod confidential;
 pub mod freeze;
 pub mod info;
 pub mod init;
