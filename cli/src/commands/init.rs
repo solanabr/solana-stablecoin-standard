@@ -126,6 +126,9 @@ pub async fn execute(
     uri: uri_val.clone(),
     decimals: decimals_val,
     supply_cap: supply_cap_val,
+    enable_permanent_delegate: None,
+    enable_transfer_hook: None,
+    default_account_frozen: None,
   };
 
   let ix_data = sss_core::instruction::Initialize {

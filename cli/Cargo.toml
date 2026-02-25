@@ -5,7 +5,7 @@ edition = "2021"
 description = "Solana Stablecoin Standard CLI"
 
 [[bin]]
-name = "sss"
+name = "sss-token"
 path = "src/main.rs"
 
 [dependencies]

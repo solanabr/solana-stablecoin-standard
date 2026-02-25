@@ -109,10 +109,10 @@ console.log(`Supply: ${info.currentSupply}`);
 
 ```bash
 # Build the CLI
-cargo build --release --bin sss
+cargo build --release --bin sss-token
 
 # Initialize a new SSS-2 stablecoin
-sss init \
+sss-token init \
   --preset sss-2 \
   --name "Regulated USD" \
   --symbol "rUSD" \
@@ -120,7 +120,7 @@ sss init \
   --supply-cap 1000000000
 
 # Mint tokens
-sss mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
+sss-token mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
 ```
 
 ## Features
@@ -138,8 +138,8 @@ sss mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
 - Confidential transfer support for SSS-3 (deposit, apply pending)
 - Typed error handling with error mapping
 
-**Rust CLI (`sss`)**
-- 18 subcommands covering all stablecoin operations
+**Rust CLI (`sss-token`)**
+- 20 subcommands covering all stablecoin operations
 - TOML config file support (`--config`) for reproducible deployments
 - Environment variable support for RPC URL and keypair
 - Configurable commitment level
@@ -167,7 +167,7 @@ solana-stablecoin-standard/
     sss-core/              # Core stablecoin program (Anchor)
     sss-transfer-hook/     # Transfer hook program (Anchor)
   sdk/                     # TypeScript SDK (@sss/sdk)
-  cli/                     # Rust CLI (sss)
+  cli/                     # Rust CLI (sss-token)
   backend/                 # Express REST API
   tui/                     # ratatui terminal UI
   frontend/                # Next.js 15 frontend

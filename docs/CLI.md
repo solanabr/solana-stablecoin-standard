@@ -1,6 +1,6 @@
 # CLI Reference
 
-The `sss` CLI provides command-line access to all Solana Stablecoin Standard operations.
+The `sss-token` CLI provides command-line access to all Solana Stablecoin Standard operations.
 
 ## Installation
 
@@ -9,13 +9,13 @@ The `sss` CLI provides command-line access to all Solana Stablecoin Standard ope
 ```bash
 cd cli
 cargo build --release
-# Binary at: target/release/sss
+# Binary at: target/release/sss-token
 ```
 
 ### From Workspace Root
 
 ```bash
-cargo build --release --bin sss
+cargo build --release --bin sss-token
 ```
 
 ## Global Options
@@ -46,7 +46,7 @@ Initialize a new stablecoin. Use either `--preset` with inline args, or `--confi
 
 ```bash
 # Inline arguments
-sss init \
+sss-token init \
   --preset sss-1 \
   --name "My Stablecoin" \
   --symbol "MUSD" \
@@ -55,7 +55,7 @@ sss init \
   --supply-cap 1000000000
 
 # TOML config file
-sss init --config example-config.toml
+sss-token init --config example-config.toml
 ```
 
 | Argument | Required | Default | Description |
@@ -88,7 +88,7 @@ default_account_frozen = true
 Mint tokens to a recipient token account. Caller must have the minter role.
 
 ```bash
-sss mint \
+sss-token mint \
   --mint <MINT_ADDRESS> \
   --to <TOKEN_ACCOUNT> \
   --amount 1000000
@@ -105,7 +105,7 @@ sss mint \
 Burn tokens from a token account. Caller must have the burner role.
 
 ```bash
-sss burn \
+sss-token burn \
   --mint <MINT_ADDRESS> \
   --from <TOKEN_ACCOUNT> \
   --amount 500000
@@ -122,7 +122,7 @@ sss burn \
 Freeze a token account. Caller must have the freezer role.
 
 ```bash
-sss freeze \
+sss-token freeze \
   --mint <MINT_ADDRESS> \
   --account <TOKEN_ACCOUNT>
 ```
@@ -137,7 +137,7 @@ sss freeze \
 Thaw a frozen token account. Caller must have the freezer role.
 
 ```bash
-sss thaw \
+sss-token thaw \
   --mint <MINT_ADDRESS> \
   --account <TOKEN_ACCOUNT>
 ```
@@ -152,7 +152,7 @@ sss thaw \
 Pause all operations for a stablecoin. Caller must have the pauser role.
 
 ```bash
-sss pause --mint <MINT_ADDRESS>
+sss-token pause --mint <MINT_ADDRESS>
 ```
 
 | Argument | Required | Description |
@@ -164,7 +164,7 @@ sss pause --mint <MINT_ADDRESS>
 Resume operations for a stablecoin. Caller must have the pauser role.
 
 ```bash
-sss unpause --mint <MINT_ADDRESS>
+sss-token unpause --mint <MINT_ADDRESS>
 ```
 
 | Argument | Required | Description |
@@ -176,7 +176,7 @@ sss unpause --mint <MINT_ADDRESS>
 Forcibly transfer tokens from one account to another. Caller must have the seizer role. Works even when paused.
 
 ```bash
-sss seize \
+sss-token seize \
   --mint <MINT_ADDRESS> \
   --from <SOURCE_TOKEN_ACCOUNT> \
   --to <DEST_TOKEN_ACCOUNT> \
@@ -199,7 +199,7 @@ Manage the transfer blacklist (SSS-2 only).
 Add an address to the blacklist. Caller must have the blacklister role.
 
 ```bash
-sss blacklist add \
+sss-token blacklist add \
   --mint <MINT_ADDRESS> \
   --address <WALLET_ADDRESS> \
   --reason "OFAC sanctioned"
@@ -216,7 +216,7 @@ sss blacklist add \
 Remove an address from the blacklist. Caller must have the blacklister role.
 
 ```bash
-sss blacklist remove \
+sss-token blacklist remove \
   --mint <MINT_ADDRESS> \
   --address <WALLET_ADDRESS>
 ```
@@ -226,7 +226,7 @@ sss blacklist remove \
 Check if an address is blacklisted.
 
 ```bash
-sss blacklist check \
+sss-token blacklist check \
   --mint <MINT_ADDRESS> \
   --address <WALLET_ADDRESS>
 ```
@@ -240,7 +240,7 @@ Manage role assignments.
 Grant a role to an address. Admin-only.
 
 ```bash
-sss roles grant \
+sss-token roles grant \
   --mint <MINT_ADDRESS> \
   --address <WALLET_ADDRESS> \
   --role minter
@@ -257,7 +257,7 @@ sss roles grant \
 Revoke a role from an address. Admin-only.
 
 ```bash
-sss roles revoke \
+sss-token roles revoke \
   --mint <MINT_ADDRESS> \
   --address <WALLET_ADDRESS> \
   --role minter
@@ -268,7 +268,7 @@ sss roles revoke \
 List roles for the current keypair on a given stablecoin.
 
 ```bash
-sss roles list --mint <MINT_ADDRESS>
+sss-token roles list --mint <MINT_ADDRESS>
 ```
 
 ### holders
@@ -276,7 +276,7 @@ sss roles list --mint <MINT_ADDRESS>
 List all token holders for a given mint, sorted by balance descending.
 
 ```bash
-sss holders \
+sss-token holders \
   --mint <MINT_ADDRESS> \
   --min-balance 1000000
 ```
@@ -291,7 +291,7 @@ sss holders \
 Display transaction history for a stablecoin (from the config PDA).
 
 ```bash
-sss audit-log \
+sss-token audit-log \
   --mint <MINT_ADDRESS> \
   --action mint \
   --limit 50
@@ -312,7 +312,7 @@ Manage minter role assignments.
 List all addresses with the minter role.
 
 ```bash
-sss minters list --mint <MINT_ADDRESS>
+sss-token minters list --mint <MINT_ADDRESS>
 ```
 
 #### minters add
@@ -320,7 +320,7 @@ sss minters list --mint <MINT_ADDRESS>
 Grant the minter role to an address. Admin-only.
 
 ```bash
-sss minters add \
+sss-token minters add \
   --mint <MINT_ADDRESS> \
   --address <WALLET_ADDRESS>
 ```
@@ -330,7 +330,7 @@ sss minters add \
 Revoke the minter role from an address. Admin-only.
 
 ```bash
-sss minters remove \
+sss-token minters remove \
   --mint <MINT_ADDRESS> \
   --address <WALLET_ADDRESS>
 ```
@@ -340,10 +340,36 @@ sss minters remove \
 Display stablecoin configuration and status.
 
 ```bash
-sss info --mint <MINT_ADDRESS>
+sss-token info --mint <MINT_ADDRESS>
 ```
 
 Output includes: mint address, authority, preset, paused status, supply cap, total minted, total burned, and current supply.
+
+### status
+
+Display stablecoin status. This is an alias for `info` and produces identical output.
+
+```bash
+sss-token status --mint <MINT_ADDRESS>
+```
+
+| Argument | Required | Description |
+|---|---|---|
+| `--mint` | Yes | Base58 mint address |
+
+### supply
+
+Display supply information for a stablecoin, including supply cap utilization.
+
+```bash
+sss-token supply --mint <MINT_ADDRESS>
+```
+
+| Argument | Required | Description |
+|---|---|---|
+| `--mint` | Yes | Base58 mint address |
+
+Output includes: supply cap, cap utilization percentage, total minted, total burned, and current supply.
 
 ## Examples
 
@@ -355,35 +381,35 @@ export SOLANA_RPC_URL="http://localhost:8899"
 export SOLANA_KEYPAIR="~/.config/solana/id.json"
 
 # Create a stablecoin
-sss init --preset sss-1 --name "Test USD" --symbol "tUSD"
+sss-token init --preset sss-1 --name "Test USD" --symbol "tUSD"
 
 # Grant roles
-sss roles grant --mint <MINT> --address <MINTER_WALLET> --role minter
-sss roles grant --mint <MINT> --address <FREEZER_WALLET> --role freezer
+sss-token roles grant --mint <MINT> --address <MINTER_WALLET> --role minter
+sss-token roles grant --mint <MINT> --address <FREEZER_WALLET> --role freezer
 
 # Mint tokens
-sss mint --mint <MINT> --to <TOKEN_ACCOUNT> --amount 1000000000
+sss-token mint --mint <MINT> --to <TOKEN_ACCOUNT> --amount 1000000000
 
 # Check status
-sss info --mint <MINT>
+sss-token info --mint <MINT>
 
 # Freeze a suspicious account
-sss freeze --mint <MINT> --account <SUSPICIOUS_ACCOUNT>
+sss-token freeze --mint <MINT> --account <SUSPICIOUS_ACCOUNT>
 
 # Emergency pause
-sss pause --mint <MINT>
+sss-token pause --mint <MINT>
 
 # Seize funds (works while paused)
-sss seize --mint <MINT> --from <BAD_ACCOUNT> --to <TREASURY>  --amount 500000
+sss-token seize --mint <MINT> --from <BAD_ACCOUNT> --to <TREASURY>  --amount 500000
 
 # Resume
-sss unpause --mint <MINT>
+sss-token unpause --mint <MINT>
 ```
 
 ### Devnet Usage
 
 ```bash
-sss --rpc-url https://api.devnet.solana.com \
+sss-token --rpc-url https://api.devnet.solana.com \
     --keypair ~/.config/solana/devnet.json \
     info --mint <MINT_ADDRESS>
 ```

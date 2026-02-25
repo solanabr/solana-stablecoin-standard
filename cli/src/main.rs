@@ -6,7 +6,7 @@ mod config;
 mod utils;
 
 #[derive(Parser)]
-#[command(name = "sss", version, about = "Solana Stablecoin Standard CLI")]
+#[command(name = "sss-token", version, about = "Solana Stablecoin Standard CLI")]
 pub struct Cli {
   #[command(subcommand)]
   pub command: Commands,
@@ -165,6 +165,18 @@ pub enum Commands {
     /// Maximum entries to display
     #[arg(long, default_value_t = 25)]
     limit: usize,
+  },
+  /// Display stablecoin status (alias for info)
+  Status {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+  },
+  /// Display supply information for a stablecoin
+  Supply {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
   },
   /// Manage minters
   Minters {
@@ -357,6 +369,12 @@ async fn main() -> Result<()> {
     }
     Commands::AuditLog { mint, action, limit } => {
       commands::audit_log::execute(&ctx, &mint, action, limit).await
+    }
+    Commands::Status { mint } => {
+      commands::info::execute(&ctx, &mint).await
+    }
+    Commands::Supply { mint } => {
+      commands::supply::execute(&ctx, &mint).await
     }
     Commands::Minters { action } => {
       match action {

@@ -11,4 +11,5 @@ pub mod minters;
 pub mod pause;
 pub mod roles;
 pub mod seize;
+pub mod supply;
 pub mod thaw;
