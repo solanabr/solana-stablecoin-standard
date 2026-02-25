@@ -191,10 +191,9 @@ async function buildSss3MintTx(
 async function main() {
   console.log("=== SSS Devnet Lifecycle Proof ===\n");
 
-  const keypairPath = path.join(
-    process.env.HOME!,
-    "Documents/secret/sss-devnet-keypair.json",
-  );
+  const keypairPath = process.env.ANCHOR_WALLET
+    || process.env.KEYPAIR_PATH
+    || path.join(process.env.HOME!, "Documents/secret/sss-devnet-keypair.json");
   const rawKey = JSON.parse(fs.readFileSync(keypairPath, "utf-8"));
   const payer = Keypair.fromSecretKey(Uint8Array.from(rawKey));
 

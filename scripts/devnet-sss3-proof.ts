@@ -13,7 +13,7 @@
  * This proof demonstrates the no-proof operations (deposit, apply pending).
  *
  * Usage: npx ts-node scripts/devnet-sss3-proof.ts
- * Requires: Funded devnet keypair at ~/.config/solana/id.json
+ * Requires: Funded devnet keypair (ANCHOR_WALLET > KEYPAIR_PATH > ~/Documents/secret/sss-devnet-keypair.json)
  */
 
 import * as fs from "fs";
@@ -48,9 +48,9 @@ async function main() {
   console.log("=== SSS-3 Devnet Lifecycle Proof ===\n");
 
   // Load keypair
-  const keypairPath =
-    process.env.KEYPAIR_PATH ||
-    path.join(process.env.HOME!, "Documents/secret/sss-devnet-keypair.json");
+  const keypairPath = process.env.ANCHOR_WALLET
+    || process.env.KEYPAIR_PATH
+    || path.join(process.env.HOME!, "Documents/secret/sss-devnet-keypair.json");
   const rawKey = JSON.parse(fs.readFileSync(keypairPath, "utf-8"));
   const payer = Keypair.fromSecretKey(Uint8Array.from(rawKey));
 
