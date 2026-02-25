@@ -54,6 +54,10 @@ pub mod sss_core {
         instructions::manage_roles::handler_revoke(ctx)
     }
 
+    pub fn transfer_authority(ctx: Context<TransferAuthority>) -> Result<()> {
+        instructions::transfer_authority::handler_transfer_authority(ctx)
+    }
+
     pub fn update_supply_cap(
         ctx: Context<UpdateSupplyCap>,
         new_supply_cap: Option<u64>,

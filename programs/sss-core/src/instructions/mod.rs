@@ -7,6 +7,7 @@ pub mod pause;
 pub mod unpause;
 pub mod seize;
 pub mod manage_roles;
+pub mod transfer_authority;
 pub mod update_config;
 
 pub use initialize::*;
@@ -18,4 +19,5 @@ pub use pause::*;
 pub use unpause::*;
 pub use seize::*;
 pub use manage_roles::*;
+pub use transfer_authority::*;
 pub use update_config::*;

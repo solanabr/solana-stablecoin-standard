@@ -78,6 +78,13 @@ pub struct RoleRevoked {
 }
 
 #[event]
+pub struct AuthorityTransferred {
+    pub config: Pubkey,
+    pub from: Pubkey,
+    pub to: Pubkey,
+}
+
+#[event]
 pub struct ConfigUpdated {
     pub config: Pubkey,
     pub field: String,
