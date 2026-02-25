@@ -48,7 +48,7 @@ export interface Sss3MintOptions {
  * Total: 2 + 32 + 1 + 32 = 67 bytes (always fixed)
  * Accounts: [mint (writable)]
  */
-function createInitializeConfidentialTransferMintInstruction(
+export function createInitializeConfidentialTransferMintInstruction(
   mint: PublicKey,
   authority: PublicKey | null,
   autoApproveNewAccounts: boolean,

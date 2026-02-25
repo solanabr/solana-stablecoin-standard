@@ -13,7 +13,6 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
-  TransactionInstruction,
   clusterApiUrl,
 } from "@solana/web3.js";
 import { AnchorProvider, Wallet, BN, Program } from "@coral-xyz/anchor";
@@ -37,6 +36,7 @@ import {
   buildInitializeIx,
   buildInitializeExtraAccountMetasIx,
   deriveConfigPda,
+  createInitializeConfidentialTransferMintInstruction,
 } from "../sdk/dist";
 import type { SssCore, SssTransferHook } from "../sdk/dist";
 import { SssCoreIdl, SssTransferHookIdl } from "../sdk/dist/idl";
@@ -148,30 +148,6 @@ async function buildSss2MintTx(
 }
 
 /**
- * Build ConfidentialTransferMint init instruction (manual — not in @solana/spl-token)
- */
-function buildConfidentialTransferMintIx(
-  mint: PublicKey,
-  authority: PublicKey,
-  autoApprove: boolean,
-  auditorKey: Uint8Array,
-): TransactionInstruction {
-  const data = Buffer.alloc(67);
-  let offset = 0;
-  data.writeUInt8(27, offset); offset += 1; // ConfidentialTransferExtension
-  data.writeUInt8(0, offset); offset += 1;  // InitializeMint
-  authority.toBuffer().copy(data, offset); offset += 32;
-  data.writeUInt8(autoApprove ? 1 : 0, offset); offset += 1;
-  Buffer.from(auditorKey).copy(data, offset);
-
-  return new TransactionInstruction({
-    programId: TOKEN_2022_PROGRAM_ID,
-    keys: [{ pubkey: mint, isSigner: false, isWritable: true }],
-    data,
-  });
-}
-
-/**
  * Build SSS-3 mint creation tx WITHOUT metadata init
  */
 async function buildSss3MintTx(
@@ -203,7 +179,7 @@ async function buildSss3MintTx(
     createInitializePermanentDelegateInstruction(
       mintKp.publicKey, configPda, TOKEN_2022_PROGRAM_ID,
     ),
-    buildConfidentialTransferMintIx(
+    createInitializeConfidentialTransferMintInstruction(
       mintKp.publicKey, configPda, true, new Uint8Array(32),
     ),
     createInitializeMint2Instruction(

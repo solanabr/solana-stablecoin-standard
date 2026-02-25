@@ -27,6 +27,7 @@ import {
 } from "@solana/spl-token";
 import { SssCore } from "../target/types/sss_core";
 import { SssTransferHook } from "../target/types/sss_transfer_hook";
+import { createInitializeConfidentialTransferMintInstruction } from "../sdk/src/presets/sss3";
 
 // ─────────────────────────────────────────────────────────────
 // PDA Derivation
@@ -523,25 +524,12 @@ export async function createSss3Mint(
     mintLen,
   );
 
-  // Build the InitializeConfidentialTransferMint instruction data manually.
-  // Pod layout (fixed size): [27, 0, authority(32), auto_approve(1), auditor(32)]
-  // OptionalNonZeroPubkey/ElGamalPubkey: all zeros = None, non-zero = Some
-  const ctData = Buffer.alloc(67); // 2 + 32 + 1 + 32
-  let offset = 0;
-  ctData.writeUInt8(27, offset); offset += 1; // ConfidentialTransfer discriminator
-  ctData.writeUInt8(0, offset); offset += 1;  // InitializeMint sub-instruction
-  // OptionalNonZeroPubkey authority (32 bytes)
-  configPda.toBuffer().copy(ctData, offset); offset += 32;
-  // PodBool auto_approve_new_accounts (1 byte)
-  ctData.writeUInt8(autoApprove ? 1 : 0, offset); offset += 1;
-  // OptionalNonZeroElGamalPubkey auditor (32 bytes)
-  Buffer.from(auditorKey).copy(ctData, offset); offset += 32;
-
-  const initConfidentialIx = {
-    programId: TOKEN_2022_PROGRAM_ID,
-    keys: [{ pubkey: mint.publicKey, isSigner: false, isWritable: true }],
-    data: ctData,
-  };
+  const initConfidentialIx = createInitializeConfidentialTransferMintInstruction(
+    mint.publicKey,
+    configPda,
+    autoApprove,
+    auditorKey,
+  );
 
   // Transaction 1: Create mint with all extensions (no metadata yet)
   const tx1 = new Transaction();
