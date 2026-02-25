@@ -45,7 +45,10 @@ function loadKeypair(): Keypair {
  * Creates connection, loads keypair, and sets up the AnchorProvider.
  */
 function initSolanaService(): SolanaService {
-  const rpcUrl = process.env.SOLANA_RPC_URL || "http://localhost:8899";
+  const rpcUrl = process.env.SOLANA_RPC_URL;
+  if (!rpcUrl) {
+    throw new Error("SOLANA_RPC_URL environment variable is required");
+  }
   const wsUrl = process.env.SOLANA_WS_URL;
 
   const coreProgramId = new PublicKey(

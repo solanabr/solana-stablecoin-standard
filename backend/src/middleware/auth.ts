@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from "express";
+import { timingSafeEqual } from "crypto";
 import { logger } from "../services/logger";
 
 /**
  * API key authentication middleware.
  * Requires `x-api-key` header matching the configured API_KEY env var.
+ * Uses timing-safe comparison to prevent timing side-channel attacks.
  */
 export function authMiddleware(
   req: Request,
@@ -18,7 +20,12 @@ export function authMiddleware(
     return;
   }
 
-  if (!apiKey || apiKey !== process.env.API_KEY) {
+  if (
+    !apiKey ||
+    typeof apiKey !== "string" ||
+    apiKey.length !== process.env.API_KEY.length ||
+    !timingSafeEqual(Buffer.from(apiKey), Buffer.from(process.env.API_KEY))
+  ) {
     logger.warn("Unauthorized request", {
       ip: req.ip,
       path: req.path,
