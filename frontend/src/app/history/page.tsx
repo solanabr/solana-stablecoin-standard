@@ -1,148 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { PublicKey } from "@solana/web3.js";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { Navbar } from "@/components/navbar";
-
-type TxType =
-  | "mint"
-  | "burn"
-  | "transfer"
-  | "freeze"
-  | "thaw"
-  | "pause"
-  | "unpause"
-  | "grant_role"
-  | "revoke_role"
-  | "seize"
-  | "blacklist_add"
-  | "blacklist_remove";
+import { MintSelector } from "@/components/mint-selector";
+import { SSS_CORE_PROGRAM_ID } from "@/lib/constants";
 
 interface HistoryEntry {
   signature: string;
-  type: TxType;
   timestamp: number;
   slot: number;
-  actor: string;
-  details: string;
+  memo: string | null;
   success: boolean;
 }
 
-const TX_TYPE_CONFIG: Record<
-  TxType,
-  { label: string; color: string; bg: string }
-> = {
-  mint: { label: "Mint", color: "text-success", bg: "bg-success/10" },
-  burn: { label: "Burn", color: "text-destructive", bg: "bg-destructive/10" },
-  transfer: { label: "Transfer", color: "text-accent", bg: "bg-accent/10" },
-  freeze: { label: "Freeze", color: "text-warning", bg: "bg-warning/10" },
-  thaw: { label: "Thaw", color: "text-success", bg: "bg-success/10" },
-  pause: { label: "Pause", color: "text-destructive", bg: "bg-destructive/10" },
-  unpause: { label: "Unpause", color: "text-success", bg: "bg-success/10" },
-  grant_role: { label: "Grant Role", color: "text-accent", bg: "bg-accent/10" },
-  revoke_role: {
-    label: "Revoke Role",
-    color: "text-warning",
-    bg: "bg-warning/10",
-  },
-  seize: { label: "Seize", color: "text-destructive", bg: "bg-destructive/10" },
-  blacklist_add: {
-    label: "Blacklist Add",
-    color: "text-destructive",
-    bg: "bg-destructive/10",
-  },
-  blacklist_remove: {
-    label: "Blacklist Remove",
-    color: "text-success",
-    bg: "bg-success/10",
-  },
-};
-
-// Placeholder data matching devnet proof transactions
-const PLACEHOLDER_HISTORY: HistoryEntry[] = [
-  {
-    signature: "5QnFYS65FhB1GoV7uZh7NoAG9D2jyaKRvz8Xch7Axjew",
-    type: "unpause",
-    timestamp: Date.now() - 120_000,
-    slot: 345_892_100,
-    actor: "AiYU56...K4AG",
-    details: "Resumed all stablecoin operations",
-    success: true,
-  },
-  {
-    signature: "4p41KoQ57Bfcpzd5P2LurPnPmUgcr4LVHnNyJjns3WqG",
-    type: "pause",
-    timestamp: Date.now() - 180_000,
-    slot: 345_892_050,
-    actor: "AiYU56...K4AG",
-    details: "Halted all stablecoin operations",
-    success: true,
-  },
-  {
-    signature: "N/A",
-    type: "seize",
-    timestamp: Date.now() - 240_000,
-    slot: 345_892_000,
-    actor: "AiYU56...K4AG",
-    details: "Seize attempt (expected failure: hook extra accounts)",
-    success: false,
-  },
-  {
-    signature: "fpiCRazKpdNJGs6dU9bBcyJGtre51mY698DGJj8WpLsw",
-    type: "blacklist_remove",
-    timestamp: Date.now() - 300_000,
-    slot: 345_891_950,
-    actor: "AiYU56...K4AG",
-    details: "Removed address from blacklist",
-    success: true,
-  },
-  {
-    signature: "2dqkYer3DrdwPn92wqAcCzQneHuHR2K2xSp9ZBwKXNSR",
-    type: "blacklist_add",
-    timestamp: Date.now() - 360_000,
-    slot: 345_891_900,
-    actor: "AiYU56...K4AG",
-    details: "Added address to blacklist: OFAC sanctioned",
-    success: true,
-  },
-  {
-    signature: "59pSTP686ZrodqT1GiZRYSaDDioHCfNhq75S9xiw2o6b",
-    type: "burn",
-    timestamp: Date.now() - 420_000,
-    slot: 345_891_850,
-    actor: "AiYU56...K4AG",
-    details: "Burned 50.000000 tokens",
-    success: true,
-  },
-  {
-    signature: "2gtK4LGKKNPcBwen5nU6fdn73Eq7hWT58SBHRNd6DTFG",
-    type: "mint",
-    timestamp: Date.now() - 480_000,
-    slot: 345_891_800,
-    actor: "AiYU56...K4AG",
-    details: "Minted 1,000.000000 tokens to recipient",
-    success: true,
-  },
-  {
-    signature: "5HVHEhykcdH2Yw7dBfGm8gCxvAxsTWFZMStLngTXg8Dw",
-    type: "grant_role",
-    timestamp: Date.now() - 540_000,
-    slot: 345_891_750,
-    actor: "AiYU56...K4AG",
-    details: "Granted Freezer role",
-    success: true,
-  },
-  {
-    signature: "3cUubdhP8zs56NNJFe1hTSr4KxeigWEwxApzbRjD8UE6",
-    type: "grant_role",
-    timestamp: Date.now() - 600_000,
-    slot: 345_891_700,
-    actor: "AiYU56...K4AG",
-    details: "Granted Minter role",
-    success: true,
-  },
-];
+function deriveConfigPda(mint: PublicKey): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("sss-config"), mint.toBuffer()],
+    SSS_CORE_PROGRAM_ID,
+  )[0];
+}
 
 function formatTime(ts: number): string {
+  if (ts === 0) return "--:--:--";
   const d = new Date(ts);
   return d.toLocaleTimeString(undefined, {
     hour: "2-digit",
@@ -152,6 +33,7 @@ function formatTime(ts: number): string {
 }
 
 function formatDate(ts: number): string {
+  if (ts === 0) return "Unknown";
   const d = new Date(ts);
   return d.toLocaleDateString(undefined, {
     month: "short",
@@ -161,132 +43,140 @@ function formatDate(ts: number): string {
 }
 
 export default function HistoryPage() {
-  const [filter, setFilter] = useState<TxType | "all">("all");
+  const { connection } = useConnection();
+  const [activeMint, setActiveMint] = useState<string | null>(null);
+  const [entries, setEntries] = useState<HistoryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const entries =
-    filter === "all"
-      ? PLACEHOLDER_HISTORY
-      : PLACEHOLDER_HISTORY.filter((e) => e.type === filter);
+  useEffect(() => {
+    if (!activeMint) {
+      setEntries([]);
+      setError(null);
+      return;
+    }
 
-  const txTypes: (TxType | "all")[] = [
-    "all",
-    "mint",
-    "burn",
-    "transfer",
-    "freeze",
-    "thaw",
-    "pause",
-    "unpause",
-    "grant_role",
-    "revoke_role",
-    "seize",
-    "blacklist_add",
-    "blacklist_remove",
-  ];
+    let cancelled = false;
+
+    async function fetchHistory() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const mintPubkey = new PublicKey(activeMint!);
+        const configPda = deriveConfigPda(mintPubkey);
+
+        const sigs = await connection.getSignaturesForAddress(configPda, {
+          limit: 50,
+        });
+
+        if (cancelled) return;
+
+        const results: HistoryEntry[] = sigs.map((sig) => ({
+          signature: sig.signature,
+          timestamp: (sig.blockTime ?? 0) * 1000,
+          slot: sig.slot,
+          memo: sig.memo,
+          success: sig.err === null,
+        }));
+
+        setEntries(results);
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Failed to fetch history";
+        setError(message);
+        setEntries([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeMint, connection]);
+
+  const successCount = entries.filter((e) => e.success).length;
+  const failCount = entries.filter((e) => !e.success).length;
 
   return (
     <div>
       <Navbar title="Transaction History" />
       <div className="p-6 space-y-6">
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Total Transactions</p>
-            <p className="text-xl font-semibold text-foreground">
-              {PLACEHOLDER_HISTORY.length}
-            </p>
-          </div>
-          <div className="rounded-xl border border-success/20 bg-card p-4">
-            <p className="text-xs text-muted-foreground">Successful</p>
-            <p className="text-xl font-semibold text-success">
-              {PLACEHOLDER_HISTORY.filter((e) => e.success).length}
-            </p>
-          </div>
-          <div className="rounded-xl border border-destructive/20 bg-card p-4">
-            <p className="text-xs text-muted-foreground">Failed</p>
-            <p className="text-xl font-semibold text-destructive">
-              {PLACEHOLDER_HISTORY.filter((e) => !e.success).length}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Latest Slot</p>
-            <p className="text-xl font-semibold text-foreground font-mono">
-              {PLACEHOLDER_HISTORY[0]?.slot.toLocaleString() ?? "—"}
-            </p>
-          </div>
-        </div>
+        <MintSelector onSelect={setActiveMint} currentMint={activeMint} />
 
-        {/* Filter tabs */}
-        <div className="flex flex-wrap gap-2">
-          {txTypes.map((type) => {
-            const isActive = filter === type;
-            const config =
-              type === "all"
-                ? { label: "All", color: "text-foreground", bg: "bg-muted" }
-                : TX_TYPE_CONFIG[type];
+        {!activeMint && (
+          <div className="rounded-xl border border-border bg-card p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Select a mint address above to view transaction history from on-chain data.
+            </p>
+          </div>
+        )}
 
-            return (
-              <button
-                key={type}
-                onClick={() => setFilter(type)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  isActive
-                    ? `${config.bg} ${config.color}`
-                    : "bg-transparent text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {config.label}
-              </button>
-            );
-          })}
-        </div>
+        {error && (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
 
-        {/* Transaction list */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          {entries.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              No transactions found for this filter.
+        {loading && (
+          <div className="rounded-xl border border-border bg-card p-8 text-center">
+            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Fetching transaction history...
             </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {entries.map((entry, i) => {
-                const typeConfig = TX_TYPE_CONFIG[entry.type];
-                return (
+          </div>
+        )}
+
+        {activeMint && !loading && entries.length > 0 && (
+          <>
+            {/* Summary stats */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">Total Transactions</p>
+                <p className="text-xl font-semibold text-foreground">
+                  {entries.length}
+                </p>
+              </div>
+              <div className="rounded-xl border border-success/20 bg-card p-4">
+                <p className="text-xs text-muted-foreground">Successful</p>
+                <p className="text-xl font-semibold text-success">
+                  {successCount}
+                </p>
+              </div>
+              <div className="rounded-xl border border-destructive/20 bg-card p-4">
+                <p className="text-xs text-muted-foreground">Failed</p>
+                <p className="text-xl font-semibold text-destructive">
+                  {failCount}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">Latest Slot</p>
+                <p className="text-xl font-semibold text-foreground font-mono">
+                  {entries[0]?.slot.toLocaleString() ?? "--"}
+                </p>
+              </div>
+            </div>
+
+            {/* Transaction list */}
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="divide-y divide-border">
+                {entries.map((entry) => (
                   <div
-                    key={i}
+                    key={entry.signature}
                     className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors"
                   >
-                    {/* Type badge */}
-                    <div
-                      className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium ${typeConfig.bg} ${typeConfig.color}`}
-                    >
-                      {typeConfig.label}
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate">
-                        {entry.details}
-                      </p>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(entry.timestamp)} {formatTime(entry.timestamp)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Slot {entry.slot.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {entry.actor}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Status & signature */}
-                    <div className="shrink-0 flex items-center gap-3">
+                    {/* Status icon */}
+                    <div className="shrink-0">
                       {entry.success ? (
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-success/10">
                           <svg
-                            className="h-3 w-3 text-success"
+                            className="h-3.5 w-3.5 text-success"
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth={2.5}
@@ -300,9 +190,9 @@ export default function HistoryPage() {
                           </svg>
                         </span>
                       ) : (
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10">
                           <svg
-                            className="h-3 w-3 text-destructive"
+                            className="h-3.5 w-3.5 text-destructive"
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth={2.5}
@@ -316,23 +206,52 @@ export default function HistoryPage() {
                           </svg>
                         </span>
                       )}
-                      {entry.signature !== "N/A" && (
-                        <code className="text-xs text-muted-foreground font-mono">
-                          {entry.signature.slice(0, 8)}...
-                        </code>
-                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground font-mono truncate">
+                        {entry.signature.slice(0, 32)}...
+                      </p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(entry.timestamp)} {formatTime(entry.timestamp)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Slot {entry.slot.toLocaleString()}
+                        </span>
+                        {entry.memo && (
+                          <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {entry.memo}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Signature link */}
+                    <div className="shrink-0">
+                      <code className="text-xs text-muted-foreground font-mono">
+                        {entry.signature.slice(0, 8)}...{entry.signature.slice(-4)}
+                      </code>
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
 
-        {/* Note */}
+        {activeMint && !loading && entries.length === 0 && !error && (
+          <div className="rounded-xl border border-border bg-card p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              No transactions found for this stablecoin config.
+            </p>
+          </div>
+        )}
+
         <p className="text-xs text-muted-foreground text-center">
-          Transaction history is fetched from on-chain program logs. Connect wallet
-          and select a mint to view live data.
+          Transaction history is fetched from on-chain signatures for the stablecoin
+          config PDA. Select a mint to view live data.
         </p>
       </div>
     </div>

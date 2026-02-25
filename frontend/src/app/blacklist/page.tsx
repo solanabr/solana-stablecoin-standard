@@ -1,59 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { PublicKey } from "@solana/web3.js";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Navbar } from "@/components/navbar";
+import { MintSelector } from "@/components/mint-selector";
+import { SSS_HOOK_PROGRAM_ID } from "@/lib/constants";
 
-interface BlacklistEntry {
-  address: string;
-  addedBy: string;
-  addedAt: string;
-  reason: string;
+function deriveBlacklistPda(
+  mint: PublicKey,
+  address: PublicKey,
+): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("blacklist"), mint.toBuffer(), address.toBuffer()],
+    SSS_HOOK_PROGRAM_ID,
+  )[0];
 }
 
-// TODO: Connect to RPC — fetch blacklist entries from on-chain PDAs
-const PLACEHOLDER_ENTRIES: BlacklistEntry[] = [
-  {
-    address: "Hk7Rn3T9vPq...cM2w",
-    addedBy: "7xKXk8Lp9TZ...m9Fp",
-    addedAt: "2026-02-22",
-    reason: "OFAC sanctioned address",
-  },
-  {
-    address: "5uGpY1eWz8K...jL4n",
-    addedBy: "7xKXk8Lp9TZ...m9Fp",
-    addedAt: "2026-02-23",
-    reason: "Suspicious activity flagged by compliance",
-  },
-];
+function isValidPubkey(value: string): boolean {
+  try {
+    new PublicKey(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export default function BlacklistPage() {
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
+  const [activeMint, setActiveMint] = useState<string | null>(null);
+
   const [checkAddress, setCheckAddress] = useState("");
-  const [checkResult, setCheckResult] = useState<"idle" | "clean" | "blacklisted">("idle");
+  const [checkResult, setCheckResult] = useState<
+    "idle" | "clean" | "blacklisted" | "loading" | "error"
+  >("idle");
+  const [checkError, setCheckError] = useState<string | null>(null);
+
   const [addAddress, setAddAddress] = useState("");
   const [addReason, setAddReason] = useState("");
   const [removeAddress, setRemoveAddress] = useState("");
-  const [entries] = useState<BlacklistEntry[]>(PLACEHOLDER_ENTRIES);
 
-  const handleCheck = () => {
-    // TODO: Connect to RPC — derive blacklist PDA and check if it exists
-    const isBlacklisted = entries.some((e) => e.address === checkAddress);
-    setCheckResult(isBlacklisted ? "blacklisted" : "clean");
-  };
+  const handleCheck = useCallback(async () => {
+    if (!activeMint || !checkAddress) return;
+    if (!isValidPubkey(checkAddress) || !isValidPubkey(activeMint)) {
+      setCheckError("Invalid address format");
+      setCheckResult("error");
+      return;
+    }
 
-  const handleAdd = () => {
-    // TODO: Connect to RPC — build and send add_to_blacklist instruction via Anchor
-    console.log("Add to blacklist", { address: addAddress, reason: addReason });
-  };
+    setCheckResult("loading");
+    setCheckError(null);
 
-  const handleRemove = () => {
-    // TODO: Connect to RPC — build and send remove_from_blacklist instruction via Anchor
-    console.log("Remove from blacklist", { address: removeAddress });
-  };
+    try {
+      const mintPubkey = new PublicKey(activeMint);
+      const addressPubkey = new PublicKey(checkAddress);
+      const blacklistPda = deriveBlacklistPda(mintPubkey, addressPubkey);
+
+      const accountInfo = await connection.getAccountInfo(blacklistPda);
+      setCheckResult(accountInfo !== null ? "blacklisted" : "clean");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Check failed";
+      setCheckError(message);
+      setCheckResult("error");
+    }
+  }, [activeMint, checkAddress, connection]);
 
   return (
     <div>
       <Navbar title="Blacklist Management" />
       <div className="p-6 space-y-6">
+        <MintSelector onSelect={setActiveMint} currentMint={activeMint} />
+
         {/* SSS-2 notice */}
         <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
           <svg className="h-5 w-5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -70,13 +88,29 @@ export default function BlacklistPage() {
           </div>
         </div>
 
+        {!activeMint && (
+          <div className="rounded-xl border border-border bg-card p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Select a mint address above to check blacklist status.
+            </p>
+          </div>
+        )}
+
+        {!publicKey && (
+          <div className="rounded-xl border border-warning/20 bg-warning/5 p-5 text-center">
+            <p className="text-sm text-warning">
+              Connect your wallet to manage blacklist entries.
+            </p>
+          </div>
+        )}
+
         {/* Check address */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h3 className="text-base font-semibold text-foreground">
             Check Address
           </h3>
           <p className="mb-4 text-sm text-muted-foreground">
-            Verify whether an address is blacklisted.
+            Verify whether an address is blacklisted by checking the on-chain PDA.
           </p>
           <div className="flex gap-3">
             <input
@@ -85,18 +119,36 @@ export default function BlacklistPage() {
               onChange={(e) => {
                 setCheckAddress(e.target.value);
                 setCheckResult("idle");
+                setCheckError(null);
               }}
               placeholder="Enter address to check..."
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
             <button
               onClick={handleCheck}
-              className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent/80"
+              disabled={!activeMint || !checkAddress}
+              className={`rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent/80 ${!activeMint || !checkAddress ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               Check
             </button>
           </div>
-          {checkResult !== "idle" && (
+          {checkResult === "loading" && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-muted p-3">
+              <svg className="h-4 w-4 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm text-muted-foreground">Checking on-chain...</span>
+            </div>
+          )}
+          {checkResult === "error" && (
+            <div className="mt-3 rounded-lg bg-destructive/10 p-3">
+              <p className="text-sm font-medium text-destructive">
+                {checkError ?? "Failed to check address"}
+              </p>
+            </div>
+          )}
+          {(checkResult === "clean" || checkResult === "blacklisted") && (
             <div
               className={`mt-3 flex items-center gap-2 rounded-lg p-3 ${
                 checkResult === "clean"
@@ -157,11 +209,15 @@ export default function BlacklistPage() {
                 </p>
               </div>
               <button
-                onClick={handleAdd}
-                className="rounded-lg bg-destructive px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-destructive/80"
+                disabled
+                className="rounded-lg bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed"
+                title="Requires transfer hook program IDL (coming soon)"
               >
-                Add to Blacklist
+                Add to Blacklist (Coming Soon)
               </button>
+              <p className="text-xs text-muted-foreground">
+                Blacklist add/remove requires the transfer hook program. Use the SSS CLI or SDK for direct operations.
+              </p>
             </div>
           </div>
 
@@ -171,7 +227,7 @@ export default function BlacklistPage() {
               Remove from Blacklist
             </h3>
             <p className="mb-4 text-sm text-muted-foreground">
-              Restore an address's ability to transfer tokens.
+              Restore an address&apos;s ability to transfer tokens.
             </p>
             <div className="space-y-3">
               <div>
@@ -187,67 +243,16 @@ export default function BlacklistPage() {
                 />
               </div>
               <button
-                onClick={handleRemove}
-                className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent/80"
+                disabled
+                className="rounded-lg bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed"
+                title="Requires transfer hook program IDL (coming soon)"
               >
-                Remove from Blacklist
+                Remove from Blacklist (Coming Soon)
               </button>
+              <p className="text-xs text-muted-foreground">
+                Blacklist add/remove requires the transfer hook program. Use the SSS CLI or SDK for direct operations.
+              </p>
             </div>
-          </div>
-        </div>
-
-        {/* Blacklist entries table */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border px-6 py-4">
-            <h3 className="text-base font-semibold text-foreground">
-              Blacklisted Addresses
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {entries.length} address{entries.length !== 1 ? "es" : ""} currently
-              blacklisted
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Address
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Reason
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Added By
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {entries.map((entry, idx) => (
-                  <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <code className="text-sm font-mono text-foreground">
-                        {entry.address}
-                      </code>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {entry.reason}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <code className="text-sm font-mono text-muted-foreground">
-                        {entry.addedBy}
-                      </code>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
-                      {entry.addedAt}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
