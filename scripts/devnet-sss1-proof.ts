@@ -29,7 +29,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { Transaction } from "@solana/web3.js";
-import { SSS } from "@sss/sdk";
+import { SSS } from "../sdk/dist";
 
 const DEVNET_RPC = process.env.DEVNET_RPC || clusterApiUrl("devnet");
 
@@ -48,7 +48,7 @@ async function main() {
   // Load keypair
   const keypairPath =
     process.env.KEYPAIR_PATH ||
-    path.join(process.env.HOME!, ".config/solana/id.json");
+    path.join(process.env.HOME!, "Documents/secret/sss-devnet-keypair.json");
   const rawKey = JSON.parse(fs.readFileSync(keypairPath, "utf-8"));
   const payer = Keypair.fromSecretKey(Uint8Array.from(rawKey));
 
@@ -63,7 +63,7 @@ async function main() {
   console.log(
     `Payer: ${payer.publicKey.toBase58()} (${(balance / 1e9).toFixed(4)} SOL)`,
   );
-  if (balance < 0.5 * 1e9) {
+  if (balance < 0.1 * 1e9) {
     throw new Error(
       "Insufficient devnet balance. Fund with: solana airdrop 2 --url devnet",
     );
