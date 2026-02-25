@@ -1,6 +1,7 @@
 use anchor_lang::InstructionData;
 use anchor_lang::ToAccountMetas;
 use anyhow::Result;
+use serde::Deserialize;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::pubkey::Pubkey;
@@ -12,16 +13,80 @@ use solana_sdk::transaction::Transaction;
 use crate::config::CliContext;
 use crate::utils;
 
+#[derive(Deserialize)]
+struct TomlConfig {
+  name: String,
+  symbol: String,
+  #[serde(default)]
+  uri: String,
+  #[serde(default = "default_decimals")]
+  decimals: u8,
+  supply_cap: Option<u64>,
+  #[serde(default = "default_true")]
+  enable_permanent_delegate: bool,
+  #[serde(default)]
+  enable_transfer_hook: bool,
+  #[serde(default)]
+  default_account_frozen: bool,
+}
+
+fn default_decimals() -> u8 { 6 }
+fn default_true() -> bool { true }
+
 pub async fn execute(
   ctx: &CliContext,
-  preset: &str,
-  name: &str,
-  symbol: &str,
+  preset: Option<&str>,
+  config_path: Option<&str>,
+  name: Option<&str>,
+  symbol: Option<&str>,
   uri: &str,
   decimals: u8,
   supply_cap: Option<u64>,
 ) -> Result<()> {
-  let preset_u8 = utils::parse_preset(preset)?;
+  // Resolve params from either TOML config or CLI args
+  let (preset_str, name_val, symbol_val, uri_val, decimals_val, supply_cap_val) =
+    if let Some(path) = config_path {
+      let contents = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("Failed to read config file '{}': {}", path, e))?;
+      let cfg: TomlConfig = toml::from_str(&contents)
+        .map_err(|e| anyhow::anyhow!("Failed to parse TOML config '{}': {}", path, e))?;
+
+      let inferred_preset = if cfg.enable_transfer_hook {
+        "sss-2".to_string()
+      } else {
+        "sss-1".to_string()
+      };
+
+      println!("Loaded config from: {}", path);
+      println!("  Inferred preset: {}", inferred_preset);
+      if !cfg.enable_permanent_delegate {
+        println!("  Warning: enable_permanent_delegate=false is ignored (always enabled)");
+      }
+      if cfg.default_account_frozen {
+        println!("  Note: default_account_frozen=true (accounts frozen on creation)");
+      }
+      println!();
+
+      (
+        inferred_preset,
+        cfg.name,
+        cfg.symbol,
+        cfg.uri,
+        cfg.decimals,
+        cfg.supply_cap,
+      )
+    } else {
+      (
+        preset.expect("preset required when --config not provided").to_string(),
+        name.expect("name required when --config not provided").to_string(),
+        symbol.expect("symbol required when --config not provided").to_string(),
+        uri.to_string(),
+        decimals,
+        supply_cap,
+      )
+    };
+
+  let preset_u8 = utils::parse_preset(&preset_str)?;
 
   if preset_u8 == 3 {
     anyhow::bail!(
@@ -46,7 +111,7 @@ pub async fn execute(
     &payer,
     &mint_pubkey,
     preset_u8,
-    decimals,
+    decimals_val,
   )?;
 
   // Derive PDAs
@@ -56,11 +121,11 @@ pub async fn execute(
   // Build sss-core initialize instruction
   let init_args = sss_core::instructions::InitializeArgs {
     preset: preset_u8,
-    name: name.to_string(),
-    symbol: symbol.to_string(),
-    uri: uri.to_string(),
-    decimals,
-    supply_cap,
+    name: name_val.clone(),
+    symbol: symbol_val.clone(),
+    uri: uri_val.clone(),
+    decimals: decimals_val,
+    supply_cap: supply_cap_val,
   };
 
   let ix_data = sss_core::instruction::Initialize {
@@ -123,9 +188,11 @@ pub async fn execute(
   utils::print_field("Mint", &mint_pubkey.to_string());
   utils::print_field("Config PDA", &config_pda.to_string());
   utils::print_field("Preset", utils::preset_name(preset_u8));
-  utils::print_field("Decimals", &decimals.to_string());
-  if let Some(cap) = supply_cap {
-    utils::print_field("Supply Cap", &utils::format_amount(cap, decimals));
+  utils::print_field("Name", &name_val);
+  utils::print_field("Symbol", &symbol_val);
+  utils::print_field("Decimals", &decimals_val.to_string());
+  if let Some(cap) = supply_cap_val {
+    utils::print_field("Supply Cap", &utils::format_amount(cap, decimals_val));
   } else {
     utils::print_field("Supply Cap", "Unlimited");
   }

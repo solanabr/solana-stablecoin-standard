@@ -23,6 +23,7 @@ spl-token-confidential-transfer-proof-extraction = "0.2"
 solana-zk-sdk = "2.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+toml = "0.8"
 tokio = { version = "1", features = ["full"] }
 anyhow = "1"
 colored = "3"

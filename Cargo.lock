@@ -6576,6 +6576,7 @@ dependencies = [
  "sss-core",
  "sss-transfer-hook",
  "tokio",
+ "toml 0.8.23",
 ]
 
 [[package]]

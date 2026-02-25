@@ -1,0 +1,13 @@
+# SSS Custom Configuration
+# Use with: sss init --config example-config.toml
+
+name = "My Stablecoin"
+symbol = "MUSD"
+uri = "https://example.com/metadata.json"
+decimals = 6
+supply_cap = 1000000000
+
+# Token-2022 Extensions
+enable_permanent_delegate = true
+enable_transfer_hook = false
+default_account_frozen = false

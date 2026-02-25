@@ -14,6 +14,7 @@ import type {
   Preset,
   RoleType,
   StablecoinCreateOptions,
+  StablecoinCustomOptions,
   StablecoinInfo,
 } from "./types";
 import { PRESET_MAP, REVERSE_PRESET_MAP, ROLE_MAP } from "./types";
@@ -190,6 +191,40 @@ export class SSS {
       hookProgram,
       provider,
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Factory: create with custom extension selection
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Create a new stablecoin with granular extension control.
+   *
+   * Instead of choosing a preset tier, callers specify which Token-2022
+   * extensions to enable. The preset is inferred automatically:
+   * - confidentialTransfer → SSS-3
+   * - transferHook → SSS-2
+   * - otherwise → SSS-1
+   */
+  static async createCustom(
+    provider: AnchorProvider,
+    options: StablecoinCustomOptions,
+    mintKeypair?: Keypair,
+  ): Promise<SSS> {
+    const preset: Preset = options.extensions.confidentialTransfer
+      ? "sss-3"
+      : options.extensions.transferHook
+        ? "sss-2"
+        : "sss-1";
+
+    return SSS.create(provider, {
+      preset,
+      name: options.name,
+      symbol: options.symbol,
+      uri: options.uri,
+      decimals: options.decimals,
+      supplyCap: options.supplyCap,
+    }, mintKeypair);
   }
 
   // ---------------------------------------------------------------------------

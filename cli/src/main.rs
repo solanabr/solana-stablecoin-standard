@@ -34,14 +34,17 @@ pub enum Commands {
   /// Initialize a new stablecoin
   Init {
     /// Preset tier: "sss-1", "sss-2", "sss-3"
-    #[arg(long)]
-    preset: String,
+    #[arg(long, required_unless_present = "config")]
+    preset: Option<String>,
+    /// Path to custom TOML config file
+    #[arg(long, conflicts_with = "preset")]
+    config: Option<String>,
     /// Token name
-    #[arg(long)]
-    name: String,
+    #[arg(long, required_unless_present = "config")]
+    name: Option<String>,
     /// Token symbol
-    #[arg(long)]
-    symbol: String,
+    #[arg(long, required_unless_present = "config")]
+    symbol: Option<String>,
     /// Metadata URI
     #[arg(long, default_value = "")]
     uri: String,
@@ -313,8 +316,8 @@ async fn main() -> Result<()> {
   let ctx = config::CliContext::new(&cli)?;
 
   match cli.command {
-    Commands::Init { preset, name, symbol, uri, decimals, supply_cap } => {
-      commands::init::execute(&ctx, &preset, &name, &symbol, &uri, decimals, supply_cap).await
+    Commands::Init { preset, config, name, symbol, uri, decimals, supply_cap } => {
+      commands::init::execute(&ctx, preset.as_deref(), config.as_deref(), name.as_deref(), symbol.as_deref(), &uri, decimals, supply_cap).await
     }
     Commands::Mint { mint, to, amount } => {
       commands::mint::execute(&ctx, &mint, &to, amount).await

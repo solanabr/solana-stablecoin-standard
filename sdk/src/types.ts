@@ -60,3 +60,19 @@ export const REVERSE_PRESET_MAP: Record<number, Preset> = {
   2: "sss-2",
   3: "sss-3",
 };
+
+export interface StablecoinExtensionConfig {
+  permanentDelegate?: boolean;
+  transferHook?: boolean;
+  defaultAccountFrozen?: boolean;
+  confidentialTransfer?: boolean;
+}
+
+export interface StablecoinCustomOptions {
+  name: string;
+  symbol: string;
+  uri?: string;
+  decimals?: number;
+  supplyCap?: bigint;
+  extensions: StablecoinExtensionConfig;
+}
