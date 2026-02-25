@@ -21,6 +21,8 @@ import { registerBlacklist } from "./commands/blacklist.js";
 import { registerSeize } from "./commands/seize.js";
 import { registerMinters } from "./commands/minters.js";
 import { registerSupply } from "./commands/status.js";
+import { registerHolders } from "./commands/holders.js";
+import { registerAuditLog } from "./commands/audit-log.js";
 
 const program = new Command();
 
@@ -47,5 +49,7 @@ registerBlacklist(program);
 registerSeize(program);
 registerMinters(program);
 registerSupply(program);
+registerHolders(program);
+registerAuditLog(program);
 
 program.parse(process.argv);

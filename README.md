@@ -68,7 +68,7 @@ Both presets share the same on-chain program. The preset chosen at initializatio
 anchor test
 ```
 
-Starts a local validator, deploys both programs, and runs 32 integration tests covering the full SSS-1 and SSS-2 lifecycles, SDK integration tests, convenience wrappers, minter management, and CLI config parsing.
+Starts a local validator, deploys both programs, and runs 34 integration tests covering the full SSS-1 and SSS-2 lifecycles, SDK integration tests, convenience wrappers, minter management, and CLI config parsing.
 
 ### Build the SDK and CLI
 

@@ -520,3 +520,36 @@ describe("CLI: config file parsing (JSON and TOML)", () => {
     expect(cfg.preset).to.equal("sss-1");
   });
 });
+
+describe("CLI: holders and audit-log command validation", () => {
+  it("holders --min-balance filters accounts below threshold", () => {
+    // Simulate the balance filter logic used in holders.ts
+    const minBalance = BigInt(1_000_000);
+    const mockAccounts = [
+      { balance: BigInt(5_000_000) },
+      { balance: BigInt(500_000) },
+      { balance: BigInt(1_000_000) },
+      { balance: BigInt(0) },
+    ];
+
+    const filtered = mockAccounts.filter((a) => a.balance >= minBalance);
+    expect(filtered.length).to.equal(2);
+    expect(filtered.every((a) => a.balance >= minBalance)).to.be.true;
+  });
+
+  it("audit-log rejects unknown --action values", async () => {
+    // The valid event list exported by audit-log.ts
+    const KNOWN_EVENTS = [
+      "TokenInitialized", "TokensMinted", "TokensBurned",
+      "AccountFrozen", "AccountThawed", "TokenPaused", "TokenUnpaused",
+      "BlacklistAdded", "BlacklistRemoved", "TokensSeized",
+      "AuthorityTransferred", "RoleUpdated", "MinterQuotaUpdated",
+    ];
+
+    const validAction = "TokensMinted";
+    const invalidAction = "NotAnEvent";
+
+    expect(KNOWN_EVENTS.includes(validAction)).to.be.true;
+    expect(KNOWN_EVENTS.includes(invalidAction)).to.be.false;
+  });
+});

@@ -188,6 +188,34 @@ sss-token minters remove <ADDRESS> --keypair ./authority.json
 
 The `<FROM_WALLET>`'s token account must be frozen before calling.
 
+### `holders`
+
+List all token accounts for the active stablecoin, sorted by balance descending.
+
+```bash
+# All holders
+sss-token holders --mint <MINT_ADDRESS>
+
+# Only holders with balance >= 1,000,000 base units
+sss-token holders --mint <MINT_ADDRESS> --min-balance 1000000
+```
+
+### `audit-log`
+
+Show recent on-chain actions for the active stablecoin by scanning program transaction logs.
+
+```bash
+# Last 50 transactions (default)
+sss-token audit-log --mint <MINT_ADDRESS>
+
+# Filter by action type
+sss-token audit-log --mint <MINT_ADDRESS> --action TokensMinted
+sss-token audit-log --mint <MINT_ADDRESS> --action BlacklistAdded
+sss-token audit-log --mint <MINT_ADDRESS> --action TokensSeized --limit 100
+```
+
+Valid `--action` values: `TokenInitialized`, `TokensMinted`, `TokensBurned`, `AccountFrozen`, `AccountThawed`, `TokenPaused`, `TokenUnpaused`, `BlacklistAdded`, `BlacklistRemoved`, `TokensSeized`, `AuthorityTransferred`, `RoleUpdated`, `MinterQuotaUpdated`.
+
 ---
 
 ## Common Workflows
