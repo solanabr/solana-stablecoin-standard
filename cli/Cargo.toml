@@ -16,6 +16,7 @@ sss-transfer-hook = { path = "../programs/sss-transfer-hook", features = ["no-en
 clap = { version = "4", features = ["derive", "env"] }
 solana-sdk = { workspace = true }
 solana-client = { workspace = true }
+solana-account-decoder = "2.2"
 spl-token-2022 = { workspace = true }
 spl-associated-token-account = "6"
 spl-token-confidential-transfer-proof-extraction = "0.2"

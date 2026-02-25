@@ -1,10 +1,13 @@
+pub mod audit_log;
 pub mod blacklist;
 pub mod burn;
 pub mod confidential;
 pub mod freeze;
+pub mod holders;
 pub mod info;
 pub mod init;
 pub mod mint;
+pub mod minters;
 pub mod pause;
 pub mod roles;
 pub mod seize;

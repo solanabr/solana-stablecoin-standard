@@ -142,6 +142,32 @@ pub enum Commands {
     #[command(subcommand)]
     action: ConfidentialAction,
   },
+  /// List token holders for a mint
+  Holders {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+    /// Minimum balance filter (base units)
+    #[arg(long)]
+    min_balance: Option<u64>,
+  },
+  /// View audit log (transaction history)
+  AuditLog {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+    /// Filter by action type (partial match)
+    #[arg(long)]
+    action: Option<String>,
+    /// Maximum entries to display
+    #[arg(long, default_value_t = 25)]
+    limit: usize,
+  },
+  /// Manage minters
+  Minters {
+    #[command(subcommand)]
+    action: MinterAction,
+  },
 }
 
 #[derive(Subcommand)]
@@ -253,6 +279,34 @@ pub enum ConfidentialAction {
   Withdraw,
 }
 
+#[derive(Subcommand)]
+pub enum MinterAction {
+  /// List all minters for a mint
+  List {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+  },
+  /// Add a minter (alias for roles grant --role minter)
+  Add {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+    /// Address to grant minter role
+    #[arg(long)]
+    address: String,
+  },
+  /// Remove a minter (alias for roles revoke --role minter)
+  Remove {
+    /// Base58 mint address
+    #[arg(long)]
+    mint: String,
+    /// Address to revoke minter role from
+    #[arg(long)]
+    address: String,
+  },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
   let cli = Cli::parse();
@@ -294,6 +348,25 @@ async fn main() -> Result<()> {
     }
     Commands::Confidential { action } => {
       commands::confidential::execute(&ctx, action).await
+    }
+    Commands::Holders { mint, min_balance } => {
+      commands::holders::execute(&ctx, &mint, min_balance).await
+    }
+    Commands::AuditLog { mint, action, limit } => {
+      commands::audit_log::execute(&ctx, &mint, action, limit).await
+    }
+    Commands::Minters { action } => {
+      match action {
+        MinterAction::List { mint } => {
+          commands::minters::list(&ctx, &mint).await
+        }
+        MinterAction::Add { mint, address } => {
+          commands::minters::add(&ctx, &mint, &address).await
+        }
+        MinterAction::Remove { mint, address } => {
+          commands::minters::remove(&ctx, &mint, &address).await
+        }
+      }
     }
   }
 }
