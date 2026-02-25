@@ -67,7 +67,7 @@ pnpm install
 # Build Anchor programs
 anchor build
 
-# Run integration tests (46 tests)
+# Run integration tests (92 tests)
 anchor test
 
 # Run SDK unit tests (31 tests)
@@ -167,8 +167,8 @@ solana-stablecoin-standard/
   backend/                 # Express REST API
   tui/                     # ratatui terminal UI
   frontend/                # Next.js 15 frontend
-  tests/                   # Integration tests (46 tests)
-  trident-tests/           # Fuzz tests (Trident)
+  tests/                   # Integration tests (92 tests)
+  trident-tests/           # Property-based fuzz tests (proptest)
   scripts/                 # Utility scripts
   deployments/             # Deployment artifacts
   docs/                    # Documentation
@@ -200,10 +200,10 @@ solana-stablecoin-standard/
 
 The project includes comprehensive test coverage across multiple layers:
 
-- **46 integration tests** -- Full program interaction tests covering SSS-1, SSS-2, SSS-3 presets, role management, and edge cases
+- **92 integration tests** -- Full program interaction tests covering SSS-1, SSS-2, SSS-3 presets, role management, security boundaries, oracle supply caps, and edge cases
 - **31 SDK unit tests** -- PDA derivation, error mapping, type validation
+- **10 property-based fuzz tests** -- Proptest-powered invariant testing (arithmetic overflow, supply cap consistency, role escalation, pause bypass)
 - **Rust unit tests** -- Config logic (supply cap, mint validation)
-- **Fuzz tests** -- Trident-based fuzzing for program security
 
 ## Known Limitations
 
