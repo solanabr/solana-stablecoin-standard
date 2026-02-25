@@ -18,7 +18,9 @@ const port = parseInt(process.env.PORT || "3000", 10);
 
 // Security & parsing middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",") : false,
+}));
 app.use(express.json());
 
 // Public routes
@@ -44,6 +46,8 @@ app.use(
   },
 );
 
+let eventListenerRef: EventListener | null = null;
+
 const server = app.listen(port, () => {
   logger.info(`SSS Backend listening on port ${port}`);
 
@@ -58,6 +62,7 @@ const server = app.listen(port, () => {
         solanaService.hookProgramId,
       );
       eventListener.start();
+      eventListenerRef = eventListener;
       logger.info("Event listener started");
     } catch (err) {
       logger.warn("Event listener not started — Solana connection unavailable", {
@@ -68,8 +73,12 @@ const server = app.listen(port, () => {
 });
 
 // Graceful shutdown
-function shutdown(signal: string) {
+async function shutdown(signal: string) {
   logger.info(`Received ${signal}, shutting down gracefully`);
+  if (eventListenerRef) {
+    await eventListenerRef.stop();
+    logger.info("Event listener stopped");
+  }
   server.close(() => {
     logger.info("Server closed");
     process.exit(0);

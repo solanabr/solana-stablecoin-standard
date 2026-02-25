@@ -7,6 +7,16 @@ import { publicKeySchema } from "../utils/validation";
 
 const router = Router();
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function handleRouteError(res: Response, err: unknown, operation: string) {
+  const message = err instanceof Error ? err.message : String(err);
+  logger.error(`${operation} failed`, { error: message });
+  res.status(400).json({ error: message });
+}
+
 const blacklistAddSchema = z.object({
   mint: publicKeySchema,
   address: publicKeySchema,
@@ -42,9 +52,7 @@ router.post("/blacklist/add", async (req: Request, res: Response) => {
     logger.info("Blacklist add completed", { mint, address, reason, signature });
     res.json({ success: true, signature });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("Blacklist add failed", { error: message });
-    res.status(400).json({ error: message });
+    handleRouteError(res, err, "Blacklist add");
   }
 });
 
@@ -66,9 +74,7 @@ router.post("/blacklist/remove", async (req: Request, res: Response) => {
     logger.info("Blacklist remove completed", { mint, address, signature });
     res.json({ success: true, signature });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("Blacklist remove failed", { error: message });
-    res.status(400).json({ error: message });
+    handleRouteError(res, err, "Blacklist remove");
   }
 });
 
@@ -92,9 +98,7 @@ router.get("/status/:mint/:address", async (req: Request, res: Response) => {
     const blacklisted = await sss.blacklist.check(address);
     res.json({ blacklisted });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("Compliance status check failed", { error: message });
-    res.status(400).json({ error: message });
+    handleRouteError(res, err, "Compliance status check");
   }
 });
 
