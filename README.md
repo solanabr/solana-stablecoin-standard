@@ -205,6 +205,20 @@ The project includes comprehensive test coverage across multiple layers:
 - **Rust unit tests** -- Config logic (supply cap, mint validation)
 - **Fuzz tests** -- Trident-based fuzzing for program security
 
+## Known Limitations
+
+### SSS-2: Seize operation not supported
+
+The `seize` instruction uses Token-2022's `TransferChecked` CPI with the config PDA as permanent delegate. On SSS-2 mints, the transfer hook requires extra accounts (blacklist PDA, hook program) that cannot be forwarded through the `TransferChecked` CPI. This is a Token-2022 design constraint — transfer hooks and permanent delegate CPIs are not composable in the current runtime.
+
+**Workaround:** For SSS-2 compliance scenarios requiring asset seizure, use a freeze + admin-coordinated manual transfer flow.
+
+**Affects:** SSS-2 preset only. SSS-1 and SSS-3 seize works correctly.
+
+### Admin role revocation
+
+The `LastAdmin` protection prevents an admin from revoking their own admin role (which would permanently brick the config). However, Admin A can revoke Admin B's admin role even if B is the only other admin. This is by design — counting total admins on-chain would require an additional counter or enumeration mechanism, adding complexity and cost. The recommended pattern is: always maintain 2+ admins, and use a multisig for the primary admin key.
+
 ## License
 
 MIT -- see [LICENSE](LICENSE).

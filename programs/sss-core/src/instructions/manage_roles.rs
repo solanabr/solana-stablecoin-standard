@@ -117,12 +117,14 @@ pub struct RevokeRole<'info> {
 }
 
 pub fn handler_revoke(ctx: Context<RevokeRole>) -> Result<()> {
-    // Prevent revoking the last admin — would brick the config permanently
+    // Prevent revoking the last admin — would brick the config permanently.
+    // NOTE: This only blocks self-revocation. Admin A can still revoke Admin B
+    // even if B is the last admin. Counting total admins on-chain would require
+    // an enumeration mechanism (additional PDA or counter), adding complexity.
+    // Recommended: always maintain 2+ admins via multisig.
+    // To transfer admin: grant new admin first, then new admin revokes old admin.
     let role_account = &ctx.accounts.role_account;
     if role_account.role == Role::Admin && role_account.address == ctx.accounts.admin.key() {
-        // Admin is revoking their own admin role — this is only safe if they're NOT
-        // the sole admin. We can't easily count admins on-chain, so we block self-revocation.
-        // To transfer admin: grant new admin first, then new admin revokes old admin.
         return Err(error!(crate::error::SssError::LastAdmin));
     }
 
