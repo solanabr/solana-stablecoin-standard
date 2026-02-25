@@ -369,6 +369,46 @@ Check whether an address is blacklisted for a given mint.
 
 ---
 
+#### GET /compliance/audit-trail/:mint
+
+Export the audit trail (transaction history) for a stablecoin.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `mint` | string | Base58-encoded mint public key |
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `action` | string | -- | Filter by action type (partial match) |
+| `limit` | number | 25 | Max entries to return (1-100) |
+| `before` | string | -- | Signature cursor for pagination |
+
+**Response (200):**
+
+```json
+{
+  "mint": "Base58PublicKey",
+  "config": "Base58ConfigPda",
+  "total": 3,
+  "entries": [
+    {
+      "signature": "5wH...transaction_signature",
+      "action": "TokensMinted",
+      "timestamp": 1708800000,
+      "slot": 123456789,
+      "success": true,
+      "memo": null
+    }
+  ]
+}
+```
+
+---
+
 ## Error Responses
 
 ### Validation Error (422)
@@ -434,4 +474,4 @@ The backend fires webhook notifications for on-chain events when `WEBHOOK_URLS` 
 }
 ```
 
-Webhook delivery is best-effort with a 5-second timeout per URL. Failures are logged but do not affect the main application.
+Webhook delivery includes exponential backoff retry (3 retries at 1s, 2s, 4s intervals) with a 5-second timeout per attempt. Failures after all retries are logged but do not affect the main application.

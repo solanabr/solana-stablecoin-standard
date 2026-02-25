@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, type ConfirmedSignatureInfo } from "@solana/web3.js";
 import { logger } from "../services/logger";
 import { getSolanaService } from "../services/solana";
 import { publicKeySchema } from "../utils/validation";
@@ -99,6 +99,89 @@ router.get("/status/:mint/:address", async (req: Request, res: Response) => {
     res.json({ blacklisted });
   } catch (err) {
     handleRouteError(res, err, "Compliance status check");
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /compliance/audit-trail/:mint
+// ---------------------------------------------------------------------------
+const auditTrailQuerySchema = z.object({
+  action: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  before: z.string().optional(),
+});
+
+router.get("/audit-trail/:mint", async (req: Request, res: Response) => {
+  const mintResult = publicKeySchema.safeParse(req.params.mint);
+  if (!mintResult.success) {
+    res.status(422).json({ error: "Invalid mint public key" });
+    return;
+  }
+
+  const queryResult = auditTrailQuerySchema.safeParse(req.query);
+  if (!queryResult.success) {
+    res.status(422).json({ error: queryResult.error.flatten().fieldErrors });
+    return;
+  }
+
+  try {
+    const mint = new PublicKey(req.params.mint);
+    const { action, limit, before } = queryResult.data;
+    const solana = getSolanaService();
+
+    // Derive config PDA to query its transaction history
+    const [configPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("sss-config"), mint.toBuffer()],
+      solana.coreProgramId,
+    );
+
+    const sigOptions: { limit: number; before?: string } = { limit };
+    if (before) {
+      sigOptions.before = before;
+    }
+
+    const signatures = await solana.connection.getSignaturesForAddress(
+      configPda,
+      sigOptions,
+    );
+
+    // Map known event names from program logs
+    const EVENT_NAMES = [
+      "StablecoinInitialized", "TokensMinted", "TokensBurned",
+      "AccountFrozen", "AccountThawed", "TokensSeized",
+      "Paused", "Unpaused", "RoleGranted", "RoleRevoked",
+      "ConfigUpdated", "AuthorityTransferred",
+      "BlacklistAdded", "BlacklistRemoved",
+    ];
+
+    const entries = signatures.map((sig: ConfirmedSignatureInfo) => {
+      const memo = sig.memo ?? "";
+      const detectedAction = EVENT_NAMES.find((name) =>
+        memo.includes(name) || (sig.err === null && memo === ""),
+      );
+
+      return {
+        signature: sig.signature,
+        action: detectedAction ?? "unknown",
+        timestamp: sig.blockTime ?? null,
+        slot: sig.slot,
+        success: sig.err === null,
+        memo: memo || null,
+      };
+    });
+
+    const filtered = action
+      ? entries.filter((e: { action: string }) => e.action.toLowerCase().includes(action.toLowerCase()))
+      : entries;
+
+    res.json({
+      mint: mint.toBase58(),
+      config: configPda.toBase58(),
+      total: filtered.length,
+      entries: filtered,
+    });
+  } catch (err) {
+    handleRouteError(res, err, "Audit trail export");
   }
 });
 

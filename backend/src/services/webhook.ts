@@ -1,12 +1,17 @@
 import { logger } from "./logger";
 import type { ParsedEvent } from "./event-listener";
 
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1_000;
+const REQUEST_TIMEOUT_MS = 5_000;
+
 /**
  * Send a webhook notification for an on-chain event.
  *
  * Webhook URLs are configured via the WEBHOOK_URLS env var (comma-separated).
  * Each URL receives a POST with the event payload.
- * Failures are logged but do not throw — webhook delivery is best-effort.
+ * Retries with exponential backoff (1s, 2s, 4s) on failure.
+ * Failures after all retries are logged but do not throw.
  */
 export async function sendWebhook(event: ParsedEvent): Promise<void> {
   const webhookUrls = process.env.WEBHOOK_URLS;
@@ -31,10 +36,20 @@ export async function sendWebhook(event: ParsedEvent): Promise<void> {
     timestamp: event.timestamp,
   });
 
-  const results = await Promise.allSettled(
-    urls.map(async (url) => {
+  await Promise.allSettled(
+    urls.map((url) => deliverWithRetry(url, payload, event.type)),
+  );
+}
+
+async function deliverWithRetry(
+  url: string,
+  payload: string,
+  eventType: string,
+): Promise<void> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5_000);
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
       try {
         const response = await fetch(url, {
@@ -51,23 +66,37 @@ export async function sendWebhook(event: ParsedEvent): Promise<void> {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        logger.debug("Webhook delivered", { url, event: event.type });
+        logger.debug("Webhook delivered", { url, event: eventType, attempt });
+        return;
       } finally {
         clearTimeout(timeout);
       }
-    }),
-  );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
 
-  for (let i = 0; i < results.length; i++) {
-    const result = results[i];
-    if (result.status === "rejected") {
-      logger.warn("Webhook delivery failed", {
-        url: urls[i],
-        event: event.type,
-        error: result.reason instanceof Error
-          ? result.reason.message
-          : String(result.reason),
-      });
+      if (attempt < MAX_RETRIES) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        logger.warn("Webhook delivery failed, retrying", {
+          url,
+          event: eventType,
+          attempt: attempt + 1,
+          maxRetries: MAX_RETRIES,
+          retryInMs: delay,
+          error: message,
+        });
+        await sleep(delay);
+      } else {
+        logger.error("Webhook delivery failed after all retries", {
+          url,
+          event: eventType,
+          totalAttempts: MAX_RETRIES + 1,
+          error: message,
+        });
+      }
     }
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
