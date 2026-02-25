@@ -142,9 +142,9 @@ fn build_mint_instructions(
   let (config_pda, _) = utils::derive_config_pda(mint);
 
   // All presets use these extensions:
-  // - MintCloseAuthority (config PDA)
   // - PermanentDelegate (config PDA)
   // SSS-2 additionally uses TransferHook
+  // Note: matches SDK extension set (MetadataPointer is SDK-side only)
 
   let mint_len = get_mint_len(preset)?;
   let lamports = client.get_minimum_balance_for_rent_exemption(mint_len)?;
@@ -157,15 +157,6 @@ fn build_mint_instructions(
     mint_len as u64,
     &spl_token_2022::id(),
   ));
-
-  // Initialize MintCloseAuthority extension
-  ixs.push(
-    spl_token_2022::instruction::initialize_mint_close_authority(
-      &spl_token_2022::id(),
-      mint,
-      Some(&config_pda),
-    )?,
-  );
 
   // Initialize PermanentDelegate extension
   ixs.push(
@@ -207,7 +198,6 @@ fn get_mint_len(preset: u8) -> Result<usize> {
   use spl_token_2022::extension::ExtensionType;
 
   let mut extensions = vec![
-    ExtensionType::MintCloseAuthority,
     ExtensionType::PermanentDelegate,
   ];
 
