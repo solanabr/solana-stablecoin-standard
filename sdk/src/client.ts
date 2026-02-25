@@ -495,6 +495,15 @@ export class SSS {
     };
   }
 
+  /**
+   * Get the current total supply (minted - burned).
+   * Convenience wrapper for bounty API compatibility.
+   */
+  async getTotalSupply(): Promise<bigint> {
+    const stablecoinInfo = await this.info();
+    return stablecoinInfo.currentSupply;
+  }
+
   // ---------------------------------------------------------------------------
   // Role management
   // ---------------------------------------------------------------------------
@@ -632,6 +641,23 @@ export class SSS {
   };
 
   // ---------------------------------------------------------------------------
+  // Compliance namespace (bounty API compatibility)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Convenience accessor grouping compliance-related operations.
+   * Delegates to the existing blacklist and seize methods.
+   */
+  get compliance() {
+    return {
+      blacklistAdd: (address: PublicKey, reason: string) => this.blacklist.add(address, reason),
+      blacklistRemove: (address: PublicKey) => this.blacklist.remove(address),
+      blacklistCheck: (address: PublicKey) => this.blacklist.check(address),
+      seize: (from: PublicKey, to: PublicKey, amount: bigint) => this.seize(from, to, amount),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
   // SSS-3 confidential operations (placeholder)
   // ---------------------------------------------------------------------------
 
@@ -681,3 +707,6 @@ export class SSS {
     },
   };
 }
+
+/** Alias for bounty API compatibility */
+export { SSS as SolanaStablecoin };

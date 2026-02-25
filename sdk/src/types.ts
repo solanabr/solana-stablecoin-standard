@@ -61,6 +61,12 @@ export const REVERSE_PRESET_MAP: Record<number, Preset> = {
   3: "sss-3",
 };
 
+export const Presets = {
+  SSS_1: "sss-1" as const,
+  SSS_2: "sss-2" as const,
+  SSS_3: "sss-3" as const,
+} as const;
+
 export interface StablecoinExtensionConfig {
   permanentDelegate?: boolean;
   transferHook?: boolean;

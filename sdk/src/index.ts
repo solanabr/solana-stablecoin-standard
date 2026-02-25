@@ -1,4 +1,4 @@
-export { SSS } from "./client";
+export { SSS, SolanaStablecoin } from "./client";
 export * from "./types";
 export * from "./pda";
 export * from "./errors";

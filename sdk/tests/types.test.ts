@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ROLE_MAP, PRESET_MAP, REVERSE_PRESET_MAP } from "../src/types";
+import { ROLE_MAP, PRESET_MAP, REVERSE_PRESET_MAP, Presets } from "../src/types";
 
 describe("Type mappings", () => {
   describe("ROLE_MAP", () => {
@@ -41,6 +41,14 @@ describe("Type mappings", () => {
       for (const [key, value] of Object.entries(PRESET_MAP)) {
         expect(REVERSE_PRESET_MAP[value]).toBe(key);
       }
+    });
+  });
+
+  describe("Presets", () => {
+    it("has SSS_1, SSS_2, SSS_3 constants", () => {
+      expect(Presets.SSS_1).toBe("sss-1");
+      expect(Presets.SSS_2).toBe("sss-2");
+      expect(Presets.SSS_3).toBe("sss-3");
     });
   });
 });
