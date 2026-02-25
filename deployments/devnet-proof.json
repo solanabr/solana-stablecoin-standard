@@ -1,34 +1,61 @@
 {
   "payer": "AiYU56UqYNEG6EhBF7cRRQkhN8WBNNr3kMAgsHsEK4AG",
   "cluster": "devnet",
-  "timestamp": "2026-02-25T02:48:26.318Z",
+  "timestamp": "2026-02-25T03:02:37.401Z",
   "programs": {
     "sss_core": "Corep3pXJzUGaqpw2xzWQi4q63cn1STABiCDMJhMECB",
     "sss_transfer_hook": "hookXMsC9txN6T8hyS9GCyubBL4nvp9XPWg5wW3z3pH"
   },
   "presets": {
     "sss-1": {
-      "mint": "vMMjqMGG44mt37HF32xKKgToKvkJLThhv8VTqCABSTT",
-      "config": "8e7E9raHUwxci9rPsZaS8XyTwX6QzRVp8HZ1dWMHADXq",
+      "mint": "E66QFU3A9pKFVq2YxbAGykpR3KbBUYUD75qoAuG2CoZW",
+      "config": "bq6pwL6YuBhPGmLkG4kFMpvY11ppA1HeU2Tv1ELxjvM",
       "transactions": {
-        "sig1": "2kbTeQ9gqPuQt6ZU6sWSzJfreMWsevmSherBk5dE1TeVCLiV8MLhbYSHH75gjsFC6BGAULRkFuJyvkjkViM3aF1D",
-        "grantSig": "fxJ6oYSKzV5SdvzJtSLqRmknFLNqxH8MiseF2uCoRpaCzvmPV5raffmJnekRoJvFa5fjghYtHcfitMnnGG9rRuL",
-        "mintSig": "2p5D3151XUNKPLrVXCeSGtXGcFnyXeXsYVhsP3QP59HLA7mvW7bcxU5D6FcNjq8w2FSjpwhYcdsFUT4WJaa6LF7C",
-        "burnSig": "58SEW9UyJiqVKeSTyBJ2fBiD6RTiY7YCJd2t8hp2ytgjv2oh3qTJavWEYFn2vxcuJRUjpJzZ6rYhsucJtpEEijsw",
-        "freezeSig": "2rTY5frV7Yxb2ebDXV1NUYWXnoXxV9CWTDsTBximFpk4yb7cEmDhKABmT6rneT826fLp2hjBCqyx4Ret5nGpJigt",
-        "thawSig": "3yPH1Gx8FREgGLJPYwxKYZjMTKA9Lb8jw59AA3fsmUxk5aEqQi7TAsHQX1Lw27XSSkVhgsuZ1t8sEcnfFxhprQws",
-        "pauseSig": "BFbSH5Ry8o5tKbNTxwTnaGDVSr1XDmYbhTGqcWFhJBdxiaaweoouVBrXvYT1MC8LCacTgnYZnEdY214UNE5oB6j",
-        "unpauseSig": "3M1nqnecTbCnigCq9hrbZtjtE5hSefDJRrdG6x5pZbQ7TkW9mvxcpCdSieTCQ7zbBNaYmWGTZ818NnQRvtxDXeSV"
+        "sig1": "3dVp3wh6VsNYRXYQrGZZSRFaujA4XzzndAHT2Nu4yJKGmj63MswtWkuYePavKRcCPyDjaD3CvXGAQv4c3gbCud1e",
+        "grantSig": "4UpWoBcw36ysWxF2YYt3viZK3qZkVQLbuXSFZy9kHR8C3N32Bnw4mtAeBxrvsC1wBHLYYCCuEZhKeRv9gKdhJGwF",
+        "mintSig": "3KwHfbc3VmvA12g1Ei45U1ejVHT7nrSETc72guZWwGe6JeLByrw885pmUksNjrBSsEpJ6srdgLJbtEyu5ECAZYTL",
+        "burnSig": "3CCKN7nRnViCiTKgPTuY3BTRW6Gr629F1TrV7p75RwZQP6xgvCwavHdEtUAPv83XCd59k6EGSJRrZHaMGZ9oKQac",
+        "freezeSig": "4BLVVkB1rzNLpFPYMNBupFG8uD6m7jdewFmevaR1mhWvheUSXL6yjPMXYrbMJgsp9g7TVghHCZYXUxnt5pJ8P3C3",
+        "thawSig": "4w9cD1ugHHmvWSbsGFLpvc9GBX6peGabt2CubR2TmZ8A5RK7RDqDdkFAbvMnkL3ZWc4X2cxy7CMGnYkNhdX3M7KP",
+        "pauseSig": "534FBduaonwjdj6rcZhRdFpcNwNMz9h12LLUiWc6ZqyBE8fLvfLswPqay9Ybx6Ym8f6dnuH6vYS81kURTkwuKZ9b",
+        "unpauseSig": "5LHC7KWQ4KSKxWfgU9TZHPtgbf1BGcAPxeLFwW11XRSJXYsWEcSPSSMFvBUQ3yErU1BK56hJbGRYSqstxcPFtt15"
       },
       "finalSupply": "400000000"
     },
-    "sss-3": {
-      "mint": "G7SGQ9j5WRLFr4KwuKp6ijTiEmHr2ESf2WHxxzQ648L9",
-      "config": "4QDNvJ2GcrGcPPjcDGeSzfkf4Zfr2WoqmtK13orgh8pp",
+    "sss-2": {
+      "mint": "BPvpCyJtjR4thpUwuXZDqLAh3ojtFSrrQmMDHwFaExg8",
+      "config": "CPMpaksJTy1Aqbbr6gSSkh22wcJxZhttdCchHshzgQQS",
+      "recipient": "DfbdS9B8cpbQY9tcGFTYMfRv12jyWB7f8Za7VYrFx76m",
       "transactions": {
-        "sig3": "4A5agFJMXMFyMoLC1kXsGWkvyzJR5JbQrvt3WeZKFCBQ9RWoTdo2Th2WnfEgfVCbHqGFMCkY1Xng6nRja5HRgsXc",
-        "mintSig3": "27358WneS58E8MnwmpCioWokRbRcyNLSwepiVduhEPaDgDjptm38TfBPw2J5oZRX55Zhv9LGkrkUhtantSQPG5Ru",
-        "burnSig3": "2E9p83KjQaaaPqamGLg8fgYVbMY52KwsUYSJGJLuFbXMCMRz1ccGA45mEmJV6tuSgCMXR6rJqebxkyPU9KzubkD"
+        "init": "5kdZQMRKqZkefQhaeNKMVQhpv5C75B6ikdsfx9G5hSi2vSyXMCFJoDaXUEZavSyh6Zqt51PW8VhbUFVwmA3FgnFK",
+        "grantMinter": "3cUubdhP8zs56NNJFe1hTSr4KxeigWEwxApzbRjD8UE68k3U1L9xg1t49VouFRBuFQ3fvFpC6txzGVoVhB6UPpxp",
+        "grantFreezer": "5HVHEhykcdH2Yw7dBfGm8gCxvAxsTWFZMStLngTXg8DwLQmDh9tLQWadornUD1FcjRWGFMx2t5iqrVcjR24h68tU",
+        "thawPayer": "5FdBN2yDnhir7S7CrQWfmS9YiQdw9xEA1EpHhyD3x9RLLunaf1NHLveJJoaWB9iCYGk6BcDgQmkiy5CUk43T8fwv",
+        "thawRecipient": "2yUoZmwk9HAwMRBwUJRwEfg7kRzcT9ZYh3i61oCSz9FBSTaGP5kk41MgobsuLnAFkUGrCzd14J4VUJjAK3ci8uat",
+        "mint": "2gtK4LGKKNPcBwen5nU6fdn73Eq7hWT58SBHRNd6DTFGY9hEfpMTFmAL6Qj81dDs1j7XYTfEfGPDsKamxSnGUnCp",
+        "burn": "59pSTP686ZrodqT1GiZRYSaDDioHCfNhq75S9xiw2o6bCtfvca8ruo1R8QU1CLLYzu8fwemPeN3TgFjxdBMD4zX8",
+        "blacklistAdd": "2dqkYer3DrdwPn92wqAcCzQneHuHR2K2xSp9ZBwKXNSRQeErobX4HNMos87gvj7PsofdevRovhKKzRa7ZLqX6cjh",
+        "blacklistRemove": "fpiCRazKpdNJGs6dU9bBcyJGtre51mY698DGJj8WpLswKdnntKhrmXoqs8o8cxx9YmXaCiufms3ZS6jgafdGBxB",
+        "mintToRecipient": "ofbp1wELRwRDEzf7o1UJNZjyMETWp5SsF56JLJfXkrYa2qKfxGLj454dYCUut6ehrrjzqeFVTd5JRvyBXYyvnJy",
+        "seize": "N/A — known limitation",
+        "pause": "4p41KoQ57Bfcpzd5P2LurPnPmUgcr4LVHnNyJjns3WqGLmpKL9HvYth6piYEyFefx7ht6ir8GkAbtyu96DdZ2foM",
+        "unpause": "5QnFYS65FhB1GoV7uZh7NoAG9D2jyaKRvz8Xch7AxjewbwV57VjyFvjpJf4R6nvY3BJohwLR8vizvbKyv4qDQuKG"
+      },
+      "blacklistVerified": {
+        "added": true,
+        "removed": true
+      },
+      "finalSupply": "950000000",
+      "note": "TransferHook + DefaultAccountState(Frozen) + PermanentDelegate extensions",
+      "seizeLimitation": "Expected failure: seize CPI missing transfer hook extra accounts"
+    },
+    "sss-3": {
+      "mint": "9GkbHHYTJCTyurvdbY1y42QT8u5KqaGvkZ2oXkDgRhvs",
+      "config": "ChR5snzDrZHjYvwz6Q7qmpGuMaUnjgXWc4xaunj7jsqJ",
+      "transactions": {
+        "sig3": "357AaXe5Rn38fYMZZKNA1WPRRn1pxAGjoVrW9s2CHdvMcg72r44PGEHmiWYxrEE8883JyEcoDdN7FjrFZVqsoE54",
+        "mintSig3": "SApuUqugdZjqCwTDYE8c3msrMb6hkpUZk3ArEJneKnQm5tRRQvLJf7A3ECQavmBRau2cE7GzEKhwBmHn5tx9s53",
+        "burnSig3": "4GPitYMhQZpFxf31x46b3fZEFHpPjuxVQKSQ5PPQJ31sbSSkZZkM7q2Fbr4stVR9yaPV8Vf5tHf4DcR8ZDMESodm"
       },
       "finalSupply": "950000000",
       "note": "ConfidentialTransferMint extension enabled"
