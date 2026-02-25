@@ -42,9 +42,10 @@ export SOLANA_KEYPAIR="~/.config/solana/devnet.json"
 
 ### init
 
-Initialize a new stablecoin.
+Initialize a new stablecoin. Use either `--preset` with inline args, or `--config` with a TOML file.
 
 ```bash
+# Inline arguments
 sss init \
   --preset sss-1 \
   --name "My Stablecoin" \
@@ -52,16 +53,35 @@ sss init \
   --uri "https://example.com/metadata.json" \
   --decimals 6 \
   --supply-cap 1000000000
+
+# TOML config file
+sss init --config example-config.toml
 ```
 
 | Argument | Required | Default | Description |
 |---|---|---|---|
-| `--preset` | Yes | -- | Preset tier: `sss-1`, `sss-2`, `sss-3` |
-| `--name` | Yes | -- | Token name |
-| `--symbol` | Yes | -- | Token symbol |
+| `--preset` | Yes* | -- | Preset tier: `sss-1`, `sss-2`, `sss-3` |
+| `--name` | Yes* | -- | Token name |
+| `--symbol` | Yes* | -- | Token symbol |
 | `--uri` | No | `""` | Metadata URI |
 | `--decimals` | No | `6` | Token decimals |
 | `--supply-cap` | No | None | Maximum supply in base units |
+| `--config` | No | -- | Path to TOML config file (conflicts with `--preset`) |
+
+*Not required when using `--config`.
+
+**TOML Config Format:**
+
+```toml
+name = "My Stablecoin"
+symbol = "MUSD"
+uri = "https://example.com/metadata.json"
+decimals = 6
+supply_cap = 1000000000
+enable_transfer_hook = true      # true = SSS-2, false = SSS-1
+enable_permanent_delegate = true
+default_account_frozen = true
+```
 
 ### mint
 
@@ -82,7 +102,7 @@ sss mint \
 
 ### burn
 
-Burn tokens from a token account. Caller must have the minter role.
+Burn tokens from a token account. Caller must have the burner role.
 
 ```bash
 sss burn \
@@ -153,7 +173,7 @@ sss unpause --mint <MINT_ADDRESS>
 
 ### seize
 
-Forcibly transfer tokens from one account to another. Admin-only. Works even when paused.
+Forcibly transfer tokens from one account to another. Caller must have the seizer role. Works even when paused.
 
 ```bash
 sss seize \
@@ -176,7 +196,7 @@ Manage the transfer blacklist (SSS-2 only).
 
 #### blacklist add
 
-Add an address to the blacklist. Admin-only.
+Add an address to the blacklist. Caller must have the blacklister role.
 
 ```bash
 sss blacklist add \
@@ -193,7 +213,7 @@ sss blacklist add \
 
 #### blacklist remove
 
-Remove an address from the blacklist. Admin-only.
+Remove an address from the blacklist. Caller must have the blacklister role.
 
 ```bash
 sss blacklist remove \
@@ -230,7 +250,7 @@ sss roles grant \
 |---|---|---|
 | `--mint` | Yes | Base58 mint address |
 | `--address` | Yes | Base58 wallet to grant role to |
-| `--role` | Yes | Role: `admin`, `minter`, `freezer`, `pauser` |
+| `--role` | Yes | Role: `admin`, `minter`, `freezer`, `pauser`, `burner`, `blacklister`, `seizer` |
 
 #### roles revoke
 

@@ -67,7 +67,7 @@ pnpm install
 # Build Anchor programs
 anchor build
 
-# Run integration tests (92 tests)
+# Run integration tests (97 tests)
 anchor test
 
 # Run SDK unit tests (31 tests)
@@ -132,13 +132,15 @@ sss mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
 **TypeScript SDK (`@sss/sdk`)**
 - Preset-based stablecoin creation (SSS-1, SSS-2, SSS-3)
 - Full token lifecycle operations (mint, burn, freeze, thaw, pause, seize)
-- Role management (admin, minter, freezer, pauser)
+- Role management (admin, minter, freezer, pauser, burner, blacklister, seizer)
+- Per-minter quota enforcement and management
 - Blacklist management for SSS-2
 - Confidential transfer support for SSS-3 (deposit, apply pending)
 - Typed error handling with error mapping
 
 **Rust CLI (`sss`)**
-- 15 subcommands covering all stablecoin operations
+- 18 subcommands covering all stablecoin operations
+- TOML config file support (`--config`) for reproducible deployments
 - Environment variable support for RPC URL and keypair
 - Configurable commitment level
 
@@ -146,6 +148,8 @@ sss mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
 - REST API for all stablecoin operations
 - API key authentication
 - Rate limiting (30 req/min)
+- Pluggable compliance/sanctions screening provider
+- Fiat lifecycle verification flow (request → verify → execute)
 - WebSocket event listener with webhook notifications
 - Health check endpoint
 
@@ -167,7 +171,7 @@ solana-stablecoin-standard/
   backend/                 # Express REST API
   tui/                     # ratatui terminal UI
   frontend/                # Next.js 15 frontend
-  tests/                   # Integration tests (92 tests)
+  tests/                   # Integration tests (97 tests)
   trident-tests/           # Property-based fuzz tests (proptest)
   scripts/                 # Utility scripts
   deployments/             # Deployment artifacts
@@ -200,7 +204,7 @@ solana-stablecoin-standard/
 
 The project includes comprehensive test coverage across multiple layers:
 
-- **92 integration tests** -- Full program interaction tests covering SSS-1, SSS-2, SSS-3 presets, role management, security boundaries, oracle supply caps, and edge cases
+- **97 integration tests** -- Full program interaction tests covering SSS-1, SSS-2, SSS-3 presets, role management, security boundaries, oracle supply caps, transfer authority, and edge cases
 - **31 SDK unit tests** -- PDA derivation, error mapping, type validation
 - **10 property-based fuzz tests** -- Proptest-powered invariant testing (arithmetic overflow, supply cap consistency, role escalation, pause bypass)
 - **Rust unit tests** -- Config logic (supply cap, mint validation)

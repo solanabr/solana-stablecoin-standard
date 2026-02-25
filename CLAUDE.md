@@ -27,7 +27,8 @@ Two Anchor programs composed by SDK into 3 presets:
 - Presets are SDK-level, not program-level
 - Transfer hooks + confidential transfers are INCOMPATIBLE
 - SSS-3 uses auditor key for compliance instead of hooks
-- Role-based access: admin, minter, freezer, pauser (PDA per role per address)
+- Role-based access: admin(0), minter(1), freezer(2), pauser(3), burner(4), blacklister(5), seizer(6) — PDA per role per address
+- Per-minter quotas: `mint_quota: Option<u64>`, `amount_minted: u64` on RoleAccount (ROLE_SPACE=131)
 
 ## PDA Seeds
 - StablecoinConfig: `["sss-config", mint.key()]`

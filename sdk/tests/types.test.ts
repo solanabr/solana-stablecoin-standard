@@ -8,10 +8,13 @@ describe("Type mappings", () => {
       expect(ROLE_MAP.minter).toBe(1);
       expect(ROLE_MAP.freezer).toBe(2);
       expect(ROLE_MAP.pauser).toBe(3);
+      expect(ROLE_MAP.burner).toBe(4);
+      expect(ROLE_MAP.blacklister).toBe(5);
+      expect(ROLE_MAP.seizer).toBe(6);
     });
 
-    it("has exactly four roles", () => {
-      expect(Object.keys(ROLE_MAP)).toHaveLength(4);
+    it("has exactly seven roles", () => {
+      expect(Object.keys(ROLE_MAP)).toHaveLength(7);
     });
   });
 
