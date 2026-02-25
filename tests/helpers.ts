@@ -274,7 +274,7 @@ export async function createSss1Mint(
       decimals: args.decimals,
       supplyCap: args.supplyCap,
     })
-    .accounts({
+    .accountsPartial({
       authority,
       config: configPda,
       mint: mint.publicKey,
@@ -443,7 +443,7 @@ export async function createSss2Mint(
       decimals: args.decimals,
       supplyCap: args.supplyCap,
     })
-    .accounts({
+    .accountsPartial({
       authority,
       config: configPda,
       mint: mint.publicKey,
@@ -456,7 +456,7 @@ export async function createSss2Mint(
   // Transaction 4: Initialize extra account metas for the transfer hook
   await hookProgram.methods
     .initializeExtraAccountMetas()
-    .accounts({
+    .accountsPartial({
       payer: authority,
       extraAccountMetas: extraAccountMetasPda,
       mint: mint.publicKey,
@@ -624,7 +624,7 @@ export async function createSss3Mint(
       decimals: args.decimals,
       supplyCap: args.supplyCap,
     })
-    .accounts({
+    .accountsPartial({
       authority,
       config: configPda,
       mint: mint.publicKey,
@@ -657,7 +657,7 @@ export async function grantRole(
 
   await coreProgram.methods
     .grantRole(role)
-    .accounts({
+    .accountsPartial({
       admin: coreProgram.provider.publicKey!,
       config: configPda,
       adminRole: adminRolePda,

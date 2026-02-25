@@ -120,7 +120,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     // Thaw sender and receiver accounts (they start frozen)
     await coreProgram.methods
       .thawAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -133,7 +133,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
 
     await coreProgram.methods
       .thawAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -147,7 +147,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     // Mint tokens to sender
     await coreProgram.methods
       .mintTokens(new BN(10_000_000))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: mintResult.configPda,
         minterRole: minterRolePda,
@@ -198,7 +198,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     );
     await coreProgram.methods
       .thawAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -212,7 +212,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     // Mint some tokens to the blacklisted account for testing
     await coreProgram.methods
       .mintTokens(new BN(500_000))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: mintResult.configPda,
         minterRole: minterRolePda,
@@ -232,7 +232,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
 
     await hookProgram.methods
       .addToBlacklist("Suspicious activity")
-      .accounts({
+      .accountsPartial({
         authority: provider.wallet.publicKey,
         adminRole: mintResult.adminRolePda,
         mint: mintResult.mint.publicKey,
@@ -328,7 +328,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
 
     await hookProgram.methods
       .removeFromBlacklist()
-      .accounts({
+      .accountsPartial({
         authority: provider.wallet.publicKey,
         adminRole: mintResult.adminRolePda,
         mint: mintResult.mint.publicKey,
@@ -390,7 +390,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     );
     await coreProgram.methods
       .thawAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -404,7 +404,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     try {
       await coreProgram.methods
         .seize(new BN(500_000))
-        .accounts({
+        .accountsPartial({
           admin: provider.wallet.publicKey,
           config: mintResult.configPda,
           adminRole: mintResult.adminRolePda,

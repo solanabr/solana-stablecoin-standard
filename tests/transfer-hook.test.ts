@@ -125,7 +125,7 @@ describe("Transfer Hook", () => {
       try {
         await hookProgram.methods
           .initializeExtraAccountMetas()
-          .accounts({
+          .accountsPartial({
             payer: provider.wallet.publicKey,
             extraAccountMetas: extraAccountMetasPda,
             mint: mintResult.mint.publicKey,
@@ -315,7 +315,7 @@ describe("Transfer Hook", () => {
 
       await hookProgram.methods
         .addToBlacklist("OFAC sanctioned entity")
-        .accounts({
+        .accountsPartial({
           authority: provider.wallet.publicKey,
           adminRole: mintResult.adminRolePda,
           mint: mintResult.mint.publicKey,
@@ -348,7 +348,7 @@ describe("Transfer Hook", () => {
 
       await hookProgram.methods
         .addToBlacklist("Suspicious activity detected")
-        .accounts({
+        .accountsPartial({
           authority: provider.wallet.publicKey,
           adminRole: mintResult.adminRolePda,
           mint: mintResult.mint.publicKey,
@@ -383,7 +383,7 @@ describe("Transfer Hook", () => {
       try {
         await hookProgram.methods
           .addToBlacklist("Unauthorized attempt")
-          .accounts({
+          .accountsPartial({
             authority: nonAdmin.publicKey,
             adminRole: fakeAdminRole,
             mint: mintResult.mint.publicKey,
@@ -413,7 +413,7 @@ describe("Transfer Hook", () => {
       try {
         await hookProgram.methods
           .addToBlacklist(longReason)
-          .accounts({
+          .accountsPartial({
             authority: provider.wallet.publicKey,
             adminRole: mintResult.adminRolePda,
             mint: mintResult.mint.publicKey,
@@ -440,7 +440,7 @@ describe("Transfer Hook", () => {
       try {
         await hookProgram.methods
           .addToBlacklist("Duplicate attempt")
-          .accounts({
+          .accountsPartial({
             authority: provider.wallet.publicKey,
             adminRole: mintResult.adminRolePda,
             mint: mintResult.mint.publicKey,
@@ -600,7 +600,7 @@ describe("Transfer Hook", () => {
       try {
         await hookProgram.methods
           .removeFromBlacklist()
-          .accounts({
+          .accountsPartial({
             authority: nonAdmin.publicKey,
             adminRole: fakeAdminRole,
             mint: mintResult.mint.publicKey,
@@ -624,7 +624,7 @@ describe("Transfer Hook", () => {
 
       await hookProgram.methods
         .removeFromBlacklist()
-        .accounts({
+        .accountsPartial({
           authority: provider.wallet.publicKey,
           adminRole: mintResult.adminRolePda,
           mint: mintResult.mint.publicKey,
@@ -897,7 +897,7 @@ describe("Transfer Hook", () => {
 
       await hookProgram.methods
         .removeFromBlacklist()
-        .accounts({
+        .accountsPartial({
           authority: provider.wallet.publicKey,
           adminRole: mintResult.adminRolePda,
           mint: mintResult.mint.publicKey,
@@ -913,7 +913,7 @@ describe("Transfer Hook", () => {
       // Re-add with different reason
       await hookProgram.methods
         .addToBlacklist("Re-flagged by compliance")
-        .accounts({
+        .accountsPartial({
           authority: provider.wallet.publicKey,
           adminRole: mintResult.adminRolePda,
           mint: mintResult.mint.publicKey,
@@ -942,7 +942,7 @@ describe("Transfer Hook", () => {
 
       await hookProgram.methods
         .addToBlacklist(maxReason)
-        .accounts({
+        .accountsPartial({
           authority: provider.wallet.publicKey,
           adminRole: mintResult.adminRolePda,
           mint: mintResult.mint.publicKey,
@@ -960,7 +960,7 @@ describe("Transfer Hook", () => {
       // Clean up
       await hookProgram.methods
         .removeFromBlacklist()
-        .accounts({
+        .accountsPartial({
           authority: provider.wallet.publicKey,
           adminRole: mintResult.adminRolePda,
           mint: mintResult.mint.publicKey,

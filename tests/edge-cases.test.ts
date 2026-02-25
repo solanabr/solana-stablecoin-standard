@@ -90,7 +90,7 @@ describe("Edge Cases", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(0))
-        .accounts({
+        .accountsPartial({
           minter: minter.publicKey,
           config: mintResult.configPda,
           minterRole: minterRolePda,
@@ -110,7 +110,7 @@ describe("Edge Cases", () => {
     // First mint some tokens so we have something to burn
     await coreProgram.methods
       .mintTokens(new BN(1_000_000))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: mintResult.configPda,
         minterRole: minterRolePda,
@@ -124,7 +124,7 @@ describe("Edge Cases", () => {
     try {
       await coreProgram.methods
         .burnTokens(new BN(0))
-        .accounts({
+        .accountsPartial({
           burner: minter.publicKey,
           config: mintResult.configPda,
           burnerRole: minterRolePda,
@@ -144,7 +144,7 @@ describe("Edge Cases", () => {
     try {
       await coreProgram.methods
         .seize(new BN(0))
-        .accounts({
+        .accountsPartial({
           admin: provider.wallet.publicKey,
           config: mintResult.configPda,
           adminRole: mintResult.adminRolePda,
@@ -178,7 +178,7 @@ describe("Edge Cases", () => {
     );
     await coreProgram.methods
       .grantRole(ROLE_MINTER)
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: cappedMint.configPda,
         adminRole: cappedMint.adminRolePda,
@@ -197,7 +197,7 @@ describe("Edge Cases", () => {
     // Mint exactly at cap
     await coreProgram.methods
       .mintTokens(new BN(1_000_000))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: cappedMint.configPda,
         minterRole: cappedMinterRole,
@@ -233,7 +233,7 @@ describe("Edge Cases", () => {
     );
     await coreProgram.methods
       .grantRole(ROLE_MINTER)
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: cappedMint.configPda,
         adminRole: cappedMint.adminRolePda,
@@ -252,7 +252,7 @@ describe("Edge Cases", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(500_001))
-        .accounts({
+        .accountsPartial({
           minter: minter.publicKey,
           config: cappedMint.configPda,
           minterRole: cappedMinterRole,
@@ -271,7 +271,7 @@ describe("Edge Cases", () => {
   it("rejects double pause", async () => {
     await coreProgram.methods
       .pause()
-      .accounts({
+      .accountsPartial({
         pauser: pauser.publicKey,
         config: mintResult.configPda,
         pauserRole: pauserRolePda,
@@ -282,7 +282,7 @@ describe("Edge Cases", () => {
     try {
       await coreProgram.methods
         .pause()
-        .accounts({
+        .accountsPartial({
           pauser: pauser.publicKey,
           config: mintResult.configPda,
           pauserRole: pauserRolePda,
@@ -299,7 +299,7 @@ describe("Edge Cases", () => {
     // Unpause first
     await coreProgram.methods
       .unpause()
-      .accounts({
+      .accountsPartial({
         pauser: pauser.publicKey,
         config: mintResult.configPda,
         pauserRole: pauserRolePda,
@@ -311,7 +311,7 @@ describe("Edge Cases", () => {
     try {
       await coreProgram.methods
         .unpause()
-        .accounts({
+        .accountsPartial({
           pauser: pauser.publicKey,
           config: mintResult.configPda,
           pauserRole: pauserRolePda,
@@ -333,7 +333,7 @@ describe("Edge Cases", () => {
     const newCap = new BN(currentSupply + 5_000_000);
     await coreProgram.methods
       .updateSupplyCap(newCap)
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: mintResult.configPda,
         adminRole: mintResult.adminRolePda,
@@ -351,7 +351,7 @@ describe("Edge Cases", () => {
     try {
       await coreProgram.methods
         .updateSupplyCap(new BN(0))
-        .accounts({
+        .accountsPartial({
           admin: provider.wallet.publicKey,
           config: mintResult.configPda,
           adminRole: mintResult.adminRolePda,
@@ -366,7 +366,7 @@ describe("Edge Cases", () => {
   it("removes supply cap (set to None)", async () => {
     await coreProgram.methods
       .updateSupplyCap(null)
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: mintResult.configPda,
         adminRole: mintResult.adminRolePda,

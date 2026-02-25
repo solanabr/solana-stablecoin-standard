@@ -127,7 +127,7 @@ describe("Role Management", () => {
     try {
       await coreProgram.methods
         .grantRole(ROLE_MINTER)
-        .accounts({
+        .accountsPartial({
           admin: nonAdmin.publicKey,
           config: mintResult.configPda,
           adminRole: fakeAdminRole,
@@ -157,7 +157,7 @@ describe("Role Management", () => {
     try {
       await coreProgram.methods
         .revokeRole()
-        .accounts({
+        .accountsPartial({
           admin: provider.wallet.publicKey,
           config: freshMint.configPda,
           adminRole: freshMint.adminRolePda,
@@ -182,7 +182,7 @@ describe("Role Management", () => {
     // Original admin revokes admin2's admin role
     await coreProgram.methods
       .revokeRole()
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: mintResult.configPda,
         adminRole: mintResult.adminRolePda,
@@ -206,7 +206,7 @@ describe("Role Management", () => {
     // Minting should work
     await coreProgram.methods
       .mintTokens(new BN(100))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: mintResult.configPda,
         minterRole: minterRolePda,
@@ -228,7 +228,7 @@ describe("Role Management", () => {
     try {
       await coreProgram.methods
         .freezeAccount()
-        .accounts({
+        .accountsPartial({
           freezer: minter.publicKey,
           config: mintResult.configPda,
           freezerRole: minterAsFreezerRole,
@@ -254,7 +254,7 @@ describe("Role Management", () => {
     try {
       await coreProgram.methods
         .pause()
-        .accounts({
+        .accountsPartial({
           pauser: minter.publicKey,
           config: mintResult.configPda,
           pauserRole: minterAsPauserRole,
@@ -278,7 +278,7 @@ describe("Role Management", () => {
     // Freeze should work
     await coreProgram.methods
       .freezeAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -292,7 +292,7 @@ describe("Role Management", () => {
     // Thaw should work
     await coreProgram.methods
       .thawAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -314,7 +314,7 @@ describe("Role Management", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(100))
-        .accounts({
+        .accountsPartial({
           minter: freezer.publicKey,
           config: mintResult.configPda,
           minterRole: freezerAsMinterRole,
@@ -341,7 +341,7 @@ describe("Role Management", () => {
     // Pause should work
     await coreProgram.methods
       .pause()
-      .accounts({
+      .accountsPartial({
         pauser: pauser.publicKey,
         config: mintResult.configPda,
         pauserRole: pauserRolePda,
@@ -352,7 +352,7 @@ describe("Role Management", () => {
     // Unpause should work
     await coreProgram.methods
       .unpause()
-      .accounts({
+      .accountsPartial({
         pauser: pauser.publicKey,
         config: mintResult.configPda,
         pauserRole: pauserRolePda,
@@ -371,7 +371,7 @@ describe("Role Management", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(100))
-        .accounts({
+        .accountsPartial({
           minter: pauser.publicKey,
           config: mintResult.configPda,
           minterRole: pauserAsMinterRole,

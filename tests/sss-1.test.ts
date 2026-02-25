@@ -104,7 +104,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
     await coreProgram.methods
       .mintTokens(mintAmount)
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: mintResult.configPda,
         minterRole: minterRolePda,
@@ -144,7 +144,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     );
     await coreProgram.methods
       .grantRole(ROLE_MINTER)
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: cappedMint.configPda,
         adminRole: cappedMint.adminRolePda,
@@ -165,7 +165,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(500_001))
-        .accounts({
+        .accountsPartial({
           minter: minter.publicKey,
           config: cappedMint.configPda,
           minterRole: cappedMinterRole,
@@ -183,7 +183,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     // Mint exactly at cap should succeed
     await coreProgram.methods
       .mintTokens(new BN(500_000))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: cappedMint.configPda,
         minterRole: cappedMinterRole,
@@ -209,7 +209,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
     await coreProgram.methods
       .burnTokens(burnAmount)
-      .accounts({
+      .accountsPartial({
         burner: minter.publicKey,
         config: mintResult.configPda,
         burnerRole: minterRolePda,
@@ -246,7 +246,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
     await coreProgram.methods
       .freezeAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -261,7 +261,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(100))
-        .accounts({
+        .accountsPartial({
           minter: minter.publicKey,
           config: mintResult.configPda,
           minterRole: minterRolePda,
@@ -281,7 +281,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
   it("thaws frozen account", async () => {
     await coreProgram.methods
       .thawAccount()
-      .accounts({
+      .accountsPartial({
         freezer: freezer.publicKey,
         config: mintResult.configPda,
         freezerRole: freezerRolePda,
@@ -295,7 +295,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     // After thawing, minting should work again
     await coreProgram.methods
       .mintTokens(new BN(100))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: mintResult.configPda,
         minterRole: minterRolePda,
@@ -323,7 +323,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
     await coreProgram.methods
       .pause()
-      .accounts({
+      .accountsPartial({
         pauser: pauser.publicKey,
         config: mintResult.configPda,
         pauserRole: pauserRolePda,
@@ -339,7 +339,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(100))
-        .accounts({
+        .accountsPartial({
           minter: minter.publicKey,
           config: mintResult.configPda,
           minterRole: minterRolePda,
@@ -358,7 +358,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
   it("unpauses operations", async () => {
     await coreProgram.methods
       .unpause()
-      .accounts({
+      .accountsPartial({
         pauser: pauser.publicKey,
         config: mintResult.configPda,
         pauserRole: pauserRolePda,
@@ -372,7 +372,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     // Mint should work again
     await coreProgram.methods
       .mintTokens(new BN(100))
-      .accounts({
+      .accountsPartial({
         minter: minter.publicKey,
         config: mintResult.configPda,
         minterRole: minterRolePda,
@@ -399,7 +399,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(100))
-        .accounts({
+        .accountsPartial({
           minter: unauthorized.publicKey,
           config: mintResult.configPda,
           minterRole: fakeRolePda,
@@ -431,7 +431,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     const seizeAmount = new BN(100_000);
     await coreProgram.methods
       .seize(seizeAmount)
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: mintResult.configPda,
         adminRole: mintResult.adminRolePda,
@@ -463,7 +463,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
   it("revokes minter role", async () => {
     await coreProgram.methods
       .revokeRole()
-      .accounts({
+      .accountsPartial({
         admin: provider.wallet.publicKey,
         config: mintResult.configPda,
         adminRole: mintResult.adminRolePda,
@@ -479,7 +479,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     try {
       await coreProgram.methods
         .mintTokens(new BN(100))
-        .accounts({
+        .accountsPartial({
           minter: minter.publicKey,
           config: mintResult.configPda,
           minterRole: minterRolePda,
