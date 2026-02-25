@@ -7,36 +7,15 @@ import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Navbar } from "@/components/navbar";
 import { MintSelector } from "@/components/mint-selector";
+import { TxFeedback } from "@/components/tx-feedback";
 import { useCoreProgram } from "@/hooks/use-program";
 import { useTransaction } from "@/hooks/use-transaction";
-import { SSS_CORE_PROGRAM_ID } from "@/lib/constants";
+import { deriveConfigPda, deriveRolePda } from "@/lib/pda";
+import { isValidPubkey } from "@/lib/validation";
 
 const ROLE_MINTER = 1;
 const ROLE_FREEZER = 2;
 const ROLE_PAUSER = 3;
-
-function deriveConfigPda(mint: PublicKey): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("sss-config"), mint.toBuffer()],
-    SSS_CORE_PROGRAM_ID,
-  )[0];
-}
-
-function deriveRolePda(
-  config: PublicKey,
-  address: PublicKey,
-  role: number,
-): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("sss-role"),
-      config.toBuffer(),
-      address.toBuffer(),
-      Buffer.from([role]),
-    ],
-    SSS_CORE_PROGRAM_ID,
-  )[0];
-}
 
 function SectionCard({
   title,
@@ -113,59 +92,6 @@ function ActionButton({
   );
 }
 
-function TxFeedback({
-  loading,
-  error,
-  signature,
-}: {
-  loading: boolean;
-  error: string | null;
-  signature: string | null;
-}) {
-  if (loading) {
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-lg bg-muted p-3">
-        <svg className="h-4 w-4 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-        <span className="text-sm text-muted-foreground">Sending transaction...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mt-3 rounded-lg bg-destructive/10 p-3">
-        <p className="text-sm font-medium text-destructive">Transaction failed</p>
-        <p className="mt-0.5 text-xs text-destructive/80 break-all">{error}</p>
-      </div>
-    );
-  }
-
-  if (signature) {
-    return (
-      <div className="mt-3 rounded-lg bg-success/10 p-3">
-        <p className="text-sm font-medium text-success">Transaction confirmed</p>
-        <p className="mt-0.5 text-xs text-success/80 font-mono">
-          {signature.slice(0, 20)}...{signature.slice(-8)}
-        </p>
-      </div>
-    );
-  }
-
-  return null;
-}
-
-function isValidPubkey(value: string): boolean {
-  try {
-    new PublicKey(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export default function OperationsPage() {
   const { publicKey } = useWallet();
   const program = useCoreProgram();
@@ -184,17 +110,16 @@ export default function OperationsPage() {
   const handleMint = useCallback(async () => {
     if (!canOperate) return;
     if (!mintTo || !isValidPubkey(mintTo)) return;
-    const amount = Number(mintAmount);
-    if (!amount || amount <= 0) return;
+    if (!mintAmount || mintAmount === "0") return;
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const rolePda = deriveRolePda(configPda, publicKey!, ROLE_MINTER);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_MINTER);
     const toPubkey = new PublicKey(mintTo);
 
     const tx = await program!.methods
-      .mintTokens(new BN(amount))
+      .mintTokens(new BN(mintAmount))
       .accountsPartial({
         minter: publicKey!,
         config: configPda,
@@ -211,17 +136,16 @@ export default function OperationsPage() {
   const handleBurn = useCallback(async () => {
     if (!canOperate) return;
     if (!burnFrom || !isValidPubkey(burnFrom)) return;
-    const amount = Number(burnAmount);
-    if (!amount || amount <= 0) return;
+    if (!burnAmount || burnAmount === "0") return;
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const rolePda = deriveRolePda(configPda, publicKey!, ROLE_MINTER);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_MINTER);
     const fromPubkey = new PublicKey(burnFrom);
 
     const tx = await program!.methods
-      .burnTokens(new BN(amount))
+      .burnTokens(new BN(burnAmount))
       .accountsPartial({
         burner: publicKey!,
         config: configPda,
@@ -241,8 +165,8 @@ export default function OperationsPage() {
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const rolePda = deriveRolePda(configPda, publicKey!, ROLE_FREEZER);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_FREEZER);
     const accountPubkey = new PublicKey(freezeAccount);
 
     const tx = await program!.methods
@@ -266,8 +190,8 @@ export default function OperationsPage() {
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const rolePda = deriveRolePda(configPda, publicKey!, ROLE_FREEZER);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_FREEZER);
     const accountPubkey = new PublicKey(thawAccount);
 
     const tx = await program!.methods
@@ -290,8 +214,8 @@ export default function OperationsPage() {
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const rolePda = deriveRolePda(configPda, publicKey!, ROLE_PAUSER);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_PAUSER);
 
     const tx = await program!.methods
       .pause()
@@ -310,8 +234,8 @@ export default function OperationsPage() {
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const rolePda = deriveRolePda(configPda, publicKey!, ROLE_PAUSER);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_PAUSER);
 
     const tx = await program!.methods
       .unpause()

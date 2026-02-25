@@ -5,9 +5,11 @@ import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Navbar } from "@/components/navbar";
 import { MintSelector } from "@/components/mint-selector";
+import { TxFeedback } from "@/components/tx-feedback";
 import { useCoreProgram } from "@/hooks/use-program";
 import { useTransaction } from "@/hooks/use-transaction";
-import { SSS_CORE_PROGRAM_ID } from "@/lib/constants";
+import { deriveConfigPda, deriveRolePda } from "@/lib/pda";
+import { isValidPubkey } from "@/lib/validation";
 
 type Role = "Admin" | "Minter" | "Freezer" | "Pauser";
 
@@ -24,82 +26,6 @@ const ROLE_COLORS: Record<Role, string> = {
   Freezer: "bg-warning/10 text-warning",
   Pauser: "bg-destructive/10 text-destructive",
 };
-
-function deriveConfigPda(mint: PublicKey): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("sss-config"), mint.toBuffer()],
-    SSS_CORE_PROGRAM_ID,
-  )[0];
-}
-
-function deriveRolePda(
-  config: PublicKey,
-  address: PublicKey,
-  role: number,
-): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("sss-role"),
-      config.toBuffer(),
-      address.toBuffer(),
-      Buffer.from([role]),
-    ],
-    SSS_CORE_PROGRAM_ID,
-  )[0];
-}
-
-function isValidPubkey(value: string): boolean {
-  try {
-    new PublicKey(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function TxFeedback({
-  loading,
-  error,
-  signature,
-}: {
-  loading: boolean;
-  error: string | null;
-  signature: string | null;
-}) {
-  if (loading) {
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-lg bg-muted p-3">
-        <svg className="h-4 w-4 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-        <span className="text-sm text-muted-foreground">Sending transaction...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mt-3 rounded-lg bg-destructive/10 p-3">
-        <p className="text-sm font-medium text-destructive">Transaction failed</p>
-        <p className="mt-0.5 text-xs text-destructive/80 break-all">{error}</p>
-      </div>
-    );
-  }
-
-  if (signature) {
-    return (
-      <div className="mt-3 rounded-lg bg-success/10 p-3">
-        <p className="text-sm font-medium text-success">Transaction confirmed</p>
-        <p className="mt-0.5 text-xs text-success/80 font-mono">
-          {signature.slice(0, 20)}...{signature.slice(-8)}
-        </p>
-      </div>
-    );
-  }
-
-  return null;
-}
 
 export default function RolesPage() {
   const { publicKey } = useWallet();
@@ -120,11 +46,11 @@ export default function RolesPage() {
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const adminRolePda = deriveRolePda(configPda, publicKey!, ROLE_MAP.Admin);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [adminRolePda] = deriveRolePda(configPda, publicKey!, ROLE_MAP.Admin);
     const granteePubkey = new PublicKey(grantAddress);
     const roleValue = ROLE_MAP[grantRole];
-    const roleAccountPda = deriveRolePda(configPda, granteePubkey, roleValue);
+    const [roleAccountPda] = deriveRolePda(configPda, granteePubkey, roleValue);
 
     const tx = await program!.methods
       .grantRole(roleValue)
@@ -150,11 +76,11 @@ export default function RolesPage() {
     reset();
 
     const mintPubkey = new PublicKey(activeMint!);
-    const configPda = deriveConfigPda(mintPubkey);
-    const adminRolePda = deriveRolePda(configPda, publicKey!, ROLE_MAP.Admin);
+    const [configPda] = deriveConfigPda(mintPubkey);
+    const [adminRolePda] = deriveRolePda(configPda, publicKey!, ROLE_MAP.Admin);
     const revokePubkey = new PublicKey(revokeAddress);
     const roleValue = ROLE_MAP[revokeRole];
-    const roleAccountPda = deriveRolePda(configPda, revokePubkey, roleValue);
+    const [roleAccountPda] = deriveRolePda(configPda, revokePubkey, roleValue);
 
     const tx = await program!.methods
       .revokeRole()

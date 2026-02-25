@@ -146,7 +146,7 @@ fn build_mint_instructions(
   // - PermanentDelegate (config PDA)
   // SSS-2 additionally uses TransferHook
 
-  let mint_len = get_mint_len(preset);
+  let mint_len = get_mint_len(preset)?;
   let lamports = client.get_minimum_balance_for_rent_exemption(mint_len)?;
 
   // Create the mint account
@@ -203,7 +203,7 @@ fn build_mint_instructions(
 }
 
 /// Calculate mint account length based on preset extensions.
-fn get_mint_len(preset: u8) -> usize {
+fn get_mint_len(preset: u8) -> Result<usize> {
   use spl_token_2022::extension::ExtensionType;
 
   let mut extensions = vec![
@@ -215,6 +215,6 @@ fn get_mint_len(preset: u8) -> usize {
     extensions.push(ExtensionType::TransferHook);
   }
 
-  ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
-    .expect("Failed to calculate mint length")
+  Ok(ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
+    .map_err(|e| anyhow::anyhow!("Failed to calculate mint length: {}", e))?)
 }

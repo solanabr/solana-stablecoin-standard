@@ -5,7 +5,7 @@ import { PublicKey } from "@solana/web3.js";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { Navbar } from "@/components/navbar";
 import { MintSelector } from "@/components/mint-selector";
-import { SSS_CORE_PROGRAM_ID } from "@/lib/constants";
+import { deriveConfigPda } from "@/lib/pda";
 
 interface HistoryEntry {
   signature: string;
@@ -13,13 +13,6 @@ interface HistoryEntry {
   slot: number;
   memo: string | null;
   success: boolean;
-}
-
-function deriveConfigPda(mint: PublicKey): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("sss-config"), mint.toBuffer()],
-    SSS_CORE_PROGRAM_ID,
-  )[0];
 }
 
 function formatTime(ts: number): string {
@@ -64,7 +57,7 @@ export default function HistoryPage() {
 
       try {
         const mintPubkey = new PublicKey(activeMint!);
-        const configPda = deriveConfigPda(mintPubkey);
+        const [configPda] = deriveConfigPda(mintPubkey);
 
         const sigs = await connection.getSignaturesForAddress(configPda, {
           limit: 50,

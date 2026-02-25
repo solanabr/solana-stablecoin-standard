@@ -5,26 +5,8 @@ import { PublicKey } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Navbar } from "@/components/navbar";
 import { MintSelector } from "@/components/mint-selector";
-import { SSS_HOOK_PROGRAM_ID } from "@/lib/constants";
-
-function deriveBlacklistPda(
-  mint: PublicKey,
-  address: PublicKey,
-): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("blacklist"), mint.toBuffer(), address.toBuffer()],
-    SSS_HOOK_PROGRAM_ID,
-  )[0];
-}
-
-function isValidPubkey(value: string): boolean {
-  try {
-    new PublicKey(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { deriveBlacklistPda } from "@/lib/pda";
+import { isValidPubkey } from "@/lib/validation";
 
 export default function BlacklistPage() {
   const { connection } = useConnection();
@@ -55,7 +37,7 @@ export default function BlacklistPage() {
     try {
       const mintPubkey = new PublicKey(activeMint);
       const addressPubkey = new PublicKey(checkAddress);
-      const blacklistPda = deriveBlacklistPda(mintPubkey, addressPubkey);
+      const [blacklistPda] = deriveBlacklistPda(mintPubkey, addressPubkey);
 
       const accountInfo = await connection.getAccountInfo(blacklistPda);
       setCheckResult(accountInfo !== null ? "blacklisted" : "clean");

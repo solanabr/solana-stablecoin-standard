@@ -5,9 +5,7 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { getMint, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { useCoreProgram } from "./use-program";
-import { SSS_CORE_PROGRAM_ID } from "@/lib/constants";
-
-const SSS_CONFIG_SEED = "sss-config";
+import { deriveConfigPda } from "@/lib/pda";
 
 const PRESET_NAMES: Record<number, string> = {
   1: "SSS-1 (Minimal)",
@@ -27,13 +25,6 @@ export interface StablecoinConfigData {
   name: string;
   symbol: string;
   currentSupply: number;
-}
-
-function deriveConfigPda(mint: PublicKey): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from(SSS_CONFIG_SEED), mint.toBuffer()],
-    SSS_CORE_PROGRAM_ID,
-  );
 }
 
 export function useStablecoinConfig(mintAddress: string | null) {
