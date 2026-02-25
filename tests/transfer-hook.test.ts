@@ -135,8 +135,8 @@ describe("Transfer Hook", () => {
         expect.fail("Should reject duplicate initialization");
       } catch (err: any) {
         // PDA already exists — SystemProgram.createAccount fails
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("Should reject");
+        // Anchor wraps this as a custom program error (0x0 = already in use)
+        expect(err.toString()).to.include("already in use");
       }
     });
   });
@@ -395,8 +395,8 @@ describe("Transfer Hook", () => {
           .rpc();
         expect.fail("Non-admin should not be able to add to blacklist");
       } catch (err: any) {
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("should not be able to add");
+        // verify_admin_for_mint rejects: account not owned by sss-core
+        expect(err.error.errorCode.code).to.equal("Unauthorized");
       }
     });
 
@@ -424,8 +424,7 @@ describe("Transfer Hook", () => {
           .rpc();
         expect.fail("Should reject reason exceeding 128 characters");
       } catch (err: any) {
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("Should reject reason");
+        expect(err.error.errorCode.code).to.equal("ReasonTooLong");
       }
     });
 
@@ -452,8 +451,7 @@ describe("Transfer Hook", () => {
         expect.fail("Should reject duplicate blacklist entry");
       } catch (err: any) {
         // Anchor #[account(init)] fails because PDA already exists
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("Should reject duplicate");
+        expect(err.toString()).to.include("already in use");
       }
     });
   });
@@ -483,9 +481,8 @@ describe("Transfer Hook", () => {
         await provider.sendAndConfirm(tx, [charlie]);
         expect.fail("Should block transfer from blacklisted sender");
       } catch (err: any) {
-        // Transfer hook rejects with SenderBlacklisted (error code 6000)
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("Should block transfer from");
+        // Transfer hook rejects with SenderBlacklisted (custom error 0x1770 / 6000)
+        expect(err.toString()).to.include("0x1770");
       }
     });
 
@@ -509,9 +506,8 @@ describe("Transfer Hook", () => {
         await provider.sendAndConfirm(tx, [alice]);
         expect.fail("Should block transfer to blacklisted receiver");
       } catch (err: any) {
-        // Transfer hook rejects with ReceiverBlacklisted (error code 6001)
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("Should block transfer to");
+        // Transfer hook rejects with ReceiverBlacklisted (custom error 0x1771 / 6001)
+        expect(err.toString()).to.include("0x1771");
       }
     });
 
@@ -535,8 +531,8 @@ describe("Transfer Hook", () => {
         await provider.sendAndConfirm(tx, [dave]);
         expect.fail("Should block transfer from blacklisted dave");
       } catch (err: any) {
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("Should block transfer from");
+        // Transfer hook rejects with SenderBlacklisted (custom error 0x1770 / 6000)
+        expect(err.toString()).to.include("0x1770");
       }
     });
 
@@ -610,8 +606,8 @@ describe("Transfer Hook", () => {
           .rpc();
         expect.fail("Non-admin should not be able to remove from blacklist");
       } catch (err: any) {
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("should not be able to remove");
+        // verify_admin_for_mint rejects: account not owned by sss-core
+        expect(err.error.errorCode.code).to.equal("Unauthorized");
       }
     });
 
@@ -751,8 +747,8 @@ describe("Transfer Hook", () => {
         await provider.sendAndConfirm(tx, [dave]);
         expect.fail("Dave should still be blacklisted");
       } catch (err: any) {
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("should still be blacklisted");
+        // Transfer hook rejects with SenderBlacklisted (custom error 0x1770 / 6000)
+        expect(err.toString()).to.include("0x1770");
       }
     });
   });
@@ -836,8 +832,7 @@ describe("Transfer Hook", () => {
         expect.fail("Fallback should reject non-Execute discriminator");
       } catch (err: any) {
         // The hook's fallback match arm returns ProgramError::InvalidInstructionData
-        expect(err).to.exist;
-        expect(err.toString()).to.not.include("should reject non-Execute");
+        expect(err.toString()).to.include("invalid instruction data");
       }
     });
 

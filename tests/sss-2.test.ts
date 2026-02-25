@@ -282,8 +282,8 @@ describe("SSS-2: Compliant Stablecoin", () => {
       await provider.sendAndConfirm(tx, [blacklisted]);
       expect.fail("Should have blocked transfer from blacklisted sender");
     } catch (err: any) {
-      // The transfer hook should reject with SenderBlacklisted
-      expect(err).to.exist;
+      // The transfer hook rejects with SenderBlacklisted (custom error 0x1770 / 6000)
+      expect(err.toString()).to.include("0x1770");
     }
   });
 
@@ -315,7 +315,8 @@ describe("SSS-2: Compliant Stablecoin", () => {
       await provider.sendAndConfirm(tx, [sender]);
       expect.fail("Should have blocked transfer to blacklisted receiver");
     } catch (err: any) {
-      expect(err).to.exist;
+      // The transfer hook rejects with ReceiverBlacklisted (custom error 0x1771 / 6001)
+      expect(err.toString()).to.include("0x1771");
     }
   });
 
@@ -418,9 +419,9 @@ describe("SSS-2: Compliant Stablecoin", () => {
         "Seize on SSS-2 should fail: transfer hook accounts not forwarded",
       );
     } catch (err: any) {
-      // Expected: "An account required by the instruction is missing"
-      // because the seize CPI doesn't pass transfer hook extra accounts.
-      expect(err).to.exist;
+      // Seize CPI uses TransferChecked without forwarding transfer hook
+      // extra accounts — Token-2022 rejects with a missing account error.
+      expect(err.toString()).to.include("missing");
     }
   });
 });

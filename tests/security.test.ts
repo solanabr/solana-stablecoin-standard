@@ -112,8 +112,7 @@ describe("Security", () => {
       expect.fail("Attacker without minter role should not be able to mint");
     } catch (err: any) {
       // PDA does not exist — Anchor rejects with AccountNotInitialized
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to mint");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -144,8 +143,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without minter role should not be able to burn");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to burn");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -176,8 +174,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without freezer role should not be able to freeze");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to freeze");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -208,8 +205,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without freezer role should not be able to thaw");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to thaw");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -237,8 +233,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without pauser role should not be able to pause");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to pause");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -290,8 +285,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without pauser role should not be able to unpause");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to unpause");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
 
     // Clean up: unpause so subsequent tests can run
@@ -341,8 +335,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without admin role should not be able to grant roles");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to grant");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -371,8 +364,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without admin role should not be able to revoke roles");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to revoke");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -411,8 +403,7 @@ describe("Security", () => {
         .rpc();
       expect.fail("Attacker without admin role should not be able to seize tokens");
     } catch (err: any) {
-      expect(err).to.exist;
-      expect(err.toString()).to.not.include("should not be able to seize");
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 });

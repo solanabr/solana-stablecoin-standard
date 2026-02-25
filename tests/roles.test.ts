@@ -139,8 +139,8 @@ describe("Role Management", () => {
         .rpc();
       expect.fail("Non-admin should not be able to grant roles");
     } catch (err: any) {
-      // AccountNotInitialized or similar - the admin role PDA doesn't exist
-      expect(err).to.exist;
+      // Admin role PDA doesn't exist for the non-admin
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -240,7 +240,8 @@ describe("Role Management", () => {
         .rpc();
       expect.fail("Minter should not be able to freeze");
     } catch (err: any) {
-      expect(err).to.exist;
+      // Freezer role PDA doesn't exist for the minter
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
 
     // Pausing with minter role should fail
@@ -263,7 +264,8 @@ describe("Role Management", () => {
         .rpc();
       expect.fail("Minter should not be able to pause");
     } catch (err: any) {
-      expect(err).to.exist;
+      // Pauser role PDA doesn't exist for the minter
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -326,7 +328,8 @@ describe("Role Management", () => {
         .rpc();
       expect.fail("Freezer should not be able to mint");
     } catch (err: any) {
-      expect(err).to.exist;
+      // Minter role PDA doesn't exist for the freezer
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -383,7 +386,8 @@ describe("Role Management", () => {
         .rpc();
       expect.fail("Pauser should not be able to mint");
     } catch (err: any) {
-      expect(err).to.exist;
+      // Minter role PDA doesn't exist for the pauser
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 });

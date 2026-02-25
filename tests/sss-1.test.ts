@@ -273,8 +273,8 @@ describe("SSS-1: Minimal Stablecoin", () => {
         .rpc();
       expect.fail("Should have failed because account is frozen");
     } catch (err: any) {
-      // Token program error for frozen account
-      expect(err).to.exist;
+      // Token-2022 rejects operations on frozen accounts
+      expect(err.toString()).to.include("frozen");
     }
   });
 
@@ -411,8 +411,8 @@ describe("SSS-1: Minimal Stablecoin", () => {
         .rpc();
       expect.fail("Should have failed for unauthorized minter");
     } catch (err: any) {
-      // Account does not exist or is not owned by the program
-      expect(err).to.exist;
+      // Minter role PDA does not exist for the unauthorized user
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 
@@ -491,7 +491,8 @@ describe("SSS-1: Minimal Stablecoin", () => {
         .rpc();
       expect.fail("Should have failed after minter role revoked");
     } catch (err: any) {
-      expect(err).to.exist;
+      // Minter role PDA was closed by revocation
+      expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
   });
 });
