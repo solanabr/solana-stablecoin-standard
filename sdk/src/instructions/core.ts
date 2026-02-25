@@ -201,8 +201,9 @@ export function buildPauseIx(
 
   return program.methods
     .pause()
-    .accounts({
+    .accountsPartial({
       pauser,
+      config: configPda,
       pauserRole: pauserRolePda,
     })
     .instruction();
@@ -228,8 +229,9 @@ export function buildUnpauseIx(
 
   return program.methods
     .unpause()
-    .accounts({
+    .accountsPartial({
       pauser,
+      config: configPda,
       pauserRole: pauserRolePda,
     })
     .instruction();
@@ -299,8 +301,9 @@ export function buildGrantRoleIx(
 
   return program.methods
     .grantRole(ROLE_MAP[role])
-    .accounts({
+    .accountsPartial({
       admin,
+      config: configPda,
       adminRole: adminRolePda,
       grantee,
       roleAccount: roleAccountPda,
@@ -330,8 +333,9 @@ export function buildRevokeRoleIx(
 
   return program.methods
     .revokeRole()
-    .accounts({
+    .accountsPartial({
       admin,
+      config: configPda,
       adminRole: adminRolePda,
       roleAccount: roleAccountPda,
     })
@@ -360,8 +364,9 @@ export function buildUpdateSupplyCapIx(
 
   return program.methods
     .updateSupplyCap(newSupplyCap)
-    .accounts({
+    .accountsPartial({
       admin,
+      config: configPda,
       adminRole: adminRolePda,
     })
     .instruction();

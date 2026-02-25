@@ -1,0 +1,37 @@
+{
+  "payer": "AiYU56UqYNEG6EhBF7cRRQkhN8WBNNr3kMAgsHsEK4AG",
+  "cluster": "devnet",
+  "timestamp": "2026-02-25T02:48:26.318Z",
+  "programs": {
+    "sss_core": "Corep3pXJzUGaqpw2xzWQi4q63cn1STABiCDMJhMECB",
+    "sss_transfer_hook": "hookXMsC9txN6T8hyS9GCyubBL4nvp9XPWg5wW3z3pH"
+  },
+  "presets": {
+    "sss-1": {
+      "mint": "vMMjqMGG44mt37HF32xKKgToKvkJLThhv8VTqCABSTT",
+      "config": "8e7E9raHUwxci9rPsZaS8XyTwX6QzRVp8HZ1dWMHADXq",
+      "transactions": {
+        "sig1": "2kbTeQ9gqPuQt6ZU6sWSzJfreMWsevmSherBk5dE1TeVCLiV8MLhbYSHH75gjsFC6BGAULRkFuJyvkjkViM3aF1D",
+        "grantSig": "fxJ6oYSKzV5SdvzJtSLqRmknFLNqxH8MiseF2uCoRpaCzvmPV5raffmJnekRoJvFa5fjghYtHcfitMnnGG9rRuL",
+        "mintSig": "2p5D3151XUNKPLrVXCeSGtXGcFnyXeXsYVhsP3QP59HLA7mvW7bcxU5D6FcNjq8w2FSjpwhYcdsFUT4WJaa6LF7C",
+        "burnSig": "58SEW9UyJiqVKeSTyBJ2fBiD6RTiY7YCJd2t8hp2ytgjv2oh3qTJavWEYFn2vxcuJRUjpJzZ6rYhsucJtpEEijsw",
+        "freezeSig": "2rTY5frV7Yxb2ebDXV1NUYWXnoXxV9CWTDsTBximFpk4yb7cEmDhKABmT6rneT826fLp2hjBCqyx4Ret5nGpJigt",
+        "thawSig": "3yPH1Gx8FREgGLJPYwxKYZjMTKA9Lb8jw59AA3fsmUxk5aEqQi7TAsHQX1Lw27XSSkVhgsuZ1t8sEcnfFxhprQws",
+        "pauseSig": "BFbSH5Ry8o5tKbNTxwTnaGDVSr1XDmYbhTGqcWFhJBdxiaaweoouVBrXvYT1MC8LCacTgnYZnEdY214UNE5oB6j",
+        "unpauseSig": "3M1nqnecTbCnigCq9hrbZtjtE5hSefDJRrdG6x5pZbQ7TkW9mvxcpCdSieTCQ7zbBNaYmWGTZ818NnQRvtxDXeSV"
+      },
+      "finalSupply": "400000000"
+    },
+    "sss-3": {
+      "mint": "G7SGQ9j5WRLFr4KwuKp6ijTiEmHr2ESf2WHxxzQ648L9",
+      "config": "4QDNvJ2GcrGcPPjcDGeSzfkf4Zfr2WoqmtK13orgh8pp",
+      "transactions": {
+        "sig3": "4A5agFJMXMFyMoLC1kXsGWkvyzJR5JbQrvt3WeZKFCBQ9RWoTdo2Th2WnfEgfVCbHqGFMCkY1Xng6nRja5HRgsXc",
+        "mintSig3": "27358WneS58E8MnwmpCioWokRbRcyNLSwepiVduhEPaDgDjptm38TfBPw2J5oZRX55Zhv9LGkrkUhtantSQPG5Ru",
+        "burnSig3": "2E9p83KjQaaaPqamGLg8fgYVbMY52KwsUYSJGJLuFbXMCMRz1ccGA45mEmJV6tuSgCMXR6rJqebxkyPU9KzubkD"
+      },
+      "finalSupply": "950000000",
+      "note": "ConfidentialTransferMint extension enabled"
+    }
+  }
+}
