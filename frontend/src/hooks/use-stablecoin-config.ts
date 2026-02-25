@@ -5,11 +5,9 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { getMint, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { useCoreProgram } from "./use-program";
+import { SSS_CORE_PROGRAM_ID } from "@/lib/constants";
 
 const SSS_CONFIG_SEED = "sss-config";
-const SSS_CORE_PROGRAM_ID = new PublicKey(
-  "Corep3pXJzUGaqpw2xzWQi4q63cn1STABiCDMJhMECB",
-);
 
 const PRESET_NAMES: Record<number, string> = {
   1: "SSS-1 (Minimal)",
@@ -48,6 +46,15 @@ export function useStablecoinConfig(mintAddress: string | null) {
   const fetchConfig = useCallback(async () => {
     if (!mintAddress || !program) {
       setConfig(null);
+      return;
+    }
+
+    // Validate mint address format before RPC call
+    try {
+      new PublicKey(mintAddress);
+    } catch {
+      setError("Please enter a valid Solana address");
+      setLoading(false);
       return;
     }
 

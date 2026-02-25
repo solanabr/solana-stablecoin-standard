@@ -3,24 +3,9 @@ import { z } from "zod";
 import { PublicKey } from "@solana/web3.js";
 import { logger } from "../services/logger";
 import { getSolanaService } from "../services/solana";
+import { publicKeySchema } from "../utils/validation";
 
 const router = Router();
-
-// ---------------------------------------------------------------------------
-// Validation schemas
-// ---------------------------------------------------------------------------
-
-const publicKeySchema = z.string().refine(
-  (val) => {
-    try {
-      new PublicKey(val);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: "Invalid Solana public key" },
-);
 
 const blacklistAddSchema = z.object({
   mint: publicKeySchema,
