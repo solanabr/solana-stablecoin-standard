@@ -19,21 +19,30 @@ pub async fn execute(ctx: &CliContext, mint_str: &str) -> Result<()> {
   }
 
   // Parse fields manually from account data
-  let authority = solana_sdk::pubkey::Pubkey::try_from(&data[8..40]).unwrap();
-  let mint_key = solana_sdk::pubkey::Pubkey::try_from(&data[40..72]).unwrap();
+  let authority = solana_sdk::pubkey::Pubkey::try_from(&data[8..40])
+    .map_err(|_| anyhow::anyhow!("Invalid authority pubkey in config data"))?;
+  let mint_key = solana_sdk::pubkey::Pubkey::try_from(&data[40..72])
+    .map_err(|_| anyhow::anyhow!("Invalid mint pubkey in config data"))?;
   let preset = data[72];
   let paused = data[73] != 0;
 
   // Option<u64>: 1 byte tag + 8 bytes value
   let (supply_cap, offset) = if data[74] == 1 {
-    let cap = u64::from_le_bytes(data[75..83].try_into().unwrap());
+    let cap = u64::from_le_bytes(data[75..83].try_into()
+      .map_err(|_| anyhow::anyhow!("Invalid supply cap bytes"))?);
     (Some(cap), 83)
   } else {
     (None, 75)
   };
 
-  let total_minted = u64::from_le_bytes(data[offset..offset + 8].try_into().unwrap());
-  let total_burned = u64::from_le_bytes(data[offset + 8..offset + 16].try_into().unwrap());
+  if data.len() < offset + 16 {
+    anyhow::bail!("Config account data too short for supply counters");
+  }
+
+  let total_minted = u64::from_le_bytes(data[offset..offset + 8].try_into()
+    .map_err(|_| anyhow::anyhow!("Invalid total_minted bytes"))?);
+  let total_burned = u64::from_le_bytes(data[offset + 8..offset + 16].try_into()
+    .map_err(|_| anyhow::anyhow!("Invalid total_burned bytes"))?);
   let current_supply = total_minted.saturating_sub(total_burned);
 
   // Get mint decimals
