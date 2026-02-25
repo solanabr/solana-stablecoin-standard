@@ -14,7 +14,14 @@ fn default_config(paused: bool) -> StablecoinConfig {
         total_minted: 100_000,
         total_burned: 0,
         bump: 0,
-        _reserved: [0u8; 64],
+        name: String::new(),
+        symbol: String::new(),
+        uri: String::new(),
+        decimals: 6,
+        enable_permanent_delegate: true,
+        enable_transfer_hook: false,
+        default_account_frozen: false,
+        _reserved: [0u8; 32],
     }
 }
 

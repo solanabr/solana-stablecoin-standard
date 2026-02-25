@@ -6,6 +6,9 @@ pub struct StablecoinInitialized {
     pub authority: Pubkey,
     pub preset: u8,
     pub supply_cap: Option<u64>,
+    pub name: String,
+    pub symbol: String,
+    pub decimals: u8,
 }
 
 #[event]

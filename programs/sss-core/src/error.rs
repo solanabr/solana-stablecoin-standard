@@ -30,4 +30,10 @@ pub enum SssError {
     InvalidOraclePrice,
     #[msg("Minter quota exceeded")]
     QuotaExceeded,
+    #[msg("Name exceeds maximum length of 32 characters")]
+    NameTooLong,
+    #[msg("Symbol exceeds maximum length of 10 characters")]
+    SymbolTooLong,
+    #[msg("URI exceeds maximum length of 200 characters")]
+    UriTooLong,
 }

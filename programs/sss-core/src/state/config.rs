@@ -10,7 +10,21 @@ pub struct StablecoinConfig {
     pub total_minted: u64,
     pub total_burned: u64,
     pub bump: u8,
-    pub _reserved: [u8; 64],
+    /// Stablecoin name (max 32 chars).
+    pub name: String,
+    /// Stablecoin ticker symbol (max 10 chars).
+    pub symbol: String,
+    /// Metadata URI (max 200 chars).
+    pub uri: String,
+    /// Token decimals (e.g. 6 for USDC-style).
+    pub decimals: u8,
+    /// Whether the config PDA is set as permanent delegate on token accounts.
+    pub enable_permanent_delegate: bool,
+    /// Whether a transfer hook program is attached to the mint.
+    pub enable_transfer_hook: bool,
+    /// Whether new token accounts are frozen by default (requires explicit thaw).
+    pub default_account_frozen: bool,
+    pub _reserved: [u8; 32],
 }
 
 impl StablecoinConfig {
@@ -51,7 +65,14 @@ mod tests {
             total_minted: 0,
             total_burned: 0,
             bump: 0,
-            _reserved: [0u8; 64],
+            name: "Test Stablecoin".to_string(),
+            symbol: "TST".to_string(),
+            uri: "https://example.com/metadata.json".to_string(),
+            decimals: 6,
+            enable_permanent_delegate: true,
+            enable_transfer_hook: false,
+            default_account_frozen: false,
+            _reserved: [0u8; 32],
         }
     }
 

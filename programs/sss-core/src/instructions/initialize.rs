@@ -14,6 +14,12 @@ pub struct InitializeArgs {
     pub uri: String,
     pub decimals: u8,
     pub supply_cap: Option<u64>,
+    /// Override preset default for permanent delegate. If None, derived from preset.
+    pub enable_permanent_delegate: Option<bool>,
+    /// Override preset default for transfer hook. If None, derived from preset.
+    pub enable_transfer_hook: Option<bool>,
+    /// Override preset default for default-frozen accounts. If None, derived from preset.
+    pub default_account_frozen: Option<bool>,
 }
 
 #[derive(Accounts)]
@@ -57,6 +63,17 @@ pub fn handler_initialize(ctx: Context<Initialize>, args: InitializeArgs) -> Res
         args.preset >= 1 && args.preset <= 3,
         SssError::InvalidPreset
     );
+    require!(args.name.len() <= 32, SssError::NameTooLong);
+    require!(args.symbol.len() <= 10, SssError::SymbolTooLong);
+    require!(args.uri.len() <= 200, SssError::UriTooLong);
+
+    // Derive feature flags from preset, allowing explicit overrides
+    let (default_perm_delegate, default_hook, default_frozen) = match args.preset {
+        1 => (true, false, false),  // SSS-1: minimal
+        2 => (true, true, true),    // SSS-2: compliant (hook + frozen by default)
+        3 => (true, false, false),  // SSS-3: private (confidential transfers, no hook)
+        _ => unreachable!(),        // already validated above
+    };
 
     let config = &mut ctx.accounts.config;
     config.authority = ctx.accounts.authority.key();
@@ -67,7 +84,14 @@ pub fn handler_initialize(ctx: Context<Initialize>, args: InitializeArgs) -> Res
     config.total_minted = 0;
     config.total_burned = 0;
     config.bump = ctx.bumps.config;
-    config._reserved = [0u8; 64];
+    config.name = args.name;
+    config.symbol = args.symbol;
+    config.uri = args.uri;
+    config.decimals = args.decimals;
+    config.enable_permanent_delegate = args.enable_permanent_delegate.unwrap_or(default_perm_delegate);
+    config.enable_transfer_hook = args.enable_transfer_hook.unwrap_or(default_hook);
+    config.default_account_frozen = args.default_account_frozen.unwrap_or(default_frozen);
+    config._reserved = [0u8; 32];
 
     let admin_role = &mut ctx.accounts.admin_role;
     admin_role.config = config.key();
@@ -84,6 +108,9 @@ pub fn handler_initialize(ctx: Context<Initialize>, args: InitializeArgs) -> Res
         authority: config.authority,
         preset: config.preset,
         supply_cap: config.supply_cap,
+        name: config.name.clone(),
+        symbol: config.symbol.clone(),
+        decimals: config.decimals,
     });
 
     Ok(())
