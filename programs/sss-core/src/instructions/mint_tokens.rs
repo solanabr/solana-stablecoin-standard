@@ -151,8 +151,12 @@ fn adjust_cap_with_oracle(
     require!(data.len() >= 216, SssError::InvalidOracleData);
 
     // Pyth v2: exponent at offset 20 (i32 LE), aggregate price at offset 208 (i64 LE)
-    let expo = i32::from_le_bytes(data[20..24].try_into().unwrap());
-    let price = i64::from_le_bytes(data[208..216].try_into().unwrap());
+    let expo = i32::from_le_bytes(
+        data[20..24].try_into().map_err(|_| error!(SssError::InvalidOracleData))?
+    );
+    let price = i64::from_le_bytes(
+        data[208..216].try_into().map_err(|_| error!(SssError::InvalidOracleData))?
+    );
     require!(price > 0, SssError::InvalidOraclePrice);
 
     // Convert USD cap to token amount:
