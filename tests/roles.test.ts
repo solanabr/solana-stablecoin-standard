@@ -14,6 +14,9 @@ import {
   ROLE_MINTER,
   ROLE_FREEZER,
   ROLE_PAUSER,
+  ROLE_BURNER,
+  ROLE_BLACKLISTER,
+  ROLE_SEIZER,
   CreateSss1MintResult,
 } from "./helpers";
 
@@ -88,6 +91,39 @@ describe("Role Management", () => {
     expect(minterRole.role).to.deep.equal({ minter: {} });
     expect(freezerRole.role).to.deep.equal({ freezer: {} });
     expect(pauserRole.role).to.deep.equal({ pauser: {} });
+  });
+
+  it("admin can grant burner, blacklister, and seizer roles", async () => {
+    const burnerPda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      minter.publicKey,
+      ROLE_BURNER,
+    );
+    const blacklisterPda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      freezer.publicKey,
+      ROLE_BLACKLISTER,
+    );
+    const seizerPda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      pauser.publicKey,
+      ROLE_SEIZER,
+    );
+
+    const burnerRole = await coreProgram.account.roleAccount.fetch(burnerPda);
+    const blacklisterRole =
+      await coreProgram.account.roleAccount.fetch(blacklisterPda);
+    const seizerRole = await coreProgram.account.roleAccount.fetch(seizerPda);
+
+    expect(burnerRole.role).to.deep.equal({ burner: {} });
+    expect(blacklisterRole.role).to.deep.equal({ blacklister: {} });
+    expect(seizerRole.role).to.deep.equal({ seizer: {} });
   });
 
   it("admin can grant another admin", async () => {

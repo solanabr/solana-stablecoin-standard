@@ -63,6 +63,8 @@ pub fn handler_transfer_authority(ctx: Context<TransferAuthority>) -> Result<()>
     new_role.granted_by = ctx.accounts.admin.key();
     new_role.granted_at = Clock::get()?.unix_timestamp;
     new_role.bump = ctx.bumps.new_admin_role;
+    new_role.mint_quota = None;
+    new_role.amount_minted = 0;
 
     // Update config.authority so on-chain queries reflect the new admin
     ctx.accounts.config.authority = ctx.accounts.new_authority.key();

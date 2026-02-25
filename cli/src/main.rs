@@ -214,7 +214,7 @@ pub enum RoleAction {
     /// Base58 address to grant role to
     #[arg(long)]
     address: String,
-    /// Role: "admin", "minter", "freezer", "pauser"
+    /// Role: "admin", "minter", "freezer", "pauser", "burner", "blacklister", "seizer"
     #[arg(long)]
     role: String,
   },
@@ -226,7 +226,7 @@ pub enum RoleAction {
     /// Base58 address to revoke role from
     #[arg(long)]
     address: String,
-    /// Role: "admin", "minter", "freezer", "pauser"
+    /// Role: "admin", "minter", "freezer", "pauser", "burner", "blacklister", "seizer"
     #[arg(long)]
     role: String,
   },

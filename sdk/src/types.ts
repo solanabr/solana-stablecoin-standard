@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 export type Preset = "sss-1" | "sss-2" | "sss-3";
-export type RoleType = "admin" | "minter" | "freezer" | "pauser";
+export type RoleType = "admin" | "minter" | "freezer" | "pauser" | "burner" | "blacklister" | "seizer";
 
 export interface StablecoinCreateOptions {
   preset: Preset;
@@ -44,6 +44,9 @@ export const ROLE_MAP: Record<RoleType, number> = {
   minter: 1,
   freezer: 2,
   pauser: 3,
+  burner: 4,
+  blacklister: 5,
+  seizer: 6,
 };
 
 export const PRESET_MAP: Record<Preset, number> = {

@@ -24,7 +24,9 @@ pub struct MintTokens<'info> {
     pub config: Account<'info, StablecoinConfig>,
 
     /// Minter role PDA — its existence proves authorization.
+    /// Mutable for per-minter quota tracking (amount_minted).
     #[account(
+        mut,
         seeds = [
             SSS_ROLE_SEED,
             config.key().as_ref(),
@@ -52,6 +54,16 @@ pub struct MintTokens<'info> {
 
 pub fn handler_mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     require!(amount > 0, SssError::ZeroAmount);
+
+    // Per-minter quota check: if a quota is set, verify minting won't exceed it.
+    let minter_role = &mut ctx.accounts.minter_role;
+    if let Some(quota) = minter_role.mint_quota {
+        let new_total = minter_role
+            .amount_minted
+            .checked_add(amount)
+            .ok_or(SssError::ArithmeticOverflow)?;
+        require!(new_total <= quota, SssError::QuotaExceeded);
+    }
 
     // Capture account infos before mutable borrow of config
     let config_info = ctx.accounts.config.to_account_info();
@@ -108,6 +120,14 @@ pub fn handler_mint_tokens(ctx: Context<MintTokens>, amount: u64) -> Result<()> 
         .with_signer(signer_seeds);
 
     token_interface::mint_to(cpi_ctx, amount)?;
+
+    // Update per-minter quota tracking
+    ctx.accounts.minter_role.amount_minted = ctx
+        .accounts
+        .minter_role
+        .amount_minted
+        .checked_add(amount)
+        .ok_or(SssError::ArithmeticOverflow)?;
 
     emit!(TokensMinted {
         mint: mint_key,

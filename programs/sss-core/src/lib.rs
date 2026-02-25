@@ -64,4 +64,11 @@ pub mod sss_core {
     ) -> Result<()> {
         instructions::update_config::handler_update_supply_cap(ctx, new_supply_cap)
     }
+
+    pub fn update_minter(
+        ctx: Context<UpdateMinter>,
+        new_quota: Option<u64>,
+    ) -> Result<()> {
+        instructions::update_minter::handler_update_minter(ctx, new_quota)
+    }
 }

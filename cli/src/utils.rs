@@ -10,14 +10,17 @@ pub fn parse_pubkey(s: &str) -> Result<Pubkey> {
 }
 
 /// Parse a role string to its u8 representation.
-/// Matches the Role enum: Admin=0, Minter=1, Freezer=2, Pauser=3.
+/// Matches the Role enum: Admin=0, Minter=1, Freezer=2, Pauser=3, Burner=4, Blacklister=5, Seizer=6.
 pub fn parse_role(s: &str) -> Result<u8> {
   match s.to_lowercase().as_str() {
     "admin" => Ok(0),
     "minter" => Ok(1),
     "freezer" => Ok(2),
     "pauser" => Ok(3),
-    _ => bail!("Invalid role '{}'. Must be: admin, minter, freezer, pauser", s),
+    "burner" => Ok(4),
+    "blacklister" => Ok(5),
+    "seizer" => Ok(6),
+    _ => bail!("Invalid role '{}'. Must be: admin, minter, freezer, pauser, burner, blacklister, seizer", s),
   }
 }
 
@@ -28,6 +31,9 @@ pub fn role_name(role: u8) -> &'static str {
     1 => "Minter",
     2 => "Freezer",
     3 => "Pauser",
+    4 => "Burner",
+    5 => "Blacklister",
+    6 => "Seizer",
     _ => "Unknown",
   }
 }

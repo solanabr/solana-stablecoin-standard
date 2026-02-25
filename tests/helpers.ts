@@ -86,6 +86,9 @@ export const ROLE_ADMIN = 0;
 export const ROLE_MINTER = 1;
 export const ROLE_FREEZER = 2;
 export const ROLE_PAUSER = 3;
+export const ROLE_BURNER = 4;
+export const ROLE_BLACKLISTER = 5;
+export const ROLE_SEIZER = 6;
 
 // ─────────────────────────────────────────────────────────────
 // Airdrop

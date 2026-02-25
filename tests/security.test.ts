@@ -14,6 +14,8 @@ import {
   ROLE_MINTER,
   ROLE_FREEZER,
   ROLE_PAUSER,
+  ROLE_BURNER,
+  ROLE_SEIZER,
   CreateSss1MintResult,
 } from "./helpers";
 
@@ -120,11 +122,11 @@ describe("Security", () => {
   // 2. Burn without minter role
   // ─────────────────────────────────────────────────────────────
 
-  it("rejects burn from account without minter role", async () => {
+  it("rejects burn from account without burner role", async () => {
     const [attackerBurnerRole] = deriveRolePda(
       mintResult.configPda,
       attacker.publicKey,
-      ROLE_MINTER, // burn uses minter role
+      ROLE_BURNER,
       coreProgram.programId,
     );
 
@@ -141,7 +143,7 @@ describe("Security", () => {
         })
         .signers([attacker])
         .rpc();
-      expect.fail("Attacker without minter role should not be able to burn");
+      expect.fail("Attacker without burner role should not be able to burn");
     } catch (err: any) {
       expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }
@@ -372,7 +374,7 @@ describe("Security", () => {
   // 9. Seize without admin
   // ─────────────────────────────────────────────────────────────
 
-  it("rejects seize from account without admin role", async () => {
+  it("rejects seize from account without seizer role", async () => {
     // Create an ATA for the attacker to receive seized tokens
     const attackerAta = await createTokenAccount(
       provider,
@@ -380,10 +382,10 @@ describe("Security", () => {
       attacker.publicKey,
     );
 
-    const [attackerAdminRole] = deriveRolePda(
+    const [attackerSeizerRole] = deriveRolePda(
       mintResult.configPda,
       attacker.publicKey,
-      ROLE_ADMIN,
+      ROLE_SEIZER,
       coreProgram.programId,
     );
 
@@ -391,9 +393,9 @@ describe("Security", () => {
       await coreProgram.methods
         .seize(new BN(100))
         .accountsPartial({
-          admin: attacker.publicKey,
+          seizer: attacker.publicKey,
           config: mintResult.configPda,
-          adminRole: attackerAdminRole,
+          seizerRole: attackerSeizerRole,
           mint: mintResult.mint.publicKey,
           from: recipientAta,
           to: attackerAta,
@@ -401,7 +403,7 @@ describe("Security", () => {
         })
         .signers([attacker])
         .rpc();
-      expect.fail("Attacker without admin role should not be able to seize tokens");
+      expect.fail("Attacker without seizer role should not be able to seize tokens");
     } catch (err: any) {
       expect(err.error.errorCode.code).to.equal("AccountNotInitialized");
     }

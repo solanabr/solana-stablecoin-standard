@@ -21,12 +21,12 @@
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "blacklister",
           "writable": true,
           "signer": true
         },
         {
-          "name": "admin_role",
+          "name": "blacklister_role",
           "docs": [
             "Verified by checking owner == sss-core program ID and re-deriving the",
             "expected PDA address from known seeds using the mint key."
@@ -161,12 +161,12 @@
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "blacklister",
           "writable": true,
           "signer": true
         },
         {
-          "name": "admin_role",
+          "name": "blacklister_role",
           "docs": [
             "Verified by checking owner == sss-core program ID and re-deriving the",
             "expected PDA address from known seeds using the mint key."

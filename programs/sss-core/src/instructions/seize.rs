@@ -8,7 +8,7 @@ use crate::state::{Role, RoleAccount, StablecoinConfig};
 
 #[derive(Accounts)]
 pub struct Seize<'info> {
-    pub admin: Signer<'info>,
+    pub seizer: Signer<'info>,
 
     /// NO pause check — seizure works during emergencies.
     #[account(
@@ -17,16 +17,17 @@ pub struct Seize<'info> {
     )]
     pub config: Account<'info, StablecoinConfig>,
 
+    /// Seizer role PDA — its existence proves seizure authorization.
     #[account(
         seeds = [
             SSS_ROLE_SEED,
             config.key().as_ref(),
-            admin.key().as_ref(),
-            &[Role::Admin.as_u8()],
+            seizer.key().as_ref(),
+            &[Role::Seizer.as_u8()],
         ],
-        bump = admin_role.bump,
+        bump = seizer_role.bump,
     )]
-    pub admin_role: Account<'info, RoleAccount>,
+    pub seizer_role: Account<'info, RoleAccount>,
 
     #[account(
         constraint = config.mint == mint.key() @ SssError::MintMismatch,
@@ -75,7 +76,7 @@ pub fn handler_seize(ctx: Context<Seize>, amount: u64) -> Result<()> {
         from: ctx.accounts.from.key(),
         to: ctx.accounts.to.key(),
         amount,
-        seizer: ctx.accounts.admin.key(),
+        seizer: ctx.accounts.seizer.key(),
     });
 
     Ok(())

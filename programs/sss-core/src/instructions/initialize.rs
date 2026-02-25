@@ -76,6 +76,8 @@ pub fn handler_initialize(ctx: Context<Initialize>, args: InitializeArgs) -> Res
     admin_role.granted_by = ctx.accounts.authority.key();
     admin_role.granted_at = Clock::get()?.unix_timestamp;
     admin_role.bump = ctx.bumps.admin_role;
+    admin_role.mint_quota = None;
+    admin_role.amount_minted = 0;
 
     emit!(StablecoinInitialized {
         mint: config.mint,

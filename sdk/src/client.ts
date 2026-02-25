@@ -257,7 +257,7 @@ export class SSS {
 
   /**
    * Burn tokens from a token account.
-   * Caller must have the minter role (minters can burn).
+   * Caller must have the burner role.
    */
   async burn(from: PublicKey, amount: bigint): Promise<string> {
     const burner = this.provider.publicKey;
@@ -361,18 +361,18 @@ export class SSS {
 
   /**
    * Seize tokens from one account to another using permanent delegate.
-   * Admin-only, works even when paused.
+   * Seizer-only, works even when paused.
    */
   async seize(
     from: PublicKey,
     to: PublicKey,
     amount: bigint,
   ): Promise<string> {
-    const admin = this.provider.publicKey;
+    const seizer = this.provider.publicKey;
     const ix = await coreix.buildSeizeIx(
       this.coreProgram,
       this.mint,
-      admin,
+      seizer,
       from,
       to,
       new BN(amount.toString()),
@@ -536,14 +536,14 @@ export class SSS {
 
   blacklist = {
     /**
-     * Add an address to the blacklist. Admin-only.
+     * Add an address to the blacklist. Blacklister-only.
      */
     add: async (address: PublicKey, reason: string): Promise<string> => {
-      const authority = this.provider.publicKey;
+      const blacklister = this.provider.publicKey;
       const ix = await hookix.buildAddToBlacklistIx(
         this.hookProgram,
         this.mint,
-        authority,
+        blacklister,
         address,
         reason,
         this.coreProgram.programId,
@@ -558,14 +558,14 @@ export class SSS {
     },
 
     /**
-     * Remove an address from the blacklist. Admin-only.
+     * Remove an address from the blacklist. Blacklister-only.
      */
     remove: async (address: PublicKey): Promise<string> => {
-      const authority = this.provider.publicKey;
+      const blacklister = this.provider.publicKey;
       const ix = await hookix.buildRemoveFromBlacklistIx(
         this.hookProgram,
         this.mint,
-        authority,
+        blacklister,
         address,
         this.coreProgram.programId,
       );

@@ -27,6 +27,7 @@ import {
   ROLE_ADMIN,
   ROLE_MINTER,
   ROLE_FREEZER,
+  ROLE_BLACKLISTER,
   CreateSss2MintResult,
 } from "./helpers";
 
@@ -42,6 +43,7 @@ describe("Transfer Hook", () => {
   let mintResult: CreateSss2MintResult;
   let minterRolePda: PublicKey;
   let freezerRolePda: PublicKey;
+  let blacklisterRolePda: PublicKey;
 
   // Token accounts
   let aliceAta: PublicKey;
@@ -146,7 +148,7 @@ describe("Transfer Hook", () => {
   // ─────────────────────────────────────────────────────────────
 
   describe("Transfer Hook Setup", () => {
-    it("grants minter and freezer roles", async () => {
+    it("grants minter, freezer, and blacklister roles", async () => {
       minterRolePda = await grantRole(
         coreProgram,
         mintResult.configPda,
@@ -160,6 +162,13 @@ describe("Transfer Hook", () => {
         mintResult.adminRolePda,
         freezer.publicKey,
         ROLE_FREEZER,
+      );
+      blacklisterRolePda = await grantRole(
+        coreProgram,
+        mintResult.configPda,
+        mintResult.adminRolePda,
+        provider.wallet.publicKey,
+        ROLE_BLACKLISTER,
       );
     });
 
@@ -306,7 +315,7 @@ describe("Transfer Hook", () => {
   // ─────────────────────────────────────────────────────────────
 
   describe("Blacklist add", () => {
-    it("admin adds charlie to blacklist with reason", async () => {
+    it("blacklister adds charlie to blacklist with reason", async () => {
       const [blacklistPda] = deriveBlacklistPda(
         mintResult.mint.publicKey,
         charlie.publicKey,
@@ -316,8 +325,8 @@ describe("Transfer Hook", () => {
       await hookProgram.methods
         .addToBlacklist("OFAC sanctioned entity")
         .accountsPartial({
-          authority: provider.wallet.publicKey,
-          adminRole: mintResult.adminRolePda,
+          blacklister: provider.wallet.publicKey,
+          blacklisterRole: blacklisterRolePda,
           mint: mintResult.mint.publicKey,
           address: charlie.publicKey,
           blacklistEntry: blacklistPda,
@@ -339,7 +348,7 @@ describe("Transfer Hook", () => {
       expect(entry.addedAt.toNumber()).to.be.greaterThan(0);
     });
 
-    it("admin adds dave to blacklist", async () => {
+    it("blacklister adds dave to blacklist", async () => {
       const [blacklistPda] = deriveBlacklistPda(
         mintResult.mint.publicKey,
         dave.publicKey,
@@ -349,8 +358,8 @@ describe("Transfer Hook", () => {
       await hookProgram.methods
         .addToBlacklist("Suspicious activity detected")
         .accountsPartial({
-          authority: provider.wallet.publicKey,
-          adminRole: mintResult.adminRolePda,
+          blacklister: provider.wallet.publicKey,
+          blacklisterRole: blacklisterRolePda,
           mint: mintResult.mint.publicKey,
           address: dave.publicKey,
           blacklistEntry: blacklistPda,
@@ -364,7 +373,7 @@ describe("Transfer Hook", () => {
       expect(entry.reason).to.equal("Suspicious activity detected");
     });
 
-    it("rejects blacklist add from non-admin", async () => {
+    it("rejects blacklist add from non-blacklister", async () => {
       const randomTarget = Keypair.generate();
       const [blacklistPda] = deriveBlacklistPda(
         mintResult.mint.publicKey,
@@ -372,11 +381,11 @@ describe("Transfer Hook", () => {
         hookProgram.programId,
       );
 
-      // Derive where the non-admin's admin role PDA *would* be
-      const [fakeAdminRole] = deriveRolePda(
+      // Derive where the non-blacklister's blacklister role PDA *would* be
+      const [fakeBlacklisterRole] = deriveRolePda(
         mintResult.configPda,
         nonAdmin.publicKey,
-        ROLE_ADMIN,
+        ROLE_BLACKLISTER,
         coreProgram.programId,
       );
 
@@ -384,8 +393,8 @@ describe("Transfer Hook", () => {
         await hookProgram.methods
           .addToBlacklist("Unauthorized attempt")
           .accountsPartial({
-            authority: nonAdmin.publicKey,
-            adminRole: fakeAdminRole,
+            blacklister: nonAdmin.publicKey,
+            blacklisterRole: fakeBlacklisterRole,
             mint: mintResult.mint.publicKey,
             address: randomTarget.publicKey,
             blacklistEntry: blacklistPda,
@@ -393,9 +402,9 @@ describe("Transfer Hook", () => {
           })
           .signers([nonAdmin])
           .rpc();
-        expect.fail("Non-admin should not be able to add to blacklist");
+        expect.fail("Non-blacklister should not be able to add to blacklist");
       } catch (err: any) {
-        // verify_admin_for_mint rejects: account not owned by sss-core
+        // verify_blacklister_for_mint rejects: account not owned by sss-core
         expect(err.error.errorCode.code).to.equal("Unauthorized");
       }
     });
@@ -414,8 +423,8 @@ describe("Transfer Hook", () => {
         await hookProgram.methods
           .addToBlacklist(longReason)
           .accountsPartial({
-            authority: provider.wallet.publicKey,
-            adminRole: mintResult.adminRolePda,
+            blacklister: provider.wallet.publicKey,
+            blacklisterRole: blacklisterRolePda,
             mint: mintResult.mint.publicKey,
             address: randomTarget.publicKey,
             blacklistEntry: blacklistPda,
@@ -440,8 +449,8 @@ describe("Transfer Hook", () => {
         await hookProgram.methods
           .addToBlacklist("Duplicate attempt")
           .accountsPartial({
-            authority: provider.wallet.publicKey,
-            adminRole: mintResult.adminRolePda,
+            blacklister: provider.wallet.publicKey,
+            blacklisterRole: blacklisterRolePda,
             mint: mintResult.mint.publicKey,
             address: charlie.publicKey,
             blacklistEntry: blacklistPda,
@@ -579,17 +588,17 @@ describe("Transfer Hook", () => {
   // ─────────────────────────────────────────────────────────────
 
   describe("Blacklist remove", () => {
-    it("rejects blacklist removal from non-admin", async () => {
+    it("rejects blacklist removal from non-blacklister", async () => {
       const [blacklistPda] = deriveBlacklistPda(
         mintResult.mint.publicKey,
         charlie.publicKey,
         hookProgram.programId,
       );
 
-      const [fakeAdminRole] = deriveRolePda(
+      const [fakeBlacklisterRole] = deriveRolePda(
         mintResult.configPda,
         nonAdmin.publicKey,
-        ROLE_ADMIN,
+        ROLE_BLACKLISTER,
         coreProgram.programId,
       );
 
@@ -597,21 +606,21 @@ describe("Transfer Hook", () => {
         await hookProgram.methods
           .removeFromBlacklist()
           .accountsPartial({
-            authority: nonAdmin.publicKey,
-            adminRole: fakeAdminRole,
+            blacklister: nonAdmin.publicKey,
+            blacklisterRole: fakeBlacklisterRole,
             mint: mintResult.mint.publicKey,
             blacklistEntry: blacklistPda,
           })
           .signers([nonAdmin])
           .rpc();
-        expect.fail("Non-admin should not be able to remove from blacklist");
+        expect.fail("Non-blacklister should not be able to remove from blacklist");
       } catch (err: any) {
-        // verify_admin_for_mint rejects: account not owned by sss-core
+        // verify_blacklister_for_mint rejects: account not owned by sss-core
         expect(err.error.errorCode.code).to.equal("Unauthorized");
       }
     });
 
-    it("admin removes charlie from blacklist", async () => {
+    it("blacklister removes charlie from blacklist", async () => {
       const [blacklistPda] = deriveBlacklistPda(
         mintResult.mint.publicKey,
         charlie.publicKey,
@@ -621,8 +630,8 @@ describe("Transfer Hook", () => {
       await hookProgram.methods
         .removeFromBlacklist()
         .accountsPartial({
-          authority: provider.wallet.publicKey,
-          adminRole: mintResult.adminRolePda,
+          blacklister: provider.wallet.publicKey,
+          blacklisterRole: blacklisterRolePda,
           mint: mintResult.mint.publicKey,
           blacklistEntry: blacklistPda,
         })
@@ -893,8 +902,8 @@ describe("Transfer Hook", () => {
       await hookProgram.methods
         .removeFromBlacklist()
         .accountsPartial({
-          authority: provider.wallet.publicKey,
-          adminRole: mintResult.adminRolePda,
+          blacklister: provider.wallet.publicKey,
+          blacklisterRole: blacklisterRolePda,
           mint: mintResult.mint.publicKey,
           blacklistEntry: daveBlacklistPda,
         })
@@ -909,8 +918,8 @@ describe("Transfer Hook", () => {
       await hookProgram.methods
         .addToBlacklist("Re-flagged by compliance")
         .accountsPartial({
-          authority: provider.wallet.publicKey,
-          adminRole: mintResult.adminRolePda,
+          blacklister: provider.wallet.publicKey,
+          blacklisterRole: blacklisterRolePda,
           mint: mintResult.mint.publicKey,
           address: dave.publicKey,
           blacklistEntry: daveBlacklistPda,
@@ -938,8 +947,8 @@ describe("Transfer Hook", () => {
       await hookProgram.methods
         .addToBlacklist(maxReason)
         .accountsPartial({
-          authority: provider.wallet.publicKey,
-          adminRole: mintResult.adminRolePda,
+          blacklister: provider.wallet.publicKey,
+          blacklisterRole: blacklisterRolePda,
           mint: mintResult.mint.publicKey,
           address: target.publicKey,
           blacklistEntry: blacklistPda,
@@ -956,8 +965,8 @@ describe("Transfer Hook", () => {
       await hookProgram.methods
         .removeFromBlacklist()
         .accountsPartial({
-          authority: provider.wallet.publicKey,
-          adminRole: mintResult.adminRolePda,
+          blacklister: provider.wallet.publicKey,
+          blacklisterRole: blacklisterRolePda,
           mint: mintResult.mint.publicKey,
           blacklistEntry: blacklistPda,
         })

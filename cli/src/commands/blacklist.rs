@@ -23,15 +23,15 @@ async fn add(ctx: &CliContext, mint_str: &str, address_str: &str, reason: &str) 
   let payer = ctx.payer_pubkey();
 
   let (config_pda, _) = utils::derive_config_pda(&mint);
-  let (admin_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 0); // Admin = 0
+  let (blacklister_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 5); // Blacklister = 5
   let (blacklist_pda, _) = utils::derive_blacklist_pda(&mint, &address);
 
   let ix_data = sss_transfer_hook::instruction::AddToBlacklist {
     reason: reason.to_string(),
   }.data();
   let accounts = sss_transfer_hook::accounts::AddToBlacklist {
-    authority: payer,
-    admin_role: admin_role_pda,
+    blacklister: payer,
+    blacklister_role: blacklister_role_pda,
     mint,
     address,
     blacklist_entry: blacklist_pda,
@@ -61,13 +61,13 @@ async fn remove(ctx: &CliContext, mint_str: &str, address_str: &str) -> Result<(
   let payer = ctx.payer_pubkey();
 
   let (config_pda, _) = utils::derive_config_pda(&mint);
-  let (admin_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 0);
+  let (blacklister_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 5); // Blacklister = 5
   let (blacklist_pda, _) = utils::derive_blacklist_pda(&mint, &address);
 
   let ix_data = sss_transfer_hook::instruction::RemoveFromBlacklist.data();
   let accounts = sss_transfer_hook::accounts::RemoveFromBlacklist {
-    authority: payer,
-    admin_role: admin_role_pda,
+    blacklister: payer,
+    blacklister_role: blacklister_role_pda,
     mint,
     blacklist_entry: blacklist_pda,
   }.to_account_metas(None);

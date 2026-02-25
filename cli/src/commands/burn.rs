@@ -27,7 +27,7 @@ pub async fn execute(
 
   // Derive PDAs
   let (config_pda, _) = utils::derive_config_pda(&mint);
-  let (burner_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 1); // Minter = 1 (minters can burn)
+  let (burner_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 4); // Burner = 4
 
   let ix_data = sss_core::instruction::BurnTokens { amount }.data();
   let accounts = sss_core::accounts::BurnTokens {

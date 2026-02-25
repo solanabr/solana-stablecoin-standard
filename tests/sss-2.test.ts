@@ -30,6 +30,8 @@ import {
   ROLE_MINTER,
   ROLE_FREEZER,
   ROLE_PAUSER,
+  ROLE_BLACKLISTER,
+  ROLE_SEIZER,
   CreateSss2MintResult,
 } from "./helpers";
 
@@ -48,6 +50,8 @@ describe("SSS-2: Compliant Stablecoin", () => {
   let treasuryAta: PublicKey;
   let minterRolePda: PublicKey;
   let freezerRolePda: PublicKey;
+  let blacklisterRolePda: PublicKey;
+  let seizerRolePda: PublicKey;
 
   const minter = Keypair.generate();
   const freezer = Keypair.generate();
@@ -190,6 +194,15 @@ describe("SSS-2: Compliant Stablecoin", () => {
   });
 
   it("blacklists an address", async () => {
+    // Grant blacklister role to the provider wallet
+    blacklisterRolePda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      provider.wallet.publicKey,
+      ROLE_BLACKLISTER,
+    );
+
     // Create blacklisted user's token account and thaw it
     const blacklistedAta = await createTokenAccount(
       provider,
@@ -233,8 +246,8 @@ describe("SSS-2: Compliant Stablecoin", () => {
     await hookProgram.methods
       .addToBlacklist("Suspicious activity")
       .accountsPartial({
-        authority: provider.wallet.publicKey,
-        adminRole: mintResult.adminRolePda,
+        blacklister: provider.wallet.publicKey,
+        blacklisterRole: blacklisterRolePda,
         mint: mintResult.mint.publicKey,
         address: blacklisted.publicKey,
         blacklistEntry: blacklistPda,
@@ -330,8 +343,8 @@ describe("SSS-2: Compliant Stablecoin", () => {
     await hookProgram.methods
       .removeFromBlacklist()
       .accountsPartial({
-        authority: provider.wallet.publicKey,
-        adminRole: mintResult.adminRolePda,
+        blacklister: provider.wallet.publicKey,
+        blacklisterRole: blacklisterRolePda,
         mint: mintResult.mint.publicKey,
         blacklistEntry: blacklistPda,
       })
@@ -384,6 +397,16 @@ describe("SSS-2: Compliant Stablecoin", () => {
     //
     // Here we verify the expected failure mode: the CPI fails because
     // Token-2022 can't resolve the transfer hook's required accounts.
+
+    // Grant seizer role to the provider wallet
+    seizerRolePda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      provider.wallet.publicKey,
+      ROLE_SEIZER,
+    );
+
     treasuryAta = await createTokenAccount(
       provider,
       mintResult.mint.publicKey,
@@ -406,9 +429,9 @@ describe("SSS-2: Compliant Stablecoin", () => {
       await coreProgram.methods
         .seize(new BN(500_000))
         .accountsPartial({
-          admin: provider.wallet.publicKey,
+          seizer: provider.wallet.publicKey,
           config: mintResult.configPda,
-          adminRole: mintResult.adminRolePda,
+          seizerRole: seizerRolePda,
           mint: mintResult.mint.publicKey,
           from: senderAta,
           to: treasuryAta,

@@ -86,7 +86,7 @@ export function buildMintTokensIx(
 
 /**
  * Build the `burnTokens` instruction.
- * Burns tokens from the specified token account. Requires minter role (minters can burn).
+ * Burns tokens from the specified token account. Requires burner role.
  *
  * Auto-resolved by Anchor: config (PDA)
  */
@@ -101,7 +101,7 @@ export function buildBurnTokensIx(
   const [burnerRolePda] = deriveRolePda(
     configPda,
     burner,
-    "minter",
+    "burner",
     program.programId,
   );
 
@@ -240,32 +240,32 @@ export function buildUnpauseIx(
 /**
  * Build the `seize` instruction.
  * Forcibly transfers tokens from one account to another using permanent delegate.
- * Admin-only, works even when paused (emergency measure).
+ * Seizer-only, works even when paused (emergency measure).
  *
  * Auto-resolved by Anchor: config (PDA)
  */
 export function buildSeizeIx(
   program: Program<SssCore>,
   mint: PublicKey,
-  admin: PublicKey,
+  seizer: PublicKey,
   from: PublicKey,
   to: PublicKey,
   amount: BN,
 ) {
   const [configPda] = deriveConfigPda(mint, program.programId);
-  const [adminRolePda] = deriveRolePda(
+  const [seizerRolePda] = deriveRolePda(
     configPda,
-    admin,
-    "admin",
+    seizer,
+    "seizer",
     program.programId,
   );
 
   return program.methods
     .seize(amount)
     .accounts({
-      admin,
+      seizer,
       mint,
-      adminRole: adminRolePda,
+      seizerRole: seizerRolePda,
       from,
       to,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -376,6 +376,38 @@ export function buildTransferAuthorityIx(
       adminRole: adminRolePda,
       newAuthority,
       newAdminRole: newAdminRolePda,
+    })
+    .instruction();
+}
+
+/**
+ * Build the `updateMinter` instruction.
+ * Updates a minter's quota. Admin-only.
+ * Pass null to remove the quota (unlimited minting).
+ *
+ * Auto-resolved by Anchor: config (PDA)
+ */
+export function buildUpdateMinterIx(
+  program: Program<SssCore>,
+  configPda: PublicKey,
+  admin: PublicKey,
+  minterRoleAccountPda: PublicKey,
+  newQuota: BN | null,
+) {
+  const [adminRolePda] = deriveRolePda(
+    configPda,
+    admin,
+    "admin",
+    program.programId,
+  );
+
+  return program.methods
+    .updateMinter(newQuota)
+    .accountsPartial({
+      admin,
+      config: configPda,
+      adminRole: adminRolePda,
+      minterRole: minterRoleAccountPda,
     })
     .instruction();
 }

@@ -28,4 +28,6 @@ pub enum SssError {
     InvalidOracleData,
     #[msg("Oracle price is stale or non-positive")]
     InvalidOraclePrice,
+    #[msg("Minter quota exceeded")]
+    QuotaExceeded,
 }

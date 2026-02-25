@@ -54,7 +54,7 @@
         {
           "name": "burner_role",
           "docs": [
-            "Minter role PDA — minters can also burn."
+            "Burner role PDA — its existence proves burn authorization."
           ]
         },
         {
@@ -329,8 +329,10 @@
         {
           "name": "minter_role",
           "docs": [
-            "Minter role PDA — its existence proves authorization."
-          ]
+            "Minter role PDA — its existence proves authorization.",
+            "Mutable for per-minter quota tracking (amount_minted)."
+          ],
+          "writable": true
         },
         {
           "name": "mint",
@@ -477,7 +479,7 @@
       ],
       "accounts": [
         {
-          "name": "admin",
+          "name": "seizer",
           "signer": true
         },
         {
@@ -510,7 +512,10 @@
           }
         },
         {
-          "name": "admin_role"
+          "name": "seizer_role",
+          "docs": [
+            "Seizer role PDA — its existence proves seizure authorization."
+          ]
         },
         {
           "name": "mint"
@@ -594,6 +599,76 @@
       "args": []
     },
     {
+      "name": "transfer_authority",
+      "discriminator": [
+        48,
+        169,
+        76,
+        72,
+        229,
+        180,
+        55,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  115,
+                  115,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_role",
+          "docs": [
+            "The caller's admin role PDA — will be closed."
+          ],
+          "writable": true
+        },
+        {
+          "name": "new_authority"
+        },
+        {
+          "name": "new_admin_role",
+          "docs": [
+            "The new authority's admin role PDA — will be created."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "unpause",
       "discriminator": [
         169,
@@ -643,6 +718,73 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "update_minter",
+      "discriminator": [
+        164,
+        129,
+        164,
+        88,
+        75,
+        29,
+        91,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  115,
+                  115,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_role",
+          "docs": [
+            "Admin role PDA — proves admin authorization."
+          ]
+        },
+        {
+          "name": "minter_role",
+          "docs": [
+            "The minter's role account to update. Must be a Minter role."
+          ],
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_quota",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     },
     {
       "name": "update_supply_cap",
@@ -756,6 +898,19 @@
         190,
         40,
         119
+      ]
+    },
+    {
+      "name": "AuthorityTransferred",
+      "discriminator": [
+        245,
+        109,
+        179,
+        54,
+        135,
+        92,
+        22,
+        64
       ]
     },
     {
@@ -931,6 +1086,21 @@
       "code": 6010,
       "name": "InvalidRole",
       "msg": "Invalid role value"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidOracleData",
+      "msg": "Invalid oracle price feed data"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidOraclePrice",
+      "msg": "Oracle price is stale or non-positive"
+    },
+    {
+      "code": 6013,
+      "name": "QuotaExceeded",
+      "msg": "Minter quota exceeded"
     }
   ],
   "types": [
@@ -969,6 +1139,26 @@
           },
           {
             "name": "freezer",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AuthorityTransferred",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "config",
+            "type": "pubkey"
+          },
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
             "type": "pubkey"
           }
         ]
@@ -1076,6 +1266,15 @@
           },
           {
             "name": "Pauser"
+          },
+          {
+            "name": "Burner"
+          },
+          {
+            "name": "Blacklister"
+          },
+          {
+            "name": "Seizer"
           }
         ]
       }
@@ -1112,6 +1311,23 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "mint_quota",
+            "docs": [
+              "Per-minter quota: maximum amount this minter is allowed to mint.",
+              "None means unlimited. Only meaningful for Role::Minter."
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "amount_minted",
+            "docs": [
+              "Cumulative amount minted by this minter. Only tracked for Role::Minter."
+            ],
+            "type": "u64"
           }
         ]
       }

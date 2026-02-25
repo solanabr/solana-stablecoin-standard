@@ -27,12 +27,12 @@ export type SssTransferHook = {
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "blacklister",
           "writable": true,
           "signer": true
         },
         {
-          "name": "adminRole",
+          "name": "blacklisterRole",
           "docs": [
             "Verified by checking owner == sss-core program ID and re-deriving the",
             "expected PDA address from known seeds using the mint key."
@@ -167,12 +167,12 @@ export type SssTransferHook = {
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "blacklister",
           "writable": true,
           "signer": true
         },
         {
-          "name": "adminRole",
+          "name": "blacklisterRole",
           "docs": [
             "Verified by checking owner == sss-core program ID and re-deriving the",
             "expected PDA address from known seeds using the mint key."

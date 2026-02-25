@@ -16,6 +16,8 @@ import {
   ROLE_MINTER,
   ROLE_FREEZER,
   ROLE_PAUSER,
+  ROLE_BURNER,
+  ROLE_SEIZER,
   CreateSss1MintResult,
 } from "./helpers";
 
@@ -30,8 +32,10 @@ describe("Edge Cases", () => {
   let recipientAta: PublicKey;
   let treasuryAta: PublicKey;
   let minterRolePda: PublicKey;
+  let burnerRolePda: PublicKey;
   let freezerRolePda: PublicKey;
   let pauserRolePda: PublicKey;
+  let seizerRolePda: PublicKey;
 
   const minter = Keypair.generate();
   const freezer = Keypair.generate();
@@ -59,6 +63,13 @@ describe("Edge Cases", () => {
       minter.publicKey,
       ROLE_MINTER,
     );
+    burnerRolePda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      minter.publicKey,
+      ROLE_BURNER,
+    );
     freezerRolePda = await grantRole(
       coreProgram,
       mintResult.configPda,
@@ -72,6 +83,13 @@ describe("Edge Cases", () => {
       mintResult.adminRolePda,
       pauser.publicKey,
       ROLE_PAUSER,
+    );
+    seizerRolePda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      provider.wallet.publicKey,
+      ROLE_SEIZER,
     );
 
     recipientAta = await createTokenAccount(
@@ -127,7 +145,7 @@ describe("Edge Cases", () => {
         .accountsPartial({
           burner: minter.publicKey,
           config: mintResult.configPda,
-          burnerRole: minterRolePda,
+          burnerRole: burnerRolePda,
           mint: mintResult.mint.publicKey,
           from: recipientAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -145,9 +163,9 @@ describe("Edge Cases", () => {
       await coreProgram.methods
         .seize(new BN(0))
         .accountsPartial({
-          admin: provider.wallet.publicKey,
+          seizer: provider.wallet.publicKey,
           config: mintResult.configPda,
-          adminRole: mintResult.adminRolePda,
+          seizerRole: seizerRolePda,
           mint: mintResult.mint.publicKey,
           from: recipientAta,
           to: treasuryAta,

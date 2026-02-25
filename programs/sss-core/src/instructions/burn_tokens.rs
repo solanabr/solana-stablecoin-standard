@@ -18,13 +18,13 @@ pub struct BurnTokens<'info> {
     )]
     pub config: Account<'info, StablecoinConfig>,
 
-    /// Minter role PDA — minters can also burn.
+    /// Burner role PDA — its existence proves burn authorization.
     #[account(
         seeds = [
             SSS_ROLE_SEED,
             config.key().as_ref(),
             burner.key().as_ref(),
-            &[Role::Minter.as_u8()],
+            &[Role::Burner.as_u8()],
         ],
         bump = burner_role.bump,
     )]

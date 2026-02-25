@@ -60,7 +60,7 @@ export type SssCore = {
         {
           "name": "burnerRole",
           "docs": [
-            "Minter role PDA — minters can also burn."
+            "Burner role PDA — its existence proves burn authorization."
           ]
         },
         {
@@ -335,8 +335,10 @@ export type SssCore = {
         {
           "name": "minterRole",
           "docs": [
-            "Minter role PDA — its existence proves authorization."
-          ]
+            "Minter role PDA — its existence proves authorization.",
+            "Mutable for per-minter quota tracking (amount_minted)."
+          ],
+          "writable": true
         },
         {
           "name": "mint",
@@ -483,7 +485,7 @@ export type SssCore = {
       ],
       "accounts": [
         {
-          "name": "admin",
+          "name": "seizer",
           "signer": true
         },
         {
@@ -516,7 +518,10 @@ export type SssCore = {
           }
         },
         {
-          "name": "adminRole"
+          "name": "seizerRole",
+          "docs": [
+            "Seizer role PDA — its existence proves seizure authorization."
+          ]
         },
         {
           "name": "mint"
@@ -719,6 +724,73 @@ export type SssCore = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "updateMinter",
+      "discriminator": [
+        164,
+        129,
+        164,
+        88,
+        75,
+        29,
+        91,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  115,
+                  115,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "stablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "adminRole",
+          "docs": [
+            "Admin role PDA — proves admin authorization."
+          ]
+        },
+        {
+          "name": "minterRole",
+          "docs": [
+            "The minter's role account to update. Must be a Minter role."
+          ],
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "newQuota",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     },
     {
       "name": "updateSupplyCap",
@@ -1030,6 +1102,11 @@ export type SssCore = {
       "code": 6012,
       "name": "invalidOraclePrice",
       "msg": "Oracle price is stale or non-positive"
+    },
+    {
+      "code": 6013,
+      "name": "quotaExceeded",
+      "msg": "Minter quota exceeded"
     }
   ],
   "types": [
@@ -1195,6 +1272,15 @@ export type SssCore = {
           },
           {
             "name": "pauser"
+          },
+          {
+            "name": "burner"
+          },
+          {
+            "name": "blacklister"
+          },
+          {
+            "name": "seizer"
           }
         ]
       }
@@ -1231,6 +1317,23 @@ export type SssCore = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "mintQuota",
+            "docs": [
+              "Per-minter quota: maximum amount this minter is allowed to mint.",
+              "None means unlimited. Only meaningful for Role::Minter."
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "amountMinted",
+            "docs": [
+              "Cumulative amount minted by this minter. Only tracked for Role::Minter."
+            ],
+            "type": "u64"
           }
         ]
       }

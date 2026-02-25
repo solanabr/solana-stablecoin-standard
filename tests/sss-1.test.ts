@@ -18,6 +18,8 @@ import {
   ROLE_MINTER,
   ROLE_FREEZER,
   ROLE_PAUSER,
+  ROLE_BURNER,
+  ROLE_SEIZER,
   CreateSss1MintResult,
 } from "./helpers";
 
@@ -31,8 +33,10 @@ describe("SSS-1: Minimal Stablecoin", () => {
   let mintResult: CreateSss1MintResult;
   let recipientAta: PublicKey;
   let minterRolePda: PublicKey;
+  let burnerRolePda: PublicKey;
   let freezerRolePda: PublicKey;
   let pauserRolePda: PublicKey;
+  let seizerRolePda: PublicKey;
 
   const minter = Keypair.generate();
   const freezer = Keypair.generate();
@@ -199,6 +203,15 @@ describe("SSS-1: Minimal Stablecoin", () => {
   });
 
   it("burns tokens", async () => {
+    // Grant burner role to the minter keypair (separate from minter role)
+    burnerRolePda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      minter.publicKey,
+      ROLE_BURNER,
+    );
+
     const burnAmount = new BN(200_000);
 
     const configBefore = await fetchConfig(coreProgram, mintResult.configPda);
@@ -212,7 +225,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       .accountsPartial({
         burner: minter.publicKey,
         config: mintResult.configPda,
-        burnerRole: minterRolePda,
+        burnerRole: burnerRolePda,
         mint: mintResult.mint.publicKey,
         from: recipientAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -417,6 +430,15 @@ describe("SSS-1: Minimal Stablecoin", () => {
   });
 
   it("seizes tokens via permanent delegate", async () => {
+    // Grant seizer role to the provider wallet
+    seizerRolePda = await grantRole(
+      coreProgram,
+      mintResult.configPda,
+      mintResult.adminRolePda,
+      provider.wallet.publicKey,
+      ROLE_SEIZER,
+    );
+
     const treasuryAta = await createTokenAccount(
       provider,
       mintResult.mint.publicKey,
@@ -432,9 +454,9 @@ describe("SSS-1: Minimal Stablecoin", () => {
     await coreProgram.methods
       .seize(seizeAmount)
       .accountsPartial({
-        admin: provider.wallet.publicKey,
+        seizer: provider.wallet.publicKey,
         config: mintResult.configPda,
-        adminRole: mintResult.adminRolePda,
+        seizerRole: seizerRolePda,
         mint: mintResult.mint.publicKey,
         from: recipientAta,
         to: treasuryAta,

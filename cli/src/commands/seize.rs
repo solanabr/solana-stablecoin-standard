@@ -22,13 +22,13 @@ pub async fn execute(
 
   // Derive PDAs
   let (config_pda, _) = utils::derive_config_pda(&mint);
-  let (admin_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 0); // Admin = 0
+  let (seizer_role_pda, _) = utils::derive_role_pda(&config_pda, &payer, 6); // Seizer = 6
 
   let ix_data = sss_core::instruction::Seize { amount }.data();
   let accounts = sss_core::accounts::Seize {
-    admin: payer,
+    seizer: payer,
     config: config_pda,
-    admin_role: admin_role_pda,
+    seizer_role: seizer_role_pda,
     mint,
     from: from_account,
     to: to_account,

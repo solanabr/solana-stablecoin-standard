@@ -59,6 +59,9 @@ pub fn handler_grant(ctx: Context<GrantRole>, role: u8) -> Result<()> {
         1 => Role::Minter,
         2 => Role::Freezer,
         3 => Role::Pauser,
+        4 => Role::Burner,
+        5 => Role::Blacklister,
+        6 => Role::Seizer,
         _ => return Err(error!(crate::error::SssError::InvalidRole)),
     };
 
@@ -69,6 +72,8 @@ pub fn handler_grant(ctx: Context<GrantRole>, role: u8) -> Result<()> {
     role_account.granted_by = ctx.accounts.admin.key();
     role_account.granted_at = Clock::get()?.unix_timestamp;
     role_account.bump = ctx.bumps.role_account;
+    role_account.mint_quota = None;
+    role_account.amount_minted = 0;
 
     emit!(RoleGranted {
         config: ctx.accounts.config.key(),

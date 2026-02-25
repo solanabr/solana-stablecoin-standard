@@ -45,3 +45,44 @@ pub fn verify_admin_for_mint(
 
   Ok(())
 }
+
+/// Verifies that the provided blacklister_role account is a valid sss-core
+/// Blacklister RoleAccount PDA for the given mint and authority.
+///
+/// Same logic as verify_admin_for_mint but checks role byte = 5 (Blacklister).
+pub fn verify_blacklister_for_mint(
+  blacklister_role: &AccountInfo,
+  mint_key: &Pubkey,
+  authority_key: &Pubkey,
+) -> Result<()> {
+  // The account must be owned by the sss-core program.
+  require!(
+    blacklister_role.owner == &SSS_CORE_PROGRAM_ID,
+    TransferHookError::Unauthorized
+  );
+
+  // Re-derive the sss-core config PDA from the mint.
+  let (sss_config_pda, _config_bump) = Pubkey::find_program_address(
+    &[SSS_CONFIG_SEED, mint_key.as_ref()],
+    &SSS_CORE_PROGRAM_ID,
+  );
+
+  // Re-derive the expected blacklister role PDA and verify it matches.
+  // Seeds: [b"sss-role", config_key, authority_key, &[Role::Blacklister = 5]]
+  let (expected_pda, _bump) = Pubkey::find_program_address(
+    &[
+      SSS_ROLE_SEED,
+      sss_config_pda.as_ref(),
+      authority_key.as_ref(),
+      &[5u8], // Role::Blacklister = 5
+    ],
+    &SSS_CORE_PROGRAM_ID,
+  );
+
+  require!(
+    blacklister_role.key() == expected_pda,
+    TransferHookError::Unauthorized
+  );
+
+  Ok(())
+}
