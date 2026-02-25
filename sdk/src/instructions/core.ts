@@ -23,6 +23,9 @@ export function buildInitializeIx(
     uri: string;
     decimals: number;
     supplyCap: BN | null;
+    enablePermanentDelegate?: boolean | null;
+    enableTransferHook?: boolean | null;
+    defaultAccountFrozen?: boolean | null;
   },
 ) {
   const [configPda] = deriveConfigPda(mint, program.programId);
@@ -41,6 +44,9 @@ export function buildInitializeIx(
       uri: args.uri,
       decimals: args.decimals,
       supplyCap: args.supplyCap,
+      enablePermanentDelegate: args.enablePermanentDelegate ?? null,
+      enableTransferHook: args.enableTransferHook ?? null,
+      defaultAccountFrozen: args.defaultAccountFrozen ?? null,
     })
     .accounts({
       authority,

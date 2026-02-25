@@ -277,6 +277,9 @@ export async function createSss1Mint(
       uri: args.uri,
       decimals: args.decimals,
       supplyCap: args.supplyCap,
+      enablePermanentDelegate: null,
+      enableTransferHook: null,
+      defaultAccountFrozen: null,
     })
     .accountsPartial({
       authority,
@@ -446,6 +449,9 @@ export async function createSss2Mint(
       uri: args.uri,
       decimals: args.decimals,
       supplyCap: args.supplyCap,
+      enablePermanentDelegate: null,
+      enableTransferHook: null,
+      defaultAccountFrozen: null,
     })
     .accountsPartial({
       authority,
@@ -614,6 +620,9 @@ export async function createSss3Mint(
       uri: args.uri,
       decimals: args.decimals,
       supplyCap: args.supplyCap,
+      enablePermanentDelegate: null,
+      enableTransferHook: null,
+      defaultAccountFrozen: null,
     })
     .accountsPartial({
       authority,

@@ -1107,6 +1107,21 @@ export type SssCore = {
       "code": 6013,
       "name": "quotaExceeded",
       "msg": "Minter quota exceeded"
+    },
+    {
+      "code": 6014,
+      "name": "nameTooLong",
+      "msg": "Name exceeds maximum length of 32 characters"
+    },
+    {
+      "code": 6015,
+      "name": "symbolTooLong",
+      "msg": "Symbol exceeds maximum length of 10 characters"
+    },
+    {
+      "code": 6016,
+      "name": "uriTooLong",
+      "msg": "URI exceeds maximum length of 200 characters"
     }
   ],
   "types": [
@@ -1219,6 +1234,33 @@ export type SssCore = {
             "name": "supplyCap",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "enablePermanentDelegate",
+            "docs": [
+              "Override preset default for permanent delegate. If None, derived from preset."
+            ],
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "enableTransferHook",
+            "docs": [
+              "Override preset default for transfer hook. If None, derived from preset."
+            ],
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "defaultAccountFrozen",
+            "docs": [
+              "Override preset default for default-frozen accounts. If None, derived from preset."
+            ],
+            "type": {
+              "option": "bool"
             }
           }
         ]
@@ -1426,11 +1468,60 @@ export type SssCore = {
             "type": "u8"
           },
           {
+            "name": "name",
+            "docs": [
+              "Stablecoin name (max 32 chars)."
+            ],
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "docs": [
+              "Stablecoin ticker symbol (max 10 chars)."
+            ],
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "docs": [
+              "Metadata URI (max 200 chars)."
+            ],
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "Token decimals (e.g. 6 for USDC-style)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "enablePermanentDelegate",
+            "docs": [
+              "Whether the config PDA is set as permanent delegate on token accounts."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "enableTransferHook",
+            "docs": [
+              "Whether a transfer hook program is attached to the mint."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "defaultAccountFrozen",
+            "docs": [
+              "Whether new token accounts are frozen by default (requires explicit thaw)."
+            ],
+            "type": "bool"
+          },
+          {
             "name": "reserved",
             "type": {
               "array": [
                 "u8",
-                64
+                32
               ]
             }
           }
@@ -1459,6 +1550,18 @@ export type SssCore = {
             "type": {
               "option": "u64"
             }
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
           }
         ]
       }
