@@ -1,0 +1,24 @@
+[package]
+name = "oracle-pricing"
+version = "0.1.0"
+description = "SSS Oracle Pricing: Switchboard oracle feeds for non-USD stablecoin pegs"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "oracle_pricing"
+
+[lints]
+workspace = true
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }

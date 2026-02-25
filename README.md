@@ -52,6 +52,7 @@ Both presets share the same on-chain program. The preset chosen at initializatio
 |---|---|---|
 | `sss_token` | `E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP` | `E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP` |
 | `transfer_hook` | `6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY` | `6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY` |
+| `oracle_pricing` | `62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w` | `62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w` |
 
 ## Quick Start
 
@@ -68,7 +69,7 @@ Both presets share the same on-chain program. The preset chosen at initializatio
 anchor test
 ```
 
-Starts a local validator, deploys both programs, and runs 34 integration tests covering the full SSS-1 and SSS-2 lifecycles, SDK integration tests, convenience wrappers, minter management, and CLI config parsing.
+Starts a local validator, deploys both programs, and runs 38 integration tests covering the full SSS-1 and SSS-2 lifecycles, SDK integration tests, convenience wrappers, minter management, CLI config parsing, and oracle pricing module.
 
 ### Build the SDK and CLI
 
@@ -204,6 +205,7 @@ solana-stablecoin-standard/
 | [SSS-2 Specification](docs/SSS-2.md) | Compliant stablecoin standard — compliance extensions, hook flow |
 | [Compliance Guide](docs/COMPLIANCE.md) | Regulatory considerations, blacklist management, audit trail |
 | [API Reference](docs/API.md) | Backend service REST API endpoints and request/response formats |
+| [Oracle Module](docs/ORACLE.md) | Switchboard oracle integration for non-USD pegs (BRL, EUR) |
 
 ## Backend Services
 
