@@ -3,6 +3,7 @@ import { z } from "zod";
 import { PublicKey } from "@solana/web3.js";
 import { logger } from "../services/logger";
 import { getSolanaService } from "../services/solana";
+import { getComplianceProvider } from "../services/compliance-provider";
 import { publicKeySchema } from "../utils/validation";
 
 const router = Router();
@@ -66,14 +67,31 @@ router.post("/mint", async (req: Request, res: Response) => {
 
   try {
     const { mint, to, amount } = parsed.data;
+
+    // Step: VERIFY — compliance screening
+    const compliance = getComplianceProvider();
+    const screening = await compliance.screenTransaction({
+      to,
+      amount,
+      action: "mint",
+    });
+    if (!screening.approved) {
+      logger.warn("Mint blocked by compliance", { mint, to, amount, reason: screening.reason });
+      res.status(403).json({ error: "Compliance check failed", reason: screening.reason });
+      return;
+    }
+
+    // Step: EXECUTE — on-chain mint
     const solana = getSolanaService();
     const sss = await solana.loadStablecoin(new PublicKey(mint));
     const signature = await sss.mintTokens(
       new PublicKey(to),
       BigInt(amount),
     );
+
+    // Step: LOG — record result with compliance metadata
     logger.info("Mint operation completed", { mint, to, amount, signature });
-    res.json({ success: true, signature });
+    res.json({ success: true, signature, compliance: { provider: screening.provider, checkedAt: screening.checkedAt } });
   } catch (err) {
     handleRouteError(res, err, "Mint");
   }
@@ -91,14 +109,32 @@ router.post("/burn", async (req: Request, res: Response) => {
 
   try {
     const { mint, from, amount } = parsed.data;
+
+    // Step: VERIFY — compliance screening
+    const compliance = getComplianceProvider();
+    const screening = await compliance.screenTransaction({
+      from,
+      to: from, // burn target is the source account
+      amount,
+      action: "burn",
+    });
+    if (!screening.approved) {
+      logger.warn("Burn blocked by compliance", { mint, from, amount, reason: screening.reason });
+      res.status(403).json({ error: "Compliance check failed", reason: screening.reason });
+      return;
+    }
+
+    // Step: EXECUTE — on-chain burn
     const solana = getSolanaService();
     const sss = await solana.loadStablecoin(new PublicKey(mint));
     const signature = await sss.burn(
       new PublicKey(from),
       BigInt(amount),
     );
+
+    // Step: LOG — record result with compliance metadata
     logger.info("Burn operation completed", { mint, from, amount, signature });
-    res.json({ success: true, signature });
+    res.json({ success: true, signature, compliance: { provider: screening.provider, checkedAt: screening.checkedAt } });
   } catch (err) {
     handleRouteError(res, err, "Burn");
   }

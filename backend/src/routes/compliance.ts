@@ -3,6 +3,7 @@ import { z } from "zod";
 import { PublicKey, type ConfirmedSignatureInfo } from "@solana/web3.js";
 import { logger } from "../services/logger";
 import { getSolanaService } from "../services/solana";
+import { getComplianceProvider } from "../services/compliance-provider";
 import { publicKeySchema } from "../utils/validation";
 
 const router = Router();
@@ -99,6 +100,29 @@ router.get("/status/:mint/:address", async (req: Request, res: Response) => {
     res.json({ blacklisted });
   } catch (err) {
     handleRouteError(res, err, "Compliance status check");
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /compliance/screen/:address
+// ---------------------------------------------------------------------------
+router.get("/screen/:address", async (req: Request, res: Response) => {
+  const address = req.params.address as string;
+  try {
+    new PublicKey(address); // validate
+  } catch {
+    res.status(400).json({ error: "Invalid address" });
+    return;
+  }
+
+  try {
+    const compliance = getComplianceProvider();
+    const result = await compliance.screenAddress(address);
+    res.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error("Screening failed", { address, error: message });
+    res.status(500).json({ error: message });
   }
 });
 
