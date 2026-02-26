@@ -80,28 +80,35 @@ cargo test
 ### Create Your First Stablecoin (TypeScript)
 
 ```typescript
-import { SSS } from "@stbr/sss-token";
+import { SolanaStablecoin, Presets } from "@stbr/sss-token";
 import { AnchorProvider } from "@coral-xyz/anchor";
 
 // Set up provider (wallet + connection)
 const provider = AnchorProvider.env();
 
-// Create an SSS-1 stablecoin
-const sss = await SSS.create(provider, {
-  preset: "sss-1",
+// Create an SSS-2 compliant stablecoin
+const stable = await SolanaStablecoin.create(provider, {
+  preset: Presets.SSS_2,
   name: "My Stablecoin",
   symbol: "MUSD",
-  uri: "https://example.com/metadata.json",
   decimals: 6,
-  supplyCap: 1_000_000_000n, // 1B tokens (optional)
+});
+
+// Or create with custom extensions (preset inferred automatically)
+const custom = await SolanaStablecoin.create(provider, {
+  name: "Custom Stable",
+  symbol: "CUSD",
+  extensions: { permanentDelegate: true, transferHook: false },
 });
 
 // Grant minter role, then mint tokens
-await sss.roles.grant(minterWallet.publicKey, "minter");
-await sss.mintTokens(recipientTokenAccount, 1_000_000n);
+await stable.roles.grant(minterWallet.publicKey, "minter");
+await stable.mintTokens(recipientTokenAccount, 1_000_000n);
 
-// Check stablecoin info
-const info = await sss.info();
+// Compliance operations (SSS-2)
+await stable.compliance.blacklistAdd(address, "Sanctions match");
+await stable.compliance.seize(frozenAccount, treasury, amount);
+const supply = await stable.getTotalSupply();
 console.log(`Supply: ${info.currentSupply}`);
 ```
 

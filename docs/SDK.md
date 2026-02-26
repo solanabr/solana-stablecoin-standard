@@ -79,6 +79,24 @@ Token-2022 extensions: MetadataPointer, PermanentDelegate, ConfidentialTransferM
 
 An auditor ElGamal public key can be provided via `Sss3MintOptions.auditorElGamalPubkey` (32-byte `Uint8Array`). If omitted, a zero key is used (for testing).
 
+### Custom Extensions
+
+Instead of choosing a preset, specify which Token-2022 extensions to enable. The preset is inferred automatically:
+
+```typescript
+const custom = await SSS.create(provider, {
+  name: "Custom Stable",
+  symbol: "CUSD",
+  decimals: 6,
+  extensions: {
+    permanentDelegate: true,
+    transferHook: false,
+    defaultAccountFrozen: false,
+  },
+});
+// Inferred as SSS-1 (no transferHook, no confidentialTransfer)
+```
+
 ### Custom Mint Keypair
 
 ```typescript

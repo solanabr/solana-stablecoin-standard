@@ -77,37 +77,45 @@ export class SSS {
   /**
    * Create a new stablecoin from scratch.
    *
-   * 1. Generates a mint keypair
-   * 2. Builds the mint creation tx (per preset)
-   * 3. Builds the sss-core initialize instruction
-   * 4. Sends the transaction
-   * 5. Returns an SSS instance
+   * Accepts either a preset-based config or a custom extensions config:
+   * - `{ preset: "sss-2", name, symbol, ... }` — use a standard preset
+   * - `{ name, symbol, extensions: { permanentDelegate: true, ... } }` — custom config
+   *
+   * When `extensions` is provided without a preset, the preset is inferred:
+   * - confidentialTransfer → SSS-3
+   * - transferHook → SSS-2
+   * - otherwise → SSS-1
    */
   static async create(
     provider: AnchorProvider,
-    options: StablecoinCreateOptions,
+    options: StablecoinCreateOptions | StablecoinCustomOptions,
     mintKeypair?: Keypair,
   ): Promise<SSS> {
+    // If extensions provided, route through custom path
+    if ("extensions" in options && options.extensions) {
+      return SSS.createCustom(provider, options as StablecoinCustomOptions, mintKeypair);
+    }
+    const opts = options as StablecoinCreateOptions;
     const { coreProgram, hookProgram } = SSS.createPrograms(provider);
     const mint = mintKeypair ?? Keypair.generate();
     const payer = provider.publicKey;
-    const decimals = options.decimals ?? 6;
-    const supplyCap = options.supplyCap
-      ? new BN(options.supplyCap.toString())
+    const decimals = opts.decimals ?? 6;
+    const supplyCap = opts.supplyCap
+      ? new BN(opts.supplyCap.toString())
       : null;
 
     // Build mint creation transaction per preset
     let mintTx: Transaction;
-    switch (options.preset) {
+    switch (opts.preset) {
       case "sss-1":
         mintTx = await createSss1MintTransaction(
           provider.connection,
           payer,
           mint,
           {
-            name: options.name,
-            symbol: options.symbol,
-            uri: options.uri,
+            name: opts.name,
+            symbol: opts.symbol,
+            uri: opts.uri,
             decimals,
           },
           coreProgram.programId,
@@ -119,9 +127,9 @@ export class SSS {
           payer,
           mint,
           {
-            name: options.name,
-            symbol: options.symbol,
-            uri: options.uri,
+            name: opts.name,
+            symbol: opts.symbol,
+            uri: opts.uri,
             decimals,
           },
           coreProgram.programId,
@@ -133,16 +141,16 @@ export class SSS {
           payer,
           mint,
           {
-            name: options.name,
-            symbol: options.symbol,
-            uri: options.uri,
+            name: opts.name,
+            symbol: opts.symbol,
+            uri: opts.uri,
             decimals,
           },
           coreProgram.programId,
         );
         break;
       default:
-        throw new Error(`Unknown preset: ${options.preset}`);
+        throw new Error(`Unknown preset: ${opts.preset}`);
     }
 
     // Build sss-core initialize instruction
@@ -151,10 +159,10 @@ export class SSS {
       mint.publicKey,
       payer,
       {
-        preset: PRESET_MAP[options.preset],
-        name: options.name,
-        symbol: options.symbol,
-        uri: options.uri ?? "",
+        preset: PRESET_MAP[opts.preset],
+        name: opts.name,
+        symbol: opts.symbol,
+        uri: opts.uri ?? "",
         decimals,
         supplyCap,
       },
@@ -163,7 +171,7 @@ export class SSS {
     mintTx.add(initIx);
 
     // For SSS-2, also initialize extra account metas for the transfer hook
-    if (options.preset === "sss-2") {
+    if (opts.preset === "sss-2") {
       const hookInitIx = await hookix.buildInitializeExtraAccountMetasIx(
         hookProgram,
         mint.publicKey,
