@@ -79,7 +79,7 @@ await sss.roles.grant(freezerWallet, "freezer");
 await sss.roles.grant(pauserWallet, "pauser");
 
 // Mint
-await sss.mintTokens(recipientTokenAccount, 100_000_000n);
+await sss.mint({ recipient: recipientTokenAccount, amount: 100_000_000n });
 
 // Check info
 const info = await sss.info();

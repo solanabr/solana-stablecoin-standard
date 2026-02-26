@@ -258,13 +258,13 @@ async function main() {
 
     // Create ATA
     const ata = getAssociatedTokenAddressSync(
-      sss.mint, payer.publicKey, false, TOKEN_2022_PROGRAM_ID,
+      sss.mintAddress, payer.publicKey, false, TOKEN_2022_PROGRAM_ID,
     );
     await signSendConfirm(
       connection,
       new Transaction().add(
         createAssociatedTokenAccountInstruction(
-          payer.publicKey, ata, payer.publicKey, sss.mint, TOKEN_2022_PROGRAM_ID,
+          payer.publicKey, ata, payer.publicKey, sss.mintAddress, TOKEN_2022_PROGRAM_ID,
         ),
       ),
       [payer],
@@ -296,7 +296,7 @@ async function main() {
     console.log(`  Supply: ${info.currentSupply} (cap: ${info.supplyCap})`);
 
     (proof.presets as Record<string, unknown>)["sss-1"] = {
-      mint: sss.mint.toBase58(),
+      mint: sss.mintAddress.toBase58(),
       config: sss.configPda.toBase58(),
       transactions: { sig1, grantSig, mintSig, burnSig, freezeSig, thawSig, pauseSig, unpauseSig },
       finalSupply: info.currentSupply.toString(),
@@ -348,20 +348,20 @@ async function main() {
     // 5. Create ATAs (will be default frozen due to DefaultAccountState)
     const recipient2 = Keypair.generate();
     const payerAta2 = getAssociatedTokenAddressSync(
-      sss2.mint, payer.publicKey, false, TOKEN_2022_PROGRAM_ID,
+      sss2.mintAddress, payer.publicKey, false, TOKEN_2022_PROGRAM_ID,
     );
     const recipientAta2 = getAssociatedTokenAddressSync(
-      sss2.mint, recipient2.publicKey, false, TOKEN_2022_PROGRAM_ID,
+      sss2.mintAddress, recipient2.publicKey, false, TOKEN_2022_PROGRAM_ID,
     );
 
     await signSendConfirm(
       connection,
       new Transaction().add(
         createAssociatedTokenAccountInstruction(
-          payer.publicKey, payerAta2, payer.publicKey, sss2.mint, TOKEN_2022_PROGRAM_ID,
+          payer.publicKey, payerAta2, payer.publicKey, sss2.mintAddress, TOKEN_2022_PROGRAM_ID,
         ),
         createAssociatedTokenAccountInstruction(
-          payer.publicKey, recipientAta2, recipient2.publicKey, sss2.mint, TOKEN_2022_PROGRAM_ID,
+          payer.publicKey, recipientAta2, recipient2.publicKey, sss2.mintAddress, TOKEN_2022_PROGRAM_ID,
         ),
       ),
       [payer],
@@ -425,7 +425,7 @@ async function main() {
     console.log(`  Preset: ${info2.preset}, Supply: ${info2.currentSupply} (cap: ${info2.supplyCap})`);
 
     (proof.presets as Record<string, unknown>)["sss-2"] = {
-      mint: sss2.mint.toBase58(),
+      mint: sss2.mintAddress.toBase58(),
       config: sss2.configPda.toBase58(),
       recipient: recipient2.publicKey.toBase58(),
       transactions: {
@@ -479,13 +479,13 @@ async function main() {
     await sss3.roles.grant(payer.publicKey, "minter");
 
     const ata3 = getAssociatedTokenAddressSync(
-      sss3.mint, payer.publicKey, false, TOKEN_2022_PROGRAM_ID,
+      sss3.mintAddress, payer.publicKey, false, TOKEN_2022_PROGRAM_ID,
     );
     await signSendConfirm(
       connection,
       new Transaction().add(
         createAssociatedTokenAccountInstruction(
-          payer.publicKey, ata3, payer.publicKey, sss3.mint, TOKEN_2022_PROGRAM_ID,
+          payer.publicKey, ata3, payer.publicKey, sss3.mintAddress, TOKEN_2022_PROGRAM_ID,
         ),
       ),
       [payer],
@@ -501,7 +501,7 @@ async function main() {
     console.log(`  Preset: ${info3.preset}, Supply: ${info3.currentSupply}`);
 
     (proof.presets as Record<string, unknown>)["sss-3"] = {
-      mint: sss3.mint.toBase58(),
+      mint: sss3.mintAddress.toBase58(),
       config: sss3.configPda.toBase58(),
       transactions: { sig3, mintSig3, burnSig3 },
       finalSupply: info3.currentSupply.toString(),

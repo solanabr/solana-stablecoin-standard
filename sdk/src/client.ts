@@ -27,7 +27,7 @@ import { createSss3MintTransaction } from "./presets/sss3";
 import { ConfidentialOps } from "./confidential";
 
 export class SSS {
-  readonly mint: PublicKey;
+  readonly mintAddress: PublicKey;
   readonly configPda: PublicKey;
   readonly configBump: number;
   private coreProgram: Program<SssCore>;
@@ -42,7 +42,7 @@ export class SSS {
     hookProgram: Program<SssTransferHook>,
     provider: AnchorProvider,
   ) {
-    this.mint = mint;
+    this.mintAddress = mint;
     this.configPda = configPda;
     this.configBump = configBump;
     this.coreProgram = coreProgram;
@@ -277,6 +277,14 @@ export class SSS {
   // ---------------------------------------------------------------------------
 
   /**
+   * Mint new tokens to a recipient token account.
+   * Caller must have the minter role.
+   */
+  async mint(options: { recipient: PublicKey; amount: bigint }): Promise<string> {
+    return this.mintTokens(options.recipient, options.amount);
+  }
+
+  /**
    * Mint new tokens to a token account.
    * Caller must have the minter role.
    */
@@ -284,7 +292,7 @@ export class SSS {
     const minter = this.provider.publicKey;
     const ix = await coreix.buildMintTokensIx(
       this.coreProgram,
-      this.mint,
+      this.mintAddress,
       minter,
       to,
       new BN(amount.toString()),
@@ -306,7 +314,7 @@ export class SSS {
     const burner = this.provider.publicKey;
     const ix = await coreix.buildBurnTokensIx(
       this.coreProgram,
-      this.mint,
+      this.mintAddress,
       burner,
       from,
       new BN(amount.toString()),
@@ -328,7 +336,7 @@ export class SSS {
     const freezer = this.provider.publicKey;
     const ix = await coreix.buildFreezeAccountIx(
       this.coreProgram,
-      this.mint,
+      this.mintAddress,
       freezer,
       tokenAccount,
     );
@@ -349,7 +357,7 @@ export class SSS {
     const freezer = this.provider.publicKey;
     const ix = await coreix.buildThawAccountIx(
       this.coreProgram,
-      this.mint,
+      this.mintAddress,
       freezer,
       tokenAccount,
     );
@@ -414,7 +422,7 @@ export class SSS {
     const seizer = this.provider.publicKey;
     const ix = await coreix.buildSeizeIx(
       this.coreProgram,
-      this.mint,
+      this.mintAddress,
       seizer,
       from,
       to,
@@ -594,7 +602,7 @@ export class SSS {
       const blacklister = this.provider.publicKey;
       const ix = await hookix.buildAddToBlacklistIx(
         this.hookProgram,
-        this.mint,
+        this.mintAddress,
         blacklister,
         address,
         reason,
@@ -616,7 +624,7 @@ export class SSS {
       const blacklister = this.provider.publicKey;
       const ix = await hookix.buildRemoveFromBlacklistIx(
         this.hookProgram,
-        this.mint,
+        this.mintAddress,
         blacklister,
         address,
         this.coreProgram.programId,
@@ -636,7 +644,7 @@ export class SSS {
      */
     check: async (address: PublicKey): Promise<boolean> => {
       const [blacklistPda] = deriveBlacklistPda(
-        this.mint,
+        this.mintAddress,
         address,
         this.hookProgram.programId,
       );
@@ -675,7 +683,7 @@ export class SSS {
      * No ZK proofs required.
      */
     deposit: async (tokenAccount: PublicKey, amount: bigint, decimals: number): Promise<string> => {
-      const ops = new ConfidentialOps(this.provider.connection, this.mint, this.provider.publicKey);
+      const ops = new ConfidentialOps(this.provider.connection, this.mintAddress, this.provider.publicKey);
       const ix = ops.buildDepositInstruction(tokenAccount, amount, decimals);
       try {
         return await this.provider.sendAndConfirm(new Transaction().add(ix));
@@ -689,7 +697,7 @@ export class SSS {
      * No ZK proofs required.
      */
     applyPending: async (tokenAccount: PublicKey): Promise<string> => {
-      const ops = new ConfidentialOps(this.provider.connection, this.mint, this.provider.publicKey);
+      const ops = new ConfidentialOps(this.provider.connection, this.mintAddress, this.provider.publicKey);
       const ix = ops.buildApplyPendingBalanceInstruction(tokenAccount);
       try {
         return await this.provider.sendAndConfirm(new Transaction().add(ix));

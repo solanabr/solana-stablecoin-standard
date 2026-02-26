@@ -150,7 +150,7 @@ const custom = await SolanaStablecoin.create(provider, {
 
 // Token operations
 await stable.roles.grant(minterWallet.publicKey, "minter");
-await stable.mintTokens(recipientTokenAccount, 1_000_000n);
+await stable.mint({ recipient: recipientTokenAccount, amount: 1_000_000n });
 const supply = await stable.getTotalSupply();
 
 // Compliance (SSS-2)

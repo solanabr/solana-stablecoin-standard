@@ -117,6 +117,13 @@ const sss = await SSS.create(provider, {
 Caller must have the `minter` role. Blocked when paused.
 
 ```typescript
+// Object-style (recommended)
+const signature = await sss.mint({
+  recipient: recipientTokenAccount,
+  amount: 1_000_000n,
+});
+
+// Positional-style (also available)
 const signature = await sss.mintTokens(
   recipientTokenAccount, // PublicKey of the token account
   1_000_000n,            // Amount in base units
@@ -383,7 +390,7 @@ import {
 } from "@stbr/sss-token";
 
 try {
-  await sss.mintTokens(account, amount);
+  await sss.mint({ recipient: account, amount });
 } catch (err) {
   if (err instanceof PausedError) {
     console.log("Operations are paused");

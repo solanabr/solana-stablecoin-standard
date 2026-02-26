@@ -159,7 +159,7 @@ await sss.roles.grant(minterWallet, "minter");
 await sss.thaw(userTokenAccount);
 
 // Mint tokens to verified user
-await sss.mintTokens(userTokenAccount, 1_000_000n);
+await sss.mint({ recipient: userTokenAccount, amount: 1_000_000n });
 
 // Blacklist a sanctioned address
 await sss.blacklist.add(sanctionedWallet, "OFAC SDN list");

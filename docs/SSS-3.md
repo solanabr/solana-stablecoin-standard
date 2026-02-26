@@ -224,7 +224,7 @@ const sss = await SSS.create(provider, {
 
 // Grant minter role and mint tokens (public balance)
 await sss.roles.grant(minterWallet, "minter");
-await sss.mintTokens(userTokenAccount, 10_000_000n);
+await sss.mint({ recipient: userTokenAccount, amount: 10_000_000n });
 
 // Move tokens into confidential balance
 await sss.confidential.deposit(userTokenAccount, 10_000_000n, 6);

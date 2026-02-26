@@ -91,7 +91,7 @@ async function main() {
     supplyCap: BigInt(10_000_000_000_000), // 10M tokens
   });
   txSigs.initialize = "see-explorer";
-  console.log(`   Mint: ${sss.mint.toBase58()}`);
+  console.log(`   Mint: ${sss.mintAddress.toBase58()}`);
   console.log(`   Config: ${sss.configPda.toBase58()}`);
 
   // 2. Grant minter role
@@ -102,7 +102,7 @@ async function main() {
   // 3. Create ATA and mint tokens (public balance)
   console.log("\n3. Minting tokens to public balance...");
   const ata = getAssociatedTokenAddressSync(
-    sss.mint,
+    sss.mintAddress,
     payer.publicKey,
     false,
     TOKEN_2022_PROGRAM_ID,
@@ -112,7 +112,7 @@ async function main() {
       payer.publicKey,
       ata,
       payer.publicKey,
-      sss.mint,
+      sss.mintAddress,
       TOKEN_2022_PROGRAM_ID,
     ),
   );
@@ -167,7 +167,7 @@ async function main() {
   // Save proof
   const proof: ProofResult = {
     preset: "sss-3",
-    mint: sss.mint.toBase58(),
+    mint: sss.mintAddress.toBase58(),
     config: sss.configPda.toBase58(),
     transactions: txSigs,
     notes,

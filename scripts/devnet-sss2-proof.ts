@@ -83,7 +83,7 @@ async function main() {
     decimals: 6,
   });
   txSigs.initialize = "see-explorer";
-  console.log(`   Mint: ${sss.mint.toBase58()}`);
+  console.log(`   Mint: ${sss.mintAddress.toBase58()}`);
   console.log(`   Config: ${sss.configPda.toBase58()}`);
 
   // 2. Grant roles
@@ -95,13 +95,13 @@ async function main() {
   // 3. Create ATAs (will be frozen by default due to DefaultAccountState)
   console.log("\n3. Creating token accounts (default frozen)...");
   const payerAta = getAssociatedTokenAddressSync(
-    sss.mint,
+    sss.mintAddress,
     payer.publicKey,
     false,
     TOKEN_2022_PROGRAM_ID,
   );
   const recipientAta = getAssociatedTokenAddressSync(
-    sss.mint,
+    sss.mintAddress,
     recipient.publicKey,
     false,
     TOKEN_2022_PROGRAM_ID,
@@ -113,7 +113,7 @@ async function main() {
         payer.publicKey,
         payerAta,
         payer.publicKey,
-        sss.mint,
+        sss.mintAddress,
         TOKEN_2022_PROGRAM_ID,
       ),
     )
@@ -122,7 +122,7 @@ async function main() {
         payer.publicKey,
         recipientAta,
         recipient.publicKey,
-        sss.mint,
+        sss.mintAddress,
         TOKEN_2022_PROGRAM_ID,
       ),
     );
@@ -198,7 +198,7 @@ async function main() {
   // Save proof
   const proof: ProofResult = {
     preset: "sss-2",
-    mint: sss.mint.toBase58(),
+    mint: sss.mintAddress.toBase58(),
     config: sss.configPda.toBase58(),
     transactions: txSigs,
     timestamp: new Date().toISOString(),

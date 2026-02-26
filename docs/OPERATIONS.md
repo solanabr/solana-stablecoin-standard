@@ -77,7 +77,7 @@ const sss = await SSS.create(provider, {
 });
 
 // Record the mint address
-console.log("Mint:", sss.mint.toBase58());
+console.log("Mint:", sss.mintAddress.toBase58());
 ```
 
 ### CLI Creation
