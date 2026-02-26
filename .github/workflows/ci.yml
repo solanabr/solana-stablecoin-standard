@@ -127,7 +127,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build SDK
-        run: pnpm --filter @sss/sdk build
+        run: pnpm --filter @stbr/sss-token build
 
       - name: Run SDK tests
         run: pnpm test:sdk
@@ -176,7 +176,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build SDK
-        run: pnpm --filter @sss/sdk build
+        run: pnpm --filter @stbr/sss-token build
 
       - name: Typecheck backend
         run: cd backend && npx tsc --noEmit

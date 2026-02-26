@@ -4,7 +4,7 @@
   "scripts": {
     "build": "anchor build",
     "test:integration": "anchor test --skip-build",
-    "test:sdk": "pnpm --filter @sss/sdk test",
+    "test:sdk": "pnpm --filter @stbr/sss-token test",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
   },

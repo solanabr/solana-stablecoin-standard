@@ -1,6 +1,6 @@
 # API Reference
 
-The SSS backend provides a REST API for stablecoin operations. Built with Express, it wraps the `@sss/sdk` and exposes endpoints for minting, burning, freezing, compliance, and monitoring.
+The SSS backend provides a REST API for stablecoin operations. Built with Express, it wraps the `@stbr/sss-token` and exposes endpoints for minting, burning, freezing, compliance, and monitoring.
 
 ## Base URL
 

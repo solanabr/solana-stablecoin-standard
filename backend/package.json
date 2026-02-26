@@ -11,7 +11,7 @@
     "@coral-xyz/anchor": "^0.32.0",
     "@solana/web3.js": "^1.98",
     "@solana/spl-token": "^0.4",
-    "@sss/sdk": "workspace:*",
+    "@stbr/sss-token": "workspace:*",
     "express": "^4",
     "cors": "^2",
     "helmet": "^8",

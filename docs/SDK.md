@@ -1,13 +1,13 @@
 # SDK Reference
 
-The `@sss/sdk` TypeScript SDK provides a high-level client for creating and managing stablecoins on Solana.
+The `@stbr/sss-token` TypeScript SDK provides a high-level client for creating and managing stablecoins on Solana.
 
 ## Installation
 
 ```bash
-pnpm add @sss/sdk
+pnpm add @stbr/sss-token
 # or
-npm install @sss/sdk
+npm install @stbr/sss-token
 ```
 
 **Peer dependencies:** `@coral-xyz/anchor`, `@solana/web3.js`, `@solana/spl-token`
@@ -15,7 +15,7 @@ npm install @sss/sdk
 ## Quick Start
 
 ```typescript
-import { SSS } from "@sss/sdk";
+import { SSS } from "@stbr/sss-token";
 import { AnchorProvider } from "@coral-xyz/anchor";
 
 const provider = AnchorProvider.env();
@@ -301,7 +301,7 @@ For testing environments where actual encryption is not exercised:
 import {
   generateTestElGamalKeypair,
   generateTestAesKey,
-} from "@sss/sdk";
+} from "@stbr/sss-token";
 
 const { publicKey, secretKey } = generateTestElGamalKeypair();
 const aesKey = generateTestAesKey();
@@ -317,7 +317,7 @@ import {
   deriveExtraAccountMetasPda,
   SSS_CORE_PROGRAM_ID,
   SSS_HOOK_PROGRAM_ID,
-} from "@sss/sdk";
+} from "@stbr/sss-token";
 
 const [configPda, bump] = deriveConfigPda(mintPublicKey);
 const [rolePda] = deriveRolePda(configPda, walletPublicKey, "minter");
@@ -345,7 +345,7 @@ import {
   buildInitializeExtraAccountMetasIx,
   buildAddToBlacklistIx,
   buildRemoveFromBlacklistIx,
-} from "@sss/sdk";
+} from "@stbr/sss-token";
 ```
 
 These return `TransactionInstruction` objects that can be composed into custom transactions.
@@ -362,7 +362,7 @@ import {
   UnauthorizedError,
   LastAdminError,
   SenderBlacklistedError,
-} from "@sss/sdk";
+} from "@stbr/sss-token";
 
 try {
   await sss.mintTokens(account, amount);

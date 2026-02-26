@@ -559,7 +559,7 @@ static async createCustom(
 
 ```bash
 cargo build --bin sss
-pnpm --filter @sss/sdk build
+pnpm --filter @stbr/sss-token build
 ```
 
 **Step 8: Commit**
@@ -755,7 +755,7 @@ cp target/types/sss_transfer_hook.ts sdk/src/idl/sss_transfer_hook.ts
 **Step 2: Build SDK**
 
 ```bash
-pnpm --filter @sss/sdk build
+pnpm --filter @stbr/sss-token build
 ```
 
 **Step 3: Run integration tests**

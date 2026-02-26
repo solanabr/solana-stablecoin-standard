@@ -197,7 +197,7 @@ pub struct BlacklistEntry {
 
 ## 5. SDK Design
 
-### 5.1 TypeScript SDK (`@sss/sdk`)
+### 5.1 TypeScript SDK (`@stbr/sss-token`)
 
 ```typescript
 // Factory-based API
@@ -411,7 +411,7 @@ solana-stablecoin-standard/
 ├── programs/
 │   ├── sss-core/               # Anchor program
 │   └── sss-transfer-hook/      # Anchor program
-├── sdk/                        # TypeScript SDK (@sss/sdk)
+├── sdk/                        # TypeScript SDK (@stbr/sss-token)
 ├── cli/                        # Rust CLI (sss-cli)
 ├── backend/                    # Backend services
 ├── tui/                        # Admin TUI (ratatui)

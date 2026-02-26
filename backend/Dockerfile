@@ -18,7 +18,7 @@ COPY target/idl/ target/idl/
 COPY target/types/ target/types/
 
 # Build SDK first (backend depends on it), then backend
-RUN pnpm --filter @sss/sdk build
+RUN pnpm --filter @stbr/sss-token build
 RUN pnpm --filter sss-backend build
 
 # Production stage

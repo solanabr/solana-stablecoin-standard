@@ -143,7 +143,7 @@ packages:
   "scripts": {
     "build": "anchor build",
     "test": "anchor test",
-    "test:sdk": "pnpm --filter @sss/sdk test",
+    "test:sdk": "pnpm --filter @stbr/sss-token test",
     "test:integration": "pnpm --filter sss-tests test",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
@@ -201,7 +201,7 @@ trident-tests/fuzz_tests/fuzzing/hfuzz_workspace/
 
 ## Quick Reference
 - **Anchor programs:** `programs/sss-core/`, `programs/sss-transfer-hook/`
-- **TypeScript SDK:** `sdk/` (pnpm workspace: `@sss/sdk`)
+- **TypeScript SDK:** `sdk/` (pnpm workspace: `@stbr/sss-token`)
 - **Rust CLI:** `cli/` (cargo workspace: `sss-cli`)
 - **Backend:** `backend/` (Express/Fastify)
 - **TUI:** `tui/` (ratatui)
@@ -1987,7 +1987,7 @@ git commit -m "test: add SSS-2 full lifecycle with transfer hook and blacklist"
 
 ```json
 {
-  "name": "@sss/sdk",
+  "name": "@stbr/sss-token",
   "version": "0.1.0",
   "description": "Solana Stablecoin Standard SDK",
   "main": "dist/index.js",

@@ -198,7 +198,7 @@ Replace calls to `buildConfidentialTransferMintIx(...)` with `createInitializeCo
 
 **Step 5: Build and verify**
 
-Run: `pnpm build --filter @sss/sdk`
+Run: `pnpm build --filter @stbr/sss-token`
 Expected: SUCCESS
 
 **Step 6: Commit**
@@ -658,7 +658,7 @@ anchor build
 cargo build --bin sss-cli
 cd frontend && npx next build
 cd backend && npx tsc --noEmit
-pnpm build --filter @sss/sdk
+pnpm build --filter @stbr/sss-token
 ```
 
 Expected: All builds succeed with zero errors.

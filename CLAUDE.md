@@ -2,7 +2,7 @@
 
 ## Quick Reference
 - **Anchor programs:** `programs/sss-core/`, `programs/sss-transfer-hook/`
-- **TypeScript SDK:** `sdk/` (pnpm workspace: `@sss/sdk`)
+- **TypeScript SDK:** `sdk/` (pnpm workspace: `@stbr/sss-token`)
 - **Rust CLI:** `cli/` (cargo workspace: `sss-cli`)
 - **Backend:** `backend/` (Express/Fastify)
 - **TUI:** `tui/` (ratatui)

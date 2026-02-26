@@ -9,7 +9,7 @@ A production-grade framework for creating, managing, and operating stablecoins o
                     +-----------+-----------+
                                 |
                     +-----------v-----------+
-                    |      @sss/sdk         |
+                    |      @stbr/sss-token         |
                     |  TypeScript SDK       |
                     +---+-------+-------+---+
                         |       |       |
@@ -80,7 +80,7 @@ cargo test
 ### Create Your First Stablecoin (TypeScript)
 
 ```typescript
-import { SSS } from "@sss/sdk";
+import { SSS } from "@stbr/sss-token";
 import { AnchorProvider } from "@coral-xyz/anchor";
 
 // Set up provider (wallet + connection)
@@ -129,7 +129,7 @@ sss-token mint --mint <MINT_ADDRESS> --to <TOKEN_ACCOUNT> --amount 1000000
 - `sss-core` -- Universal stablecoin management with role-based access control, supply cap enforcement, pause/unpause, and permanent delegate seizure
 - `sss-transfer-hook` -- Token-2022 transfer hook for blacklist enforcement with cross-program admin verification
 
-**TypeScript SDK (`@sss/sdk`)**
+**TypeScript SDK (`@stbr/sss-token`)**
 - Preset-based stablecoin creation (SSS-1, SSS-2, SSS-3)
 - Full token lifecycle operations (mint, burn, freeze, thaw, pause, seize)
 - Role management (admin, minter, freezer, pauser, burner, blacklister, seizer)
@@ -166,7 +166,7 @@ solana-stablecoin-standard/
   programs/
     sss-core/              # Core stablecoin program (Anchor)
     sss-transfer-hook/     # Transfer hook program (Anchor)
-  sdk/                     # TypeScript SDK (@sss/sdk)
+  sdk/                     # TypeScript SDK (@stbr/sss-token)
   cli/                     # Rust CLI (sss-token)
   backend/                 # Express REST API
   tui/                     # ratatui terminal UI

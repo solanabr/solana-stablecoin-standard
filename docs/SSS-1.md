@@ -62,7 +62,7 @@ When `SSS.create()` is called with `preset: "sss-1"`, the SDK builds a single tr
 ## Example
 
 ```typescript
-import { SSS } from "@sss/sdk";
+import { SSS } from "@stbr/sss-token";
 
 // Create
 const sss = await SSS.create(provider, {

@@ -37,7 +37,7 @@ pub async fn execute(ctx: &CliContext, action: ConfidentialAction) -> Result<()>
       println!("transactions, which is best handled by the TypeScript SDK.");
       println!();
       println!("Use the TypeScript SDK for this operation:");
-      println!("  import {{ SSS3Client }} from '@sss/sdk';");
+      println!("  import {{ SSS3Client }} from '@stbr/sss-token';");
       println!("  await client.confidentialTransfer(mint, from, to, amount);");
       println!();
       Ok(())
@@ -49,7 +49,7 @@ pub async fn execute(ctx: &CliContext, action: ConfidentialAction) -> Result<()>
       println!("proofs, which is best handled by the TypeScript SDK.");
       println!();
       println!("Use the TypeScript SDK for this operation:");
-      println!("  import {{ SSS3Client }} from '@sss/sdk';");
+      println!("  import {{ SSS3Client }} from '@stbr/sss-token';");
       println!("  await client.confidentialWithdraw(mint, account, amount);");
       println!();
       Ok(())

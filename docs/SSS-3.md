@@ -211,7 +211,7 @@ Instruction data (67 bytes, Pod/fixed-size):
 ## Example: Full Confidential Flow
 
 ```typescript
-import { SSS, generateTestElGamalKeypair } from "@sss/sdk";
+import { SSS, generateTestElGamalKeypair } from "@stbr/sss-token";
 
 // Create SSS-3 stablecoin with auditor key
 const auditorKeys = generateTestElGamalKeypair(); // Use real derivation in production

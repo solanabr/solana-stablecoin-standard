@@ -15,7 +15,7 @@ https://superteam.fun/earn/listing/build-the-solana-stablecoin-standard-bounty
 ## Architecture (decided)
 - 2 Anchor programs: `sss-core` (universal stablecoin management) + `sss-transfer-hook` (blacklist/allowlist compliance)
 - 3 presets (SDK-level, not program-level): SSS-1 (minimal), SSS-2 (compliant), SSS-3 (private/confidential)
-- TypeScript SDK (`@sss/sdk`), Rust CLI (`sss-cli`), Backend services (Express/Fastify)
+- TypeScript SDK (`@stbr/sss-token`), Rust CLI (`sss-cli`), Backend services (Express/Fastify)
 - Transfer hooks + confidential transfers are INCOMPATIBLE — SSS-2 uses hooks, SSS-3 uses auditor key mechanism
 
 ## Strategy

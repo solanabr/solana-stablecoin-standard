@@ -66,7 +66,7 @@ node dist/main.js
 ### SDK Creation
 
 ```typescript
-import { SSS } from "@sss/sdk";
+import { SSS } from "@stbr/sss-token";
 
 const sss = await SSS.create(provider, {
   preset: "sss-2",
@@ -292,7 +292,7 @@ anchor upgrade --program-id <PROGRAM_ID> target/deploy/<program>.so
 ### SDK Upgrades
 
 ```bash
-pnpm update @sss/sdk
+pnpm update @stbr/sss-token
 ```
 
 The SDK is versioned independently of the on-chain programs. Ensure the SDK version is compatible with the deployed program version.

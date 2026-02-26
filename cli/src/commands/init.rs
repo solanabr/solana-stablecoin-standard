@@ -91,7 +91,7 @@ pub async fn execute(
   if preset_u8 == 3 {
     anyhow::bail!(
       "SSS-3 (Private) initialization requires the TypeScript SDK for \
-       ConfidentialTransferMint extension setup. Use the @sss/sdk package instead.\n\
+       ConfidentialTransferMint extension setup. Use the @stbr/sss-token package instead.\n\
        See: docs/SSS-3.md"
     );
   }

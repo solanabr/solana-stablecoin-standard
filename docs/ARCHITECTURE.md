@@ -15,7 +15,7 @@ Solana Stablecoin Standard (SSS) follows a 3-layer architecture that separates b
 +------------------------------------------------------------------+
 |                    Layer 1 — Base SDK                              |
 |     Token-2022 mint creation  |  sss-core (roles, lifecycle)      |
-|     CLI (sss-token)           |  TypeScript SDK (@sss/sdk)        |
+|     CLI (sss-token)           |  TypeScript SDK (@stbr/sss-token)        |
 +------------------------------------------------------------------+
 |                       Solana (Token-2022)                          |
 +------------------------------------------------------------------+
@@ -39,7 +39,7 @@ The foundation layer provides token creation, lifecycle management, and role-bas
 
 **Client Tooling**
 - CLI (`sss-token`): Rust-based CLI for all on-chain operations
-- TypeScript SDK (`@sss/sdk`): Programmatic access to all SSS functionality
+- TypeScript SDK (`@stbr/sss-token`): Programmatic access to all SSS functionality
 - Backend: Express service for sanctions screening and fiat lifecycle verification
 - TUI: ratatui-based terminal dashboard
 - Frontend: Next.js 15 explorer

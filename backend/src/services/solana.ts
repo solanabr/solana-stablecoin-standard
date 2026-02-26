@@ -1,6 +1,6 @@
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import { SSS } from "@sss/sdk";
+import { SSS } from "@stbr/sss-token";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { logger } from "./logger";

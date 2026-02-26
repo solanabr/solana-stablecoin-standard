@@ -141,7 +141,7 @@ The SSS-2 creation transaction includes everything from SSS-1 plus:
 ## Example
 
 ```typescript
-import { SSS } from "@sss/sdk";
+import { SSS } from "@stbr/sss-token";
 
 // Create SSS-2 stablecoin
 const sss = await SSS.create(provider, {
