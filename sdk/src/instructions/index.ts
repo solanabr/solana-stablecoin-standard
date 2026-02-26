@@ -9,6 +9,8 @@ export {
   buildSeizeIx,
   buildGrantRoleIx,
   buildRevokeRoleIx,
+  buildTransferAuthorityIx,
+  buildUpdateMinterIx,
   buildUpdateSupplyCapIx,
 } from "./core";
 
