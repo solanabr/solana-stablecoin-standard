@@ -244,6 +244,28 @@ docker compose up    # Backend with health check at :3000/health
 | **Interactive Admin TUI** | ratatui terminal dashboard for real-time monitoring |
 | **Example Frontend** | Next.js 15 scaffold for stablecoin creation and management |
 
+#### TUI Dashboard (ratatui)
+
+Real-time terminal dashboard for monitoring stablecoin config, supply stats, roles, and events.
+
+![TUI Dashboard](docs/images/tui-dashboard.png)
+
+```bash
+cargo run --bin sss-tui <MINT_ADDRESS> --rpc https://api.devnet.solana.com
+```
+
+#### Frontend Admin Panel (Next.js 15)
+
+Web-based admin interface with wallet integration for all stablecoin operations.
+
+| Dashboard | Operations | Confidential Transfers |
+|:-:|:-:|:-:|
+| ![Dashboard](docs/images/frontend-dashboard.png) | ![Operations](docs/images/frontend-operations.png) | ![Confidential](docs/images/frontend-confidential.png) |
+
+```bash
+cd frontend && pnpm dev    # http://localhost:3000
+```
+
 ---
 
 ## Devnet Deployment
