@@ -9,7 +9,7 @@ on:
 env:
   SOLANA_VERSION: "2.1.14"
   ANCHOR_VERSION: "0.32.0"
-  RUST_TOOLCHAIN: "1.79.0"
+  RUST_TOOLCHAIN: "1.82.0"
   NODE_VERSION: "22"
 
 concurrency:
