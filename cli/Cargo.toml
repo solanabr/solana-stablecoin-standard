@@ -17,8 +17,8 @@ clap = { version = "4", features = ["derive", "env"] }
 solana-sdk = { workspace = true }
 solana-client = { workspace = true }
 solana-account-decoder = "2.2"
-spl-token-2022 = { workspace = true }
-spl-associated-token-account = "6"
+spl-token-2022 = { workspace = true, features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "6", features = ["no-entrypoint"] }
 spl-token-confidential-transfer-proof-extraction = "0.2"
 solana-zk-sdk = "2.2"
 serde = { version = "1", features = ["derive"] }
