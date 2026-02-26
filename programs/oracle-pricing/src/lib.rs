@@ -7,7 +7,7 @@ pub mod switchboard;
 
 use instructions::*;
 
-declare_id!("62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w");
+declare_id!("EPa1rmXgW71g92F9VUK68BfkgiRQxWRt4WRN1p4pqHZ5");
 
 #[program]
 pub mod oracle_pricing {

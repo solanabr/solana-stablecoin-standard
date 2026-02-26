@@ -2,7 +2,8 @@
   "deployedAt": "Sat, 21 Feb 2026 21:40:53 GMT",
   "programIds": {
     "sssToken": "E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP",
-    "hook": "6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY"
+    "hook": "6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY",
+    "oraclePricing": "EPa1rmXgW71g92F9VUK68BfkgiRQxWRt4WRN1p4pqHZ5"
   },
   "results": {
     "SSS-1 init": "2PLTPtcusFhNB7j6nMM2XceCEgvXEuKYAacnBGXKGWjm3soFSeSvrWqrD8ki5Y9EaKRQihnLRmheS81DJ7J8zymz",

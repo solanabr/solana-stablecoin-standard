@@ -17,7 +17,7 @@ Switchboard Aggregator (BRL/USD)
 └─────────────────────┘         + sets return_data for CPI callers
 ```
 
-Program ID: `62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w`
+Program ID: `EPa1rmXgW71g92F9VUK68BfkgiRQxWRt4WRN1p4pqHZ5`
 
 ## Data Model
 

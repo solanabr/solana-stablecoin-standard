@@ -52,7 +52,7 @@ Both presets share the same on-chain program. The preset chosen at initializatio
 |---|---|---|
 | `sss_token` | `E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP` | `E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP` |
 | `transfer_hook` | `6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY` | `6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY` |
-| `oracle_pricing` | `62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w` | `62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w` |
+| `oracle_pricing` | `EPa1rmXgW71g92F9VUK68BfkgiRQxWRt4WRN1p4pqHZ5` | `EPa1rmXgW71g92F9VUK68BfkgiRQxWRt4WRN1p4pqHZ5` |
 
 ## Quick Start
 

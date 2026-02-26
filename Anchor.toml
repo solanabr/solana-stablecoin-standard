@@ -8,12 +8,12 @@ skip-lint = false
 [programs.devnet]
 sss_token = "E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP"
 transfer_hook = "6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY"
-oracle_pricing = "62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w"
+oracle_pricing = "EPa1rmXgW71g92F9VUK68BfkgiRQxWRt4WRN1p4pqHZ5"
 
 [programs.localnet]
 sss_token = "E7iCiXrkudyt5j1nVHHmbuqCEyLP2hD4VGNJyuPAdWwP"
 transfer_hook = "6tULvFAJ7HfaMsjqcUyS7G3kJyncrBsth9kp2UGramiY"
-oracle_pricing = "62W3YccPPBB7W1RG6CEsXRPrujRvZMhZREHz6BtPnV7w"
+oracle_pricing = "EPa1rmXgW71g92F9VUK68BfkgiRQxWRt4WRN1p4pqHZ5"
 
 [registry]
 url = "https://api.apr.dev"
