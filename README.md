@@ -83,63 +83,15 @@ The binary is output to `target/debug/sss` (or `target/release/sss` with `--rele
 ## Project Structure
 
 ```
-solana-stablecoin-standard/
-  programs/
-    sss-token/                 # Core stablecoin program
-      src/
-        instructions/          # 14 instruction handlers
-          initialize.rs        # Create mint + config + roles
-          mint.rs              # Mint tokens (minter role)
-          burn.rs              # Burn tokens
-          freeze.rs            # Freeze a token account
-          thaw.rs              # Thaw a token account
-          pause.rs             # Pause all operations
-          unpause.rs           # Resume operations
-          update_roles.rs      # Assign pauser/blacklister/seizer
-          update_minter.rs     # Configure minter wallets + quotas
-          transfer_authority.rs# Transfer master authority
-          blacklist_add.rs     # Add address to blacklist (SSS-2)
-          blacklist_remove.rs  # Remove address from blacklist (SSS-2)
-          seize.rs             # Seize tokens from blacklisted address (SSS-2)
-          attest_reserve.rs    # Record reserve attestation (GENIUS Act)
-        state/                 # Account structures
-          config.rs            # StablecoinConfig
-          roles.rs             # RoleRegistry
-          minter.rs            # MinterInfo
-          blacklist.rs         # BlacklistEntry
-          reserve.rs           # ReserveAttestation
-          audit.rs             # AuditLogEntry
-        utils/                 # Access control + feature gating
-        errors.rs              # Error codes (25 variants)
-        events.rs              # Anchor events (14 event types)
-        lib.rs                 # Program entry point
-    sss-transfer-hook/         # Transfer hook program (SSS-2)
-      src/
-        lib.rs                 # Hook execute + ExtraAccountMetaList init
-  sdk/                         # TypeScript SDK
-    src/
-      client.ts                # SSSClient class
-      pda.ts                   # PDA derivation helpers
-      types.ts                 # TypeScript type definitions
-      events.ts                # Event parsing utilities
-      oracle.ts                # OracleModule (Pyth price feeds)
-      presets.ts               # Preset configuration helpers
-      errors.ts                # Error mapping + SSSError class
-      constants.ts             # Program IDs + PDA seeds
-      index.ts                 # Public exports
-  cli/                         # Rust CLI
-    src/
-      main.rs                  # Clap argument parsing + dispatch
-      commands/                # Subcommand implementations
-      config.rs                # CLI configuration (RPC URL, keypair)
-      display.rs               # Formatted terminal output
-      pda.rs                   # PDA derivation helpers
-      tui.rs                   # Interactive ratatui dashboard
-  backend/                     # Backend services
-  tests/                       # Anchor integration tests
-  docs/                        # Architecture + preset documentation
-  Anchor.toml                  # Anchor workspace config
-  Cargo.toml                   # Rust workspace config
+programs/
+  sss-token/          # Core program — 14 instructions, 5 account types, 25 error codes
+  sss-transfer-hook/  # Transfer hook — blacklist enforcement on every transfer (SSS-2)
+sdk/                  # TypeScript SDK — SSSClient, PDA helpers, oracle module, presets
+cli/                  # Rust CLI — 14 subcommands + interactive ratatui TUI dashboard
+app/                  # Next.js frontend — landing page + wallet-connected dashboard
+backend/              # Express.js REST API wrapping the SDK
+tests/                # Anchor integration + E2E devnet tests
+docs/                 # Architecture, presets, compliance, operations docs
 ```
 
 ## Features
@@ -238,13 +190,38 @@ The deploy script will:
 
 ### Example Devnet Transactions
 
-| Action | Signature | Explorer |
-|--------|-----------|----------|
-| Deploy sss-token | `4Qo6UqzYjFXgTK5e834vzSQtgJBrubiWgNqhFpbWjQMWn9TG7uMMeTMf1Lv3C76fxoWEzLZTP9iDDUDjsLu7rNHh` | [View](https://explorer.solana.com/tx/4Qo6UqzYjFXgTK5e834vzSQtgJBrubiWgNqhFpbWjQMWn9TG7uMMeTMf1Lv3C76fxoWEzLZTP9iDDUDjsLu7rNHh?cluster=devnet) |
-| Deploy sss-transfer-hook | `3tL27qMEeiGRfH7NGzhkfDtBoyBi32gXMFqjob7pN1JG2sSioQVf87WQnQUAHQCUZpisNkg9oVkRqt1fn5qhPBYn` | [View](https://explorer.solana.com/tx/3tL27qMEeiGRfH7NGzhkfDtBoyBi32gXMFqjob7pN1JG2sSioQVf87WQnQUAHQCUZpisNkg9oVkRqt1fn5qhPBYn?cluster=devnet) |
-| Init SSS-1 (DevnetUSD) | `24fcq83aVQNuvEeMf7P6HuPcPhb8YhNbYeDdHhCdUKBKrapRkfwL8G9qQuR5Dmm9MTJJx2n8thWdfKEjVoq4AtyF` | [View](https://explorer.solana.com/tx/24fcq83aVQNuvEeMf7P6HuPcPhb8YhNbYeDdHhCdUKBKrapRkfwL8G9qQuR5Dmm9MTJJx2n8thWdfKEjVoq4AtyF?cluster=devnet) |
+| Action | Signature |
+|--------|-----------|
+| Deploy sss-token | [`4Qo6Uq...u7rNHh`](https://explorer.solana.com/tx/4Qo6UqzYjFXgTK5e834vzSQtgJBrubiWgNqhFpbWjQMWn9TG7uMMeTMf1Lv3C76fxoWEzLZTP9iDDUDjsLu7rNHh?cluster=devnet) |
+| Deploy sss-transfer-hook | [`3tL27q...hPBYn`](https://explorer.solana.com/tx/3tL27qMEeiGRfH7NGzhkfDtBoyBi32gXMFqjob7pN1JG2sSioQVf87WQnQUAHQCUZpisNkg9oVkRqt1fn5qhPBYn?cluster=devnet) |
+| Init SSS-1 (DevnetUSD) | [`24fcq8...4AtyF`](https://explorer.solana.com/tx/24fcq83aVQNuvEeMf7P6HuPcPhb8YhNbYeDdHhCdUKBKrapRkfwL8G9qQuR5Dmm9MTJJx2n8thWdfKEjVoq4AtyF?cluster=devnet) |
 
-**Example Mint:** `9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv` ([View](https://explorer.solana.com/address/9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv?cluster=devnet))
+**Example Mint:** [`9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv`](https://explorer.solana.com/address/9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv?cluster=devnet)
+
+### Live Demo: Full SSS-2 Workflow
+
+Every operation executed end-to-end on Solana devnet against a single SSS-2 mint. Click any signature to verify on Solana Explorer.
+
+**Mint:** [`C9TssJentaYfyyfbhihHRGfxS5t3aWHS8LoXJbopyLgp`](https://explorer.solana.com/address/C9TssJentaYfyyfbhihHRGfxS5t3aWHS8LoXJbopyLgp?cluster=devnet)
+
+| # | Operation | Description | Transaction |
+|---|-----------|-------------|-------------|
+| 1 | **Initialize SSS-2** | Create mint with MetadataPointer + PermanentDelegate + TransferHook + DefaultAccountState | [`2Cueq6...cZF9`](https://explorer.solana.com/tx/2Cueq6MC4JzDczrcGXXmgyYAfVUU832RzYUMqfnYygJNp6imRxQw712xmz61YB8EKLhbeGQT2VrvFXDNSt9jcZF9?cluster=devnet) |
+| 2 | **Init Transfer Hook** | Initialize ExtraAccountMetaList for blacklist enforcement | [`3VRxTx...NCfr`](https://explorer.solana.com/tx/3VRxTxjwdk4eCUyzqT2dcoWsa2DwsNvSXbr2khg4PKf9b5BX15jxSCdiwAexVqH4TQBqygy1ovFV7myzTvNHNCfr?cluster=devnet) |
+| 3 | **Register Minter** | Add minter with 1,000,000 token quota | [`5rLcNs...ipSF`](https://explorer.solana.com/tx/5rLcNs7G2aQqaJ6hBJDnzkMwXAenHeSLLvF49tQ2ZoaRxdRz6vNBaQNLEoQgEPCqLdrgePQ7jmnhMGKJuaw6ipSF?cluster=devnet) |
+| 4 | **Mint 1,000 Tokens** | Mint tokens to recipient (auto-creates ATA) | [`2hpwXK...mSt2`](https://explorer.solana.com/tx/2hpwXKWK2wQe5E7LtYTS4ToXijmiPLNsjTvRzXoNyfQ1etYLQzxjTKUDjN5wvE8hcfRrAoKFFFEUUv6vJUbAmSt2?cluster=devnet) |
+| 5 | **Burn 100 Tokens** | Burn tokens from caller's account | [`rNNVwW...YJfy`](https://explorer.solana.com/tx/rNNVwWtsPvprVBScTLWk5zZf7BF22PVXoPMryMcGt6CdtFgpSZDxrtXysn9gQCL6AxFAywMTjGqRkrzrgkWYJfy?cluster=devnet) |
+| 6 | **Freeze Account** | Freeze a token account | [`2fRzw6...QEPB`](https://explorer.solana.com/tx/2fRzw6SPj9TcEPsAiKXSjLSpagFTkrxK2cgAW3VLh1o7VDmr344c3rZDXN5vonELXqyCvj6UuXcd8nLTMT2xQEPB?cluster=devnet) |
+| 7 | **Thaw Account** | Thaw a frozen token account | [`3hdai9...M6yw`](https://explorer.solana.com/tx/3hdai9dLYouDEV4dfDg3d1MWZ7QQBjSmuXZyWnK6WUwGh5UNdPy686HbSbYVQjpKYHpqgcaYYf8dpXALrsFzM6yw?cluster=devnet) |
+| 8 | **Pause** | Pause all minting and burning globally | [`TwZZCx...hVjR`](https://explorer.solana.com/tx/TwZZCx4nhi6rxAF1QEzmqzf2pNn1Re1bzz89R43fyAshZEpBqR33AXXbdAevs4p8tcbwwFszGUPqqo6zYc3hVjR?cluster=devnet) |
+| 9 | **Unpause** | Resume operations | [`5W9gyY...tQrM`](https://explorer.solana.com/tx/5W9gyYRw9fZvsXGE7CBsLqHR25CeQvrp5PveWyNfkXN5DEHVW3bJop5Z13vTTKQViafn4hCmXzNW6hkSoMyBtQrM?cluster=devnet) |
+| 10 | **Assign Roles** | Set pauser, blacklister, and seizer roles | [`5w3Qeg...kf4D`](https://explorer.solana.com/tx/5w3QegM657D5hHAkhe8ccfB4FoyatDLrYgUjYAC9ze2aB28NNuegBo5dU9txMGWcE9LjbYVDMzsCQHf9XGUjkf4D?cluster=devnet) |
+| 11 | **Blacklist Add** | Add address to blacklist + freeze their account | [`2AQcWo...czVe`](https://explorer.solana.com/tx/2AQcWo6cg4HNLreSZmLW7KvRvgRB39Bcy1WYBkTxqmSk6W12ZGVXKyT7bXSqcwBVcXDF7DtjnNNzVT46NGvUczVe?cluster=devnet) |
+| 12 | **Seize Tokens** | Seize tokens from blacklisted address via burn+mint | [`CHWrRL...v3P`](https://explorer.solana.com/tx/CHWrRLUhhZhxvDg5rgrHgRtACKjqjG3wKcfN4h3M4khUs5q6HpmZFWcqBCn33qpfgi96mUn7KRsJd3SYWZsvu3P?cluster=devnet) |
+| 13 | **Blacklist Remove** | Remove address from blacklist + thaw their account | [`5mq1c8...EoKS`](https://explorer.solana.com/tx/5mq1c8icf3Xf6W8ynLSPUroLqj2fxB6UqF4WmZf43kDBpZLpV3tzWYRkUGYuc8M3kTjP1Y4jforNwgrSQxToEoKS?cluster=devnet) |
+| 14 | **Attest Reserve** | Record on-chain reserve attestation (GENIUS Act) | [`h3X8T9...jBM`](https://explorer.solana.com/tx/h3X8T9F1j2437izqGv3tnJds7qJZr5K9VW9QuXD5Jdor8AsAezwCifJc7tGYAcGroy8QJFbymUdix4WHxDrcjBM?cluster=devnet) |
+
+> All 14 operations executed successfully on devnet in a single automated E2E run.
 
 ### Example CLI Usage (Devnet)
 

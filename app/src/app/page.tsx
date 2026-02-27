@@ -8,6 +8,7 @@ import Hero from "@/components/Hero";
 import Marquee from "@/components/Marquee";
 import StackingCards from "@/components/StackingCards";
 import SplitPresets from "@/components/SplitPresets";
+import LiveDemo from "@/components/LiveDemo";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -26,6 +27,7 @@ export default function Home() {
       <Marquee />
       <StackingCards animationsReady={animationsReady} />
       <SplitPresets />
+      <LiveDemo />
       <Footer />
     </>
   );
