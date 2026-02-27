@@ -476,7 +476,7 @@ function renderSplash() {
 
   blessed.text({
     parent: splashScreen, top: 12, left: 'center', align: 'center',
-    content: 'Welcome to the SSS Terminal.\nSuperteam Brazil Bounty Submission.',
+    content: 'Welcome to the SSS Terminal.\nInstitutional Stablecoin Standard for Solana.',
     style: { fg: colors.text }
   });
 
