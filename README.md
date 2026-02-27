@@ -58,7 +58,15 @@ anchor build
 anchor test
 ```
 
-The test suite runs 20 integration tests covering both SSS-1 and SSS-2 flows.
+The test suite runs 60 integration tests across all presets plus SDK integration and 69 fuzz/property tests.
+
+| Suite | Tests | Coverage |
+|-------|-------|----------|
+| SSS-1 | 16 | init, minter, mint, burn, freeze, thaw, pause, unpause, feature-gate, quota, roles, **unauthorized access (4 tests)** |
+| SSS-2 | 12 | init with hook, ExtraAccountMetaList, mint, blacklist, seize, pause, attestation, **transfer hook execution (4 tests)** |
+| SSS-3 | 9 | init with confidential transfers, mint, burn, freeze, thaw, pause, blacklist, roles |
+| SDK Integration | 23 | Client construction, PDA derivation, all instructions, error handling |
+| Fuzz / Property | 69 | Validation boundaries, overflow protection, RBAC, proptest generative |
 
 ### Build the CLI
 
@@ -196,6 +204,11 @@ See [cli/README.md](cli/README.md) for the complete command reference.
 
 - [Architecture](docs/architecture.md) -- PDA schema, Token-2022 extensions, transfer hook flow, role model
 - [Presets](docs/presets.md) -- Feature comparison matrix and use cases
+- [SSS-1 Specification](docs/SSS-1.md) -- Minimal stablecoin preset details
+- [SSS-2 Specification](docs/SSS-2.md) -- Compliant stablecoin preset with transfer hook
+- [Compliance](docs/COMPLIANCE.md) -- GENIUS Act mapping, OFAC screening, regulatory considerations
+- [Operations](docs/OPERATIONS.md) -- Operator runbook: deployment, monitoring, incident response
+- [API Reference](docs/API.md) -- Backend REST API endpoint documentation
 
 ## Build Notes
 

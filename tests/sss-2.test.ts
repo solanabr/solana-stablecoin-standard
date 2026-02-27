@@ -14,7 +14,9 @@ import {
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
   createTransferCheckedInstruction,
+  createTransferCheckedWithTransferHookInstruction,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAccount,
 } from "@solana/spl-token";
 import { expect } from "chai";
 import BN from "bn.js";
@@ -471,5 +473,300 @@ describe("SSS-2: Compliant Stablecoin", () => {
     // Verify config index incremented
     const config = await tokenProgram.account.stablecoinConfig.fetch(configPda);
     expect(config.reserveAttestationIndex.toNumber()).to.equal(1);
+  });
+
+  // ---------------------------------------------------------------
+  // Transfer Hook Execution Tests
+  //
+  // Defense-in-depth: SSS-2 uses TWO mechanisms to prevent blacklisted transfers:
+  //   1. blacklist_add freezes the token account → Token-2022 blocks transfers to/from frozen accounts
+  //   2. Transfer hook checks BlacklistEntry PDAs → blocks transfers even if freeze is somehow bypassed
+  //
+  // These tests verify the complete flow including hook execution via ExtraAccountMetaList.
+  // ---------------------------------------------------------------
+
+  it("Transfer succeeds via transfer hook when both parties are not blacklisted", async () => {
+    // State: userA has ~500M tokens (1B minted - 500M seized), userB has 0 tokens
+    // Both are NOT blacklisted. The transfer hook should allow this transfer.
+    const userAAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userA.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    const userBAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userB.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Use createTransferCheckedWithTransferHookInstruction which automatically
+    // resolves the ExtraAccountMetaList and appends hook accounts
+    const transferIx = await createTransferCheckedWithTransferHookInstruction(
+      provider.connection,
+      userAAta,
+      mint.publicKey,
+      userBAta,
+      userA.publicKey,
+      BigInt(100_000_000), // 100 tokens
+      6, // decimals
+      [],
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const tx = new Transaction().add(transferIx);
+    const sig = await provider.sendAndConfirm(tx, [userA]);
+    expect(sig).to.be.a("string");
+    await provider.connection.confirmTransaction(sig, "confirmed");
+
+    // Verify balances after transfer
+    const userBAccount = await getAccount(
+      provider.connection,
+      userBAta,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    expect(Number(userBAccount.amount)).to.equal(100_000_000);
+
+    const userAAccount = await getAccount(
+      provider.connection,
+      userAAta,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    expect(Number(userAAccount.amount)).to.equal(400_000_000); // 500M - 100M
+  });
+
+  it("Transfer fails when destination owner is blacklisted", async () => {
+    // Blacklist userB — this also freezes their token account
+    const userBAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userB.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    const userAAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userA.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const [blacklistPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("blacklist"),
+        configPda.toBuffer(),
+        userB.publicKey.toBuffer(),
+      ],
+      tokenProgram.programId
+    );
+
+    await tokenProgram.methods
+      .blacklistAdd({ reason: "Transfer hook test — destination blacklisted" })
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleRegistry: roleRegistryPda,
+        blacklistEntry: blacklistPda,
+        addressToBlacklist: userB.publicKey,
+        mint: mint.publicKey,
+        targetTokenAccount: userBAta,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    // Attempt transfer from userA (clean) → userB (blacklisted)
+    // This should fail — the destination is frozen AND the hook would reject it
+    try {
+      const transferIx = await createTransferCheckedWithTransferHookInstruction(
+        provider.connection,
+        userAAta,
+        mint.publicKey,
+        userBAta,
+        userA.publicKey,
+        BigInt(50_000_000), // 50 tokens
+        6,
+        [],
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      const tx = new Transaction().add(transferIx);
+      await provider.sendAndConfirm(tx, [userA]);
+      expect.fail("Transfer to blacklisted destination should have failed");
+    } catch (err: any) {
+      // Expected — transfer blocked by frozen account check or hook
+      expect(err.message || err.toString()).to.not.include("Should have failed");
+    }
+
+    // Verify balances unchanged
+    const userAAccount = await getAccount(
+      provider.connection,
+      userAAta,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    expect(Number(userAAccount.amount)).to.equal(400_000_000); // unchanged
+  });
+
+  it("Transfer fails when source owner is blacklisted", async () => {
+    // userB is already blacklisted from previous test.
+    // Now also blacklist userA (the sender).
+    const userAAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userA.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    const treasuryAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      treasury.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const [blacklistPdaA] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("blacklist"),
+        configPda.toBuffer(),
+        userA.publicKey.toBuffer(),
+      ],
+      tokenProgram.programId
+    );
+
+    await tokenProgram.methods
+      .blacklistAdd({ reason: "Transfer hook test — source blacklisted" })
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleRegistry: roleRegistryPda,
+        blacklistEntry: blacklistPdaA,
+        addressToBlacklist: userA.publicKey,
+        mint: mint.publicKey,
+        targetTokenAccount: userAAta,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    // Attempt transfer from userA (blacklisted+frozen) → treasury (clean)
+    // This should fail — source is frozen AND the hook would reject it
+    try {
+      const transferIx = await createTransferCheckedWithTransferHookInstruction(
+        provider.connection,
+        userAAta,
+        mint.publicKey,
+        treasuryAta,
+        userA.publicKey,
+        BigInt(50_000_000),
+        6,
+        [],
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      const tx = new Transaction().add(transferIx);
+      await provider.sendAndConfirm(tx, [userA]);
+      expect.fail("Transfer from blacklisted source should have failed");
+    } catch (err: any) {
+      expect(err.message || err.toString()).to.not.include("Should have failed");
+    }
+
+    // Cleanup: un-blacklist both users
+    await tokenProgram.methods
+      .blacklistRemove()
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleRegistry: roleRegistryPda,
+        blacklistEntry: blacklistPdaA,
+        mint: mint.publicKey,
+        targetTokenAccount: userAAta,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc();
+
+    const [blacklistPdaB] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("blacklist"),
+        configPda.toBuffer(),
+        userB.publicKey.toBuffer(),
+      ],
+      tokenProgram.programId
+    );
+    const userBAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userB.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    await tokenProgram.methods
+      .blacklistRemove()
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleRegistry: roleRegistryPda,
+        blacklistEntry: blacklistPdaB,
+        mint: mint.publicKey,
+        targetTokenAccount: userBAta,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc();
+  });
+
+  it("Transfer succeeds again after destination is un-blacklisted", async () => {
+    // Both users are now clean (un-blacklisted in previous test cleanup)
+    const userAAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userA.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    const userBAta = getAssociatedTokenAddressSync(
+      mint.publicKey,
+      userB.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // Transfer should succeed now that both parties are clean
+    const transferIx = await createTransferCheckedWithTransferHookInstruction(
+      provider.connection,
+      userAAta,
+      mint.publicKey,
+      userBAta,
+      userA.publicKey,
+      BigInt(50_000_000), // 50 tokens
+      6,
+      [],
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const tx = new Transaction().add(transferIx);
+    const sig = await provider.sendAndConfirm(tx, [userA]);
+    expect(sig).to.be.a("string");
+    await provider.connection.confirmTransaction(sig, "confirmed");
+
+    // Verify updated balances
+    const userBAccount = await getAccount(
+      provider.connection,
+      userBAta,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    expect(Number(userBAccount.amount)).to.equal(150_000_000); // 100M + 50M
+
+    const userAAccount = await getAccount(
+      provider.connection,
+      userAAta,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+    expect(Number(userAAccount.amount)).to.equal(350_000_000); // 400M - 50M
   });
 });

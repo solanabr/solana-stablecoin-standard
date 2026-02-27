@@ -2,6 +2,7 @@
 members = [
     "programs/*",
     "cli",
+    "trident-tests",
 ]
 resolver = "2"
 

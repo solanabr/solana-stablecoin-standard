@@ -1,0 +1,136 @@
+version: "3.9"
+
+# =============================================================================
+# Solana Stablecoin Standard -- Docker Compose
+# =============================================================================
+#
+# Services:
+#   api                - Express REST API (port 3000)
+#   event-listener     - Subscribes to on-chain sss-token program logs
+#   webhook-service    - Receives events and dispatches to registered webhooks
+#   compliance-service - Sanctions / risk screening stub
+#
+# Usage:
+#   docker compose up --build
+#   docker compose up -d           # detached
+#   docker compose logs -f api     # follow api logs
+#
+# Environment variables (override in .env or shell):
+#   RPC_URL        - Solana RPC endpoint (default: host.docker.internal:8899)
+#   KEYPAIR_PATH   - path to authority keypair JSON inside the container
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # API -- main Express backend
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sss-api
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      RPC_URL: "${RPC_URL:-http://host.docker.internal:8899}"
+      KEYPAIR_PATH: "${KEYPAIR_PATH:-/keys/id.json}"
+      WEBHOOK_SERVICE_URL: "http://webhook-service:3001"
+      COMPLIANCE_SERVICE_URL: "http://compliance-service:3002"
+    volumes:
+      - "${HOME}/.config/solana:/keys:ro"
+    networks:
+      - sss-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    depends_on:
+      webhook-service:
+        condition: service_healthy
+      compliance-service:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Event Listener -- subscribes to on-chain program logs via websocket
+  # ---------------------------------------------------------------------------
+  event-listener:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sss-event-listener
+    command: ["node", "dist/backend/src/services/event-listener.js"]
+    environment:
+      RPC_URL: "${RPC_URL:-http://host.docker.internal:8899}"
+      SSS_TOKEN_PROGRAM_ID: "5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4"
+      WEBHOOK_SERVICE_URL: "http://webhook-service:3001"
+    networks:
+      - sss-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    depends_on:
+      webhook-service:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Webhook Service -- event dispatch with retry
+  # ---------------------------------------------------------------------------
+  webhook-service:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sss-webhook-service
+    command: ["node", "dist/backend/src/services/webhook-service.js"]
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+      MAX_RETRIES: "5"
+    networks:
+      - sss-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Compliance Service -- sanctions screening stub
+  # ---------------------------------------------------------------------------
+  compliance-service:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sss-compliance-service
+    command: ["node", "dist/backend/src/services/compliance-service.js"]
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: "3002"
+    networks:
+      - sss-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3002/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+# =============================================================================
+# Network
+# =============================================================================
+networks:
+  sss-net:
+    driver: bridge
+    name: sss-network

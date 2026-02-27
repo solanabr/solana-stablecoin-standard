@@ -467,4 +467,165 @@ describe("SSS-1: Minimal Stablecoin", () => {
       })
       .rpc();
   });
+
+  // ---------------------------------------------------------------
+  // Unauthorized Access Tests (negative path)
+  // ---------------------------------------------------------------
+
+  it("Rejects pause from non-pauser", async () => {
+    // Assign pauser to a specific key, then try to pause with a different one
+    const designatedPauser = Keypair.generate();
+    const sigAirdrop = await provider.connection.requestAirdrop(
+      designatedPauser.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(sigAirdrop);
+
+    // Set pauser to designatedPauser
+    await program.methods
+      .updateRoles({
+        role: { pauser: {} },
+        newHolder: designatedPauser.publicKey,
+      })
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleRegistry: roleRegistryPda,
+      })
+      .rpc();
+
+    // Now try to pause with the authority wallet (which is no longer the pauser)
+    // Master authority should still work because of fallback
+    // Instead test with a completely random keypair
+    const impostor = Keypair.generate();
+    const sigImpostor = await provider.connection.requestAirdrop(
+      impostor.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(sigImpostor);
+
+    try {
+      await program.methods
+        .pause()
+        .accounts({
+          authority: impostor.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+        })
+        .signers([impostor])
+        .rpc();
+
+      expect.fail("Non-pauser should not be able to pause");
+    } catch (err: any) {
+      expect(err.error?.errorCode?.code || err.message).to.include("Unauthorized");
+    }
+
+    // Restore pauser to authority
+    await program.methods
+      .updateRoles({
+        role: { pauser: {} },
+        newHolder: authority.publicKey,
+      })
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleRegistry: roleRegistryPda,
+      })
+      .rpc();
+  });
+
+  it("Rejects transfer_authority from non-master", async () => {
+    const impostor = Keypair.generate();
+    const newAuth = Keypair.generate();
+    const sigImpostor = await provider.connection.requestAirdrop(
+      impostor.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(sigImpostor);
+
+    try {
+      await program.methods
+        .transferAuthority()
+        .accounts({
+          authority: impostor.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+          newAuthority: newAuth.publicKey,
+        })
+        .signers([impostor])
+        .rpc();
+
+      expect.fail("Non-master should not be able to transfer authority");
+    } catch (err: any) {
+      expect(err.error?.errorCode?.code || err.message).to.include("Unauthorized");
+    }
+  });
+
+  it("Rejects update_roles from non-master", async () => {
+    const impostor = Keypair.generate();
+    const sigImpostor = await provider.connection.requestAirdrop(
+      impostor.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(sigImpostor);
+
+    try {
+      await program.methods
+        .updateRoles({
+          role: { pauser: {} },
+          newHolder: impostor.publicKey,
+        })
+        .accounts({
+          authority: impostor.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+        })
+        .signers([impostor])
+        .rpc();
+
+      expect.fail("Non-master should not be able to update roles");
+    } catch (err: any) {
+      expect(err.error?.errorCode?.code || err.message).to.include("Unauthorized");
+    }
+  });
+
+  it("Rejects update_minter from non-master", async () => {
+    const impostor = Keypair.generate();
+    const sigImpostor = await provider.connection.requestAirdrop(
+      impostor.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(sigImpostor);
+
+    const [minterInfoPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("minter"),
+        configPda.toBuffer(),
+        impostor.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    try {
+      await program.methods
+        .updateMinter({
+          isActive: true,
+          mintQuota: new BN(999_999_999_999),
+        })
+        .accounts({
+          authority: impostor.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+          minterInfo: minterInfoPda,
+          minterWallet: impostor.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([impostor])
+        .rpc();
+
+      expect.fail("Non-master should not be able to create minters");
+    } catch (err: any) {
+      expect(err.error?.errorCode?.code || err.message).to.include("Unauthorized");
+    }
+  });
 });

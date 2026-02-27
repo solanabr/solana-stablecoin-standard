@@ -1,0 +1,13 @@
+[package]
+name = "trident-tests"
+version = "0.1.0"
+edition = "2021"
+description = "Fuzz tests for SSS Token Program"
+publish = false
+
+[dependencies]
+sss-token = { path = "../programs/sss-token", features = ["no-entrypoint"] }
+anchor-lang = "0.31.1"
+
+[dev-dependencies]
+proptest = "1.4"

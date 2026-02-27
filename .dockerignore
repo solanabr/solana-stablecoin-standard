@@ -1,0 +1,40 @@
+# Rust build artifacts
+target/
+
+# Node modules (will be installed fresh in the container)
+node_modules/
+sdk/node_modules/
+backend/node_modules/
+sdk/dist/
+backend/dist/
+
+# Anchor / Solana build artifacts
+.anchor/
+programs/*/target/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Test artifacts
+tests/
+app/
+
+# CLI (Rust binary, not needed in backend container)
+cli/
+
+# Docs
+docs/
+*.md
+
+# Misc
+Cargo.lock
+Cargo.toml
+Anchor.toml
+yarn.lock
+FULL_EXTRACTION.txt
+migrations/
