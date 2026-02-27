@@ -1,5 +1,6 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Args;
+use serde::Deserialize;
 use solana_sdk::{
     pubkey::Pubkey,
     signature::Keypair,
@@ -26,6 +27,20 @@ pub struct InitArgs {
     pub uri: String,
     #[arg(long, default_value_t = 6)]
     pub decimals: u8,
+    #[arg(long, help = "Path to TOML config file (for custom preset)")]
+    pub config: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct TomlConfig {
+    pub name: Option<String>,
+    pub symbol: Option<String>,
+    pub uri: Option<String>,
+    pub decimals: Option<u8>,
+    pub enable_permanent_delegate: Option<bool>,
+    pub enable_transfer_hook: Option<bool>,
+    pub default_account_frozen: Option<bool>,
+    pub enable_confidential_transfers: Option<bool>,
 }
 
 fn parse_preset(s: &str) -> Result<StablecoinPreset, String> {
@@ -45,11 +60,26 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
 
     let token_program = spl_token_2022_id();
 
+    // If --config is provided with custom preset, load TOML overrides
+    let toml_config = if let Some(config_path) = &args.config {
+        let content = std::fs::read_to_string(config_path)
+            .with_context(|| format!("Failed to read config file: {}", config_path))?;
+        Some(toml::from_str::<TomlConfig>(&content)
+            .context("Failed to parse TOML config")?)
+    } else {
+        None
+    };
+
+    let name = toml_config.as_ref().and_then(|c| c.name.clone()).unwrap_or_else(|| args.name.clone());
+    let symbol = toml_config.as_ref().and_then(|c| c.symbol.clone()).unwrap_or_else(|| args.symbol.clone());
+    let uri = toml_config.as_ref().and_then(|c| c.uri.clone()).unwrap_or_else(|| args.uri.clone());
+    let decimals = toml_config.as_ref().and_then(|c| c.decimals).unwrap_or(args.decimals);
+
     let params = sss_token::instructions::InitializeParams {
-        name: args.name.clone(),
-        symbol: args.symbol.clone(),
-        uri: args.uri.clone(),
-        decimals: args.decimals,
+        name,
+        symbol,
+        uri,
+        decimals,
         preset: args.preset,
     };
 

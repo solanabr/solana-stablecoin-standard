@@ -1,0 +1,105 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+/* ── Base ────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  cursor: none;
+}
+
+body {
+  overflow-x: hidden;
+  background-color: #EBE9E1;
+}
+
+::selection {
+  background-color: #FF3E00;
+  color: #EBE9E1;
+}
+
+/* ── Grid background ─────────────────────────────────────── */
+.grid-bg {
+  background-size: 50px 50px;
+  background-image:
+    linear-gradient(to right, rgba(10, 10, 10, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(10, 10, 10, 0.05) 1px, transparent 1px);
+}
+
+/* ── Typography ──────────────────────────────────────────── */
+.text-huge {
+  font-size: clamp(4rem, 15vw, 18rem);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+}
+
+/* ── Marquee ─────────────────────────────────────────────── */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: 2px solid #0A0A0A;
+  border-bottom: 2px solid #0A0A0A;
+  padding: 1rem 0;
+}
+
+.marquee-content {
+  display: inline-block;
+  animation: marquee 15s linear infinite;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 2vw;
+  text-transform: uppercase;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Stacking cards ──────────────────────────────────────── */
+.stack-area {
+  position: relative;
+  padding-bottom: 10vh;
+}
+
+.stack-card {
+  position: sticky;
+  top: 15vh;
+  height: 70vh;
+  border: 3px solid #0A0A0A;
+  box-shadow: 15px 15px 0px #0A0A0A;
+  transform-origin: center top;
+  transition: transform 0.3s ease;
+}
+
+/* ── Reveal text animation ───────────────────────────────── */
+.reveal-text {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+.reveal-text .line {
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s;
+}
+
+.reveal-text.in-view .line {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ── Brutal button ───────────────────────────────────────── */
+.brutal-btn {
+  border: 2px solid #0A0A0A;
+  box-shadow: 6px 6px 0px #0A0A0A;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.brutal-btn:hover {
+  transform: translate(4px, 4px);
+  box-shadow: 2px 2px 0px #0A0A0A;
+  background: #FF3E00;
+  color: #EBE9E1;
+  border-color: #FF3E00;
+}

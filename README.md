@@ -210,6 +210,53 @@ See [cli/README.md](cli/README.md) for the complete command reference.
 - [Operations](docs/OPERATIONS.md) -- Operator runbook: deployment, monitoring, incident response
 - [API Reference](docs/API.md) -- Backend REST API endpoint documentation
 
+## Devnet Deployment
+
+Both programs are deployed to Solana devnet:
+
+| Program | Program ID | Explorer |
+|---------|-----------|----------|
+| **sss-token** | `5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4` | [View on Explorer](https://explorer.solana.com/address/5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4?cluster=devnet) |
+| **sss-transfer-hook** | `FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy` | [View on Explorer](https://explorer.solana.com/address/FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy?cluster=devnet) |
+
+### Deploy to Devnet
+
+```bash
+./scripts/deploy-devnet.sh
+```
+
+The deploy script will:
+1. Configure Solana CLI for devnet
+2. Build programs if needed
+3. Deploy both programs
+4. Run example transactions (init SSS-1, add minter, mint tokens)
+
+### Example Devnet Transactions
+
+| Action | Signature | Explorer |
+|--------|-----------|----------|
+| Deploy sss-token | `4Qo6UqzYjFXgTK5e834vzSQtgJBrubiWgNqhFpbWjQMWn9TG7uMMeTMf1Lv3C76fxoWEzLZTP9iDDUDjsLu7rNHh` | [View](https://explorer.solana.com/tx/4Qo6UqzYjFXgTK5e834vzSQtgJBrubiWgNqhFpbWjQMWn9TG7uMMeTMf1Lv3C76fxoWEzLZTP9iDDUDjsLu7rNHh?cluster=devnet) |
+| Deploy sss-transfer-hook | `3tL27qMEeiGRfH7NGzhkfDtBoyBi32gXMFqjob7pN1JG2sSioQVf87WQnQUAHQCUZpisNkg9oVkRqt1fn5qhPBYn` | [View](https://explorer.solana.com/tx/3tL27qMEeiGRfH7NGzhkfDtBoyBi32gXMFqjob7pN1JG2sSioQVf87WQnQUAHQCUZpisNkg9oVkRqt1fn5qhPBYn?cluster=devnet) |
+| Init SSS-1 (DevnetUSD) | `24fcq83aVQNuvEeMf7P6HuPcPhb8YhNbYeDdHhCdUKBKrapRkfwL8G9qQuR5Dmm9MTJJx2n8thWdfKEjVoq4AtyF` | [View](https://explorer.solana.com/tx/24fcq83aVQNuvEeMf7P6HuPcPhb8YhNbYeDdHhCdUKBKrapRkfwL8G9qQuR5Dmm9MTJJx2n8thWdfKEjVoq4AtyF?cluster=devnet) |
+
+**Example Mint:** `9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv` ([View](https://explorer.solana.com/address/9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv?cluster=devnet))
+
+### Example CLI Usage (Devnet)
+
+```bash
+# Initialize a stablecoin
+sss --url https://api.devnet.solana.com init --preset sss-1 --name "DevnetUSD" --symbol "dUSD"
+
+# Check status
+sss --url https://api.devnet.solana.com status --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
+
+# View supply
+sss --url https://api.devnet.solana.com supply --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
+
+# Launch TUI dashboard
+sss --url https://api.devnet.solana.com dashboard --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
+```
+
 ## Build Notes
 
 - **blake3 pinning**: Platform tools ship Cargo 1.84 which cannot parse `edition = "2024"` in blake3 >= 1.6. Pin to 1.5.5 with `cargo update -p blake3 --precise 1.5.5`.

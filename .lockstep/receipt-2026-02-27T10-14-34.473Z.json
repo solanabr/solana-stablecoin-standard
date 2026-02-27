@@ -1,0 +1,1141 @@
+{
+  "version": "1",
+  "hash_algorithm": "sha256",
+  "canonicalization": "json-stable-stringify",
+  "lockstep_version": "0.1.3",
+  "node_version": "v24.8.0",
+  "platform": "linux-x64",
+  "claude_cli_version": "2.1.62 (Claude Code)",
+  "spec_file": "/home/cryptalis/superteamBR_rust/solana-stablecoin-standard/.lockstep.yml",
+  "spec_hash": "9a1138f6f1840ab54b52551cbb887e97def10e6a74c0994eef0be54d0ed81e60",
+  "agent": "claude-code",
+  "judge_model": "claude-sonnet-4-6",
+  "judge_mode": "subscription",
+  "judge_runs": 0,
+  "started_at": "2026-02-27T09:50:14.340Z",
+  "completed_at": "2026-02-27T10:14:34.472Z",
+  "total_steps": 13,
+  "steps_passed": 9,
+  "steps_failed": 1,
+  "step_proofs": [
+    {
+      "step_index": 0,
+      "step_name": "A: Program Structure",
+      "criteria_hash": "a8710184a58ef4a19891d2cf598446fedc1ddc91fd13332991bb9533aaaf2dca",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "85146b1a8928af4d936c62a5b24ce71eae7dedb527408596ab1dc7b5d717bc18",
+          "agent_stdout_hash": "fde4033eb1be1f50cca8997cb229f76c63dff132f0e3143faa23105f1480a103",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub mod errors;' programs/sss-token/src/lib.rs && grep -q 'pub mod events;' programs/sss-token/src/lib.rs && grep -q 'pub mod instructions;' programs/sss-token/src/lib.rs && grep -q 'pub mod state;' programs/sss-token/src/lib.rs && grep -q 'pub mod utils;' programs/sss-token/src/lib.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 6,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub fn initialize(' programs/sss-token/src/lib.rs && grep -q 'pub fn mint_tokens(' programs/sss-token/src/lib.rs && grep -q 'pub fn burn_tokens(' programs/sss-token/src/lib.rs && grep -q 'pub fn freeze_account(' programs/sss-token/src/lib.rs && grep -q 'pub fn thaw_account(' programs/sss-token/src/lib.rs && grep -q 'pub fn pause(' programs/sss-token/src/lib.rs && grep -q 'pub fn unpause(' programs/sss-token/src/lib.rs && grep -q 'pub fn update_roles(' programs/sss-token/src/lib.rs && grep -q 'pub fn update_minter(' programs/sss-token/src/lib.rs && grep -q 'pub fn transfer_authority(' programs/sss-token/src/lib.rs && grep -q 'pub fn blacklist_add(' programs/sss-token/src/lib.rs && grep -q 'pub fn blacklist_remove(' programs/sss-token/src/lib.rs && grep -q 'pub fn seize(' programs/sss-token/src/lib.rs && grep -q 'pub fn attest_reserve(' programs/sss-token/src/lib.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 10,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub mod attest_reserve;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod blacklist_add;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod blacklist_remove;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod burn;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod freeze;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod initialize;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod mint;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod pause;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod seize;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod thaw;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod transfer_authority;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod unpause;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod update_minter;' programs/sss-token/src/instructions/mod.rs && grep -q 'pub mod update_roles;' programs/sss-token/src/instructions/mod.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 12,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub bump: u8' programs/sss-token/src/state/config.rs && grep -q 'pub mint: Pubkey' programs/sss-token/src/state/config.rs && grep -q 'pub master_authority: Pubkey' programs/sss-token/src/state/config.rs && grep -q 'pub name: String' programs/sss-token/src/state/config.rs && grep -q 'pub symbol: String' programs/sss-token/src/state/config.rs && grep -q 'pub uri: String' programs/sss-token/src/state/config.rs && grep -q 'pub decimals: u8' programs/sss-token/src/state/config.rs && grep -q 'pub preset: StablecoinPreset' programs/sss-token/src/state/config.rs && grep -q 'pub enable_permanent_delegate: bool' programs/sss-token/src/state/config.rs && grep -q 'pub enable_transfer_hook: bool' programs/sss-token/src/state/config.rs && grep -q 'pub default_account_frozen: bool' programs/sss-token/src/state/config.rs && grep -q 'pub enable_confidential_transfers: bool' programs/sss-token/src/state/config.rs && grep -q 'pub is_paused: bool' programs/sss-token/src/state/config.rs && grep -q 'pub total_minted: u64' programs/sss-token/src/state/config.rs && grep -q 'pub total_burned: u64' programs/sss-token/src/state/config.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 13,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/state/config.rs",
+              "passed": true
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'SSS1' programs/sss-token/src/state/config.rs && grep -q 'SSS2' programs/sss-token/src/state/config.rs && grep -q 'SSS3' programs/sss-token/src/state/config.rs && grep -q 'Custom' programs/sss-token/src/state/config.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 4,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub master_authority: Pubkey' programs/sss-token/src/state/roles.rs && grep -q 'pub pauser: Pubkey' programs/sss-token/src/state/roles.rs && grep -q 'pub blacklister: Pubkey' programs/sss-token/src/state/roles.rs && grep -q 'pub seizer: Pubkey' programs/sss-token/src/state/roles.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 4,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/state/roles.rs",
+              "passed": true
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub is_active: bool' programs/sss-token/src/state/minter.rs && grep -q 'pub mint_quota: u64' programs/sss-token/src/state/minter.rs && grep -q 'pub total_minted: u64' programs/sss-token/src/state/minter.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 4,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub blocked_address: Pubkey' programs/sss-token/src/state/blacklist.rs && grep -q 'pub reason: String' programs/sss-token/src/state/blacklist.rs && grep -q 'pub blacklisted_by: Pubkey' programs/sss-token/src/state/blacklist.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 3,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'pub reserve_hash: \\[u8; 32\\]' programs/sss-token/src/state/reserve.rs && grep -q 'pub total_reserves_usd: u64' programs/sss-token/src/state/reserve.rs && grep -q 'pub attested_by: Pubkey' programs/sss-token/src/state/reserve.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 4,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'Unauthorized' programs/sss-token/src/errors.rs && grep -q 'InvalidAuthority' programs/sss-token/src/errors.rs && grep -q 'ProgramPaused' programs/sss-token/src/errors.rs && grep -q 'ProgramNotPaused' programs/sss-token/src/errors.rs && grep -q 'MinterNotActive' programs/sss-token/src/errors.rs && grep -q 'MintQuotaExceeded' programs/sss-token/src/errors.rs && grep -q 'MintAmountZero' programs/sss-token/src/errors.rs && grep -q 'BurnAmountZero' programs/sss-token/src/errors.rs && grep -q 'FeatureNotEnabled' programs/sss-token/src/errors.rs && grep -q 'BlacklistNotEnabled' programs/sss-token/src/errors.rs && grep -q 'CannotBlacklistAuthority' programs/sss-token/src/errors.rs && grep -q 'Overflow' programs/sss-token/src/errors.rs && grep -q 'SeizeAmountZero' programs/sss-token/src/errors.rs && grep -q 'SeizeSameAccount' programs/sss-token/src/errors.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 10,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'StablecoinInitialized' programs/sss-token/src/events.rs && grep -q 'TokensMinted' programs/sss-token/src/events.rs && grep -q 'TokensBurned' programs/sss-token/src/events.rs && grep -q 'AccountFrozen' programs/sss-token/src/events.rs && grep -q 'AccountThawed' programs/sss-token/src/events.rs && grep -q 'ProgramPaused' programs/sss-token/src/events.rs && grep -q 'ProgramUnpaused' programs/sss-token/src/events.rs && grep -q 'RoleUpdated' programs/sss-token/src/events.rs && grep -q 'MinterUpdated' programs/sss-token/src/events.rs && grep -q 'AuthorityTransferred' programs/sss-token/src/events.rs && grep -q 'BlacklistAdded' programs/sss-token/src/events.rs && grep -q 'BlacklistRemoved' programs/sss-token/src/events.rs && grep -q 'TokensSeized' programs/sss-token/src/events.rs && grep -q 'AuditLogRecorded' programs/sss-token/src/events.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 11,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T09:50:14.340Z",
+          "completed_at": "2026-02-27T09:51:51.219Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "genesis",
+      "step_hash": "68e37e5e77fbeb8828b6cdd46e2c6f2760bdd73934100ca44cb1a61f3d9caaea"
+    },
+    {
+      "step_index": 1,
+      "step_name": "B: Token-2022 Extensions",
+      "criteria_hash": "e62c6688e5dafabfabc312f77d7cb69be7bfdeea7d736ed5844cf7c2205d7849",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "74b5efb9996abbf9e62f5e59e935ba942bba8919d047383595f3686831f2435d",
+          "agent_stdout_hash": "a29da2e010bbedb9ceb5f4e5d6ed5c57d985e950d7ef03729996053b0470c3cc",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/initialize.rs",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T09:51:51.220Z",
+          "completed_at": "2026-02-27T09:53:43.389Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "68e37e5e77fbeb8828b6cdd46e2c6f2760bdd73934100ca44cb1a61f3d9caaea",
+      "step_hash": "6f74e1f7304c36f29502e3c4fbeecc014f2184b7ee1ece96d27af0b00f343244"
+    },
+    {
+      "step_index": 2,
+      "step_name": "C: Transfer Hook",
+      "criteria_hash": "28a12b188ff5619b8284418890fead4147e5d75ac63a0e544731467df1b18c22",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "1ad81f4809adf29c3b3c7b98d36677c16c499e96763df78012df768136e387fa",
+          "agent_stdout_hash": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T09:53:43.389Z",
+          "completed_at": "2026-02-27T09:58:03.340Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "6f74e1f7304c36f29502e3c4fbeecc014f2184b7ee1ece96d27af0b00f343244",
+      "step_hash": "835ab619b4bc5a68dbdaced1b338a3a7e6db70874bb21a75257466cfbe40ec73"
+    },
+    {
+      "step_index": 3,
+      "step_name": "D: Security Boundaries",
+      "criteria_hash": "ddbeadebf0f134065d3a48afa00a8604e708a5d4e57dfc323a483005a000c295",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "3b95a70c9b8e954012aad04a553763507bdb26e53e365e7f2f16060f355bfb3c",
+          "agent_stdout_hash": "64b182d5f1c3a40e884c8bcc56c40c3f2829e2d74ba108daf5406d76ab568cb8",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/freeze.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/thaw.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/pause.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/unpause.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/update_roles.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/update_minter.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/transfer_authority.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_add.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_remove.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/attest_reserve.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/mint.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/burn.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/freeze.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/thaw.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_add.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_remove.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/unpause.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_add.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/update_roles.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/mint.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/mint.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/mint.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/transfer_authority.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_add.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/update_roles.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/state/roles.rs",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T09:58:03.340Z",
+          "completed_at": "2026-02-27T10:00:59.035Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "835ab619b4bc5a68dbdaced1b338a3a7e6db70874bb21a75257466cfbe40ec73",
+      "step_hash": "c7d4dcdaa058402a8cc70198788d1207a9cbe45c9263cff7c6a83bbc7ca66d0f"
+    },
+    {
+      "step_index": 4,
+      "step_name": "E: Critical Security Fixes",
+      "criteria_hash": "278cd1adea187659e0afe371016cdffa080b31db116428cbbfc3fed11e15bae1",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "99e76eb277bb97c0bfeb8d3271b2f50ed532aaded58160f595533b0103648d8e",
+          "agent_stdout_hash": "98ed82680c0753440cf2e35cb8db1a97507a7dd61d75041e6a1ae6a71be84aab",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_remove.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-transfer-hook/src/lib.rs",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T10:00:59.036Z",
+          "completed_at": "2026-02-27T10:02:58.627Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "c7d4dcdaa058402a8cc70198788d1207a9cbe45c9263cff7c6a83bbc7ca66d0f",
+      "step_hash": "7cc67af379fea0a975a0cc257bd4e37d59436b187ac086cb488a2a94ba4cd2f8"
+    },
+    {
+      "step_index": 5,
+      "step_name": "F: Hardening Improvements",
+      "criteria_hash": "54cbfce6226ef0468a9b3c0f25df256d64d517615e9e7e873e336856620e2ba2",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "66a454eca889fcee7f0ba31ecc2740f6ec48832ee66717293db53f3e5698815a",
+          "agent_stdout_hash": "259fa23dac0e2bfd019620f9ee8088004007a6dff2c41c7ef0c6dd1d6c122ec2",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/freeze.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/thaw.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/pause.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/unpause.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/update_roles.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_add.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/attest_reserve.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/mint.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/burn.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/freeze.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/thaw.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_add.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/blacklist_remove.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/update_minter.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/errors.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/errors.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T10:02:58.627Z",
+          "completed_at": "2026-02-27T10:05:22.827Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "7cc67af379fea0a975a0cc257bd4e37d59436b187ac086cb488a2a94ba4cd2f8",
+      "step_hash": "d8e905af0f7073829290c9b93917054172e6f4d030e1b0b430fe47af47285c31"
+    },
+    {
+      "step_index": 6,
+      "step_name": "G: Seize Mechanism",
+      "criteria_hash": "24b01a3510b348d2f6fdaca92f1b3bd3ff66009f90a392240d12e6e3cba1172b",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "9839f9aae6e0413d1df58582f1548e12b87c5b0c41c98ecd69adcea5032ba9f4",
+          "agent_stdout_hash": "1766e881fe30dde2ee0ede69ce95a186c18e2498f43ed09a51f47f019babdc8e",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "programs/sss-token/src/instructions/seize.rs",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T10:05:22.827Z",
+          "completed_at": "2026-02-27T10:07:12.075Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "d8e905af0f7073829290c9b93917054172e6f4d030e1b0b430fe47af47285c31",
+      "step_hash": "956ea99639e14d688d663ce7d23d0a155d446e98c2a46e13132b98a6e6719283"
+    },
+    {
+      "step_index": 7,
+      "step_name": "H: Tests",
+      "criteria_hash": "7767e00787e02b5992ed6879994c976b151e32289d26423af70bd568366a8e45",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "dcc9ef05cb091d84060d7a27ecb26abc8b833fbc9e383ea6397deff442a6fb4c",
+          "agent_stdout_hash": "67d64947c493bd2cdf008ff48033b9828a5672b09a4647e098195b517132cda5",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_exists",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_exists",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_exists",
+              "target": "tests/sss-3.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_exists",
+              "target": "tests/sdk-integration.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-1.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-3.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-3.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-3.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sdk-integration.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sdk-integration.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sdk-integration.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "tests/sss-2.test.ts",
+              "passed": true
+            },
+            {
+              "type": "command_output",
+              "target": "anchor test 2>&1 | grep -oP '\\d+ passing'",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 34929,
+              "stdout_hash": "36b637f9f96a7b41972ae5df4cbc8030afd47cd875e3d1b7c70a11f62a740197",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T10:07:12.075Z",
+          "completed_at": "2026-02-27T10:10:24.049Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "956ea99639e14d688d663ce7d23d0a155d446e98c2a46e13132b98a6e6719283",
+      "step_hash": "8f3d6ed57028491fdf27d85ef0d05b4e9d274dcd23af7d0ab6d06256af7f62e1"
+    },
+    {
+      "step_index": 8,
+      "step_name": "I: SDK",
+      "criteria_hash": "8996f06f546e06e4ceffd98a6312a743743af559abe7a628e2b66f3f596a6098",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "6b53d526d2a5fd4dde81d896a2407829751ba62213aad270b1fc6834576954a7",
+          "agent_stdout_hash": "d2b8b59a793e97d72fbdbd52a1b860f40de00ce9795a7058ea8a6ef487f7e6a8",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_exists",
+              "target": "sdk/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'getConfigPda' sdk/src/pda.ts && grep -q 'getRoleRegistryPda' sdk/src/pda.ts && grep -q 'getMinterInfoPda' sdk/src/pda.ts && grep -q 'getBlacklistPda' sdk/src/pda.ts",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 4,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/errors.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/events.ts",
+              "passed": true
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'SSS1' sdk/src/presets.ts && grep -q 'SSS2' sdk/src/presets.ts && grep -q 'SSS3' sdk/src/presets.ts",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 3,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/oracle.ts",
+              "passed": true
+            },
+            {
+              "type": "file_exists",
+              "target": "sdk/src/idl/sss_token.json",
+              "passed": true
+            },
+            {
+              "type": "file_exists",
+              "target": "sdk/src/idl/sss_transfer_hook.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/client.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/errors.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "sdk/src/errors.ts",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T10:10:24.049Z",
+          "completed_at": "2026-02-27T10:12:15.923Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "8f3d6ed57028491fdf27d85ef0d05b4e9d274dcd23af7d0ab6d06256af7f62e1",
+      "step_hash": "8610dd6bf7c27827a139d903f99da5de95319940c5395417fd42aa8c078b77c8"
+    },
+    {
+      "step_index": 9,
+      "step_name": "J: CLI",
+      "criteria_hash": "fe3c0fef2fb6d1149b38fff571db0dd5bf4ca5fad1367cf5f62518f4f50f2845",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "8a450c5e20ce6929659c8c6b28f80221c12d1209524ee6a05675e5525a60fce5",
+          "agent_stdout_hash": "023acd196add6952c2897eb16e54c3aa2d3016cc9c621776277925e161acbd42",
+          "agent_stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "validations": [
+            {
+              "type": "file_exists",
+              "target": "cli/Cargo.toml",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "cli/Cargo.toml",
+              "passed": true
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'Init' cli/src/main.rs && grep -q 'Mint' cli/src/main.rs && grep -q 'Burn' cli/src/main.rs && grep -q 'Freeze' cli/src/main.rs && grep -q 'Thaw' cli/src/main.rs && grep -q 'Pause' cli/src/main.rs && grep -q 'Unpause' cli/src/main.rs && grep -q 'Blacklist' cli/src/main.rs && grep -q 'Seize' cli/src/main.rs && grep -q 'Roles' cli/src/main.rs && grep -q 'Minter' cli/src/main.rs && grep -q 'Attest' cli/src/main.rs && grep -q 'Info' cli/src/main.rs && grep -q 'Dashboard' cli/src/main.rs",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 11,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "type": "file_exists",
+              "target": "cli/src/tui.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "cli/src/tui.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "cli/src/tui.rs",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "cli/src/tui.rs",
+              "passed": true
+            },
+            {
+              "type": "command_passes",
+              "target": "grep -q 'rpc_url' cli/src/config.rs && grep -q 'keypair_path' cli/src/config.rs",
+              "passed": false,
+              "exit_code": 1,
+              "duration_ms": 2,
+              "stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdout_truncated": "",
+              "stderr_truncated": "",
+              "details": "Command exited with code 1"
+            }
+          ],
+          "all_required_passed": false,
+          "started_at": "2026-02-27T10:12:15.923Z",
+          "completed_at": "2026-02-27T10:14:34.472Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": false,
+      "previous_step_hash": "8610dd6bf7c27827a139d903f99da5de95319940c5395417fd42aa8c078b77c8",
+      "step_hash": "75f95d2248b71ed633b42cd42a1d13850bf4ec900618b3cd2b8998d66d35e2d6"
+    }
+  ],
+  "chain_hash": "75f95d2248b71ed633b42cd42a1d13850bf4ec900618b3cd2b8998d66d35e2d6",
+  "status": "failed"
+}

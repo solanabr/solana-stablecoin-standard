@@ -1,0 +1,512 @@
+version: "1"
+config:
+  agent: "claude-code"
+  max_retries: 1
+  step_timeout: 600
+  working_directory: "."
+  judge_mode: "subscription"
+
+context: |
+  SSS Gap-Fill Verification Spec v2.0
+  ~60 validators across 8 steps verifying all new features added in the gap-fill phase.
+  SDK methods, CLI subcommands, backend endpoints, devnet config, TUI redesign,
+  fuzz tests, and SDK package name.
+
+steps:
+  - name: "Step 1: SDK Quick Wins"
+    prompt: |
+      Verify SDK new methods exist and TypeScript compiles. Do not modify any files.
+    validate:
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "getTotalSupply"
+        label: "s1-01: getTotalSupply method exists"
+
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "getTokenSupply"
+        label: "s1-02: getTokenSupply method exists"
+
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "fetchAllMinters"
+        label: "s1-03: fetchAllMinters method exists"
+
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "fetchTokenHolders"
+        label: "s1-04: fetchTokenHolders method exists"
+
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "totalMinted"
+        label: "s1-05: getTotalSupply returns totalMinted"
+
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "totalBurned"
+        label: "s1-06: getTotalSupply returns totalBurned"
+
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "currentSupply"
+        label: "s1-07: getTotalSupply returns currentSupply"
+
+      - type: file_contains
+        path: "sdk/src/client.ts"
+        pattern: "getTokenLargestAccounts"
+        label: "s1-08: fetchTokenHolders uses getTokenLargestAccounts"
+
+      - type: command_passes
+        command: "cd sdk && npx tsc --noEmit 2>&1 | grep -v 'error' | tail -1 || true"
+        label: "s1-09: SDK compiles without errors"
+
+  - name: "Step 2: CLI Subcommands"
+    prompt: |
+      Verify all 5 new CLI subcommands exist and the CLI builds. Do not modify any files.
+    validate:
+      - type: file_contains
+        path: "cli/src/commands/mod.rs"
+        pattern: "pub mod status;"
+        label: "s2-01: status module declared"
+
+      - type: file_contains
+        path: "cli/src/commands/mod.rs"
+        pattern: "pub mod supply;"
+        label: "s2-02: supply module declared"
+
+      - type: file_contains
+        path: "cli/src/commands/mod.rs"
+        pattern: "pub mod minters;"
+        label: "s2-03: minters module declared"
+
+      - type: file_contains
+        path: "cli/src/commands/mod.rs"
+        pattern: "pub mod holders;"
+        label: "s2-04: holders module declared"
+
+      - type: file_contains
+        path: "cli/src/commands/mod.rs"
+        pattern: "pub mod audit_log;"
+        label: "s2-05: audit_log module declared"
+
+      - type: file_contains
+        path: "cli/src/main.rs"
+        pattern: "Status"
+        label: "s2-06: Status variant in Commands enum"
+
+      - type: file_contains
+        path: "cli/src/main.rs"
+        pattern: "Supply"
+        label: "s2-07: Supply variant in Commands enum"
+
+      - type: file_contains
+        path: "cli/src/main.rs"
+        pattern: "Minters"
+        label: "s2-08: Minters variant in Commands enum"
+
+      - type: file_contains
+        path: "cli/src/main.rs"
+        pattern: "Holders"
+        label: "s2-09: Holders variant in Commands enum"
+
+      - type: file_contains
+        path: "cli/src/main.rs"
+        pattern: "AuditLog"
+        label: "s2-10: AuditLog variant in Commands enum"
+
+      - type: file_contains
+        path: "cli/src/commands/status.rs"
+        pattern: "pub fn execute"
+        label: "s2-11: status execute function"
+
+      - type: file_contains
+        path: "cli/src/commands/supply.rs"
+        pattern: "pub fn execute"
+        label: "s2-12: supply execute function"
+
+      - type: file_contains
+        path: "cli/src/commands/minters.rs"
+        pattern: "MintersAction"
+        label: "s2-13: minters uses nested subcommand"
+
+      - type: file_contains
+        path: "cli/src/commands/holders.rs"
+        pattern: "min_balance"
+        label: "s2-14: holders has min-balance filter"
+
+      - type: file_contains
+        path: "cli/src/commands/audit_log.rs"
+        pattern: "get_signatures_for_address"
+        label: "s2-15: audit-log fetches tx signatures"
+
+      - type: file_contains
+        path: "cli/src/commands/init.rs"
+        pattern: "TomlConfig"
+        label: "s2-16: init has TOML config support"
+
+      - type: file_contains
+        path: "cli/src/commands/init.rs"
+        pattern: "toml::from_str"
+        label: "s2-17: init parses TOML file"
+
+      - type: file_contains
+        path: "cli/Cargo.toml"
+        pattern: 'toml = '
+        label: "s2-18: toml dependency added"
+
+      - type: file_contains
+        path: "cli/Cargo.toml"
+        pattern: 'serde = '
+        label: "s2-19: serde dependency added"
+
+      - type: file_contains
+        path: "cli/Cargo.toml"
+        pattern: 'serde_json = '
+        label: "s2-20: serde_json dependency added"
+
+      - type: command_passes
+        command: "cd cli && cargo build 2>&1 | grep -c 'error' | grep '^0$'"
+        label: "s2-21: CLI builds without errors"
+
+  - name: "Step 3: Backend Endpoints"
+    prompt: |
+      Verify backend new routes and service improvements. Do not modify any files.
+    validate:
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "/:mint/supply"
+        label: "s3-01: supply endpoint exists"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "/:mint/holders"
+        label: "s3-02: holders endpoint exists"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "/:mint/minters"
+        label: "s3-03: minters endpoint exists"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "/:mint/audit"
+        label: "s3-04: audit endpoint exists"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "/:mint/audit/export"
+        label: "s3-05: audit export endpoint exists"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "Content-Disposition"
+        label: "s3-06: export sets Content-Disposition header"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "getTotalSupply"
+        label: "s3-07: supply route uses getTotalSupply"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "fetchAllMinters"
+        label: "s3-08: minters route uses fetchAllMinters"
+
+      - type: file_contains
+        path: "backend/src/routes/stablecoin.ts"
+        pattern: "fetchTokenHolders"
+        label: "s3-09: holders route uses fetchTokenHolders"
+
+      - type: file_contains
+        path: "backend/src/services/event-listener.ts"
+        pattern: "BorshCoder"
+        label: "s3-10: event-listener uses BorshCoder"
+
+      - type: file_contains
+        path: "backend/src/services/event-listener.ts"
+        pattern: "EventParser"
+        label: "s3-11: event-listener uses EventParser"
+
+      - type: file_contains
+        path: "backend/src/services/event-listener.ts"
+        pattern: "parseLogs"
+        label: "s3-12: event-listener uses parseLogs"
+
+      - type: file_contains
+        path: "backend/src/services/event-listener.ts"
+        pattern: "appendFileSync"
+        label: "s3-13: event-listener has file persistence"
+
+      - type: file_contains
+        path: "backend/src/services/event-listener.ts"
+        pattern: "events.jsonl"
+        label: "s3-14: event-listener uses JSONL format"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "ComplianceProvider"
+        label: "s3-15: ComplianceProvider interface exists"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "StubProvider"
+        label: "s3-16: StubProvider implementation"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "ChainalysisProvider"
+        label: "s3-17: ChainalysisProvider placeholder"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "EllipticProvider"
+        label: "s3-18: EllipticProvider placeholder"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "COMPLIANCE_PROVIDER"
+        label: "s3-19: provider selection via env var"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "/compliance/export"
+        label: "s3-20: compliance export endpoint"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "compliance-history.jsonl"
+        label: "s3-21: compliance has file persistence"
+
+      - type: file_contains
+        path: "backend/src/services/compliance-service.ts"
+        pattern: "RISK_WEIGHTS"
+        label: "s3-22: weighted risk scoring model"
+
+  - name: "Step 4: Devnet Deployment Config"
+    prompt: |
+      Verify devnet deployment configuration. Do not modify any files.
+    validate:
+      - type: file_contains
+        path: "Anchor.toml"
+        pattern: "[programs.devnet]"
+        label: "s4-01: devnet program section in Anchor.toml"
+
+      - type: file_contains
+        path: "Anchor.toml"
+        pattern: "sss_token"
+        label: "s4-02: sss_token program ID in devnet section"
+
+      - type: file_contains
+        path: "Anchor.toml"
+        pattern: "sss_transfer_hook"
+        label: "s4-03: sss_transfer_hook in devnet section"
+
+      - type: command_passes
+        command: "test -f scripts/deploy-devnet.sh"
+        label: "s4-04: deploy script exists"
+
+      - type: command_passes
+        command: "test -x scripts/deploy-devnet.sh"
+        label: "s4-05: deploy script is executable"
+
+      - type: file_contains
+        path: "scripts/deploy-devnet.sh"
+        pattern: "anchor deploy"
+        label: "s4-06: deploy script runs anchor deploy"
+
+      - type: file_contains
+        path: "scripts/deploy-devnet.sh"
+        pattern: "devnet"
+        label: "s4-07: deploy script targets devnet"
+
+      - type: file_contains
+        path: "README.md"
+        pattern: "Devnet Deployment"
+        label: "s4-08: README has devnet section"
+
+      - type: file_contains
+        path: "README.md"
+        pattern: "explorer.solana.com"
+        label: "s4-09: README has explorer links"
+
+  - name: "Step 5: Fuzz Tests Enhancement"
+    prompt: |
+      Verify fuzz test enhancements. Do not modify any files.
+    validate:
+      - type: command_passes
+        command: "test -f trident-tests/fuzz_tests/fuzz_1/mod.rs"
+        label: "s5-01: fuzz_1 module file exists"
+
+      - type: command_passes
+        command: "test -f trident-tests/fuzz_tests/fuzz_1/test_instruction_fuzz.rs"
+        label: "s5-02: instruction fuzz test file exists"
+
+      - type: file_contains
+        path: "trident-tests/fuzz_tests/fuzz_1/test_instruction_fuzz.rs"
+        pattern: "FuzzInstruction"
+        label: "s5-03: FuzzInstruction enum defined"
+
+      - type: file_contains
+        path: "trident-tests/fuzz_tests/fuzz_1/test_instruction_fuzz.rs"
+        pattern: "SimulatedState"
+        label: "s5-04: SimulatedState for invariant checking"
+
+      - type: file_contains
+        path: "trident-tests/fuzz_tests/fuzz_1/test_instruction_fuzz.rs"
+        pattern: "check_supply_invariant"
+        label: "s5-05: supply consistency invariant"
+
+      - type: file_contains
+        path: "trident-tests/fuzz_tests/fuzz_1/test_instruction_fuzz.rs"
+        pattern: "check_quota_invariant"
+        label: "s5-06: quota enforcement invariant"
+
+      - type: file_contains
+        path: "trident-tests/fuzz_tests/fuzz_1/test_instruction_fuzz.rs"
+        pattern: "check_attestation_invariant"
+        label: "s5-07: attestation ordering invariant"
+
+      - type: file_contains
+        path: "trident-tests/src/lib.rs"
+        pattern: "pub mod fuzz_1"
+        label: "s5-08: fuzz_1 module registered"
+
+      - type: file_contains
+        path: "Trident.toml"
+        pattern: "FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy"
+        label: "s5-09: transfer hook program in Trident.toml"
+
+      - type: command_passes
+        command: "cd trident-tests && cargo test 2>&1 | grep 'test result: ok' | head -1"
+        label: "s5-10: all fuzz tests pass"
+
+  - name: "Step 6: SDK Package Name"
+    prompt: |
+      Verify SDK package name change. Do not modify any files.
+    validate:
+      - type: file_contains
+        path: "sdk/package.json"
+        pattern: "@stbr/sss-token"
+        label: "s6-01: SDK package name is @stbr/sss-token"
+
+      - type: command_passes
+        command: "! grep -q '@solana-stablecoin-standard/sdk' sdk/package.json"
+        label: "s6-02: old package name removed"
+
+  - name: "Step 7: TUI Redesign"
+    prompt: |
+      Verify the TUI comprehensive redesign. Do not modify any files.
+    validate:
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "render_overview"
+        label: "s7-01: render_overview function (Tab 0)"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "render_supply_analytics"
+        label: "s7-02: render_supply_analytics function (Tab 1)"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "render_roles"
+        label: "s7-03: render_roles function (Tab 2)"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "render_minters"
+        label: "s7-04: render_minters function (Tab 3)"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "render_blacklist"
+        label: "s7-05: render_blacklist function (Tab 4)"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "render_attestations"
+        label: "s7-06: render_attestations function (Tab 5)"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "render_activity"
+        label: "s7-07: render_activity function (Tab 6)"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "Sparkline"
+        label: "s7-08: Sparkline widget used"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "BarChart"
+        label: "s7-09: BarChart widget used"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "scroll_offset"
+        label: "s7-10: scroll support implemented"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "search_mode"
+        label: "s7-11: search mode implemented"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "search_query"
+        label: "s7-12: search query state"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "block_height"
+        label: "s7-13: block height tracking"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "supply_history"
+        label: "s7-14: supply history ring buffer"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "VecDeque"
+        label: "s7-15: VecDeque for supply history"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "get_program_accounts"
+        label: "s7-16: minters/blacklist fetched via getProgramAccounts"
+
+      - type: file_contains
+        path: "cli/src/tui.rs"
+        pattern: "get_signatures_for_address"
+        label: "s7-17: activity log uses getSignaturesForAddress"
+
+      - type: command_passes
+        command: "wc -l cli/src/tui.rs | awk '{print ($1 >= 800)}' | grep '1'"
+        label: "s7-18: TUI file is 800+ lines (comprehensive rewrite)"
+
+      - type: command_passes
+        command: "cd cli && cargo build 2>&1 | grep -c 'error' | grep '^0$'"
+        label: "s7-19: CLI builds without errors after TUI rewrite"
+
+  - name: "Step 8: Full Build Verification"
+    prompt: |
+      Verify everything compiles and all tests pass. Do not modify any files.
+    validate:
+      - type: command_passes
+        command: "cd sdk && npx tsc --noEmit 2>&1 | grep -v 'error TS' | tail -1 || true"
+        label: "s8-01: SDK TypeScript compiles"
+
+      - type: command_passes
+        command: "cd cli && cargo build 2>&1 | grep -c 'error' | grep '^0$'"
+        label: "s8-02: CLI Rust builds"
+
+      - type: command_passes
+        command: "cd trident-tests && cargo test 2>&1 | grep 'test result: ok'"
+        label: "s8-03: Fuzz tests pass"
+
+      - type: command_passes
+        command: "cd cli && cargo build 2>&1 | grep 'Finished'"
+        label: "s8-04: CLI build completes successfully"

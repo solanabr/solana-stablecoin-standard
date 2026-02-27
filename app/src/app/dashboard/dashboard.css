@@ -1,0 +1,203 @@
+/* ── Dashboard Dark Theme ─────────────────────────────────── */
+
+:root {
+  --void: #030303;
+  --surface: #0A0A0A;
+  --surface-light: #111111;
+  --surface-hover: #181818;
+  --acid: #D4FF00;
+  --acid-dim: rgba(212, 255, 0, 0.08);
+  --text-main: #FFFFFF;
+  --text-secondary: #999999;
+  --text-dim: #555555;
+  --border: #1e1e1e;
+  --border-light: #2a2a2a;
+  --danger: #FF3366;
+  --danger-dim: rgba(255, 51, 102, 0.08);
+}
+
+/* ── Custom Cursor ───────────────────────────────────────── */
+.award-cursor {
+  width: 16px;
+  height: 16px;
+  background-color: var(--acid);
+  border-radius: 50%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s;
+  mix-blend-mode: difference;
+}
+
+.award-cursor.active {
+  width: 60px;
+  height: 60px;
+}
+
+/* ── Vertical Text ───────────────────────────────────────── */
+.vertical-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+/* ── Pillar Transitions ──────────────────────────────────── */
+.pillar-panel {
+  transition: flex 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: flex;
+}
+
+/* ── Pillar Content Fade-in ──────────────────────────────── */
+.pillar-content {
+  opacity: 0;
+  animation: pillarFadeIn 0.5s ease forwards;
+  animation-delay: 0.35s;
+}
+
+@keyframes pillarFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Noise Background ────────────────────────────────────── */
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.025;
+}
+
+.bg-noise svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Glitch Animation ────────────────────────────────────── */
+@keyframes glitch {
+  0% { transform: translate(0); opacity: 1; }
+  20% { transform: translate(-2px, 2px); opacity: 0.85; }
+  40% { transform: translate(2px, -2px); opacity: 1; }
+  60% { transform: translate(-1px, -1px); opacity: 0.9; }
+  80% { transform: translate(1px, 1px); opacity: 1; }
+  100% { transform: translate(0); opacity: 1; }
+}
+
+.data-glitch:hover {
+  animation: glitch 0.3s ease infinite;
+}
+
+/* ── Hidden Scrollbar ────────────────────────────────────── */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Dashboard cursor override ───────────────────────────── */
+@media (pointer: fine) {
+  .dashboard-wrapper,
+  .dashboard-wrapper * {
+    cursor: none !important;
+  }
+}
+
+/* ── Input Styles ────────────────────────────────────────── */
+.dark-input {
+  width: 100%;
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: 12px 16px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.dark-input:focus {
+  border-color: var(--acid);
+  box-shadow: 0 0 0 1px var(--acid);
+}
+.dark-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* Select dropdown */
+.dark-input option {
+  background: var(--surface);
+  color: var(--text-main);
+}
+
+/* ── Status / TX Link ────────────────────────────────────── */
+.tx-link {
+  color: var(--acid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.tx-link:hover {
+  opacity: 0.7;
+}
+
+/* ── Pulse animation ─────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pulse-live {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── Status banner ───────────────────────────────────────── */
+.status-banner {
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+}
+.status-banner.error {
+  background: var(--danger-dim);
+  border: 1px solid rgba(255, 51, 102, 0.2);
+  color: var(--danger);
+}
+.status-banner.success {
+  background: var(--acid-dim);
+  border: 1px solid rgba(212, 255, 0, 0.15);
+  color: var(--text-secondary);
+}
+
+/* ── Card ────────────────────────────────────────────────── */
+.dark-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+/* ── Inactive pillar hover ───────────────────────────────── */
+.inactive-pillar {
+  transition: background 0.3s;
+}
+.inactive-pillar:hover {
+  background: var(--surface-light);
+}
+
+/* ── Mobile tab bar ──────────────────────────────────────── */
+.mobile-tab {
+  transition: color 0.2s, border-color 0.2s;
+}
+.mobile-tab.active {
+  color: var(--acid);
+  border-bottom: 2px solid var(--acid);
+}

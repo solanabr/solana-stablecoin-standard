@@ -59,6 +59,16 @@ enum Commands {
     Attest(commands::attest::AttestArgs),
     /// Display stablecoin info
     Info(commands::info::InfoArgs),
+    /// Show stablecoin status summary
+    Status(commands::status::StatusArgs),
+    /// Show supply details
+    Supply(commands::supply::SupplyArgs),
+    /// Manage and list minters
+    Minters(commands::minters::MintersArgs),
+    /// Show token holders
+    Holders(commands::holders::HoldersArgs),
+    /// Show audit log and attestation history
+    AuditLog(commands::audit_log::AuditLogArgs),
     /// Interactive TUI dashboard
     Dashboard(DashboardArgs),
 }
@@ -81,6 +91,11 @@ fn main() -> Result<()> {
         Commands::Minter(args) => commands::minter::execute(&config, args),
         Commands::Attest(args) => commands::attest::execute(&config, args),
         Commands::Info(args) => commands::info::execute(&config, args),
+        Commands::Status(args) => commands::status::execute(&config, args),
+        Commands::Supply(args) => commands::supply::execute(&config, args),
+        Commands::Minters(args) => commands::minters::execute(&config, args),
+        Commands::Holders(args) => commands::holders::execute(&config, args),
+        Commands::AuditLog(args) => commands::audit_log::execute(&config, args),
         Commands::Dashboard(args) => tui::run_dashboard(&config, &args.mint),
     }
 }

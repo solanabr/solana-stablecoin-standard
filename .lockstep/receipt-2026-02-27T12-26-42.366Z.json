@@ -1,0 +1,209 @@
+{
+  "version": "1",
+  "hash_algorithm": "sha256",
+  "canonicalization": "json-stable-stringify",
+  "lockstep_version": "0.1.0",
+  "node_version": "v24.8.0",
+  "platform": "linux-x64",
+  "claude_cli_version": "2.1.62 (Claude Code)",
+  "spec_file": "/home/cryptalis/superteamBR_rust/solana-stablecoin-standard/.lockstep-dashboard-v2.yml",
+  "spec_hash": "922fc6c702660c1712f7dab976bb7ee0280ee8979a90c0900a9b8ed3b3d6c865",
+  "agent": "claude-code",
+  "judge_model": "claude-sonnet-4-6",
+  "judge_mode": "subscription",
+  "judge_runs": 0,
+  "started_at": "2026-02-27T12:26:41.894Z",
+  "completed_at": "2026-02-27T12:26:42.366Z",
+  "total_steps": 14,
+  "steps_passed": 3,
+  "steps_failed": 1,
+  "step_proofs": [
+    {
+      "step_index": 0,
+      "step_name": "Step 1: Dependencies intact",
+      "criteria_hash": "7d97904d6710041421175a1300ba8c1df156f43015cb2f9bfffe5b7c9b2ecc12",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "050d354bcbedda63b84b07d7486b8ca99e1bf1fd682d7d292bbc2546956b73e8",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "4ec3071136424d44c81d5829a4c68f759e151f4ecad2b7c9ab572966c87d43a5",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T12:26:41.895Z",
+          "completed_at": "2026-02-27T12:26:42.014Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "genesis",
+      "step_hash": "6ef47bf9e93ed8999a1c54e96adb754a720115e14bf1e9285baefb028d28aa59"
+    },
+    {
+      "step_index": 1,
+      "step_name": "Step 2: Space Grotesk + JetBrains Mono fonts",
+      "criteria_hash": "06a23bfd00f0040d5e76915d20894b727c11e3699acb66054ac1507d724a650e",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "e56b796780aaa4b4d1499ff41ced21e1a65528c547bd6d77fb9d5c8a9c95713f",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "4ec3071136424d44c81d5829a4c68f759e151f4ecad2b7c9ab572966c87d43a5",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/layout.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/layout.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/layout.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T12:26:42.014Z",
+          "completed_at": "2026-02-27T12:26:42.131Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "6ef47bf9e93ed8999a1c54e96adb754a720115e14bf1e9285baefb028d28aa59",
+      "step_hash": "15dd14d8a05de62f261c9bd87f827af302101b60b12f68199555de874ed1c0ec"
+    },
+    {
+      "step_index": 2,
+      "step_name": "Step 3: Dashboard dark theme styles",
+      "criteria_hash": "b3c458666f78acfb9518e973fe49eaa7fec0fbd91c9c5eb2d2413666a87fd545",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "2ebd7c0f7a3b3b61935bb2a8ddd48eea559c83b1b885b306a27f67e94db0528f",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "4ec3071136424d44c81d5829a4c68f759e151f4ecad2b7c9ab572966c87d43a5",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/dashboard.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/dashboard.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/dashboard.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/dashboard.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/dashboard.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/dashboard/dashboard.css",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T12:26:42.131Z",
+          "completed_at": "2026-02-27T12:26:42.248Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "15dd14d8a05de62f261c9bd87f827af302101b60b12f68199555de874ed1c0ec",
+      "step_hash": "6ce2aa33e3f4eacbc11d38954c527d92070e081b600067f14c050e09a62755a9"
+    },
+    {
+      "step_index": 3,
+      "step_name": "Step 4: Dark login screen with real wallet connect",
+      "criteria_hash": "614d7849b2cda5a61eef8948544eb90defb24d7449038367a3f442a44ea628ff",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "fae96ed800d7fc0928003faa0dd4b8ecd090a324892ecded412c660f41dcb749",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "4ec3071136424d44c81d5829a4c68f759e151f4ecad2b7c9ab572966c87d43a5",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/dashboard/LoginScreen.tsx",
+              "passed": false,
+              "details": "Pattern not found in app/src/components/dashboard/LoginScreen.tsx: \"AUTHORIZE\""
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/dashboard/LoginScreen.tsx",
+              "passed": false,
+              "details": "Pattern not found in app/src/components/dashboard/LoginScreen.tsx: \"CONNECTION\""
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/dashboard/LoginScreen.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/dashboard/LoginScreen.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/dashboard/LoginScreen.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/dashboard/LoginScreen.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/dashboard/LoginScreen.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": false,
+          "started_at": "2026-02-27T12:26:42.248Z",
+          "completed_at": "2026-02-27T12:26:42.366Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": false,
+      "previous_step_hash": "6ce2aa33e3f4eacbc11d38954c527d92070e081b600067f14c050e09a62755a9",
+      "step_hash": "c6cc39b7c7b4fea53c75f2cdda575652ae0dd91cac628237a09a6b253902af41"
+    }
+  ],
+  "chain_hash": "c6cc39b7c7b4fea53c75f2cdda575652ae0dd91cac628237a09a6b253902af41",
+  "status": "failed"
+}

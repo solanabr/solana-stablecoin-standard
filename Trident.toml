@@ -22,3 +22,7 @@ validator_startup_timeout = 30000
 [[test.validator.programs]]
 address = "5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4"
 program = "target/deploy/sss_token.so"
+
+[[test.validator.programs]]
+address = "FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy"
+program = "target/deploy/sss_transfer_hook.so"

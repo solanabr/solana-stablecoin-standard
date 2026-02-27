@@ -3,3 +3,6 @@
 
 #[path = "../fuzz_tests/fuzz_0/mod.rs"]
 pub mod fuzz_0;
+
+#[path = "../fuzz_tests/fuzz_1/mod.rs"]
+pub mod fuzz_1;

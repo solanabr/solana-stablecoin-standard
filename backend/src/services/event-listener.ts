@@ -2,15 +2,20 @@
  * SSS Event Listener Service
  *
  * Connects to a Solana RPC websocket and subscribes to the sss-token program
- * logs. Parses Anchor events from transaction logs and outputs them as
- * structured JSON to stdout. In a production setup this would forward events
- * to a message queue (e.g. Redis Streams, NATS, Kafka).
+ * logs. Parses Anchor events from transaction logs using BorshCoder/EventParser
+ * and outputs them as structured JSON. Events are persisted to a JSONL file
+ * and optionally forwarded to a webhook service.
  *
  * Usage:
  *   RPC_URL=http://localhost:8899 ts-node src/services/event-listener.ts
  */
 
 import { Connection, PublicKey, Logs } from "@solana/web3.js";
+import { BorshCoder, EventParser } from "@coral-xyz/anchor";
+import * as fs from "fs";
+import * as path from "path";
+
+import sssTokenIdl from "../../../sdk/src/idl/sss_token.json";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -23,28 +28,66 @@ const SSS_TOKEN_PROGRAM_ID = new PublicKey(
 );
 const WEBHOOK_SERVICE_URL =
   process.env.WEBHOOK_SERVICE_URL || "http://webhook-service:3001";
+const EVENT_LOG_PATH =
+  process.env.EVENT_LOG_PATH || path.join(__dirname, "../../data/events.jsonl");
+
+// ---------------------------------------------------------------------------
+// Event Parser Setup
+// ---------------------------------------------------------------------------
+
+const coder = new BorshCoder(sssTokenIdl as any);
+const eventParser = new EventParser(SSS_TOKEN_PROGRAM_ID, coder);
+
+// ---------------------------------------------------------------------------
+// Known event types
+// ---------------------------------------------------------------------------
+
+const EVENT_TYPES = new Set([
+  "stablecoinInitialized",
+  "tokensMinted",
+  "tokensBurned",
+  "accountFrozen",
+  "accountThawed",
+  "programPaused",
+  "programUnpaused",
+  "roleUpdated",
+  "minterUpdated",
+  "authorityTransferred",
+  "blacklistAdded",
+  "blacklistRemoved",
+  "tokensSeized",
+  "auditLogRecorded",
+]);
+
+// ---------------------------------------------------------------------------
+// Persistence
+// ---------------------------------------------------------------------------
+
+function ensureLogDir(): void {
+  const dir = path.dirname(EVENT_LOG_PATH);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+function persistEvent(entry: object): void {
+  try {
+    fs.appendFileSync(EVENT_LOG_PATH, JSON.stringify(entry) + "\n");
+  } catch (err) {
+    console.error(`[persist] Failed to write event: ${(err as Error).message}`);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Simple anchor event log prefix (base64-encoded discriminator). */
-const PROGRAM_DATA_PREFIX = "Program data:";
-
 interface ParsedEvent {
   timestamp: string;
   signature: string;
   programId: string;
-  rawData: string;
-}
-
-function extractEventData(logs: string[]): string[] {
-  return logs
-    .filter((line) => line.includes(PROGRAM_DATA_PREFIX))
-    .map((line) => {
-      const idx = line.indexOf(PROGRAM_DATA_PREFIX);
-      return line.slice(idx + PROGRAM_DATA_PREFIX.length).trim();
-    });
+  eventName: string;
+  data: any;
 }
 
 async function dispatchToWebhookService(event: ParsedEvent): Promise<void> {
@@ -53,7 +96,7 @@ async function dispatchToWebhookService(event: ParsedEvent): Promise<void> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        eventType: "program_log",
+        eventType: event.eventName,
         payload: event,
       }),
     });
@@ -77,22 +120,34 @@ let eventCount = 0;
 function handleLogs(logs: Logs): void {
   if (logs.err) return; // skip failed transactions
 
-  const eventDataEntries = extractEventData(logs.logs);
-  if (eventDataEntries.length === 0) return;
+  // Use EventParser to decode Anchor events from logs
+  const events = eventParser.parseLogs(logs.logs);
 
-  for (const rawData of eventDataEntries) {
+  for (const evt of events) {
     eventCount++;
+    const eventName = evt.name;
+    const isKnown = EVENT_TYPES.has(eventName);
+
     const event: ParsedEvent = {
       timestamp: new Date().toISOString(),
       signature: logs.signature,
       programId: SSS_TOKEN_PROGRAM_ID.toBase58(),
-      rawData,
+      eventName,
+      data: evt.data,
     };
 
+    // Output to stdout
     console.log(JSON.stringify(event));
+
+    // Persist to JSONL file
+    persistEvent(event);
 
     // Best-effort forward to webhook service
     dispatchToWebhookService(event).catch(() => {});
+
+    if (!isKnown) {
+      console.warn(`[event-listener] Unknown event type: ${eventName}`);
+    }
   }
 }
 
@@ -100,7 +155,10 @@ async function start(): Promise<void> {
   console.log("=== SSS Event Listener ===");
   console.log(`RPC:     ${RPC_URL}`);
   console.log(`Program: ${SSS_TOKEN_PROGRAM_ID.toBase58()}`);
+  console.log(`Log:     ${EVENT_LOG_PATH}`);
   console.log("");
+
+  ensureLogDir();
 
   const connection = new Connection(RPC_URL, "confirmed");
 

@@ -6463,10 +6463,13 @@ dependencies = [
  "colored",
  "crossterm",
  "ratatui",
+ "serde",
+ "serde_json",
  "solana-client",
  "solana-sdk",
  "sss-token",
  "tokio",
+ "toml 0.8.23",
 ]
 
 [[package]]

@@ -11,3 +11,8 @@ pub mod roles;
 pub mod minter;
 pub mod attest;
 pub mod info;
+pub mod status;
+pub mod supply;
+pub mod minters;
+pub mod holders;
+pub mod audit_log;

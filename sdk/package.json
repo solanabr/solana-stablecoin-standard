@@ -1,5 +1,5 @@
 {
-  "name": "@solana-stablecoin-standard/sdk",
+  "name": "@stbr/sss-token",
   "version": "0.1.0",
   "description": "TypeScript SDK for the Solana Stablecoin Standard (SSS)",
   "main": "dist/index.js",

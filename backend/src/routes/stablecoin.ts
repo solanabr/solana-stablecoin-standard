@@ -101,6 +101,154 @@ export function createStablecoinRouter(client: SSSClient): Router {
     }
   );
 
+  /**
+   * GET /api/stablecoin/:mint/supply
+   * Fetch supply details from config + live SPL supply.
+   */
+  router.get(
+    "/:mint/supply",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const mint = new PublicKey(req.params.mint);
+        const totalSupply = await client.getTotalSupply(mint);
+        const tokenSupply = await client.getTokenSupply(mint);
+
+        res.json({ ...totalSupply, live: tokenSupply });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  /**
+   * GET /api/stablecoin/:mint/holders
+   * Fetch top token holders.
+   */
+  router.get(
+    "/:mint/holders",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const mint = new PublicKey(req.params.mint);
+        const holders = await client.fetchTokenHolders(mint);
+
+        res.json({ holders, count: holders.length });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  /**
+   * GET /api/stablecoin/:mint/minters
+   * Fetch all minters for a stablecoin.
+   */
+  router.get(
+    "/:mint/minters",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const mint = new PublicKey(req.params.mint);
+        const minters = await client.fetchAllMinters(mint);
+
+        res.json({
+          minters: minters.map((m) => ({
+            address: m.pubkey.toBase58(),
+            ...m.account,
+          })),
+          count: minters.length,
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  /**
+   * GET /api/stablecoin/:mint/audit
+   * Fetch attestation history. Supports ?limit=N (default 20).
+   */
+  router.get(
+    "/:mint/audit",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const mint = new PublicKey(req.params.mint);
+        const limit = parseInt((req.query.limit as string) || "20", 10);
+        const config = await client.fetchConfig(mint);
+        const [configPda] = client.getConfigPda(mint);
+
+        const total = typeof config.reserveAttestationIndex === "number"
+          ? config.reserveAttestationIndex
+          : (config.reserveAttestationIndex as any).toNumber();
+        const start = Math.max(0, total - limit);
+        const attestations: any[] = [];
+
+        for (let i = total - 1; i >= start; i--) {
+          try {
+            const a = await client.fetchReserveAttestation(configPda, i);
+            attestations.push(a);
+          } catch {
+            // attestation may not exist
+          }
+        }
+
+        res.json({ attestations, total });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  /**
+   * GET /api/stablecoin/:mint/audit/export
+   * Export attestation history. Supports ?format=csv|json (default json).
+   */
+  router.get(
+    "/:mint/audit/export",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const mint = new PublicKey(req.params.mint);
+        const format = (req.query.format as string) || "json";
+        const limit = parseInt((req.query.limit as string) || "100", 10);
+        const config = await client.fetchConfig(mint);
+        const [configPda] = client.getConfigPda(mint);
+
+        const total = typeof config.reserveAttestationIndex === "number"
+          ? config.reserveAttestationIndex
+          : (config.reserveAttestationIndex as any).toNumber();
+        const start = Math.max(0, total - limit);
+        const attestations: any[] = [];
+
+        for (let i = total - 1; i >= start; i--) {
+          try {
+            const a = await client.fetchReserveAttestation(configPda, i);
+            attestations.push(a);
+          } catch {
+            // skip
+          }
+        }
+
+        if (format === "csv") {
+          const header = "index,reserveHash,totalReservesUsd,totalOutstanding,attestedBy,attestationUri,timestamp";
+          const rows = attestations.map((a) => {
+            const hash = Array.isArray(a.reserveHash)
+              ? a.reserveHash.map((b: number) => b.toString(16).padStart(2, "0")).join("")
+              : "";
+            return `${a.index},${hash},${a.totalReservesUsd},${a.totalOutstanding},${a.attestedBy},${a.attestationUri},${a.timestamp}`;
+          });
+          const csv = [header, ...rows].join("\n");
+          res.setHeader("Content-Type", "text/csv");
+          res.setHeader("Content-Disposition", `attachment; filename="audit-${mint.toBase58().slice(0, 8)}.csv"`);
+          res.send(csv);
+        } else {
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Content-Disposition", `attachment; filename="audit-${mint.toBase58().slice(0, 8)}.json"`);
+          res.json({ attestations, total });
+        }
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
   // -----------------------------------------------------------------------
   // POST endpoints
   // -----------------------------------------------------------------------

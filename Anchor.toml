@@ -9,6 +9,10 @@ skip-lint = false
 sss_token = "5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4"
 sss_transfer_hook = "FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy"
 
+[programs.devnet]
+sss_token = "5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4"
+sss_transfer_hook = "FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy"
+
 [registry]
 url = "https://api.apr.dev"
 

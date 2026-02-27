@@ -1,0 +1,19 @@
+{
+  "name": "tui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "admin_tui.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "@solana/web3.js": "^1.95.0",
+    "@coral-xyz/anchor": "^0.31.1"
+  }
+}

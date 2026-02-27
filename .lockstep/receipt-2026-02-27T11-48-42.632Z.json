@@ -1,0 +1,305 @@
+{
+  "version": "1",
+  "hash_algorithm": "sha256",
+  "canonicalization": "json-stable-stringify",
+  "lockstep_version": "0.1.0",
+  "node_version": "v24.8.0",
+  "platform": "linux-x64",
+  "claude_cli_version": "2.1.62 (Claude Code)",
+  "spec_file": "/home/cryptalis/superteamBR_rust/solana-stablecoin-standard/.lockstep-frontend.yml",
+  "spec_hash": "15dfafa1d728f63ae8c8ddc11956a2031577224d3cb588c226758148cb4bd751",
+  "agent": "claude-code",
+  "judge_model": "claude-sonnet-4-6",
+  "judge_mode": "subscription",
+  "judge_runs": 0,
+  "started_at": "2026-02-27T11:48:40.464Z",
+  "completed_at": "2026-02-27T11:48:42.632Z",
+  "total_steps": 17,
+  "steps_passed": 4,
+  "steps_failed": 1,
+  "step_proofs": [
+    {
+      "step_index": 0,
+      "step_name": "Step 1: Project scaffold",
+      "criteria_hash": "cf68d5045021c6a060d1b4b2f492efedfcb248887526ac61273a3241dface272",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "dc782a50e88a58dc8f74790364971afc6a28f93ff46c410a32bfee43d01f4108",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tsconfig.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:48:40.465Z",
+          "completed_at": "2026-02-27T11:48:40.843Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "genesis",
+      "step_hash": "3d6df7abec45a4d1e85d88e67614e231feb58470ab05d40dc6011557cead207b"
+    },
+    {
+      "step_index": 1,
+      "step_name": "Step 2: Tailwind theme",
+      "criteria_hash": "52ce83ddc86987985f249716a1bd2866a56c94ce7f08ba0303f2819ee542402e",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "72f654a89cac59ffbec80c40e12c5bc18f95965cff3ed08dbcce856984219e7a",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:48:40.843Z",
+          "completed_at": "2026-02-27T11:48:41.063Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "3d6df7abec45a4d1e85d88e67614e231feb58470ab05d40dc6011557cead207b",
+      "step_hash": "09e45409c8c8a2607428f9c586f1b82e227942642296f54170efe8fc289343ec"
+    },
+    {
+      "step_index": 2,
+      "step_name": "Step 3: Google Fonts",
+      "criteria_hash": "4cd643d12bcd8ea1dc1a5ff7bff1654321d3bf2e67e4a0d4202f7979da572f11",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "b24dc8212af22f094e593a834d8e1872f11bbbd603d090b6e8881ae4fc0a7a71",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/layout.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/layout.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/layout.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:48:41.063Z",
+          "completed_at": "2026-02-27T11:48:41.296Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "09e45409c8c8a2607428f9c586f1b82e227942642296f54170efe8fc289343ec",
+      "step_hash": "7019b2e9050102ded2faf39299f724e89a03c5c3b2a186c99f8b3a257687c2b1"
+    },
+    {
+      "step_index": 3,
+      "step_name": "Step 4: Global styles",
+      "criteria_hash": "1a870f6cd33a21bf7247c6c8c41ffd2b4a87661fa81e19e9b61ea341c65f8a59",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "7b7181889d3c461fae6b9a4655fae6017e8c661609dedc64518792be5ebbf9ab",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:48:41.296Z",
+          "completed_at": "2026-02-27T11:48:41.936Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "7019b2e9050102ded2faf39299f724e89a03c5c3b2a186c99f8b3a257687c2b1",
+      "step_hash": "67019288f2c256ef1fab897be5a9c05d6d6c74e70af77d10962a6e7c1d21f371"
+    },
+    {
+      "step_index": 4,
+      "step_name": "Step 5: Custom cursor",
+      "criteria_hash": "4072a8fb838ab1193506211a81522819b9d4cdd2c8c665c7be09096e2eda6e9e",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "ad84fd48cdca45109b250ff33b78d3acdc9594795ebb821434bf7d7636227c7e",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": false,
+              "details": "Pattern not found in app/src/components/CustomCursor.tsx: \"pointer-events\""
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": false,
+          "started_at": "2026-02-27T11:48:41.937Z",
+          "completed_at": "2026-02-27T11:48:42.632Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": false,
+      "previous_step_hash": "67019288f2c256ef1fab897be5a9c05d6d6c74e70af77d10962a6e7c1d21f371",
+      "step_hash": "070c73ac49601eb3634a4fbbcf7ffe8bda784d840f496825cbbdfe8ce5c60bdd"
+    }
+  ],
+  "chain_hash": "070c73ac49601eb3634a4fbbcf7ffe8bda784d840f496825cbbdfe8ce5c60bdd",
+  "status": "failed"
+}

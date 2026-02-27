@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#EBE9E1] text-[#0A0A0A]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSS — The Standard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Syne', 'sans-serif'],
+                        sans: ['Manrope', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        paper: '#EBE9E1',
+                        ink: '#0A0A0A',
+                        accent: '#FF3E00',
+                        blue: '#0044FF'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html { scroll-behavior: smooth; cursor: none; }
+        body { overflow-x: hidden; background-color: #EBE9E1; }
+
+        ::selection { background-color: #FF3E00; color: #EBE9E1; }
+
+        .cursor {
+            width: 20px;
+            height: 20px;
+            background-color: #FF3E00;
+            border-radius: 50%;
+            position: fixed;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s, mix-blend-mode 0.3s;
+            mix-blend-mode: normal;
+        }
+
+        .cursor.hovered {
+            width: 80px;
+            height: 80px;
+            background-color: #EBE9E1;
+            mix-blend-mode: difference;
+        }
+
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #0A0A0A;
+            color: #EBE9E1;
+            z-index: 9998;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
+            transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+        .loader-hide { transform: translateY(-100%); }
+
+        .text-huge {
+            font-size: clamp(4rem, 15vw, 18rem);
+            line-height: 0.85;
+            letter-spacing: -0.04em;
+        }
+
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+            border-top: 2px solid #0A0A0A;
+            border-bottom: 2px solid #0A0A0A;
+            padding: 1rem 0;
+            background: #FF3E00;
+            color: #EBE9E1;
+        }
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 15s linear infinite;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 2vw;
+            text-transform: uppercase;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .stack-area {
+            position: relative;
+            padding-bottom: 10vh;
+        }
+        .stack-card {
+            position: sticky;
+            top: 15vh;
+            height: 70vh;
+            border: 3px solid #0A0A0A;
+            box-shadow: 15px 15px 0px #0A0A0A;
+            transform-origin: center top;
+            transition: transform 0.3s ease;
+        }
+
+        .reveal-text {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        .reveal-text .line {
+            transform: translateY(100%);
+            opacity: 0;
+            transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s;
+        }
+        .reveal-text.in-view .line {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .brutal-btn {
+            border: 2px solid #0A0A0A;
+            box-shadow: 6px 6px 0px #0A0A0A;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .brutal-btn:hover {
+            transform: translate(4px, 4px);
+            box-shadow: 2px 2px 0px #0A0A0A;
+            background: #FF3E00;
+            color: #EBE9E1;
+            border-color: #FF3E00;
+        }
+
+        .grid-bg {
+            background-size: 50px 50px;
+            background-image:
+                linear-gradient(to right, rgba(10,10,10,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(10,10,10,0.05) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="antialiased grid-bg">
+
+    <div class="cursor" id="cursor"></div>
+
+    <div id="loader">
+        <div class="font-mono text-sm uppercase">Loading Assets</div>
+        <div class="font-display text-[15vw] font-bold leading-none" id="loader-perc">0%</div>
+        <div class="font-mono text-sm uppercase text-right">Standard / 01</div>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 flex justify-between items-center z-50 mix-blend-difference text-[#EBE9E1]">
+        <div class="font-display font-bold text-2xl tracking-tighter hover-target">SSS.</div>
+        <div class="font-mono text-sm uppercase tracking-widest hidden md:block">Solana Open Source</div>
+        <button class="font-display font-bold uppercase hover-target border-b-2 border-transparent hover:border-[#EBE9E1] transition-colors">Menu</button>
+    </nav>
+
+    <section class="min-h-screen flex flex-col justify-end p-6 pb-24 relative">
+        <div class="absolute top-1/4 right-10 w-64 md:w-96 text-sm font-mono leading-relaxed reveal-text">
+            <div class="line">Opinionated architecture for</div>
+            <div class="line delay-100">institutional stablecoins.</div>
+            <div class="line delay-200">Built to be forked.</div>
+        </div>
+
+        <h1 class="text-huge font-display font-bold uppercase text-ink hover-target">
+            <span class="block hover:text-accent transition-colors duration-500">Stable</span>
+            <span class="block ml-[10vw] hover:text-blue transition-colors duration-500">Standard</span>
+        </h1>
+
+        <div class="flex justify-between items-end mt-12 border-t-2 border-ink pt-6">
+            <a href="#" class="brutal-btn bg-ink text-paper px-8 py-4 font-display font-bold uppercase tracking-wider text-xl hover-target">
+                View Source
+            </a>
+            <div class="font-mono text-xs uppercase text-right max-w-xs">
+                A modular SDK where issuers choose Token-2022 extensions and compliance modules.
+            </div>
+        </div>
+    </section>
+
+    <div class="marquee-container hover-target">
+        <div class="marquee-content">
+            MODULAR ARCHITECTURE • TOKEN-2022 • PERMANENT DELEGATE • TRANSFER HOOKS • COMPLIANCE PRESETS • OPEN SOURCE • MODULAR ARCHITECTURE • TOKEN-2022 • PERMANENT DELEGATE • TRANSFER HOOKS • COMPLIANCE PRESETS • OPEN SOURCE •
+        </div>
+    </div>
+
+    <section class="py-32 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="mb-24 reveal-text">
+                <h2 class="font-display text-6xl md:text-8xl font-bold uppercase leading-none mb-6">
+                    <div class="line">The Layers</div>
+                </h2>
+                <p class="font-mono text-xl max-w-2xl border-l-4 border-accent pl-6">
+                    <div class="line">Three distinct layers of abstraction. From base token mechanics to fully opinionated compliance presets.</div>
+                </p>
+            </div>
+
+            <div class="stack-area">
+                <div class="stack-card bg-paper p-8 md:p-16 flex flex-col justify-between" style="z-index: 10;">
+                    <div class="flex justify-between items-start">
+                        <span class="font-mono text-6xl text-ink">01</span>
+                        <span class="px-4 py-1 border-2 border-ink rounded-full font-mono text-sm uppercase">Base SDK</span>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-5xl md:text-7xl font-bold uppercase mb-4">Foundation</h3>
+                        <p class="font-sans text-lg max-w-xl mb-8">Token creation with mint authority, freeze authority, and metadata. Issuers choose which extensions to enable via our unified Role Management program.</p>
+                        <div class="flex gap-4 font-mono text-sm">
+                            <span class="bg-ink text-paper px-3 py-1">Mint/Freeze</span>
+                            <span class="bg-ink text-paper px-3 py-1">Role Admin</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stack-card bg-accent p-8 md:p-16 flex flex-col justify-between" style="z-index: 20; margin-top: 5vh; color: #EBE9E1; border-color: #0A0A0A;">
+                    <div class="flex justify-between items-start">
+                        <span class="font-mono text-6xl text-[#0A0A0A]">02</span>
+                        <span class="px-4 py-1 border-2 border-[#0A0A0A] rounded-full font-mono text-sm uppercase text-[#0A0A0A]">Modules</span>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-5xl md:text-7xl font-bold uppercase mb-4 text-[#0A0A0A]">Capabilities</h3>
+                        <p class="font-sans text-lg max-w-xl mb-8 text-[#0A0A0A]">Composable pieces that add power. Compliance modules, blacklists, and permanent delegation. Each independently testable and strictly optional.</p>
+                        <div class="flex gap-4 font-mono text-sm">
+                            <span class="bg-[#0A0A0A] text-paper px-3 py-1">Transfer Hooks</span>
+                            <span class="bg-[#0A0A0A] text-paper px-3 py-1">Confidentiality</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stack-card bg-blue p-8 md:p-16 flex flex-col justify-between" style="z-index: 30; margin-top: 5vh; color: #EBE9E1; border-color: #0A0A0A;">
+                    <div class="flex justify-between items-start">
+                        <span class="font-mono text-6xl text-[#0A0A0A]">03</span>
+                        <span class="px-4 py-1 border-2 border-[#0A0A0A] rounded-full font-mono text-sm uppercase text-[#0A0A0A]">Presets</span>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-8 items-end">
+                        <div>
+                            <h3 class="font-display text-5xl md:text-7xl font-bold uppercase mb-4 text-[#EBE9E1]">Standards</h3>
+                            <p class="font-sans text-lg text-paper/80">Opinionated combinations of L1 + L2. These are the "standards" — what gets documented, recommended, and heavily referenced by regulators.</p>
+                        </div>
+                        <div class="bg-[#0A0A0A] p-6 border-2 border-[#0A0A0A] text-paper font-mono text-sm leading-loose overflow-hidden">
+                            $ sss-token init --preset 2<br>
+                            > Deploying SSS-2 Compliant...<br>
+                            > Injecting Permanent Delegate<br>
+                            > Validating Hooks... <span class="text-accent">SUCCESS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="border-y-4 border-ink flex flex-col md:flex-row min-h-screen">
+        <div class="w-full md:w-1/2 p-8 md:p-16 border-b-4 md:border-b-0 md:border-r-4 border-ink hover:bg-ink hover:text-paper transition-colors duration-500 group relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="font-mono text-2xl mb-12">SSS—01</div>
+                <h2 class="font-display text-6xl md:text-8xl font-bold uppercase mb-6">Minimal<br>Stable</h2>
+                <p class="font-sans text-xl mb-12 max-w-md">For internal tokens, DAO treasuries, and fast ecosystem settlement. What's needed on every stable, nothing more.</p>
+                <ul class="font-mono space-y-4 text-sm uppercase tracking-wide border-l-2 border-current pl-4">
+                    <li>+ Mint Authority</li>
+                    <li>+ Freeze Authority</li>
+                    <li>+ Metadata Core</li>
+                    <li class="opacity-50 line-through">- Transfer Hooks</li>
+                </ul>
+            </div>
+            <div class="absolute -bottom-20 -right-20 font-display font-bold text-[30rem] leading-none opacity-5 group-hover:opacity-10 transition-opacity">1</div>
+        </div>
+
+        <div class="w-full md:w-1/2 p-8 md:p-16 hover:bg-accent hover:text-paper transition-colors duration-500 group relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="font-mono text-2xl mb-12">SSS—02</div>
+                <h2 class="font-display text-6xl md:text-8xl font-bold uppercase mb-6">Compliant<br>Stable</h2>
+                <p class="font-sans text-xl mb-12 max-w-md">For regulated USDC/USDT-class tokens. On-chain blacklist enforcement and token seizure capabilities are mandatory.</p>
+                <ul class="font-mono space-y-4 text-sm uppercase tracking-wide border-l-2 border-current pl-4">
+                    <li>+ All SSS-01 Features</li>
+                    <li>+ Permanent Delegate</li>
+                    <li>+ Transfer Hooks (Blacklist)</li>
+                    <li>+ Default Frozen State</li>
+                </ul>
+            </div>
+            <div class="absolute -bottom-20 -right-20 font-display font-bold text-[30rem] leading-none opacity-5 group-hover:opacity-20 transition-opacity">2</div>
+        </div>
+    </section>
+
+    <footer class="bg-ink text-paper py-32 px-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        <div class="font-mono text-sm uppercase tracking-widest mb-12 text-accent">Initialize Your Protocol</div>
+        <h2 class="text-huge font-display font-bold uppercase leading-none hover-target mix-blend-difference mb-12">
+            Deploy<br>Now.
+        </h2>
+        <a href="#" class="brutal-btn bg-paper text-ink px-12 py-6 font-display font-bold uppercase tracking-widest text-2xl hover-target mb-24">
+            Read The Docs
+        </a>
+        <div class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-center border-t-2 border-paper/20 pt-8 font-mono text-xs uppercase">
+            <div>Solana Stablecoin Standard</div>
+            <div class="flex gap-8 mt-4 md:mt-0">
+                <a href="#" class="hover:text-accent transition-colors">Github</a>
+                <a href="#" class="hover:text-accent transition-colors">Twitter</a>
+                <a href="#" class="hover:text-accent transition-colors">Superteam</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const cursor = document.getElementById('cursor');
+        const hoverTargets = document.querySelectorAll('.hover-target, a, button, .stack-card');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        hoverTargets.forEach(target => {
+            target.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            target.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+        const loader = document.getElementById('loader');
+        const loaderPerc = document.getElementById('loader-perc');
+        let perc = 0;
+
+        const loaderInterval = setInterval(() => {
+            perc += Math.floor(Math.random() * 20) + 1;
+            if (perc >= 100) {
+                perc = 100;
+                clearInterval(loaderInterval);
+                loaderPerc.innerText = perc + '%';
+                setTimeout(() => {
+                    loader.classList.add('loader-hide');
+                    initScrollAnimations();
+                }, 500);
+            } else {
+                loaderPerc.innerText = perc + '%';
+            }
+        }, 100);
+
+        function initScrollAnimations() {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.2
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                        const lines = entry.target.querySelectorAll('.line');
+                        lines.forEach((line, index) => {
+                            line.style.transitionDelay = `${index * 150}ms`;
+                        });
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.reveal-text').forEach(el => {
+                observer.observe(el);
+            });
+        }
+    </script>
+</body>
+</html>

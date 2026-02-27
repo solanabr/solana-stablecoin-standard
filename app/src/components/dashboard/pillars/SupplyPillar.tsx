@@ -1,0 +1,280 @@
+"use client";
+
+import { useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import { Coins, Flame, AlertOctagon, Play } from "lucide-react";
+import type { SSSState } from "@/hooks/useSSS";
+import MetricBlock from "../MetricBlock";
+import ActionButton from "../ActionButton";
+
+type ActiveForm = "mint" | "burn" | null;
+
+export default function SupplyPillar({ sss }: { sss: SSSState }) {
+  const { publicKey } = useWallet();
+  const [activeForm, setActiveForm] = useState<ActiveForm>(null);
+  const [recipient, setRecipient] = useState("");
+  const [mintAmount, setMintAmount] = useState("");
+  const [burnAmount, setBurnAmount] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [txSig, setTxSig] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const decimals = sss.supply?.decimals ?? 6;
+  const pow = Math.pow(10, decimals);
+  const currentSupply = sss.supply ? sss.supply.currentSupply.toNumber() / pow : 0;
+  const totalMinted = sss.supply ? sss.supply.totalMinted.toNumber() / pow : 0;
+  const totalBurned = sss.supply ? sss.supply.totalBurned.toNumber() / pow : 0;
+  const symbol = sss.config?.symbol || "---";
+  const isPaused = sss.config?.isPaused ?? false;
+
+  const fmt = (n: number) =>
+    n >= 1_000_000
+      ? (n / 1_000_000).toFixed(2) + "M"
+      : n >= 1_000
+        ? (n / 1_000).toFixed(2) + "K"
+        : n.toFixed(2);
+
+  const clearStatus = () => { setStatus(null); setTxSig(null); };
+
+  const handleMint = async () => {
+    if (!sss.client || !mintAmount || !recipient) return;
+    setLoading(true);
+    setStatus("Sending mint transaction...");
+    setTxSig(null);
+    try {
+      const amount = new BN(parseFloat(mintAmount) * pow);
+      const recipientPk = new PublicKey(recipient);
+      const recipientAta = sss.client.getAssociatedTokenAddress(sss.mint, recipientPk);
+      const { signature } = await sss.client.mintTokens(sss.mint, amount, recipientAta);
+      setTxSig(signature);
+      setStatus("Mint successful");
+      await sss.refresh();
+    } catch (e: unknown) {
+      setStatus("Error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBurn = async () => {
+    if (!sss.client || !burnAmount || !publicKey) return;
+    setLoading(true);
+    setStatus("Sending burn transaction...");
+    setTxSig(null);
+    try {
+      const amount = new BN(parseFloat(burnAmount) * pow);
+      const burnerAta = sss.client.getAssociatedTokenAddress(sss.mint, publicKey);
+      const { signature } = await sss.client.burnTokens(sss.mint, amount, burnerAta);
+      setTxSig(signature);
+      setStatus("Burn successful");
+      await sss.refresh();
+    } catch (e: unknown) {
+      setStatus("Error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePauseToggle = async () => {
+    if (!sss.client) return;
+    setLoading(true);
+    setStatus(isPaused ? "Unpausing..." : "Pausing...");
+    setTxSig(null);
+    try {
+      const { signature } = isPaused
+        ? await sss.client.unpause(sss.mint)
+        : await sss.client.pause(sss.mint);
+      setTxSig(signature);
+      setStatus(isPaused ? "Program unpaused" : "Program paused");
+      await sss.refresh();
+    } catch (e: unknown) {
+      setStatus("Error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Status feedback */}
+      {status && (
+        <div
+          className={`status-banner ${status.startsWith("Error") ? "error" : "success"}`}
+          style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+        >
+          <div className="flex items-center justify-between">
+            <span>{status}</span>
+            <button onClick={clearStatus} className="hover-trigger text-[#666] hover:text-white ml-4 text-lg leading-none">&times;</button>
+          </div>
+          {txSig && (
+            <a
+              href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
+              target="_blank"
+              rel="noreferrer"
+              className="tx-link block mt-2 text-[12px]"
+            >
+              {txSig.slice(0, 8)}...{txSig.slice(-6)} &rarr; Explorer
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Metrics */}
+      <MetricBlock
+        label={`Total Outstanding Supply (${symbol})`}
+        value={fmt(currentSupply)}
+        subtext={currentSupply.toLocaleString() + " tokens"}
+        highlight
+        large
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricBlock label="Total Minted" value={"+" + fmt(totalMinted)} />
+        <MetricBlock label="Total Burned" value={"-" + fmt(totalBurned)} />
+      </div>
+
+      {/* Decorative chart */}
+      <div className="dark-card !p-6 opacity-60">
+        <svg width="100%" height="60" viewBox="0 0 400 60" preserveAspectRatio="none">
+          <polyline
+            fill="none"
+            stroke="#D4FF00"
+            strokeWidth="1.5"
+            points="0,50 40,45 80,48 120,30 160,35 200,15 240,20 280,10 320,18 360,5 400,12"
+          />
+          <circle cx="400" cy="12" r="3" fill="#D4FF00" />
+        </svg>
+        <div
+          className="text-[#D4FF00] text-[10px] uppercase tracking-widest mt-3"
+          style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+        >
+          Supply Trajectory
+        </div>
+      </div>
+
+      {/* Section title */}
+      <div
+        className="text-[#666] text-[11px] uppercase tracking-[0.25em] pt-4"
+        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+      >
+        Actions
+      </div>
+
+      {/* Actions */}
+      <div className="space-y-3">
+        <ActionButton
+          icon={<Coins size={18} />}
+          label="Issue Mint Order"
+          desc="Mint new tokens to an address"
+          onClick={() => { setActiveForm(activeForm === "mint" ? null : "mint"); clearStatus(); }}
+        />
+
+        {activeForm === "mint" && (
+          <div className="dark-card space-y-4">
+            <div>
+              <label
+                className="text-[#666] text-[11px] uppercase tracking-[0.15em] block mb-2"
+                style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+              >
+                Recipient Address
+              </label>
+              <input
+                type="text"
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                placeholder={publicKey?.toBase58() || "Wallet address..."}
+                className="dark-input"
+              />
+            </div>
+            <div>
+              <label
+                className="text-[#666] text-[11px] uppercase tracking-[0.15em] block mb-2"
+                style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+              >
+                Amount ({symbol})
+              </label>
+              <input
+                type="number"
+                value={mintAmount}
+                onChange={(e) => setMintAmount(e.target.value)}
+                placeholder="0.00"
+                className="dark-input"
+              />
+            </div>
+            <button
+              onClick={handleMint}
+              disabled={loading || !mintAmount || !recipient}
+              className="hover-trigger w-full py-3.5 rounded-lg bg-[#D4FF00] text-[#030303] text-sm font-semibold uppercase tracking-widest disabled:opacity-30 transition-all hover:brightness-110"
+              style={{ fontFamily: "var(--font-space-grotesk)" }}
+            >
+              {loading ? "Processing..." : "Confirm Mint"}
+            </button>
+          </div>
+        )}
+
+        <ActionButton
+          icon={<Flame size={18} />}
+          label="Execute Burn"
+          desc="Burn tokens from your wallet"
+          danger
+          onClick={() => { setActiveForm(activeForm === "burn" ? null : "burn"); clearStatus(); }}
+        />
+
+        {activeForm === "burn" && (
+          <div className="dark-card space-y-4">
+            <div>
+              <label
+                className="text-[#666] text-[11px] uppercase tracking-[0.15em] block mb-2"
+                style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+              >
+                Burn from
+              </label>
+              <div
+                className="text-[#666] text-[12px] p-3 border border-[#2a2a2a] rounded-lg bg-[#0A0A0A] truncate"
+                style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+              >
+                {publicKey?.toBase58() || "Not connected"}
+              </div>
+            </div>
+            <div>
+              <label
+                className="text-[#666] text-[11px] uppercase tracking-[0.15em] block mb-2"
+                style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+              >
+                Amount ({symbol})
+              </label>
+              <input
+                type="number"
+                value={burnAmount}
+                onChange={(e) => setBurnAmount(e.target.value)}
+                placeholder="0.00"
+                className="dark-input"
+              />
+            </div>
+            <button
+              onClick={handleBurn}
+              disabled={loading || !burnAmount}
+              className="hover-trigger w-full py-3.5 rounded-lg bg-[#FF3366] text-white text-sm font-semibold uppercase tracking-widest disabled:opacity-30 transition-all hover:brightness-110"
+              style={{ fontFamily: "var(--font-space-grotesk)" }}
+            >
+              {loading ? "Processing..." : "Confirm Burn"}
+            </button>
+          </div>
+        )}
+
+        <div className="pt-3">
+          <ActionButton
+            icon={isPaused ? <Play size={18} /> : <AlertOctagon size={18} />}
+            label={isPaused ? "Resume Operations" : "Global Pause"}
+            desc={isPaused ? "Unpause the program" : "Emergency halt all operations"}
+            danger={!isPaused}
+            onClick={handlePauseToggle}
+            disabled={loading}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

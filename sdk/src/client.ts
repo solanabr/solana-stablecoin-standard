@@ -558,6 +558,62 @@ export class SSSClient {
     }
   }
 
+  // --- Query Methods ---
+
+  async getTotalSupply(
+    mint: PublicKey
+  ): Promise<{
+    totalMinted: BN;
+    totalBurned: BN;
+    currentSupply: BN;
+    decimals: number;
+  }> {
+    const config = await this.fetchConfig(mint);
+    const currentSupply = config.totalMinted.sub(config.totalBurned);
+    return {
+      totalMinted: config.totalMinted,
+      totalBurned: config.totalBurned,
+      currentSupply,
+      decimals: config.decimals,
+    };
+  }
+
+  async getTokenSupply(
+    mint: PublicKey
+  ): Promise<{ amount: string; decimals: number; uiAmount: number | null }> {
+    const resp = await this.connection.getTokenSupply(mint);
+    return {
+      amount: resp.value.amount,
+      decimals: resp.value.decimals,
+      uiAmount: resp.value.uiAmount,
+    };
+  }
+
+  async fetchAllMinters(
+    mint: PublicKey
+  ): Promise<{ pubkey: PublicKey; account: MinterInfo }[]> {
+    const [configPda] = this.getConfigPda(mint);
+    const accounts = this.tokenProgram.account as any;
+    const all = await accounts.minterInfo.all([
+      { memcmp: { offset: 9, bytes: configPda.toBase58() } },
+    ]);
+    return all.map((a: any) => ({
+      pubkey: a.publicKey as PublicKey,
+      account: a.account as MinterInfo,
+    }));
+  }
+
+  async fetchTokenHolders(
+    mint: PublicKey
+  ): Promise<{ address: PublicKey; amount: string; uiAmount: number | null }[]> {
+    const resp = await this.connection.getTokenLargestAccounts(mint);
+    return resp.value.map((v) => ({
+      address: v.address,
+      amount: v.amount,
+      uiAmount: v.uiAmount,
+    }));
+  }
+
   // --- Utilities ---
 
   getAssociatedTokenAddress(mint: PublicKey, owner: PublicKey): PublicKey {

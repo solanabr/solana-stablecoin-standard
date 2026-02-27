@@ -1,0 +1,1077 @@
+{
+  "version": "1",
+  "hash_algorithm": "sha256",
+  "canonicalization": "json-stable-stringify",
+  "lockstep_version": "0.1.0",
+  "node_version": "v24.8.0",
+  "platform": "linux-x64",
+  "claude_cli_version": "2.1.62 (Claude Code)",
+  "spec_file": "/home/cryptalis/superteamBR_rust/solana-stablecoin-standard/.lockstep-frontend.yml",
+  "spec_hash": "ef9cf904b34e5da6da14172dff512cf64c6e790772341381ec97d7250513dcb0",
+  "agent": "claude-code",
+  "judge_model": "claude-sonnet-4-6",
+  "judge_mode": "subscription",
+  "judge_runs": 0,
+  "started_at": "2026-02-27T11:49:13.242Z",
+  "completed_at": "2026-02-27T11:49:24.259Z",
+  "total_steps": 17,
+  "steps_passed": 17,
+  "steps_failed": 0,
+  "step_proofs": [
+    {
+      "step_index": 0,
+      "step_name": "Step 1: Project scaffold",
+      "criteria_hash": "cf68d5045021c6a060d1b4b2f492efedfcb248887526ac61273a3241dface272",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "dc782a50e88a58dc8f74790364971afc6a28f93ff46c410a32bfee43d01f4108",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tsconfig.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/package.json",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:13.243Z",
+          "completed_at": "2026-02-27T11:49:13.465Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "genesis",
+      "step_hash": "e014b9ac28e27409e5486aa5ebf136b422b18c0a3aa2f5c5fdf6829ed4779200"
+    },
+    {
+      "step_index": 1,
+      "step_name": "Step 2: Tailwind theme",
+      "criteria_hash": "52ce83ddc86987985f249716a1bd2866a56c94ce7f08ba0303f2819ee542402e",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "72f654a89cac59ffbec80c40e12c5bc18f95965cff3ed08dbcce856984219e7a",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/tailwind.config.ts",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:13.465Z",
+          "completed_at": "2026-02-27T11:49:14.040Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "e014b9ac28e27409e5486aa5ebf136b422b18c0a3aa2f5c5fdf6829ed4779200",
+      "step_hash": "e652c2c3b1d2a1b97e286241f8fe4bef1b1e40ec35b3dcdf551c8e18d31ccfa7"
+    },
+    {
+      "step_index": 2,
+      "step_name": "Step 3: Google Fonts",
+      "criteria_hash": "4cd643d12bcd8ea1dc1a5ff7bff1654321d3bf2e67e4a0d4202f7979da572f11",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "b24dc8212af22f094e593a834d8e1872f11bbbd603d090b6e8881ae4fc0a7a71",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/layout.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/layout.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/layout.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:14.040Z",
+          "completed_at": "2026-02-27T11:49:14.474Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "e652c2c3b1d2a1b97e286241f8fe4bef1b1e40ec35b3dcdf551c8e18d31ccfa7",
+      "step_hash": "a0387fde5a52ff4b29d41338a1c6633f030d285d484e9570ceea7dc2ff8cb49c"
+    },
+    {
+      "step_index": 3,
+      "step_name": "Step 4: Global styles",
+      "criteria_hash": "1a870f6cd33a21bf7247c6c8c41ffd2b4a87661fa81e19e9b61ea341c65f8a59",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "7b7181889d3c461fae6b9a4655fae6017e8c661609dedc64518792be5ebbf9ab",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:14.474Z",
+          "completed_at": "2026-02-27T11:49:14.912Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "a0387fde5a52ff4b29d41338a1c6633f030d285d484e9570ceea7dc2ff8cb49c",
+      "step_hash": "e0b8c57b26ff17d2be0cc87e3db9a48f19e5262ab649046aa12a71515a9b952b"
+    },
+    {
+      "step_index": 4,
+      "step_name": "Step 5: Custom cursor",
+      "criteria_hash": "26ef9c029c86183fe782ad4041a4787a8594a4554efa48a3f18b3a780c9185e2",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "ad84fd48cdca45109b250ff33b78d3acdc9594795ebb821434bf7d7636227c7e",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/CustomCursor.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:14.912Z",
+          "completed_at": "2026-02-27T11:49:15.157Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "e0b8c57b26ff17d2be0cc87e3db9a48f19e5262ab649046aa12a71515a9b952b",
+      "step_hash": "4e5025be67e90849d2db768cb5a40c0f5b545086651487c82e5172fc91fecad6"
+    },
+    {
+      "step_index": 5,
+      "step_name": "Step 6: Preloader",
+      "criteria_hash": "e019eebe5afe4700251e2086dcd47fd306ba977ba15015027f50dcd4143c4551",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "e6b90c24b69f4ba932c086de5b92b6cc30c0407287eace6d70bcb354e6a5a8d6",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Preloader.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Preloader.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Preloader.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Preloader.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Preloader.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Preloader.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Preloader.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:15.157Z",
+          "completed_at": "2026-02-27T11:49:15.466Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "4e5025be67e90849d2db768cb5a40c0f5b545086651487c82e5172fc91fecad6",
+      "step_hash": "0779a67d734af5774656877b716da75c2f41cafaea9805d7d802d4b39ab00a13"
+    },
+    {
+      "step_index": 6,
+      "step_name": "Step 7: Navigation",
+      "criteria_hash": "2ec3cd01b93e90fd98ce664b3df2bc935aa3872fd7dcda92c130454355b3dcf1",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "3f83e069918f27fd673c77af91ccac931ca3d0b86dd72ad7f74a119c2fdc65b0",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Navigation.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Navigation.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Navigation.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Navigation.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Navigation.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Navigation.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:15.466Z",
+          "completed_at": "2026-02-27T11:49:15.849Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "0779a67d734af5774656877b716da75c2f41cafaea9805d7d802d4b39ab00a13",
+      "step_hash": "6a46c35e40b92ddcf186fb05be005a2d512601f74e529340dbe2770fc2f9f09a"
+    },
+    {
+      "step_index": 7,
+      "step_name": "Step 8: Hero section",
+      "criteria_hash": "603ba477b17a5b192a596a4449386a92569a23a6650322c4e50ce5de07328207",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "fdd47b1b89063db7d44014ce34d2b747fe5abc14fb7e1f4f8a8376c265b0ded0",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Hero.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:15.849Z",
+          "completed_at": "2026-02-27T11:49:16.259Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "6a46c35e40b92ddcf186fb05be005a2d512601f74e529340dbe2770fc2f9f09a",
+      "step_hash": "d3b2af0424d1effa1ca0dd038ca6d7d83a395956b23a4e6b6ec351cbaf336f04"
+    },
+    {
+      "step_index": 8,
+      "step_name": "Step 9: Marquee",
+      "criteria_hash": "aa693e6e1c6366f6b05b31ba84bbdd9ab024966fd3a7d03f5739ad96f26e99dd",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "6286b41d8cdfd729ed58bb9a0574cbeafb22e7e39e652323bca5c8cbf684321b",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Marquee.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:16.259Z",
+          "completed_at": "2026-02-27T11:49:16.679Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "d3b2af0424d1effa1ca0dd038ca6d7d83a395956b23a4e6b6ec351cbaf336f04",
+      "step_hash": "a0a58f5d064b7ca5de08f4e28ef9abc81af0ea5a0b90fe2e7cbc9f5f1580e577"
+    },
+    {
+      "step_index": 9,
+      "step_name": "Step 10: Stacking cards",
+      "criteria_hash": "5f7e98725fa198bc0410ef9979911f6a5ad0580eb51cdc43aa938ae90fc896f4",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "8cf5726d6456bf14f0222ed46fdfd0492c69efe01332fa526f0dcf9c048186ef",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/StackingCards.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:16.679Z",
+          "completed_at": "2026-02-27T11:49:17.089Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "a0a58f5d064b7ca5de08f4e28ef9abc81af0ea5a0b90fe2e7cbc9f5f1580e577",
+      "step_hash": "43519c5f0bf1923ebe02411fd382adad42889122d0221be7d3d465db5b32a357"
+    },
+    {
+      "step_index": 10,
+      "step_name": "Step 11: Split presets",
+      "criteria_hash": "2cc7b519deade3b40e3199ce72e642e3cf8028f79aa3179e317bf631a49fcbc9",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "44cd9bd82818e5a8efc306a2d6c5b825ef3f6f51103dd1bafd1bb050c5aa4253",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/SplitPresets.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:17.089Z",
+          "completed_at": "2026-02-27T11:49:17.504Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "43519c5f0bf1923ebe02411fd382adad42889122d0221be7d3d465db5b32a357",
+      "step_hash": "0a93d96be1fe8cabda222ce683d6774f31db73c343542989f340895c188379fe"
+    },
+    {
+      "step_index": 11,
+      "step_name": "Step 12: Footer",
+      "criteria_hash": "2ccc12bacc8b2fc7e03332460bd627cd452170fa0704ba8d275f08ca1344e86c",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "7dc47b9689f959548fe478bb205f404345e3ff21b4ae8b2e648f811ec15d26fc",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/components/Footer.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:17.505Z",
+          "completed_at": "2026-02-27T11:49:17.914Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "0a93d96be1fe8cabda222ce683d6774f31db73c343542989f340895c188379fe",
+      "step_hash": "af6396107be7c2e11d38ba5288fbdf261dbb2e06e3981bec4bb89bd93d2323c7"
+    },
+    {
+      "step_index": 12,
+      "step_name": "Step 13: Scroll reveal CSS",
+      "criteria_hash": "87069df0ec42a1367c1c39b0985bb9eef9178ce9be461f22ca96b83129e7c0a4",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "36fc3c083d172ef0ab58ed022b20119035a6b1b18a3e48d6231223bd6d0ec0cd",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:17.914Z",
+          "completed_at": "2026-02-27T11:49:18.313Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "af6396107be7c2e11d38ba5288fbdf261dbb2e06e3981bec4bb89bd93d2323c7",
+      "step_hash": "da2c01265bd6bd1935963708b25e769c6d0eab974587c1c9797849fc3269d9cd"
+    },
+    {
+      "step_index": 13,
+      "step_name": "Step 14: Brutal button CSS",
+      "criteria_hash": "5e58d0afe0937d0afc5bf4f10cefeeda588fc351a3e1de51f3e148ff5fb89aba",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "0199bebcc31fd508883a84c0a746c23c4408bb70820c60e023f220b7d89d189b",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:18.313Z",
+          "completed_at": "2026-02-27T11:49:18.901Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "da2c01265bd6bd1935963708b25e769c6d0eab974587c1c9797849fc3269d9cd",
+      "step_hash": "7f36292cfee3d72d58b3db7e6bb98270a94166bcea5601dc44765c899518975c"
+    },
+    {
+      "step_index": 14,
+      "step_name": "Step 15: Marquee CSS",
+      "criteria_hash": "b064303ac4a5edd458c031052cd3b265d035c9e91f56ef41968e07d3a8c9d829",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "fbe145c8fa44d2a081b719c1c6f6dbd763409490204357f4d20f96365709402d",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/globals.css",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:18.901Z",
+          "completed_at": "2026-02-27T11:49:19.124Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "7f36292cfee3d72d58b3db7e6bb98270a94166bcea5601dc44765c899518975c",
+      "step_hash": "cc8e3377d103100b9c3b63cc5fc7752d52554f8a2fa7877ab742b3781e2e9fe9"
+    },
+    {
+      "step_index": 15,
+      "step_name": "Step 16: Page composition",
+      "criteria_hash": "aabda94d60273902607fd267f29eddbf45368d36ccd644ac95cbb2f25406d210",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "a5845499572b37852bc8f6b1a2caa74546ce329144b857e900d40ed0c8e6bcdb",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            },
+            {
+              "type": "file_contains",
+              "target": "app/src/app/page.tsx",
+              "passed": true
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:19.124Z",
+          "completed_at": "2026-02-27T11:49:19.401Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "cc8e3377d103100b9c3b63cc5fc7752d52554f8a2fa7877ab742b3781e2e9fe9",
+      "step_hash": "1fc3d2ba01a3a6e907f1141c03e52dccd15f608999b85e498b0c1ae73efe845f"
+    },
+    {
+      "step_index": 16,
+      "step_name": "Step 17: Build passes",
+      "criteria_hash": "2a4e30aef16b992870387f748f30478c8a7eb34f6ea431cceebce81f4f7019a7",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "prompt_hash": "3915d3b21a006b0ae39efdecaf08991f01c4e6d795b30a424011a797e89566bd",
+          "agent_stdout_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "agent_stderr_hash": "5670b9e3a5fcad034c7064ad97d6af51e833a4439ce4f86c08a02963adcdd24a",
+          "validations": [
+            {
+              "type": "command_passes",
+              "target": "cd app && npx next build 2>&1 | tail -5",
+              "passed": true,
+              "exit_code": 0,
+              "duration_ms": 4450,
+              "stdout_hash": "41d5f1c598d01ac0e59fe9064a8d78d842f94fe9cde7f1d104756990e28d1e91",
+              "stderr_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          ],
+          "all_required_passed": true,
+          "started_at": "2026-02-27T11:49:19.401Z",
+          "completed_at": "2026-02-27T11:49:24.259Z"
+        }
+      ],
+      "final_attempt": 1,
+      "all_passed": true,
+      "previous_step_hash": "1fc3d2ba01a3a6e907f1141c03e52dccd15f608999b85e498b0c1ae73efe845f",
+      "step_hash": "c8bea1106cca2fe8488b16e70da514e2f755487f5a87af0d1e82b93d3760f70b"
+    }
+  ],
+  "chain_hash": "c8bea1106cca2fe8488b16e70da514e2f755487f5a87af0d1e82b93d3760f70b",
+  "status": "completed"
+}
