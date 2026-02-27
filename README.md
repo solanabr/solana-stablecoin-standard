@@ -4,6 +4,10 @@ A modular, compliance-ready stablecoin framework for Solana using Token-2022.
 
 SSS provides a complete on-chain toolkit for issuing and managing stablecoins, from minimal single-authority tokens to fully compliant assets with transfer restrictions, blacklists, asset seizure, and GENIUS Act reserve attestations. The framework ships as two Anchor programs, a TypeScript SDK, and a Rust CLI with an interactive TUI dashboard.
 
+<p align="center">
+  <img src="assets/tui-splash.png" alt="SSS Terminal — Institutional Stablecoin Standard for Solana" width="720" />
+</p>
+
 ---
 
 ## Architecture
@@ -206,6 +210,7 @@ See [cli/README.md](cli/README.md) for the complete command reference.
 - [Presets](docs/presets.md) -- Feature comparison matrix and use cases
 - [SSS-1 Specification](docs/SSS-1.md) -- Minimal stablecoin preset details
 - [SSS-2 Specification](docs/SSS-2.md) -- Compliant stablecoin preset with transfer hook
+- [SSS-3 Specification](docs/SSS-3.md) -- Private stablecoin preset with confidential transfers
 - [Compliance](docs/COMPLIANCE.md) -- GENIUS Act mapping, OFAC screening, regulatory considerations
 - [Operations](docs/OPERATIONS.md) -- Operator runbook: deployment, monitoring, incident response
 - [API Reference](docs/API.md) -- Backend REST API endpoint documentation

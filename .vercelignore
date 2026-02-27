@@ -1,0 +1,14 @@
+.anchor/
+target/
+programs/
+cli/
+tui/
+backend/
+trident-tests/
+node_modules/
+tests/
+docs/
+scripts/
+.github/
+*.so
+*.keypair
