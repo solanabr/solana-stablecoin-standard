@@ -41,6 +41,11 @@ This document describes the on-chain architecture of the Solana Stablecoin Stand
     - AuditLogEntry
 ```
 
+| Program | Program ID | Explorer |
+|---------|-----------|----------|
+| **sss-token** | `5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4` | [View on Solana Explorer](https://explorer.solana.com/address/5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4?cluster=devnet) |
+| **sss-transfer-hook** | `FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy` | [View on Solana Explorer](https://explorer.solana.com/address/FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy?cluster=devnet) |
+
 **sss-token** is the core program. It manages the stablecoin lifecycle: initialization, supply control, access management, compliance enforcement, and reserve attestation. All state PDAs are owned by this program.
 
 **sss-transfer-hook** is a lightweight companion program activated only for SSS-2 presets. Token-2022 invokes it on every `transfer_checked` call to enforce blacklist restrictions. The hook program does not own any stablecoin state -- it reads PDAs owned by sss-token to make pass/fail decisions.
