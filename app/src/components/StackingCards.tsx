@@ -39,7 +39,7 @@ export default function StackingCards({ animationsReady }: StackingCardsProps) {
       <div className="max-w-7xl mx-auto">
         <div className="mb-24 reveal-text" ref={revealRef}>
           <h2 className="font-display text-6xl md:text-8xl font-bold uppercase leading-none mb-6">
-            <div className="line">The Layers</div>
+            <div className="line">Architecture</div>
           </h2>
           <p className="font-mono text-xl max-w-2xl border-l-4 border-accent pl-6">
             <span className="line block">

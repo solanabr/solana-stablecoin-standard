@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import BrutalCard from "@/components/ui/BrutalCard";
 import BrutalButton from "@/components/ui/BrutalButton";
@@ -10,6 +10,7 @@ import type { SSSState } from "@/hooks/useSSS";
 
 export default function SupplyTab({ sss }: { sss: SSSState }) {
   const { publicKey } = useWallet();
+  const { connection } = useConnection();
   const [mintAmount, setMintAmount] = useState("");
   const [recipient, setRecipient] = useState("");
   const [burnAmount, setBurnAmount] = useState("");
@@ -18,20 +19,43 @@ export default function SupplyTab({ sss }: { sss: SSSState }) {
 
   const decimals = sss.supply?.decimals ?? 6;
 
+  const ensureAta = async (owner: PublicKey): Promise<PublicKey> => {
+    if (!sss.client || !publicKey) throw new Error("Not connected");
+    const ata = sss.client.getAssociatedTokenAddress(sss.mint, owner);
+    const info = await connection.getAccountInfo(ata);
+    if (!info) {
+      setStatus("Creating token account...");
+      const ix = sss.client.createAssociatedTokenAccountInstruction(publicKey, sss.mint, owner);
+      const tx = new Transaction().add(ix);
+      tx.feePayer = publicKey;
+      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const signed = await sss.client.provider.wallet.signTransaction(tx);
+      await connection.sendRawTransaction(signed.serialize());
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    return ata;
+  };
+
   const handleMint = async () => {
     if (!sss.client || !mintAmount || !recipient) return;
-    setStatus("Sending mint transaction...");
+    setStatus("Preparing mint...");
     setTxSig(null);
     try {
       const amount = new BN(parseFloat(mintAmount) * Math.pow(10, decimals));
       const recipientPk = new PublicKey(recipient);
-      const recipientAta = sss.client.getAssociatedTokenAddress(sss.mint, recipientPk);
+      const recipientAta = await ensureAta(recipientPk);
+      setStatus("Sending mint transaction...");
       const { signature } = await sss.client.mintTokens(sss.mint, amount, recipientAta);
       setTxSig(signature);
       setStatus("Mint successful!");
       await sss.refresh();
     } catch (e: any) {
-      setStatus("Error: " + (e.message || String(e)));
+      const msg = e.message || String(e);
+      if (msg.includes("AccountNotInitialized") || msg.includes("3012")) {
+        setStatus("Error: You must be registered as a minter first. Go to Roles tab → Update Minter.");
+      } else {
+        setStatus("Error: " + msg);
+      }
     }
   };
 

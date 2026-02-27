@@ -28,17 +28,16 @@ export default function Navigation() {
   };
 
   const links = [
-    { label: "Hero", id: "hero" },
-    { label: "The Layers", id: "layers" },
+    { label: "Overview", id: "hero" },
+    { label: "Architecture", id: "layers" },
     { label: "Presets", id: "presets" },
-    { label: "Deploy", id: "deploy" },
+    { label: "Get Started", id: "deploy" },
     { label: "Dashboard", id: "__dashboard__" },
   ];
 
   const externalLinks = [
-    { label: "Github", href: "#" },
-    { label: "Twitter", href: "#" },
-    { label: "Superteam", href: "#" },
+    { label: "Github", href: "https://github.com/amanhij/solana-stablecoin-standard-pre" },
+    { label: "Documentation", href: "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/feat/sss-full-implementation/docs" },
   ];
 
   return (

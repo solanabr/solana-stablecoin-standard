@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import {
   ShieldCheck,
@@ -20,6 +20,7 @@ type ActiveForm = "blacklistAdd" | "blacklistRemove" | "freeze" | "thaw" | "seiz
 
 export default function CompliancePillar({ sss }: { sss: SSSState }) {
   const { publicKey } = useWallet();
+  const { connection } = useConnection();
   const [activeForm, setActiveForm] = useState<ActiveForm>(null);
   const [address, setAddress] = useState("");
   const [reason, setReason] = useState("");
@@ -122,16 +123,33 @@ export default function CompliancePillar({ sss }: { sss: SSSState }) {
     }
   };
 
+  const ensureAta = async (owner: PublicKey): Promise<PublicKey> => {
+    if (!sss.client || !publicKey) throw new Error("Not connected");
+    const ata = sss.client.getAssociatedTokenAddress(sss.mint, owner);
+    const info = await connection.getAccountInfo(ata);
+    if (!info) {
+      const ix = sss.client.createAssociatedTokenAccountInstruction(publicKey, sss.mint, owner);
+      const tx = new Transaction().add(ix);
+      tx.feePayer = publicKey;
+      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const signed = await sss.client.provider.wallet.signTransaction(tx);
+      await connection.sendRawTransaction(signed.serialize());
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    return ata;
+  };
+
   const handleSeize = async () => {
     if (!sss.client || !seizeAddr || !seizeAmount || !publicKey) return;
     setLoading(true);
-    setStatus("Seizing tokens...");
+    setStatus("Preparing seize...");
     setTxSig(null);
     try {
       const amount = new BN(parseFloat(seizeAmount) * Math.pow(10, decimals));
       const targetPk = new PublicKey(seizeAddr);
       const fromAta = sss.client.getAssociatedTokenAddress(sss.mint, targetPk);
-      const toAta = sss.client.getAssociatedTokenAddress(sss.mint, sss.client.provider.wallet.publicKey);
+      const toAta = await ensureAta(sss.client.provider.wallet.publicKey);
+      setStatus("Seizing tokens...");
       const { signature } = await sss.client.seize(sss.mint, targetPk, fromAta, toAta, amount);
       setTxSig(signature);
       setStatus("Tokens seized");
