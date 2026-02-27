@@ -1,0 +1,23 @@
+[package]
+name = "sss-cli"
+version = "0.1.0"
+description = "CLI for the Solana Stablecoin Standard (SSS)"
+edition = "2021"
+
+[[bin]]
+name = "sss"
+path = "src/main.rs"
+
+[dependencies]
+sss-token = { path = "../programs/sss-token", features = ["cpi"] }
+anchor-lang = "0.31.1"
+anchor-client = "0.31.1"
+solana-sdk = "2.1"
+solana-client = "2.1"
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+colored = "2"
+bs58 = "0.5"
+ratatui = "0.29"
+crossterm = "0.28"

@@ -1,0 +1,29 @@
+{
+  "name": "@solana-stablecoin-standard/backend",
+  "version": "0.1.0",
+  "description": "REST API backend for the Solana Stablecoin Standard",
+  "license": "ISC",
+  "main": "dist/backend/src/server.js",
+  "scripts": {
+    "start": "node dist/backend/src/server.js",
+    "build": "tsc",
+    "dev": "ts-node src/server.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.0",
+    "bn.js": "^5.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.12.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
