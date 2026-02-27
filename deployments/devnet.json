@@ -1,0 +1,36 @@
+﻿{
+  "network": "devnet",
+  "deployedAt": "2026-02-26T13:35:00Z",
+  "programs": {
+    "sss_token": {
+      "programId": "8pgWR8CtoBFQVZt1uufDciegkFSetKr3WmXA2QCyGgx2",
+      "signature": "SaJCYP5fs5WXNQ6VJhv21Cy7qfnia64dTHYBerovxMS6NvYX4DFGWzZrcdybYzRttTN5vz8CoMoXN4ccgfyVuuE",
+      "authority": "FUTbzegEr8jH8T8UMztMv7Wo38931XSkMsuAB9CRW7FS",
+      "verified": true,
+      "features": ["SSS-1", "SSS-2", "SSS-3"]
+    },
+    "sss_transfer_hook": {
+      "programId": "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx",
+      "signature": "45WKgxYQqcCPaLxdZ1DQqz49xmRdgM3juYk56Gv4bGELHt71GVBSk5LDQD3fnLZpERFyzShuRgFGt36YXFyLkeR2",
+      "authority": "FUTbzegEr8jH8T8UMztMv7Wo38931XSkMsuAB9CRW7FS",
+      "verified": true,
+      "features": ["TransferHook", "Blacklist", "Whitelist", "Fees"]
+    }
+  },
+  "deploymentInfo": {
+    "rpcUrl": "https://api.devnet.solana.com",
+    "cluster": "devnet",
+    "version": "0.1.0",
+    "deployedBy": "antigravity"
+  },
+  "verification": {
+    "programVerified": true,
+    "idlVerified": true,
+    "testsPassed": true,
+    "lastVerified": "2026-02-26T14:15:00Z"
+  },
+  "urls": {
+    "sssToken": "https://explorer.solana.com/address/8pgWR8CtoBFQVZt1uufDciegkFSetKr3WmXA2QCyGgx2?cluster=devnet",
+    "transferHook": "https://explorer.solana.com/address/97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx?cluster=devnet"
+  }
+}

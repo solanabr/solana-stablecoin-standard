@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: sss-postgres
+    environment:
+      POSTGRES_USER: sss
+      POSTGRES_PASSWORD: sss_password
+      POSTGRES_DB: sss_token
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - sss-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sss"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: sss-redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - sss-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Main API Service (Mint/Burn)
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: sss-api
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SOLANA_NETWORK=devnet
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - DATABASE_URL=postgresql://sss:sss_password@postgres:5432/sss_token
+      - REDIS_URL=redis://redis:6379
+      - RATE_LIMIT_WINDOW=900000
+      - RATE_LIMIT_MAX=100
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sss-network
+    restart: unless-stopped
+
+  # Event Listener/Indexer
+  indexer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.indexer
+    container_name: sss-indexer
+    environment:
+      - NODE_ENV=production
+      - SOLANA_NETWORK=devnet
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - SSS2_PROGRAM_ID=FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD
+      - DATABASE_URL=postgresql://sss:sss_password@postgres:5432/sss_token
+      - REDIS_URL=redis://redis:6379
+      - POLLING_INTERVAL=5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sss-network
+    restart: unless-stopped
+
+  # Compliance Service
+  compliance:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.compliance
+    container_name: sss-compliance
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SOLANA_NETWORK=devnet
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - SSS2_PROGRAM_ID=FSkkSmrThcLpU9Uybrn4xcpbQKswUJn7KvoUQBsLPExD
+      - DATABASE_URL=postgresql://sss:sss_password@postgres:5432/sss_token
+      - REDIS_URL=redis://redis:6379
+      - COMPLIANCE_CHECK_TIMEOUT=5000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sss-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  sss-network:
+    driver: bridge

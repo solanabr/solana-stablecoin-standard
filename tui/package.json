@@ -1,0 +1,26 @@
+{
+  "name": "sss-admin-tui",
+  "version": "0.1.0",
+  "description": "Interactive terminal UI for SSS stablecoin administration",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "npx ts-node src/index.ts",
+    "build": "tsc",
+    "dev": "npx ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.95.4",
+    "ink": "^4.4.1",
+    "ink-select-input": "^5.0.0",
+    "ink-spinner": "^5.0.0",
+    "ink-table": "^3.1.0",
+    "ink-text-input": "^5.0.1",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "typescript": "^5.3.0"
+  }
+}

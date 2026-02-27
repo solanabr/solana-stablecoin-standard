@@ -1,0 +1,24 @@
+[toolchain]
+anchor_version = "0.32.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+sss2_hook = "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
+sss_token = "8JpbyYEJXLeWoPJcLsHWg64bDtwFZXhPoubVJPeH11aH"
+
+[programs.localnet]
+sss2_hook = "97WYcUSr6Y9YaDTM55PJYuAXpLL552HS6WXxVBmxAGmx"
+sss_token = "8pgWR8CtoBFQVZt1uufDciegkFSetKr3WmXA2QCyGgx2"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "npm run test"
