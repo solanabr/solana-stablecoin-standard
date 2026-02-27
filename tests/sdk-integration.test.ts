@@ -309,6 +309,7 @@ describe("SDK Integration: SSSClient", () => {
       );
 
       expect(signature).to.be.a("string");
+      await provider.connection.confirmTransaction(signature, "confirmed");
 
       // Verify on-chain balance
       const tokenAccount = await getAccount(
@@ -363,6 +364,7 @@ describe("SDK Integration: SSSClient", () => {
       );
 
       expect(signature).to.be.a("string");
+      await provider.connection.confirmTransaction(signature, "confirmed");
 
       const tokenAccount = await getAccount(
         provider.connection,
@@ -406,6 +408,7 @@ describe("SDK Integration: SSSClient", () => {
       );
 
       expect(signature).to.be.a("string");
+      await provider.connection.confirmTransaction(signature, "confirmed");
 
       const tokenAccount = await getAccount(
         provider.connection,
