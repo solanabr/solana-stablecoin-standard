@@ -4,25 +4,59 @@
  * To run:
  * 1. npm install
  * 2. Maximize your terminal window.
- * 3. node admin_tui.js [--rpc URL] [--mint MINT_ADDRESS]
+ * 3. node admin_tui.js [--rpc URL] [--mint MINT_ADDRESS] [--keypair PATH]
  */
 
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
-const { Connection, PublicKey } = require('@solana/web3.js');
-const { BorshAccountsCoder } = require('@coral-xyz/anchor');
+const { Connection, PublicKey, Keypair, Transaction, TransactionInstruction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
+const { BorshAccountsCoder, Program, AnchorProvider, Wallet, BN } = require('@coral-xyz/anchor');
+const { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync, ASSOCIATED_TOKEN_PROGRAM_ID } = require('@solana/spl-token');
+const fs = require('fs');
+const path = require('path');
 const idl = require('./idl/sss_token.json');
 
 // --- CLI ARGS ---
 const args = process.argv.slice(2);
 const rpcIdx = args.indexOf('--rpc');
 const mintIdx = args.indexOf('--mint');
+const keypairIdx = args.indexOf('--keypair');
 const RPC_URL = rpcIdx >= 0 ? args[rpcIdx + 1] : (process.env.RPC_URL || 'https://api.devnet.solana.com');
 const MINT = mintIdx >= 0 ? args[mintIdx + 1] : (process.env.MINT || '9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv');
+const KEYPAIR_PATH = keypairIdx >= 0 ? args[keypairIdx + 1] : (process.env.KEYPAIR_PATH || null);
 const PROGRAM_ID = '5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4';
 
 const connection = new Connection(RPC_URL, 'confirmed');
 const coder = new BorshAccountsCoder(idl);
+
+// --- WALLET / PROGRAM INIT ---
+let wallet = null;
+let program = null;
+let walletMode = false;
+
+function loadWallet() {
+  if (!KEYPAIR_PATH) return false;
+  try {
+    const raw = JSON.parse(fs.readFileSync(path.resolve(KEYPAIR_PATH), 'utf8'));
+    wallet = Keypair.fromSecretKey(Uint8Array.from(raw));
+    const provider = new AnchorProvider(
+      connection,
+      {
+        publicKey: wallet.publicKey,
+        signTransaction: async (tx) => { tx.sign(wallet); return tx; },
+        signAllTransactions: async (txs) => { txs.forEach(tx => tx.sign(wallet)); return txs; }
+      },
+      { commitment: 'confirmed' }
+    );
+    program = new Program(idl, provider);
+    walletMode = true;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+loadWallet();
 
 // --- 1. SCREEN SETUP ---
 const screen = blessed.screen({
@@ -61,6 +95,29 @@ function getReserveAttestationPda(configPda, index) {
   buf.writeBigUInt64LE(BigInt(index));
   return PublicKey.findProgramAddressSync(
     [Buffer.from('reserve'), configPda.toBuffer(), buf],
+    new PublicKey(PROGRAM_ID)
+  );
+}
+
+function getMinterInfoPda(configPda, minterPk) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('minter'), configPda.toBuffer(), minterPk.toBuffer()],
+    new PublicKey(PROGRAM_ID)
+  );
+}
+
+function getBlacklistPda(configPda, addressPk) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('blacklist'), configPda.toBuffer(), addressPk.toBuffer()],
+    new PublicKey(PROGRAM_ID)
+  );
+}
+
+function getAuditLogPda(configPda, index) {
+  const buf = Buffer.alloc(8);
+  buf.writeBigUInt64LE(BigInt(index));
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('audit'), configPda.toBuffer(), buf],
     new PublicKey(PROGRAM_ID)
   );
 }
@@ -308,7 +365,7 @@ function startAutoRefresh() {
 
 // --- 5. GLOBAL STATE ---
 let state = {
-  wallet: 'Read-Only',
+  wallet: walletMode ? shortAddr(wallet.publicKey.toBase58()) : 'No Wallet',
   config: { preset: 'UNINITIALIZED', name: '', symbol: '', decimals: 6 },
   mintAddress: MINT,
   isPaused: false,
@@ -361,6 +418,27 @@ function formatTimestamp(ts) {
 function formatUsd(amount, decimals) {
   decimals = decimals || 6;
   return (amount / Math.pow(10, decimals)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// --- TX EXECUTION HELPER ---
+async function executeTx(title, txFn) {
+  if (!walletMode) {
+    showMessage('No Wallet', 'Pass --keypair <path> to enable transactions.', 3000);
+    return false;
+  }
+  showMessage(title, 'Sending transaction...', 10000);
+  screen.render();
+  try {
+    const sig = await txFn();
+    await connection.confirmTransaction(sig, 'confirmed');
+    showMessage('Success', `Transaction confirmed!\n\nSignature:\n${sig}`, 5000);
+    setTimeout(() => refreshData(), 1000);
+    return true;
+  } catch (err) {
+    const msg = err.message || String(err);
+    showMessage('Transaction Failed', msg.slice(0, 200), 6000);
+    return false;
+  }
 }
 
 // --- 7. UI CONTAINERS ---
@@ -436,9 +514,10 @@ function updateStatusBar() {
   const loadingStr = liveData.loading ? 'SYNCING' : 'LIVE';
   const errStr = liveData.error ? ' | ERR: ' + liveData.error.slice(0, 30) : '';
   const pauseStr = state.isPaused ? ' | PAUSED' : '';
+  const walletStr = walletMode ? 'OPERATOR' : 'READ-ONLY';
 
   statusBar.setContent(
-    ` STATUS: ${loadingStr} | RPC: DEVNET | MINT: ${mintShort} | Last: ${lastTime} | Next: ${countdown}s${pauseStr}${errStr} | [Q] Quit [TAB] Nav [R] Refresh`
+    ` STATUS: ${loadingStr} | ${walletStr} | RPC: DEVNET | MINT: ${mintShort} | Last: ${lastTime} | Next: ${countdown}s${pauseStr}${errStr} | [Q] Quit [TAB] Nav [R] Refresh`
   );
 }
 
@@ -453,7 +532,7 @@ function updateTopNav() {
     `{bold}MINT:{/bold} ${mintShort} | ` +
     `{bold}PRESET:{/bold} ${preset} | ` +
     `{bold}STATUS:{/bold} ${state.isPaused ? '{red-fg}HALTED{/red-fg}' : '{green-fg}LIVE{/green-fg}'} | ` +
-    `{bold}MODE:{/bold} Read-Only`
+    `{bold}MODE:{/bold} ${walletMode ? '{green-fg}OPERATOR{/green-fg}' : '{red-fg}Read-Only{/red-fg}'}`
   );
 }
 
@@ -504,7 +583,7 @@ function renderPresetPicker() {
 
   const list = blessed.list({
     parent: presetScreen, top: 4, left: 2, width: '40%', height: '80%',
-    items: ['> SSS-1: Minimal Stablecoin', '> SSS-2: Compliant Stablecoin', '> SSS-3: Custom Configuration'],
+    items: ['> SSS-1: Minimal Stablecoin', '> SSS-2: Compliant Stablecoin', '> SSS-3: Private Stablecoin'],
     style: { selected: { bg: colors.secondary, fg: 'black', bold: true }, fg: colors.text },
     keys: true, mouse: true
   });
@@ -518,7 +597,7 @@ function renderPresetPicker() {
   list.on('select item', (item, index) => {
     if (index === 0) details.setContent('SSS-1: MINIMAL\n\nFor internal DAO treasuries and ecosystem settlement.\n\n+ Mint Authority\n+ Freeze Authority\n+ Metadata\n- No Transfer Hooks\n- No Seize Capabilities');
     if (index === 1) details.setContent('SSS-2: COMPLIANT (INSTITUTIONAL)\n\nFor regulated USDC/USDT-class tokens. Strict adherence.\n\n+ All SSS-1 Features\n+ Permanent Delegate (Seize Capable)\n+ Transfer Hooks (On-chain Blacklist)\n+ Default Account Frozen state optional.');
-    if (index === 2) details.setContent('SSS-3: CUSTOM CONFIGURATION\n\nFull control over every extension and authority.\n\n+ All SSS-2 Features\n+ Custom Transfer Hook Logic\n+ Configurable Freeze Defaults\n+ Custom Fee Structures\n+ Manual Authority Assignment');
+    if (index === 2) details.setContent('SSS-3: PRIVATE STABLECOIN\n\nConfidential transfers with ZK proofs.\n\n+ All SSS-1 Features\n+ Permanent Delegate\n+ ConfidentialTransferMint Extension\n+ Encrypted Balances & Transfers\n\nNote: ZK ElGamal Proof Program is\ncurrently disabled on Solana.\nConfidential transfer operations\nare coming soon.');
     screen.render();
   });
 
@@ -653,10 +732,11 @@ function renderOverviewTab() {
   });
 
   const yn = (v) => v ? '{green-fg}ENABLED{/green-fg}' : '{red-fg}DISABLED{/red-fg}';
+  const ctDisplay = (v) => v ? '{yellow-fg}COMING SOON{/yellow-fg}' : '{red-fg}DISABLED{/red-fg}';
   const ftext = cfg
     ? ` Permanent Delegate : ${yn(cfg.enablePermanentDelegate)}\n` +
       ` Transfer Hooks     : ${yn(cfg.enableTransferHook)}\n` +
-      ` Conf. Transfers    : ${yn(cfg.enableConfidentialTransfers)}\n` +
+      ` Conf. Transfers    : ${ctDisplay(cfg.enableConfidentialTransfers)}\n` +
       ` Default Frozen     : ${yn(cfg.defaultAccountFrozen)}`
     : ' Loading feature flags...';
 
@@ -757,7 +837,35 @@ function renderSupplyTab() {
   });
 
   mintSubmitBtn.on('press', () => {
-    showMessage('Read-Only', 'Mint operations require a connected wallet.\nThis TUI is in read-only mode.', 3000);
+    const recipient = addrInput.getValue().trim();
+    const amountStr = amtInput.getValue().trim();
+    if (!recipient || !amountStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
+    const amount = new BN(parseFloat(amountStr) * Math.pow(10, dec));
+    executeTx('Minting Tokens', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const [minterPda] = getMinterInfoPda(configPda, wallet.publicKey);
+      const mintPk = new PublicKey(MINT);
+      const recipientPk = new PublicKey(recipient);
+      const recipientAta = getAssociatedTokenAddressSync(mintPk, recipientPk, false, TOKEN_2022_PROGRAM_ID);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.mintTokens(amount)
+        .accounts({
+          minter: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          minterInfo: minterPda,
+          mint: mintPk,
+          recipientTokenAccount: recipientAta,
+          auditLog: auditPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 
   // Burn Form
@@ -766,12 +874,12 @@ function renderSupplyTab() {
     border: { type: 'line', fg: colors.danger }, label: ' Execute Burn '
   });
   blessed.text({ parent: burnForm, top: 1, left: 2, content: 'Source Account:' });
-  blessed.textbox({
+  const burnSourceInput = blessed.textbox({
     parent: burnForm, name: 'sourceAddress', top: 2, left: 2, width: '90%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
   blessed.text({ parent: burnForm, top: 4, left: 2, content: 'Burn Amount:' });
-  blessed.textbox({
+  const burnAmtInput = blessed.textbox({
     parent: burnForm, name: 'burnAmount', top: 5, left: 2, width: '90%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
@@ -782,7 +890,29 @@ function renderSupplyTab() {
   });
 
   burnSubmitBtn.on('press', () => {
-    showMessage('Read-Only', 'Burn operations require a connected wallet.\nThis TUI is in read-only mode.', 3000);
+    const source = burnSourceInput.getValue().trim();
+    const amountStr = burnAmtInput.getValue().trim();
+    if (!source || !amountStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
+    const amount = new BN(parseFloat(amountStr) * Math.pow(10, dec));
+    executeTx('Burning Tokens', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const mintPk = new PublicKey(MINT);
+      const sourcePk = new PublicKey(source);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.burnTokens(amount)
+        .accounts({
+          burner: wallet.publicKey,
+          config: configPda,
+          mint: mintPk,
+          tokenAccount: sourcePk,
+          auditLog: auditPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 
   // Audit Trail
@@ -853,12 +983,12 @@ function renderBlacklistTab() {
     border: { type: 'line', fg: colors.danger }, label: ' Add to Blacklist '
   });
   blessed.text({ parent: formBox, top: 1, left: 2, content: 'Address:' });
-  blessed.textbox({
+  const blAddrInput = blessed.textbox({
     parent: formBox, name: 'blAddress', top: 1, left: 12, width: '40%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
   blessed.text({ parent: formBox, top: 3, left: 2, content: 'Reason:' });
-  blessed.textbox({
+  const blReasonInput = blessed.textbox({
     parent: formBox, name: 'blReason', top: 3, left: 12, width: '40%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
@@ -868,7 +998,33 @@ function renderBlacklistTab() {
     mouse: true, keys: true
   });
   blSubmit.on('press', () => {
-    showMessage('Read-Only', 'Blacklist operations require a connected wallet.', 3000);
+    const address = blAddrInput.getValue().trim();
+    const reason = blReasonInput.getValue().trim();
+    if (!address || !reason) { showMessage('Error', 'Fill in all fields.', 2000); return; }
+    executeTx('Adding to Blacklist', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const targetPk = new PublicKey(address);
+      const [blPda] = getBlacklistPda(configPda, targetPk);
+      const mintPk = new PublicKey(MINT);
+      const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.blacklistAdd({ reason })
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          blacklistEntry: blPda,
+          targetTokenAccount: targetAta,
+          mint: mintPk,
+          auditLog: auditPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 
   table.focus();
@@ -992,7 +1148,7 @@ function renderRolesTab() {
   });
 
   blessed.text({ parent: formBox, top: 1, left: 35, content: 'New Address:' });
-  blessed.textbox({
+  const roleAddrInput = blessed.textbox({
     parent: formBox, name: 'roleAddress', top: 1, left: 49, width: '40%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
@@ -1003,7 +1159,28 @@ function renderRolesTab() {
     mouse: true, keys: true
   });
   roleSubmit.on('press', () => {
-    showMessage('Read-Only', 'Role updates require a connected wallet.', 3000);
+    const address = roleAddrInput.getValue().trim();
+    if (!address) { showMessage('Error', 'Enter a new address.', 2000); return; }
+    const selectedIdx = roleList.selected || 0;
+    const roleEnums = [{ pauser: {} }, { blacklister: {} }, { seizer: {} }];
+    const roleEnum = roleEnums[selectedIdx];
+    executeTx('Updating Role', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const newHolder = new PublicKey(address);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.updateRoles({ role: roleEnum, newHolder })
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          auditLog: auditPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 
   table.focus();
@@ -1057,12 +1234,12 @@ function renderMintersTab() {
     border: { type: 'line', fg: colors.border }, label: ' Add / Update Minter '
   });
   blessed.text({ parent: formBox, top: 1, left: 2, content: 'Address:' });
-  blessed.textbox({
+  const minterAddrInput = blessed.textbox({
     parent: formBox, name: 'minterAddress', top: 1, left: 12, width: '40%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
   blessed.text({ parent: formBox, top: 3, left: 2, content: 'Quota:' });
-  blessed.textbox({
+  const minterQuotaInput = blessed.textbox({
     parent: formBox, name: 'minterQuota', top: 3, left: 12, width: '20%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
@@ -1072,7 +1249,30 @@ function renderMintersTab() {
     mouse: true, keys: true
   });
   minterSubmit.on('press', () => {
-    showMessage('Read-Only', 'Minter operations require a connected wallet.', 3000);
+    const address = minterAddrInput.getValue().trim();
+    const quotaStr = minterQuotaInput.getValue().trim();
+    if (!address || !quotaStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
+    const quota = new BN(parseFloat(quotaStr) * Math.pow(10, dec));
+    executeTx('Updating Minter', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const minterPk = new PublicKey(address);
+      const [minterPda] = getMinterInfoPda(configPda, minterPk);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.updateMinter({ isActive: true, mintQuota: quota })
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          minterInfo: minterPda,
+          minter: minterPk,
+          auditLog: auditPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 
   table.focus();
@@ -1086,7 +1286,7 @@ function renderFreezeThawTab() {
     border: { type: 'line', fg: colors.danger }, label: ' Freeze Account '
   });
   blessed.text({ parent: freezeForm, top: 1, left: 2, content: 'Target Address:', style: { fg: colors.danger } });
-  blessed.textbox({
+  const freezeAddrInput = blessed.textbox({
     parent: freezeForm, name: 'freezeAddress', top: 2, left: 2, width: '90%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
@@ -1101,7 +1301,30 @@ function renderFreezeThawTab() {
     mouse: true, keys: true
   });
   freezeBtn.on('press', () => {
-    showMessage('Read-Only', 'Freeze operations require a connected wallet.', 3000);
+    const address = freezeAddrInput.getValue().trim();
+    if (!address) { showMessage('Error', 'Enter a target address.', 2000); return; }
+    executeTx('Freezing Account', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const targetPk = new PublicKey(address);
+      const mintPk = new PublicKey(MINT);
+      const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.freezeAccount()
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          tokenAccount: targetAta,
+          mint: mintPk,
+          auditLog: auditPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 
   // Thaw form (right)
@@ -1110,7 +1333,7 @@ function renderFreezeThawTab() {
     border: { type: 'line', fg: colors.success }, label: ' Thaw Account '
   });
   blessed.text({ parent: thawForm, top: 1, left: 2, content: 'Target Address:', style: { fg: colors.success } });
-  blessed.textbox({
+  const thawAddrInput = blessed.textbox({
     parent: thawForm, name: 'thawAddress', top: 2, left: 2, width: '90%', height: 1,
     style: { bg: colors.border, fg: colors.text }, inputOnFocus: true
   });
@@ -1120,7 +1343,30 @@ function renderFreezeThawTab() {
     mouse: true, keys: true
   });
   thawBtn.on('press', () => {
-    showMessage('Read-Only', 'Thaw operations require a connected wallet.', 3000);
+    const address = thawAddrInput.getValue().trim();
+    if (!address) { showMessage('Error', 'Enter a target address.', 2000); return; }
+    executeTx('Thawing Account', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const targetPk = new PublicKey(address);
+      const mintPk = new PublicKey(MINT);
+      const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.thawAccount()
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          tokenAccount: targetAta,
+          mint: mintPk,
+          auditLog: auditPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 
   // Frozen accounts info
@@ -1261,6 +1507,7 @@ function renderConfigTab() {
   });
 
   const yn = (v) => v ? '{green-fg}YES{/green-fg}' : '{red-fg}NO{/red-fg}';
+  const ctFlag = (v) => v ? '{yellow-fg}INITIALIZED (ZK Pending){/yellow-fg}' : '{red-fg}NO{/red-fg}';
 
   if (cfg) {
     blessed.text({
@@ -1278,7 +1525,7 @@ function renderConfigTab() {
         `\n {bold}--- Feature Flags ---{/bold}\n` +
         ` Permanent Delegate:  ${yn(cfg.enablePermanentDelegate)}\n` +
         ` Transfer Hook:       ${yn(cfg.enableTransferHook)}\n` +
-        ` Confidential Tx:     ${yn(cfg.enableConfidentialTransfers)}\n` +
+        ` Confidential Tx:     ${ctFlag(cfg.enableConfidentialTransfers)}\n` +
         ` Default Frozen:      ${yn(cfg.defaultAccountFrozen)}\n` +
         ` Is Paused:           ${yn(cfg.isPaused)}\n` +
         `\n {bold}--- Stats ---{/bold}\n` +
@@ -1309,7 +1556,7 @@ function renderConfigTab() {
       ` {bold}--- Connection ---{/bold}\n` +
       ` RPC URL:  ${RPC_URL}\n` +
       ` Mint:     ${MINT}\n` +
-      ` Mode:     Read-Only\n` +
+      ` Mode:     ${walletMode ? '{green-fg}OPERATOR{/green-fg}' : '{red-fg}Read-Only{/red-fg}'}\n` +
       `\n {bold}--- Refresh ---{/bold}\n` +
       ` Interval: ${REFRESH_INTERVAL / 1000}s\n` +
       ` Last:     ${liveData.lastRefresh ? liveData.lastRefresh.toLocaleTimeString() : 'N/A'}\n` +
@@ -1321,11 +1568,60 @@ function renderConfigTab() {
       `\n {bold}--- CLI Usage ---{/bold}\n` +
       ` node admin_tui.js \\\n` +
       `   --rpc <URL> \\\n` +
-      `   --mint <MINT_ADDR>\n` +
-      `\n {bold}Note:{/bold} Config changes require\n` +
-      ` a connected wallet. This TUI\n` +
-      ` is read-only.`,
+      `   --mint <MINT_ADDR> \\\n` +
+      `   --keypair <PATH>`,
     style: { fg: colors.text }
+  });
+
+  // Pause / Unpause buttons
+  const pauseBtn = blessed.button({
+    parent: settingsBox, top: 16, left: 2, width: 16, height: 1,
+    content: ' [ PAUSE ] ',
+    style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
+    mouse: true, keys: true
+  });
+  pauseBtn.on('press', () => {
+    executeTx('Pausing Program', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.pause()
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          auditLog: auditPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
+  });
+
+  const unpauseBtn = blessed.button({
+    parent: settingsBox, top: 16, left: 20, width: 18, height: 1,
+    content: ' [ UNPAUSE ] ',
+    style: { bg: colors.success, fg: 'black', focus: { bg: colors.accent } },
+    mouse: true, keys: true
+  });
+  unpauseBtn.on('press', () => {
+    executeTx('Unpausing Program', async () => {
+      const [configPda] = getConfigPda(MINT);
+      const [rolesPda] = getRoleRegistryPda(configPda);
+      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      return await program.methods.unpause()
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
+          roleRegistry: rolesPda,
+          auditLog: auditPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([wallet])
+        .rpc();
+    });
   });
 }
 
@@ -1387,7 +1683,8 @@ function renderComplianceTab() {
 
   // Screening log
   const logBox = blessed.box({
-    parent: mainContent, top: 16, left: 2, width: '95%', height: '100%-17',
+    parent: mainContent, top: 16, left: 2, width: '95%',
+    height: (liveData.config && liveData.config.enableConfidentialTransfers) ? '50%-17' : '100%-17',
     border: { type: 'line', fg: colors.border },
     label: ' Screening Log ', tags: true, scrollable: true, alwaysScroll: true,
     keys: true, mouse: true,
@@ -1409,6 +1706,27 @@ function renderComplianceTab() {
     parent: logBox, top: 1, left: 1, tags: true,
     content: logContent, style: { fg: colors.text }
   });
+
+  // SSS-3 Confidential Transfers note
+  if (liveData.config && liveData.config.enableConfidentialTransfers) {
+    const ctBox = blessed.box({
+      parent: mainContent, top: '55%', left: 2, width: '95%', height: 12,
+      border: { type: 'line', fg: colors.accent },
+      label: ' SSS-3 Confidential Transfers ',
+      tags: true
+    });
+    blessed.text({
+      parent: ctBox, top: 1, left: 2, tags: true,
+      content:
+        ' {yellow-fg}COMING SOON{/yellow-fg}\n\n' +
+        ' The ConfidentialTransferMint extension is initialized.\n' +
+        ' ZK ElGamal Proof Program is disabled on Solana (June 2025).\n' +
+        ' Encrypted transfers will activate when Solana re-enables ZK proofs.\n\n' +
+        ' Current capabilities: All standard ops work (mint, burn, freeze, seize).\n' +
+        ' Pending: Account configuration, deposits, ZK transfers, withdrawals.',
+      style: { fg: colors.text }
+    });
+  }
 }
 
 // === TAB 11: SYSTEM LOGS ===

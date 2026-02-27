@@ -14,6 +14,7 @@
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
     "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.9",
     "@coral-xyz/anchor": "^0.31.1"
   }
 }
