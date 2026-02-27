@@ -389,11 +389,61 @@ These flags are set at initialization time based on the chosen preset and are im
 | 6021 | InvalidDecimals | Invalid decimals value |
 | 6022 | SameAuthority | Cannot transfer authority to the same address |
 | 6023 | ZeroAuthority | New authority cannot be the zero address |
-| 6024 | Overflow | Arithmetic overflow |
+| 6024 | SeizeAmountZero | Seize amount must be greater than zero |
+| 6025 | SeizeSameAccount | Source and destination accounts must be different |
+| 6026 | Overflow | Arithmetic overflow |
 
-The transfer hook program defines two additional error codes:
+The transfer hook program defines four error codes:
 
 | Code | Name | Description |
 |------|------|-------------|
 | 6000 | SourceBlacklisted | Source address is blacklisted |
 | 6001 | DestinationBlacklisted | Destination address is blacklisted |
+| 6002 | Unauthorized | Caller is not the master authority |
+| 6003 | InvalidConfig | Invalid config account |
+
+## Security Design Decisions
+
+This section documents the defense-in-depth security measures applied across both programs.
+
+### Cross-Account Validation (Defense-in-Depth)
+
+Every instruction that accepts a `role_registry` account validates `role_registry.config == config.key()` as an Anchor constraint. While PDA seed derivation already ties the role registry to a specific config, this explicit constraint provides defense-in-depth against hypothetical deserialization or seed collision attacks.
+
+Similarly, every instruction that accepts a `mint` account (as `UncheckedAccount`) validates both:
+- `address = config.mint` -- ensures the mint matches the stored config
+- `mint.owner == &token_program.key()` -- ensures the account is actually owned by Token-2022, preventing spoofed accounts
+
+The `UpdateMinter` instruction validates `minter_info.config == config.key() || minter_info.config == Pubkey::default()`, where `Pubkey::default()` handles newly-initialized accounts via `init_if_needed`.
+
+### BlacklistRemove Token Account Ownership
+
+The `blacklist_remove` instruction validates `token::authority = blacklist_entry.blocked_address` on the target token account. This prevents an attacker from passing an arbitrary token account to thaw -- only the actual blacklisted user's token account can be thawed during removal.
+
+### Transfer Hook Authorization
+
+The `initialize_extra_account_meta_list` instruction in sss-transfer-hook validates the caller by:
+1. Deriving the expected StablecoinConfig PDA from the mint
+2. Verifying the config account is owned by the sss-token program
+3. Reading the `master_authority` field directly from config account data (offset 41: 8 discriminator + 1 bump + 32 mint)
+4. Requiring the caller matches the `master_authority`
+
+This prevents unauthorized actors from initializing or re-initializing the ExtraAccountMetaList.
+
+### Transfer Hook Defense-in-Depth
+
+The `transfer_hook` execute handler applies multiple layers of validation:
+1. **Config PDA verification**: Re-derives the expected config PDA from the mint and verifies it matches the passed account
+2. **Owner check**: Verifies the config account is owned by the sss-token program
+3. **Graceful degradation**: If the config doesn't match (e.g., non-SSS mint), the hook allows the transfer rather than blocking legitimate Token-2022 operations
+4. **Seize bypass**: If the transfer authority is the config PDA itself, the transfer is allowed (this enables the burn+mint seize flow)
+5. **Blacklist existence check**: Verifies both ownership (`owner == sss-token`) and non-emptiness (`!data_is_empty()`) before blocking
+
+### Seize Safety
+
+The seize instruction enforces:
+- `amount > 0` via `SeizeAmountZero` error (prevents no-op transactions)
+- `from_token_account != to_token_account` via `SeizeSameAccount` error (prevents burn+mint to same account)
+- Blacklist entry must exist for the source address
+- The from-account must be owned by the blacklisted address (`token::authority = blacklist_entry.blocked_address`)
+- The account is thawed before burn, then re-frozen after, maintaining the frozen state invariant

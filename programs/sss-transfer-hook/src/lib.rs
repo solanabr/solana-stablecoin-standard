@@ -19,6 +19,10 @@ pub enum HookError {
     SourceBlacklisted,
     #[msg("Destination address is blacklisted")]
     DestinationBlacklisted,
+    #[msg("Unauthorized: caller is not the master authority")]
+    Unauthorized,
+    #[msg("Invalid config account")]
+    InvalidConfig,
 }
 
 #[program]
@@ -33,6 +37,37 @@ pub mod sss_transfer_hook {
     pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
+        // Verify config PDA derivation
+        let (expected_config, _bump) = Pubkey::find_program_address(
+            &[b"config", ctx.accounts.mint.key().as_ref()],
+            &SSS_TOKEN_PROGRAM_ID,
+        );
+        require!(
+            ctx.accounts.config.key() == expected_config,
+            HookError::InvalidConfig
+        );
+
+        // Verify config is owned by sss-token program
+        require!(
+            ctx.accounts.config.owner == &SSS_TOKEN_PROGRAM_ID,
+            HookError::InvalidConfig
+        );
+
+        // Read master_authority from config data
+        // Layout: 8 (discriminator) + 1 (bump) + 32 (mint) + 32 (master_authority)
+        let config_data = ctx.accounts.config.try_borrow_data()?;
+        require!(config_data.len() >= 73, HookError::InvalidConfig);
+        let master_authority_bytes: [u8; 32] = config_data[41..73]
+            .try_into()
+            .map_err(|_| error!(HookError::InvalidConfig))?;
+        let master_authority = Pubkey::new_from_array(master_authority_bytes);
+
+        // Verify caller is master authority
+        require!(
+            ctx.accounts.authority.key() == master_authority,
+            HookError::Unauthorized
+        );
+
         let extra_account_metas = build_extra_account_metas()?;
 
         let account_size =
@@ -82,30 +117,42 @@ pub mod sss_transfer_hook {
     /// verifying whether their BlacklistEntry PDA (owned by sss-token) exists.
     /// If either is blacklisted, the transfer is rejected.
     pub fn transfer_hook(ctx: Context<TransferHookExecute>, _amount: u64) -> Result<()> {
-        // Check if the config PDA (permanent delegate) is the authority.
-        // If so, this is a program-initiated transfer (e.g., seize) — allow it.
+        let mint_key = ctx.accounts.mint.key();
         let config = &ctx.accounts.config;
         let authority = &ctx.accounts.authority;
-        if config.owner == &SSS_TOKEN_PROGRAM_ID
-            && !config.data_is_empty()
-            && authority.key == config.key
+
+        // Defense-in-depth: verify config PDA matches expected derivation
+        let (expected_config, _) = Pubkey::find_program_address(
+            &[b"config", mint_key.as_ref()],
+            &SSS_TOKEN_PROGRAM_ID,
+        );
+
+        // If config doesn't match or isn't owned by sss-token, allow transfer
+        // (this mint may not be an SSS stablecoin, or config doesn't exist)
+        if config.key() != expected_config
+            || config.owner != &SSS_TOKEN_PROGRAM_ID
+            || config.data_is_empty()
         {
             return Ok(());
         }
 
-        let source_blacklist = &ctx.accounts.source_blacklist;
-        let dest_blacklist = &ctx.accounts.dest_blacklist;
+        // Seize bypass: if authority IS the config PDA, it's a program operation
+        if authority.key == &expected_config {
+            return Ok(());
+        }
 
-        // If source BlacklistEntry PDA exists (has data & owned by sss-token), block
-        if !source_blacklist.data_is_empty()
-            && source_blacklist.owner == &SSS_TOKEN_PROGRAM_ID
+        // Check source blacklist — verify owner is sss-token (defense-in-depth)
+        let source_blacklist = &ctx.accounts.source_blacklist;
+        if source_blacklist.owner == &SSS_TOKEN_PROGRAM_ID
+            && !source_blacklist.data_is_empty()
         {
             return Err(HookError::SourceBlacklisted.into());
         }
 
-        // If destination BlacklistEntry PDA exists, block
-        if !dest_blacklist.data_is_empty()
-            && dest_blacklist.owner == &SSS_TOKEN_PROGRAM_ID
+        // Check destination blacklist — verify owner is sss-token (defense-in-depth)
+        let dest_blacklist = &ctx.accounts.dest_blacklist;
+        if dest_blacklist.owner == &SSS_TOKEN_PROGRAM_ID
+            && !dest_blacklist.data_is_empty()
         {
             return Err(HookError::DestinationBlacklisted.into());
         }
@@ -210,6 +257,10 @@ pub struct InitializeExtraAccountMetaList<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    /// The authority that must match the stablecoin's master_authority.
+    /// Prevents unauthorized actors from initializing the meta list.
+    pub authority: Signer<'info>,
+
     /// CHECK: The ExtraAccountMetaList PDA. Created in the handler.
     #[account(
         mut,
@@ -219,6 +270,10 @@ pub struct InitializeExtraAccountMetaList<'info> {
     pub extra_account_meta_list: AccountInfo<'info>,
 
     pub mint: InterfaceAccount<'info, Mint>,
+
+    /// CHECK: StablecoinConfig PDA from sss-token. Validated in handler.
+    pub config: UncheckedAccount<'info>,
+
     pub system_program: Program<'info, System>,
 }
 

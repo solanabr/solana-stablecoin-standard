@@ -29,10 +29,11 @@ pub struct MintTokens<'info> {
     )]
     pub minter_info: Account<'info, MinterInfo>,
 
-    /// CHECK: The Token-2022 mint account, validated by seeds in config.
+    /// CHECK: The Token-2022 mint account. Address validated against config, owner against Token-2022.
     #[account(
         mut,
         address = config.mint,
+        constraint = mint.owner == &token_program.key() @ SssError::InvalidAuthority,
     )]
     pub mint: UncheckedAccount<'info>,
 

@@ -33,6 +33,14 @@
           "signer": true
         },
         {
+          "name": "authority",
+          "docs": [
+            "The authority that must match the stablecoin's master_authority.",
+            "Prevents unauthorized actors from initializing the meta list."
+          ],
+          "signer": true
+        },
+        {
           "name": "extra_account_meta_list",
           "writable": true,
           "pda": {
@@ -70,6 +78,9 @@
         },
         {
           "name": "mint"
+        },
+        {
+          "name": "config"
         },
         {
           "name": "system_program",
@@ -182,6 +193,16 @@
       "code": 6001,
       "name": "DestinationBlacklisted",
       "msg": "Destination address is blacklisted"
+    },
+    {
+      "code": 6002,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: caller is not the master authority"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidConfig",
+      "msg": "Invalid config account"
     }
   ]
 }

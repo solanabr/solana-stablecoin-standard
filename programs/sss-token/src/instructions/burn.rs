@@ -21,10 +21,11 @@ pub struct BurnTokens<'info> {
     )]
     pub config: Account<'info, StablecoinConfig>,
 
-    /// CHECK: The Token-2022 mint account, validated by config.
+    /// CHECK: The Token-2022 mint account. Address validated against config, owner against Token-2022.
     #[account(
         mut,
         address = config.mint,
+        constraint = mint.owner == &token_program.key() @ SssError::InvalidAuthority,
     )]
     pub mint: UncheckedAccount<'info>,
 

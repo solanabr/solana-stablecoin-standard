@@ -66,6 +66,12 @@ pub enum SssError {
     #[msg("New authority cannot be the zero address")]
     ZeroAuthority,
 
+    // Seize
+    #[msg("Seize amount must be greater than zero")]
+    SeizeAmountZero,
+    #[msg("Source and destination accounts must be different")]
+    SeizeSameAccount,
+
     // Arithmetic
     #[msg("Arithmetic overflow")]
     Overflow,

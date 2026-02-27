@@ -339,7 +339,7 @@
         {
           "name": "target_token_account",
           "docs": [
-            "The target's token account to thaw"
+            "The target's token account to thaw — must belong to the blacklisted address"
           ],
           "writable": true
         },
@@ -1630,6 +1630,16 @@
     },
     {
       "code": 6024,
+      "name": "SeizeAmountZero",
+      "msg": "Seize amount must be greater than zero"
+    },
+    {
+      "code": 6025,
+      "name": "SeizeSameAccount",
+      "msg": "Source and destination accounts must be different"
+    },
+    {
+      "code": 6026,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
     }

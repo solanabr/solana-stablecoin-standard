@@ -23,6 +23,7 @@ pub struct Seize<'info> {
     #[account(
         seeds = [RoleRegistry::SEED_PREFIX, config.key().as_ref()],
         bump = role_registry.bump,
+        constraint = role_registry.config == config.key() @ SssError::InvalidAuthority,
     )]
     pub role_registry: Account<'info, RoleRegistry>,
 
@@ -34,8 +35,12 @@ pub struct Seize<'info> {
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
 
-    /// CHECK: The Token-2022 mint account.
-    #[account(mut, address = config.mint)]
+    /// CHECK: The Token-2022 mint account. Address validated against config, owner against Token-2022.
+    #[account(
+        mut,
+        address = config.mint,
+        constraint = mint.owner == &token_program.key() @ SssError::InvalidAuthority,
+    )]
     pub mint: UncheckedAccount<'info>,
 
     /// The token account to seize from (must be owned by the blacklisted address)
@@ -73,7 +78,12 @@ pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
         Role::Seizer,
     )?;
 
-    require!(amount > 0, SssError::MintAmountZero);
+    require!(amount > 0, SssError::SeizeAmountZero);
+
+    require!(
+        ctx.accounts.from_token_account.key() != ctx.accounts.to_token_account.key(),
+        SssError::SeizeSameAccount
+    );
 
     let clock = Clock::get()?;
     let mint_key = config.mint;

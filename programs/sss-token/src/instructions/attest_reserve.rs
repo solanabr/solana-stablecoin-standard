@@ -27,6 +27,7 @@ pub struct AttestReserve<'info> {
     #[account(
         seeds = [RoleRegistry::SEED_PREFIX, config.key().as_ref()],
         bump = role_registry.bump,
+        constraint = role_registry.config == config.key() @ SssError::InvalidAuthority,
     )]
     pub role_registry: Account<'info, RoleRegistry>,
 

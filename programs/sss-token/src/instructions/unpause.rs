@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::errors::SssError;
 use crate::events::ProgramUnpaused;
 use crate::state::*;
 use crate::utils::{require_paused, require_role};
@@ -18,6 +19,7 @@ pub struct Unpause<'info> {
     #[account(
         seeds = [RoleRegistry::SEED_PREFIX, config.key().as_ref()],
         bump = role_registry.bump,
+        constraint = role_registry.config == config.key() @ SssError::InvalidAuthority,
     )]
     pub role_registry: Account<'info, RoleRegistry>,
 }

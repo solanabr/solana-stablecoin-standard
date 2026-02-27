@@ -113,8 +113,10 @@ describe("SSS-2: Compliant Stablecoin", () => {
       .initializeExtraAccountMetaList()
       .accounts({
         payer: authority.publicKey,
+        authority: authority.publicKey,
         extraAccountMetaList: extraAccountMetaListPda,
         mint: mint.publicKey,
+        config: configPda,
         systemProgram: SystemProgram.programId,
       })
       .rpc();

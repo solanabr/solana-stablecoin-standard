@@ -23,6 +23,7 @@ pub struct BlacklistRemove<'info> {
     #[account(
         seeds = [RoleRegistry::SEED_PREFIX, config.key().as_ref()],
         bump = role_registry.bump,
+        constraint = role_registry.config == config.key() @ SssError::InvalidAuthority,
     )]
     pub role_registry: Account<'info, RoleRegistry>,
 
@@ -35,14 +36,18 @@ pub struct BlacklistRemove<'info> {
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
 
-    /// CHECK: The Token-2022 mint account.
-    #[account(address = config.mint)]
+    /// CHECK: The Token-2022 mint account. Address validated against config, owner against Token-2022.
+    #[account(
+        address = config.mint,
+        constraint = mint.owner == &token_program.key() @ SssError::InvalidAuthority,
+    )]
     pub mint: UncheckedAccount<'info>,
 
-    /// The target's token account to thaw
+    /// The target's token account to thaw — must belong to the blacklisted address
     #[account(
         mut,
         token::mint = config.mint,
+        token::authority = blacklist_entry.blocked_address,
         token::token_program = token_program,
     )]
     pub target_token_account: InterfaceAccount<'info, TokenAccount>,

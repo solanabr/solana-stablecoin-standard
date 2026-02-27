@@ -29,12 +29,16 @@ const SSS_TOKEN_ERRORS: SSSErrorInfo[] = [
   { code: 6021, name: "InvalidDecimals", msg: "Invalid decimals value" },
   { code: 6022, name: "SameAuthority", msg: "Cannot transfer authority to the same address" },
   { code: 6023, name: "ZeroAuthority", msg: "New authority cannot be the zero address" },
-  { code: 6024, name: "Overflow", msg: "Arithmetic overflow" },
+  { code: 6024, name: "SeizeAmountZero", msg: "Seize amount must be greater than zero" },
+  { code: 6025, name: "SeizeSameAccount", msg: "Source and destination accounts must be different" },
+  { code: 6026, name: "Overflow", msg: "Arithmetic overflow" },
 ];
 
 const TRANSFER_HOOK_ERRORS: SSSErrorInfo[] = [
   { code: 6000, name: "SourceBlacklisted", msg: "Source address is blacklisted" },
   { code: 6001, name: "DestinationBlacklisted", msg: "Destination address is blacklisted" },
+  { code: 6002, name: "Unauthorized", msg: "Unauthorized: caller is not the master authority" },
+  { code: 6003, name: "InvalidConfig", msg: "Invalid config account" },
 ];
 
 const errorByCode = new Map<number, SSSErrorInfo>();

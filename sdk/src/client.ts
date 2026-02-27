@@ -537,14 +537,17 @@ export class SSSClient {
     mint: PublicKey
   ): Promise<{ signature: string }> {
     const [extraAccountMetaListPda] = this.getExtraAccountMetaListPda(mint);
+    const [configPda] = this.getConfigPda(mint);
 
     try {
       const signature = await this.hookProgram.methods
         .initializeExtraAccountMetaList()
         .accounts({
           payer: this.provider.wallet.publicKey,
+          authority: this.provider.wallet.publicKey,
           extraAccountMetaList: extraAccountMetaListPda,
           mint,
+          config: configPda,
           systemProgram: SystemProgram.programId,
         })
         .rpc();

@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::errors::SssError;
 use crate::events::MinterUpdated;
 use crate::state::*;
 use crate::utils::require_master_authority;
@@ -25,6 +26,7 @@ pub struct UpdateMinter<'info> {
     #[account(
         seeds = [RoleRegistry::SEED_PREFIX, config.key().as_ref()],
         bump = role_registry.bump,
+        constraint = role_registry.config == config.key() @ SssError::InvalidAuthority,
     )]
     pub role_registry: Account<'info, RoleRegistry>,
 
@@ -34,6 +36,7 @@ pub struct UpdateMinter<'info> {
         space = MinterInfo::SPACE,
         seeds = [MinterInfo::SEED_PREFIX, config.key().as_ref(), minter_wallet.key().as_ref()],
         bump,
+        constraint = minter_info.config == config.key() || minter_info.config == Pubkey::default() @ SssError::InvalidAuthority,
     )]
     pub minter_info: Account<'info, MinterInfo>,
 

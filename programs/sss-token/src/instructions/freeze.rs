@@ -4,6 +4,7 @@ use anchor_spl::{
     token_interface::TokenAccount,
 };
 
+use crate::errors::SssError;
 use crate::events::AccountFrozen;
 use crate::state::*;
 use crate::utils::{require_master_authority, require_not_paused};
@@ -21,11 +22,15 @@ pub struct FreezeTokenAccount<'info> {
     #[account(
         seeds = [RoleRegistry::SEED_PREFIX, config.key().as_ref()],
         bump = role_registry.bump,
+        constraint = role_registry.config == config.key() @ SssError::InvalidAuthority,
     )]
     pub role_registry: Account<'info, RoleRegistry>,
 
-    /// CHECK: The Token-2022 mint account.
-    #[account(address = config.mint)]
+    /// CHECK: The Token-2022 mint account. Address validated against config, owner against Token-2022.
+    #[account(
+        address = config.mint,
+        constraint = mint.owner == &token_program.key() @ SssError::InvalidAuthority,
+    )]
     pub mint: UncheckedAccount<'info>,
 
     #[account(
