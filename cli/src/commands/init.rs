@@ -7,6 +7,7 @@ use solana_sdk::instruction::Instruction;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
+#[allow(deprecated)]
 use solana_sdk::system_instruction;
 use solana_sdk::transaction::Transaction;
 
@@ -33,6 +34,7 @@ struct TomlConfig {
 fn default_decimals() -> u8 { 6 }
 fn default_true() -> bool { true }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn execute(
   ctx: &CliContext,
   preset: Option<&str>,
@@ -284,6 +286,6 @@ fn get_mint_len(preset: u8) -> Result<usize> {
     extensions.push(ExtensionType::TransferHook);
   }
 
-  Ok(ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
-    .map_err(|e| anyhow::anyhow!("Failed to calculate mint length: {}", e))?)
+  ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
+    .map_err(|e| anyhow::anyhow!("Failed to calculate mint length: {}", e))
 }

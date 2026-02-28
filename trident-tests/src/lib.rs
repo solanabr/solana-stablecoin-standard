@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports)]
 //! Property-based fuzz tests for SSS programs.
 //!
 //! These tests use `proptest` to generate random instruction sequences and

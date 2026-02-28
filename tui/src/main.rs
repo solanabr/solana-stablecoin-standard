@@ -162,9 +162,9 @@ fn print_usage() {
 
 /// Expand `~` to the user's home directory.
 fn expand_tilde(path: &str) -> String {
-  if path.starts_with("~/") {
+  if let Some(stripped) = path.strip_prefix("~/") {
     if let Some(home) = std::env::var_os("HOME") {
-      return format!("{}/{}", home.to_string_lossy(), &path[2..]);
+      return format!("{}/{}", home.to_string_lossy(), stripped);
     }
   }
   path.to_string()

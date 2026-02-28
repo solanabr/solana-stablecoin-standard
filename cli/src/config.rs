@@ -23,6 +23,7 @@ impl CliContext {
       .with_context(|| format!("Failed to read keypair file: {}", cli.keypair))?;
     let keypair_bytes: Vec<u8> = serde_json::from_str(&keypair_data)
       .with_context(|| "Failed to parse keypair JSON")?;
+    #[allow(deprecated)]
     let payer = Keypair::from_bytes(&keypair_bytes)
       .map_err(|e| anyhow::anyhow!("Invalid keypair: {}", e))?;
 
