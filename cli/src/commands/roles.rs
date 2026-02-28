@@ -2,7 +2,6 @@ use anchor_lang::InstructionData;
 use anchor_lang::ToAccountMetas;
 use anyhow::Result;
 use solana_sdk::instruction::Instruction;
-use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
 use crate::config::CliContext;
@@ -32,7 +31,7 @@ async fn grant(ctx: &CliContext, mint_str: &str, address_str: &str, role_str: &s
     admin: payer,
     config: config_pda,
     admin_role: admin_role_pda,
-    grantee: grantee,
+    grantee,
     role_account: new_role_pda,
     system_program: solana_sdk::system_program::id(),
   }.to_account_metas(None);

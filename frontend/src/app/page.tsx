@@ -84,12 +84,14 @@ function QuickAction({
   );
 }
 
-function formatSupply(raw: number, decimals: number): string {
-  const human = raw / Math.pow(10, decimals);
-  return human.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+function formatSupply(raw: bigint, decimals: number): string {
+  const divisor = 10n ** BigInt(decimals);
+  const whole = raw / divisor;
+  const frac = raw % divisor;
+  const fracStr = frac.toString().padStart(decimals, "0").slice(0, 2);
+  const wholeNum = Number(whole);
+  const formatted = wholeNum.toLocaleString();
+  return Number(fracStr) > 0 ? `${formatted}.${fracStr}` : formatted;
 }
 
 export default function DashboardPage() {
@@ -180,7 +182,7 @@ export default function DashboardPage() {
                 value={formatSupply(config.currentSupply, config.decimals)}
                 subtext={
                   config.supplyCap
-                    ? `${((config.totalMinted / config.supplyCap) * 100).toFixed(1)}% of supply cap`
+                    ? `${Number(config.totalMinted * 1000n / config.supplyCap) / 10}% of supply cap`
                     : "No supply cap"
                 }
                 variant="success"
@@ -223,7 +225,7 @@ export default function DashboardPage() {
                   <div
                     className="h-2 rounded-full bg-accent transition-all"
                     style={{
-                      width: `${Math.min((config.totalMinted / config.supplyCap) * 100, 100)}%`,
+                      width: `${Math.min(Number(config.totalMinted * 100n / config.supplyCap), 100)}%`,
                     }}
                   />
                 </div>

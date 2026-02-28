@@ -47,8 +47,8 @@ pub async fn execute(
   ];
 
   println!(
-    "{:<90} {:<24} {:>12} {}",
-    "SIGNATURE", "ACTION", "SLOT", "STATUS"
+    "{:<90} {:<24} {:>12} STATUS",
+    "SIGNATURE", "ACTION", "SLOT"
   );
   println!("{}", "-".repeat(135));
 

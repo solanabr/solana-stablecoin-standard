@@ -11,13 +11,16 @@ import { useTransaction } from "@/hooks/use-transaction";
 import { deriveConfigPda, deriveRolePda } from "@/lib/pda";
 import { isValidPubkey } from "@/lib/validation";
 
-type Role = "Admin" | "Minter" | "Freezer" | "Pauser";
+type Role = "Admin" | "Minter" | "Freezer" | "Pauser" | "Burner" | "Blacklister" | "Seizer";
 
 const ROLE_MAP: Record<Role, number> = {
   Admin: 0,
   Minter: 1,
   Freezer: 2,
   Pauser: 3,
+  Burner: 4,
+  Blacklister: 5,
+  Seizer: 6,
 };
 
 const ROLE_COLORS: Record<Role, string> = {
@@ -25,6 +28,9 @@ const ROLE_COLORS: Record<Role, string> = {
   Minter: "bg-success/10 text-success",
   Freezer: "bg-warning/10 text-warning",
   Pauser: "bg-destructive/10 text-destructive",
+  Burner: "bg-orange-500/10 text-orange-500",
+  Blacklister: "bg-red-500/10 text-red-500",
+  Seizer: "bg-purple-500/10 text-purple-500",
 };
 
 export default function RolesPage() {
@@ -156,6 +162,9 @@ export default function RolesPage() {
                 <option value="Minter">Minter</option>
                 <option value="Freezer">Freezer</option>
                 <option value="Pauser">Pauser</option>
+                <option value="Burner">Burner</option>
+                <option value="Blacklister">Blacklister</option>
+                <option value="Seizer">Seizer</option>
               </select>
             </div>
           </div>
@@ -202,6 +211,9 @@ export default function RolesPage() {
                 <option value="Minter">Minter</option>
                 <option value="Freezer">Freezer</option>
                 <option value="Pauser">Pauser</option>
+                <option value="Burner">Burner</option>
+                <option value="Blacklister">Blacklister</option>
+                <option value="Seizer">Seizer</option>
               </select>
             </div>
           </div>
@@ -227,7 +239,7 @@ export default function RolesPage() {
               },
               {
                 role: "Minter" as Role,
-                desc: "Can mint new tokens up to the supply cap. Can also burn tokens.",
+                desc: "Can mint new tokens up to the supply cap.",
               },
               {
                 role: "Freezer" as Role,
@@ -236,6 +248,18 @@ export default function RolesPage() {
               {
                 role: "Pauser" as Role,
                 desc: "Can pause and unpause all stablecoin operations in emergencies.",
+              },
+              {
+                role: "Burner" as Role,
+                desc: "Can burn tokens from any token account for redemption or compliance.",
+              },
+              {
+                role: "Blacklister" as Role,
+                desc: "Can add and remove addresses from the transfer hook blacklist (SSS-2).",
+              },
+              {
+                role: "Seizer" as Role,
+                desc: "Can seize tokens via permanent delegate. Works even when paused.",
               },
             ].map(({ role, desc }) => (
               <div key={role} className="flex items-start gap-3 rounded-lg bg-muted/30 p-3">

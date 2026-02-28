@@ -16,6 +16,7 @@ import { isValidPubkey } from "@/lib/validation";
 const ROLE_MINTER = 1;
 const ROLE_FREEZER = 2;
 const ROLE_PAUSER = 3;
+const ROLE_BURNER = 4;
 
 function SectionCard({
   title,
@@ -141,7 +142,7 @@ export default function OperationsPage() {
 
     const mintPubkey = new PublicKey(activeMint!);
     const [configPda] = deriveConfigPda(mintPubkey);
-    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_MINTER);
+    const [rolePda] = deriveRolePda(configPda, publicKey!, ROLE_BURNER);
     const fromPubkey = new PublicKey(burnFrom);
 
     const tx = await program!.methods

@@ -1,5 +1,5 @@
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import { PublicKey, Keypair, Transaction, TransactionInstruction } from "@solana/web3.js";
 import type { SssCore } from "./idl/sss_core";
 import type { SssTransferHook } from "./idl/sss_transfer_hook";
 import { SssCoreIdl, SssTransferHookIdl } from "./idl";
@@ -48,6 +48,15 @@ export class SSS {
     this.coreProgram = coreProgram;
     this.hookProgram = hookProgram;
     this.provider = provider;
+  }
+
+  /** Send a single instruction, mapping Anchor errors on failure. */
+  private async sendIx(ix: TransactionInstruction): Promise<string> {
+    try {
+      return await this.provider.sendAndConfirm(new Transaction().add(ix));
+    } catch (err) {
+      throw mapAnchorError(err);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -297,13 +306,7 @@ export class SSS {
       to,
       new BN(amount.toString()),
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -319,13 +322,7 @@ export class SSS {
       from,
       new BN(amount.toString()),
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -340,13 +337,7 @@ export class SSS {
       freezer,
       tokenAccount,
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -361,13 +352,7 @@ export class SSS {
       freezer,
       tokenAccount,
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -381,13 +366,7 @@ export class SSS {
       this.configPda,
       pauser,
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -401,13 +380,7 @@ export class SSS {
       this.configPda,
       pauser,
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -428,13 +401,7 @@ export class SSS {
       to,
       new BN(amount.toString()),
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -452,13 +419,7 @@ export class SSS {
       admin,
       capBN,
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   /**
@@ -473,13 +434,7 @@ export class SSS {
       admin,
       newAuthority,
     );
-    try {
-      return await this.provider.sendAndConfirm(
-        new Transaction().add(ix),
-      );
-    } catch (err) {
-      throw mapAnchorError(err);
-    }
+    return this.sendIx(ix);
   }
 
   // ---------------------------------------------------------------------------
@@ -537,13 +492,7 @@ export class SSS {
         address,
         role,
       );
-      try {
-        return await this.provider.sendAndConfirm(
-          new Transaction().add(ix),
-        );
-      } catch (err) {
-        throw mapAnchorError(err);
-      }
+      return this.sendIx(ix);
     },
 
     /**
@@ -564,13 +513,7 @@ export class SSS {
         admin,
         roleAccountPda,
       );
-      try {
-        return await this.provider.sendAndConfirm(
-          new Transaction().add(ix),
-        );
-      } catch (err) {
-        throw mapAnchorError(err);
-      }
+      return this.sendIx(ix);
     },
 
     /**
@@ -608,13 +551,7 @@ export class SSS {
         reason,
         this.coreProgram.programId,
       );
-      try {
-        return await this.provider.sendAndConfirm(
-          new Transaction().add(ix),
-        );
-      } catch (err) {
-        throw mapAnchorError(err);
-      }
+      return this.sendIx(ix);
     },
 
     /**
@@ -629,13 +566,7 @@ export class SSS {
         address,
         this.coreProgram.programId,
       );
-      try {
-        return await this.provider.sendAndConfirm(
-          new Transaction().add(ix),
-        );
-      } catch (err) {
-        throw mapAnchorError(err);
-      }
+      return this.sendIx(ix);
     },
 
     /**
@@ -685,11 +616,7 @@ export class SSS {
     deposit: async (tokenAccount: PublicKey, amount: bigint, decimals: number): Promise<string> => {
       const ops = new ConfidentialOps(this.provider.connection, this.mintAddress, this.provider.publicKey);
       const ix = ops.buildDepositInstruction(tokenAccount, amount, decimals);
-      try {
-        return await this.provider.sendAndConfirm(new Transaction().add(ix));
-      } catch (err) {
-        throw mapAnchorError(err);
-      }
+      return this.sendIx(ix);
     },
 
     /**
@@ -699,11 +626,7 @@ export class SSS {
     applyPending: async (tokenAccount: PublicKey): Promise<string> => {
       const ops = new ConfidentialOps(this.provider.connection, this.mintAddress, this.provider.publicKey);
       const ix = ops.buildApplyPendingBalanceInstruction(tokenAccount);
-      try {
-        return await this.provider.sendAndConfirm(new Transaction().add(ix));
-      } catch (err) {
-        throw mapAnchorError(err);
-      }
+      return this.sendIx(ix);
     },
 
     /**

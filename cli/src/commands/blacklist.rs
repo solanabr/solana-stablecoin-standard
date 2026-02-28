@@ -2,7 +2,6 @@ use anchor_lang::InstructionData;
 use anchor_lang::ToAccountMetas;
 use anyhow::Result;
 use solana_sdk::instruction::Instruction;
-use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
 use crate::config::CliContext;

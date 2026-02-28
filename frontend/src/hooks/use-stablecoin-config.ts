@@ -18,13 +18,13 @@ export interface StablecoinConfigData {
   presetName: string;
   authority: string;
   paused: boolean;
-  supplyCap: number | null;
-  totalMinted: number;
-  totalBurned: number;
+  supplyCap: bigint | null;
+  totalMinted: bigint;
+  totalBurned: bigint;
   decimals: number;
   name: string;
   symbol: string;
-  currentSupply: number;
+  currentSupply: bigint;
 }
 
 export function useStablecoinConfig(mintAddress: string | null) {
@@ -71,13 +71,13 @@ export function useStablecoinConfig(mintAddress: string | null) {
       );
 
       const decimals = mintInfo.decimals;
-      const currentSupply = Number(mintInfo.supply);
+      const currentSupply = mintInfo.supply;
       const totalMinted = configAccount.totalMinted
-        ? Number(configAccount.totalMinted)
+        ? BigInt(configAccount.totalMinted.toString())
         : currentSupply;
       const totalBurned = configAccount.totalBurned
-        ? Number(configAccount.totalBurned)
-        : 0;
+        ? BigInt(configAccount.totalBurned.toString())
+        : 0n;
 
       setConfig({
         preset: configAccount.preset,
@@ -85,7 +85,7 @@ export function useStablecoinConfig(mintAddress: string | null) {
         authority: configAccount.authority?.toBase58() ?? "Unknown",
         paused: configAccount.paused ?? false,
         supplyCap: configAccount.supplyCap
-          ? Number(configAccount.supplyCap)
+          ? BigInt(configAccount.supplyCap.toString())
           : null,
         totalMinted,
         totalBurned,
