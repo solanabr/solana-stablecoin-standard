@@ -43,7 +43,7 @@ fn main() -> Result<()> {
 
   let rpc_url = args
     .iter()
-    .position(|a| a == "--rpc" || a == "-u")
+    .position(|a| a == "--rpc-url" || a == "--rpc" || a == "-u")
     .and_then(|i| args.get(i + 1))
     .map(String::as_str)
     .unwrap_or(DEFAULT_RPC);
@@ -148,7 +148,7 @@ fn print_usage() {
   eprintln!("  <MINT_ADDRESS>   Base58 mint public key");
   eprintln!();
   eprintln!("Options:");
-  eprintln!("  -u, --rpc <URL>         RPC endpoint (default: {})", DEFAULT_RPC);
+  eprintln!("  -u, --rpc-url <URL>     RPC endpoint (default: {})", DEFAULT_RPC);
   eprintln!("  -k, --keypair <PATH>    Keypair file (default: {})", DEFAULT_KEYPAIR);
   eprintln!("  -h, --help              Show this help message");
   eprintln!();

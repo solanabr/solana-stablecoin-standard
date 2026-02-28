@@ -251,7 +251,7 @@ Real-time terminal dashboard for monitoring stablecoin config, supply stats, rol
 ![TUI Dashboard](docs/images/tui-dashboard.png)
 
 ```bash
-cargo run --bin sss-tui <MINT_ADDRESS> --rpc https://api.devnet.solana.com
+cargo run --bin sss-tui <MINT_ADDRESS> --rpc-url https://api.devnet.solana.com
 ```
 
 #### Frontend Admin Panel (Next.js 15)
