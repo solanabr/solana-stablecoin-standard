@@ -67,7 +67,7 @@ describe("mapAnchorError", () => {
 
   it("returns original Error for unknown codes when input is Error", () => {
     const originalErr = new Error("some anchor error");
-    (originalErr as Record<string, unknown>).error = { errorCode: { code: "SomeUnknownError" } };
+    (originalErr as unknown as Record<string, unknown>).error = { errorCode: { code: "SomeUnknownError" } };
     const mapped = mapAnchorError(originalErr);
     expect(mapped).toBe(originalErr);
   });

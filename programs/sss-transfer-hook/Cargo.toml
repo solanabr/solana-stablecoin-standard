@@ -16,6 +16,9 @@ cpi = ["no-entrypoint"]
 default = []
 idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(feature, values("anchor-debug"))'] }
+
 [dependencies]
 anchor-lang = { workspace = true }
 anchor-spl = { workspace = true }
