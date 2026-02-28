@@ -48,6 +48,11 @@ class DefaultComplianceProvider implements ComplianceProvider {
 
 let provider: ComplianceProvider = new DefaultComplianceProvider();
 
+logger.warn(
+  "Using default no-op compliance provider — not suitable for production. " +
+  "Integrate Chainalysis, Elliptic, or TRM Labs via setComplianceProvider().",
+);
+
 export function setComplianceProvider(p: ComplianceProvider): void {
   provider = p;
 }

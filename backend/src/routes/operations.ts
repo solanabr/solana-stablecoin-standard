@@ -51,8 +51,13 @@ const seizeSchema = z.object({
 
 function handleRouteError(res: Response, err: unknown, operation: string) {
   const message = err instanceof Error ? err.message : String(err);
-  logger.error(`${operation} failed`, { error: message });
-  res.status(400).json({ error: message });
+  const isClientError = message.includes("Account does not exist")
+    || message.includes("Invalid")
+    || message.includes("Unauthorized")
+    || message.includes("already exists");
+  const status = isClientError ? 400 : 500;
+  logger.error(`${operation} failed`, { error: message, status });
+  res.status(status).json({ error: isClientError ? message : "Internal server error" });
 }
 
 // ---------------------------------------------------------------------------
