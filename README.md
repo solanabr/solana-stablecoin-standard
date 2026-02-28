@@ -160,8 +160,10 @@ await stable.compliance.seize(frozenAccount, treasury, amount);
 
 ### CLI
 
+![CLI Demo](docs/images/cli-demo.gif)
+
 ```bash
-cargo build --release --bin sss-token
+cargo install --path cli
 
 sss-token init --preset sss-2 --name "Regulated USD" --symbol "rUSD" --decimals 6
 sss-token mint --mint <MINT> --to <TOKEN_ACCOUNT> --amount 1000000
@@ -248,22 +250,25 @@ docker compose up    # Backend with health check at :3000/health
 
 Real-time terminal dashboard for monitoring stablecoin config, supply stats, roles, and events.
 
-![TUI Dashboard](docs/images/tui-dashboard.png)
+![TUI Demo](docs/images/tui-demo.gif)
 
 ```bash
-cargo run --bin sss-tui <MINT_ADDRESS> --rpc-url https://api.devnet.solana.com
+cargo install --path tui
+sss-tui <MINT_ADDRESS> --rpc-url https://api.devnet.solana.com
 ```
 
 #### Frontend Admin Panel (Next.js 15)
 
 Web-based admin interface with wallet integration for all stablecoin operations.
 
+![Frontend Demo](docs/images/frontend-demo.gif)
+
 | Dashboard | Operations | Confidential Transfers |
 |:-:|:-:|:-:|
 | ![Dashboard](docs/images/frontend-dashboard.png) | ![Operations](docs/images/frontend-operations.png) | ![Confidential](docs/images/frontend-confidential.png) |
 
 ```bash
-cd frontend && pnpm dev    # http://localhost:3000
+cd frontend && pnpm dev    # http://localhost:3001
 ```
 
 ---
