@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  mint-burn:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    command: node services/mint-burn/dist/index.js
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - RPC_URL=${RPC_URL:-http://host.docker.internal:8899}
+      - SSS_KEYPAIR=/app/keypair.json
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  indexer:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    command: node services/indexer/dist/index.js
+    environment:
+      - RPC_URL=${RPC_URL:-http://host.docker.internal:8899}
+      - WS_URL=${WS_URL:-ws://host.docker.internal:8900}
+      - SSS_PROGRAM_ID=SSStoken11111111111111111111111111111111111
+      - LOG_LEVEL=info
+
+  compliance:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    command: node services/compliance/dist/index.js
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - RPC_URL=${RPC_URL:-http://host.docker.internal:8899}
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  webhook:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    command: node services/webhook/dist/index.js
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

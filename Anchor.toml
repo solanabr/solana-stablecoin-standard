@@ -1,0 +1,21 @@
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+sss_token = "SSStoken11111111111111111111111111111111111"
+transfer_hook = "SSShook111111111111111111111111111111111111"
+
+[programs.devnet]
+sss_token = "SSStoken11111111111111111111111111111111111"
+transfer_hook = "SSShook111111111111111111111111111111111111"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
