@@ -1,0 +1,21 @@
+{
+  "name": "@stbr/sss-backend",
+  "version": "0.1.0",
+  "description": "SSS Backend Service — REST API for fiat-to-stablecoin lifecycle operations",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.98.0",
+    "@stbr/sss-sdk": "file:../sdk"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

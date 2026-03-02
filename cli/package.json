@@ -1,0 +1,26 @@
+{
+  "name": "sss-token",
+  "version": "0.1.0",
+  "description": "CLI for managing SSS-1 and SSS-2 stablecoins on Solana",
+  "bin": {
+    "sss-token": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.98.0",
+    "@stbr/sss-sdk": "file:../sdk",
+    "bn.js": "^5.2.1",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.6",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}

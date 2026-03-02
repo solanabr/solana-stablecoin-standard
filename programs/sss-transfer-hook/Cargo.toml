@@ -1,0 +1,23 @@
+[package]
+name = "sss-transfer-hook"
+version = "0.1.0"
+description = "Transfer hook for SSS-2 blacklist enforcement"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_transfer_hook"
+
+[features]
+default = []
+no-entrypoint = []
+no-idl = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.32.1", features = ["token_2022_extensions"] }
+spl-transfer-hook-interface = "0.9"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))']}
