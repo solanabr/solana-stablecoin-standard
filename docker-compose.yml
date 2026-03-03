@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - RPC_URL=http://solana-validator:8899
+      - NODE_ENV=production
+    depends_on:
+      - solana-validator
+    restart: unless-stopped
+
+  solana-validator:
+    image: solanalabs/solana:v2.1.0
+    command: >
+      solana-test-validator
+      --reset
+      --bpf-program FH3XosNdAdUPfcxVxjUrUoCrGaLw9L3i9eadu7M8nQZQ target/deploy/sss_core.so
+      --bpf-program Hook1111111111111111111111111111111111111111 target/deploy/sss_transfer_hook.so
+    ports:
+      - "8899:8899"
+      - "8900:8900"
+    volumes:
+      - ./target/deploy:/target/deploy:ro
+    restart: unless-stopped

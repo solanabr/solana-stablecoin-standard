@@ -1,0 +1,29 @@
+{
+  "name": "@sss/tests",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "ts-mocha -p tsconfig.json -t 1000000 '**/*.test.ts'",
+    "test:core": "ts-mocha -p tsconfig.json -t 1000000 'sss-core.test.ts'",
+    "test:e2e-sss1": "ts-mocha -p tsconfig.json -t 1000000 'e2e-sss1.test.ts'",
+    "test:e2e-sss2": "ts-mocha -p tsconfig.json -t 1000000 'e2e-sss2.test.ts'"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.0",
+    "@sss/sdk": "0.1.0",
+    "anchor-bankrun": "^0.5.0",
+    "solana-bankrun": "^0.4.0",
+    "bn.js": "^5.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "ts-mocha": "^10.0.0",
+    "mocha": "^10.7.0",
+    "chai": "^4.4.0",
+    "@types/mocha": "^10.0.0",
+    "@types/chai": "^4.3.0",
+    "@types/bn.js": "^5.1.0"
+  }
+}

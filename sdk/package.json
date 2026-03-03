@@ -1,0 +1,22 @@
+{
+  "name": "@sss/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Solana Stablecoin Standard",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha --require ts-mocha -p tsconfig.json 'tests/**/*.test.ts' --timeout 60000",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.0",
+    "bn.js": "^5.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/bn.js": "^5.1.0"
+  }
+}

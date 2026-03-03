@@ -1,0 +1,12 @@
+target/
+node_modules/
+dist/
+.anchor/
+.omc/
+.DS_Store
+*.log
+.env
+.env.local
+tests/fixtures/*.so
+*-wallet.json
+*-keypair.json

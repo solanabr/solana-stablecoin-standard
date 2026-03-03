@@ -1,0 +1,32 @@
+{
+  "name": "solana-stablecoin-standard",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "sdk",
+    "cli",
+    "backend",
+    "tests"
+  ],
+  "scripts": {
+    "build:sdk": "yarn workspace @sss/sdk build",
+    "build:cli": "yarn workspace @sss/cli build",
+    "build:backend": "yarn workspace @sss/backend build",
+    "build:programs": "anchor build",
+    "test:programs": "anchor test",
+    "test:sdk": "yarn workspace @sss/sdk test",
+    "test:e2e": "yarn workspace @sss/tests test",
+    "lint": "eslint . --ext .ts",
+    "clean": "rm -rf node_modules sdk/node_modules cli/node_modules backend/node_modules tests/node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "eslint": "^9.0.0",
+    "ts-mocha": "^10.0.0",
+    "@types/mocha": "^10.0.0",
+    "mocha": "^10.7.0",
+    "chai": "^4.4.0",
+    "@types/chai": "^4.3.0"
+  }
+}

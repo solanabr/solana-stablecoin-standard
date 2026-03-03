@@ -1,0 +1,26 @@
+{
+  "name": "@sss/cli",
+  "version": "0.1.0",
+  "description": "CLI tool for Solana Stablecoin Standard",
+  "main": "dist/index.js",
+  "bin": {
+    "sss-token": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@sss/sdk": "0.1.0",
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.95.0",
+    "commander": "^12.0.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^22.0.0"
+  }
+}
