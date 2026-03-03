@@ -105,9 +105,9 @@ async function main(): Promise<void> {
     confirmTransactionInitialTimeout: 60_000,
   });
 
-  const authority = loadKeypair(
-    path.join(os.homedir(), ".config/solana/id.json")
-  );
+  const keypairPath = process.env.KEYPAIR_PATH
+    || path.join(os.homedir(), ".config/solana/id.json");
+  const authority = loadKeypair(keypairPath);
   console.log(`Authority:      ${authority.publicKey.toBase58()}`);
 
   const wallet = new Wallet(authority);

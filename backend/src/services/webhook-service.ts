@@ -309,7 +309,7 @@ app.get("/webhook/status", (_req: Request, res: Response) => {
 
 // Delete a webhook
 app.delete("/webhook/:id", (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   if (!webhooks.has(id)) {
     res.status(404).json({ error: "Webhook not found" });

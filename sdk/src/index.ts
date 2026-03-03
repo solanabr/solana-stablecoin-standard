@@ -63,5 +63,5 @@ export type {
 export { PRESET_CONFIGS, getPresetAnchorEnum } from "./presets";
 export type { PresetConfig } from "./presets";
 
-export { OracleModule } from "./oracle";
-export type { OraclePrice, ReserveData, OracleConfig } from "./oracle";
+export { OracleModule, KNOWN_FEEDS, DEFAULT_CPI_CONFIG, BRAZIL_IPCA_CONFIG } from "./oracle";
+export type { OraclePrice, ReserveData, OracleConfig, FeedInfo, FeedRegistry, CpiConfig } from "./oracle";
