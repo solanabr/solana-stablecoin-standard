@@ -6,12 +6,7 @@ use spl_tlv_account_resolution::{
     state::ExtraAccountMetaList,
 };
 
-declare_id!("Ecda92mVcyuzZ46BNUc2pnr3iCRX8Bn7Fv1BV1BRd18h");
-
-/// Discriminator for the transfer hook execute instruction
-pub const EXECUTE_IX_TAG_LE: [u8; 8] = ExecuteInstruction::SPL_DISCRIMINATOR_SLICE
-    .try_into()
-    .expect("Invalid discriminator length");
+declare_id!("5EDKqZJ6VmVxDoGYU6ybLjLXRXxT2C6eB2ayHFtXvZZQ");
 
 #[program]
 pub mod transfer_hook {

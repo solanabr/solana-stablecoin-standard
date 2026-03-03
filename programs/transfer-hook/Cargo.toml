@@ -4,21 +4,28 @@ version = "0.1.0"
 description = "SSS-2 Transfer Hook — blacklist enforcement on every transfer"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib", "lib"]
-name = "transfer_hook"
+# [lib]
+# crate-type = ["cdylib", "lib"]
+# name = "transfer_hook"
 
-[features]
-no-entrypoint = []
-no-idl = []
-no-log-ix-name = []
-cpi = ["no-entrypoint"]
-default = []
+# [features]
+# no-entrypoint = []
+# no-idl = []
+# no-log-ix-name = []
+# cpi = ["no-entrypoint"]
+# default = []
+# idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+# custom-heap = []
+# anchor-debug = []
 
-[dependencies]
-anchor-lang = { workspace = true }
-anchor-spl = { workspace = true }
-spl-token-2022 = { workspace = true }
-spl-tlv-account-resolution = { workspace = true }
-spl-transfer-hook-interface = { workspace = true }
-spl-type-length-value = { workspace = true }
+# [dependencies]
+# anchor-lang                 = { workspace = true }
+# anchor-spl                  = { workspace = true }
+# # anchor-spl                  = { workspace = true, features = ["token_2022", "token_2022_extensions"] }
+# spl-tlv-account-resolution  = { workspace = true }
+# spl-transfer-hook-interface = { workspace = true }
+# spl-type-length-value       = { workspace = true }
+# spl-pod                     = { workspace = true }
+
+# [lints.rust]
+# unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature)'] }

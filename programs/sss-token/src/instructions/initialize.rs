@@ -1,25 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    token_2022::{
-        spl_token_2022::{
-            extension::{
-                default_account_state::DefaultAccountState,
-                metadata_pointer::MetadataPointer,
-                mint_close_authority::MintCloseAuthority,
-                permanent_delegate::PermanentDelegate,
-                transfer_hook::TransferHook,
-                ExtensionType,
-            },
-            state::AccountState,
-        },
-        Token2022,
-    },
-    token_interface::Mint,
-};
-use spl_token_2022::{
-    extension::StateWithExtensionsMut,
-    state::Mint as SplMint,
-};
+use anchor_spl::token_2022::Token2022;
 
 use crate::{
     errors::SssError,

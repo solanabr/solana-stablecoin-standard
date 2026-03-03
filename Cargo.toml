@@ -1,17 +1,25 @@
 [workspace]
 members = [
     "programs/sss-token",
-    "programs/transfer-hook",
+    # "programs/transfer-hook",
 ]
 resolver = "2"
 
 [workspace.dependencies]
-anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
-anchor-spl = { version = "0.32.1", features = ["token_2022", "token_2022_extensions", "metadata"] }
-spl-token-2022 = { version = "=8.0.1", features = ["no-entrypoint"] }
-spl-tlv-account-resolution = { version = "0.7.0" }
-spl-transfer-hook-interface = { version = "0.7.0" }
-spl-type-length-value = { version = "0.4.2" }
+anchor-lang    = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-spl     = { version = "0.32.1" }
+spl-tlv-account-resolution  = "0.9"
+spl-transfer-hook-interface = "0.9"
+spl-type-length-value       = "0.6"
+spl-pod                     = "0.3"
+spl-token-2022 = "7"
+solana-program = "2.3.0"
+# solana-zk-token-sdk = "2.3.0"
+# spl-token-2022 = { version = "10.0.0", default-features = false, features = ["no-entrypoint", "zk-ops"] }
+# spl-tlv-account-resolution  = { version = "0.6.3" }
+# spl-transfer-hook-interface = { version = "0.6.3" }
+# spl-type-length-value       = { version = "0.4.3" }
+# spl-pod                     = { version = "0.2.2" }
 
 [profile.release]
 overflow-checks = true
@@ -20,3 +28,5 @@ lto = "thin"
 [profile.test]
 overflow-checks = true
 
+# [patch.crates-io]
+# solana-zk-token-sdk = { git = "https://github.com", tag = "v2.3.0" }

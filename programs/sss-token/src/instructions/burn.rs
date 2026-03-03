@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct Burn<'info> {
+pub struct BurnCtx<'info> {
     /// Must be master, burner, or token account owner burning their own tokens
     pub authority: Signer<'info>,
 
@@ -38,7 +38,7 @@ pub struct Burn<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-pub fn handler(ctx: Context<Burn>, amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<BurnCtx>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.state.paused, SssError::ProtocolPaused);
     require!(amount > 0, SssError::ZeroAmount);
 

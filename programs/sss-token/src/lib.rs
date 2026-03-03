@@ -7,7 +7,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("7PYrJyVcBX5NUZbvF6R78ZhrrkWscWoyCXCqi684B85b");
+declare_id!("3rexFCwPqs97GDNZVLBbDioaYRyw2UuWCUGhjS9ZvHRN");
 
 #[program]
 pub mod sss_token {
@@ -24,12 +24,12 @@ pub mod sss_token {
 
     /// Mint tokens to a recipient. Caller must hold the Minter role and
     /// respect their per-minter quota (0 = unlimited).
-    pub fn mint(ctx: Context<Mint>, amount: u64) -> Result<()> {
+    pub fn mint(ctx: Context<MintCtx>, amount: u64) -> Result<()> {
         instructions::mint::handler(ctx, amount)
     }
 
     /// Burn tokens from the caller's token account.
-    pub fn burn(ctx: Context<Burn>, amount: u64) -> Result<()> {
+    pub fn burn(ctx: Context<BurnCtx>, amount: u64) -> Result<()> {
         instructions::burn::handler(ctx, amount)
     }
 

@@ -1,28 +1,28 @@
 [toolchain]
 anchor_version = "0.32.1"
-solana_version = "3.0.15"
+# solana_version = "2.3.0"
 
 [features]
 resolution = true
 skip-lint = false
 
 [programs.devnet]
-sss_token = "7PYrJyVcBX5NUZbvF6R78ZhrrkWscWoyCXCqi684B85b"
-transfer_hook = "Ecda92mVcyuzZ46BNUc2pnr3iCRX8Bn7Fv1BV1BRd18h"
+sss_token = "3rexFCwPqs97GDNZVLBbDioaYRyw2UuWCUGhjS9ZvHRN"
+# transfer_hook = "5EDKqZJ6VmVxDoGYU6ybLjLXRXxT2C6eB2ayHFtXvZZQ"
 
 [programs.localnet]
 sss_token = "6YZqjB9XTBQTTeKuphBkJKg5kXfGgBrfuHd6rLZiJvgG"
-transfer_hook = "6YZqjB9XTBQTTeKuphBkJKg5kXfGgBrfuHd6rLZiJvgG"
+# transfer_hook = "6YZqjB9XTBQTTeKuphBkJKg5kXfGgBrfuHd6rLZiJvgG"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [workspace]
-members = ["programs/sss-token", "programs/transfer-hook"]
+members = ["programs/sss-token"]
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

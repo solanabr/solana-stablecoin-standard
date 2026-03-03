@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct Mint<'info> {
+pub struct MintCtx<'info> {
     pub minter: Signer<'info>,
 
     #[account(
@@ -52,7 +52,7 @@ pub struct Mint<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-pub fn handler(ctx: Context<Mint>, amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<MintCtx>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.state.paused, SssError::ProtocolPaused);
     require!(amount > 0, SssError::ZeroAmount);
 

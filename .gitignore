@@ -11,6 +11,7 @@ keys/
 # Solana
 test-ledger/
 .DS_Store
+*.so
 
 # IDE
 .vscode/
