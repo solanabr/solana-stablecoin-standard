@@ -37,11 +37,11 @@ pub struct AddToBlacklistCtx<'info> {
     /// CHECK: Arbitrary wallet or program address — stored only.
     pub target: UncheckedAccount<'info>,
 
-    /// BlacklistEntry PDA — created here.
+    /// BlacklistEntry PDA — created on first use; reactivated if previously deactivated.
     ///
     /// Seeds: [b"blacklist", mint, target]
     #[account(
-        init,
+        init_if_needed,
         payer = authority,
         space = 8 + BlacklistEntry::INIT_SPACE,
         seeds = [BLACKLIST_SEED, config.mint.as_ref(), target.key().as_ref()],

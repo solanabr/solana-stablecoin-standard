@@ -236,6 +236,35 @@ describe("SSS-2: Compliant Stablecoin", () => {
       expect(entry.address.equals(sanctionedUser.publicKey)).to.be.true;
     });
 
+    it("can re-blacklist an address that was previously removed", async () => {
+      const [blacklistEntry] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("blacklist"),
+          mintKeypair.publicKey.toBuffer(),
+          sanctionedUser.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      // PDA exists but active == false from previous test — init_if_needed allows reactivation
+      await program.methods
+        .addToBlacklist("re-sanctioned: new violation")
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          target: sanctionedUser.publicKey,
+          blacklistEntry,
+          blacklisterRole: null,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([authority])
+        .rpc();
+
+      const entry = await program.account.blacklistEntry.fetch(blacklistEntry);
+      expect(entry.active).to.be.true;
+      expect(entry.reason).to.equal("re-sanctioned: new violation");
+    });
+
     it("remove_from_blacklist fails when address is not currently blacklisted", async () => {
       const [blacklistEntry] = PublicKey.findProgramAddressSync(
         [
