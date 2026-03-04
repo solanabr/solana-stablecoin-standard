@@ -215,3 +215,45 @@ pub fn remove_role_handler(
 
     Ok(())
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UpdateMinter
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[derive(Accounts)]
+pub struct UpdateMinterCtx<'info> {
+    /// Master authority only.
+    pub authority: Signer<'info>,
+
+    /// Config PDA — used to verify the caller is the master authority.
+    #[account(
+        seeds = [CONFIG_SEED, config.mint.as_ref()],
+        bump = config.bump,
+        constraint = config.authority == authority.key() @ StablecoinError::Unauthorized,
+    )]
+    pub config: Account<'info, StablecoinConfig>,
+
+    /// The minter account to update.
+    #[account(
+        mut,
+        seeds = [MINTER_SEED, config.mint.as_ref(), minter_role.minter.as_ref()],
+        bump = minter_role.bump,
+        constraint = minter_role.mint == config.mint @ StablecoinError::Unauthorized,
+    )]
+    pub minter_role: Account<'info, MinterRole>,
+}
+
+pub fn update_minter_handler(ctx: Context<UpdateMinterCtx>, new_quota: u64) -> Result<()> {
+    let minter_role = &mut ctx.accounts.minter_role;
+    minter_role.quota = new_quota;
+
+    emit!(MinterUpdated {
+        mint: ctx.accounts.config.mint,
+        minter: minter_role.minter,
+        active: minter_role.active,
+        quota: new_quota,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
+    Ok(())
+}

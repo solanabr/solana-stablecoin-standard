@@ -6,3 +6,5 @@ pub mod initialize;
 pub mod mint;
 pub mod pause;
 pub mod roles;
+
+pub use roles::{UpdateMinterCtx, update_minter_handler};

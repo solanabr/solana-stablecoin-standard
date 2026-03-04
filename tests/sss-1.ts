@@ -170,7 +170,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       const account = await getAccount(
         provider.connection,
         recipientAta,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       expect(account.amount).to.equal(1_000_000n);
@@ -207,7 +207,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       // Pause first
       await program.methods
         .pause()
-        .accounts({ authority: authority.publicKey, config: configPda })
+        .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
         .signers([authority])
         .rpc();
 
@@ -250,7 +250,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       // Unpause for subsequent tests
       await program.methods
         .unpause()
-        .accounts({ authority: authority.publicKey, config: configPda })
+        .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
         .signers([authority])
         .rpc();
 
@@ -442,6 +442,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
           mint: mintKeypair.publicKey,
           tokenAccount: user1Ata,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
+          freezerRole: null,
         })
         .signers([authority])
         .rpc();
@@ -449,7 +450,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       const frozen = await getAccount(
         provider.connection,
         user1Ata,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       expect(frozen.isFrozen).to.be.true;
@@ -471,6 +472,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
           mint: mintKeypair.publicKey,
           tokenAccount: user1Ata,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
+          freezerRole: null,
         })
         .signers([authority])
         .rpc();
@@ -478,7 +480,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       const thawed = await getAccount(
         provider.connection,
         user1Ata,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       expect(thawed.isFrozen).to.be.false;
@@ -501,6 +503,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
             mint: mintKeypair.publicKey,
             tokenAccount: user1Ata,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
+            freezerRole: null,
           })
           .signers([user2])
           .rpc();
@@ -516,7 +519,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     it("pause and unpause track state correctly", async () => {
       await program.methods
         .pause()
-        .accounts({ authority: authority.publicKey, config: configPda })
+        .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
         .signers([authority])
         .rpc();
 
@@ -525,7 +528,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
       await program.methods
         .unpause()
-        .accounts({ authority: authority.publicKey, config: configPda })
+        .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
         .signers([authority])
         .rpc();
 
@@ -543,7 +546,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
       await program.methods
         .pause()
-        .accounts({ authority: authority.publicKey, config: configPda })
+        .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
         .signers([authority])
         .rpc();
 
@@ -556,6 +559,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
             mint: mintKeypair.publicKey,
             from: user1Ata,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
+            burnerRole: null,
           })
           .signers([authority])
           .rpc();
@@ -565,7 +569,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       } finally {
         await program.methods
           .unpause()
-          .accounts({ authority: authority.publicKey, config: configPda })
+          .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
           .signers([authority])
           .rpc();
       }
@@ -574,22 +578,53 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
   // ─────────────────────────────────────────────────────────────────────────
   describe("burn", () => {
-    it("authority can burn tokens from a user account", async () => {
-      const user1Ata = getAssociatedTokenAddressSync(
+    it("authority can burn their own tokens (SSS-1 has no permanent delegate)", async () => {
+      // In SSS-1 (no permanent delegate), the caller must own the token account.
+      // We mint tokens to the authority's own ATA and burn from there.
+      const authorityAta = getAssociatedTokenAddressSync(
         mintKeypair.publicKey,
-        user1.publicKey,
+        authority.publicKey,
         false,
         TOKEN_2022_PROGRAM_ID
       );
 
+      // Create authority ATA if it doesn't exist
+      const ataInfo = await provider.connection.getAccountInfo(authorityAta);
+      if (!ataInfo) {
+        const createAtaTx = new anchor.web3.Transaction().add(
+          createAssociatedTokenAccountInstruction(
+            authority.publicKey,
+            authorityAta,
+            authority.publicKey,
+            mintKeypair.publicKey,
+            TOKEN_2022_PROGRAM_ID
+          )
+        );
+        await provider.sendAndConfirm(createAtaTx, [authority]);
+      }
+
+      // Mint some tokens to authority's own ATA
+      await program.methods
+        .mintTo(new anchor.BN(500_000))
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          mint: mintKeypair.publicKey,
+          minterRole: null,
+          destination: authorityAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([authority])
+        .rpc();
+
       const before = await getAccount(
         provider.connection,
-        user1Ata,
-        "confirmed",
+        authorityAta,
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       const balanceBefore = before.amount;
-      expect(balanceBefore).to.be.gt(0n);
+      expect(balanceBefore > 0n).to.be.true;
 
       await program.methods
         .burn(new anchor.BN(balanceBefore.toString()))
@@ -597,16 +632,17 @@ describe("SSS-1: Minimal Stablecoin", () => {
           authority: authority.publicKey,
           config: configPda,
           mint: mintKeypair.publicKey,
-          from: user1Ata,
+          from: authorityAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
+          burnerRole: null,
         })
         .signers([authority])
         .rpc();
 
       const after = await getAccount(
         provider.connection,
-        user1Ata,
-        "confirmed",
+        authorityAta,
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       expect(after.amount).to.equal(0n);
@@ -629,6 +665,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
             mint: mintKeypair.publicKey,
             from: user1Ata,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
+            burnerRole: null,
           })
           .signers([authority])
           .rpc();

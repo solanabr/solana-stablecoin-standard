@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
+use anchor_lang::solana_program;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use spl_token_2022;
 
 use crate::{
     error::StablecoinError,
@@ -256,7 +258,7 @@ pub struct SeizeCtx<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn seize_handler(ctx: Context<SeizeCtx>, amount: u64) -> Result<()> {
+pub fn seize_handler<'info>(ctx: Context<'_, '_, '_, 'info, SeizeCtx<'info>>, amount: u64) -> Result<()> {
     let config = &ctx.accounts.config;
 
     // ── SSS-2 guard ───────────────────────────────────────────────────────
@@ -291,26 +293,57 @@ pub fn seize_handler(ctx: Context<SeizeCtx>, amount: u64) -> Result<()> {
     // The permanent delegate extension allows the config PDA to move tokens
     // from ANY token account associated with this mint, without requiring
     // the account owner's signature.
+    //
+    // When the mint has a TransferHook extension, Token-2022 will invoke the
+    // hook program during TransferChecked processing.  The hook program and
+    // all of its required extra accounts must be present in the CPI accounts
+    // list.  Callers pass these as remaining_accounts on the outer instruction;
+    // we forward them here so Token-2022 can resolve the hook.
     let mint_key = ctx.accounts.mint.key();
     let config_bump = config.bump;
     let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, mint_key.as_ref(), &[config_bump]]];
 
     let decimals = ctx.accounts.mint.decimals;
 
-    token_interface::transfer_checked(
-        CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            TransferChecked {
-                from: ctx.accounts.from.to_account_info(),
-                mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.to.to_account_info(),
-                authority: ctx.accounts.config.to_account_info(),
-            },
-            signer_seeds,
-        ),
+    let mut ix = spl_token_2022::instruction::transfer_checked(
+        ctx.accounts.token_program.to_account_info().key,
+        ctx.accounts.from.to_account_info().key,
+        ctx.accounts.mint.to_account_info().key,
+        ctx.accounts.to.to_account_info().key,
+        ctx.accounts.config.to_account_info().key,
+        &[],
         amount,
         decimals,
     )?;
+
+    // Append the extra accounts (transfer hook program, ExtraAccountMetaList,
+    // and hook-specific PDAs) to both the instruction's account list AND the
+    // account infos slice.  Token-2022 only passes to the hook the accounts
+    // that appear in the instruction's account_metas; extras in the account_infos
+    // slice that are absent from account_metas are silently dropped.
+    for acc in ctx.remaining_accounts.iter() {
+        ix.accounts.push(solana_program::instruction::AccountMeta {
+            pubkey: *acc.key,
+            is_signer: acc.is_signer,
+            is_writable: acc.is_writable,
+        });
+    }
+
+    // Build the full accounts slice: base accounts + any remaining accounts
+    // (transfer hook program, ExtraAccountMetaList, hook extra accounts).
+    let base_accounts = [
+        ctx.accounts.from.to_account_info(),
+        ctx.accounts.mint.to_account_info(),
+        ctx.accounts.to.to_account_info(),
+        ctx.accounts.config.to_account_info(),
+    ];
+    let invoke_accounts: Vec<AccountInfo> = base_accounts
+        .iter()
+        .cloned()
+        .chain(ctx.remaining_accounts.iter().cloned())
+        .collect();
+
+    solana_program::program::invoke_signed(&ix, &invoke_accounts, signer_seeds)?;
 
     emit!(TokensSeized {
         mint: mint_key,

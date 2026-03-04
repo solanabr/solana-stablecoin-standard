@@ -5,7 +5,6 @@ import {
   Transaction,
   sendAndConfirmTransaction,
   SystemProgram,
-  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import {
   TOKEN_2022_PROGRAM_ID,
@@ -13,14 +12,6 @@ import {
   createAssociatedTokenAccountInstruction,
   getAccount,
   getMint,
-  ExtensionType,
-  getMintLen,
-  createInitializeMintInstruction,
-  createInitializeMetadataPointerInstruction,
-  createInitializePermanentDelegateInstruction,
-  createInitializeTransferHookInstruction,
-  createInitializeDefaultAccountStateInstruction,
-  AccountState,
 } from "@solana/spl-token";
 import { AnchorProvider, BN, Program, Idl } from "@coral-xyz/anchor";
 import { Wallet } from "@coral-xyz/anchor";
@@ -32,33 +23,31 @@ import {
   StablecoinConfigState,
   MintOptions,
   RoleType,
-  RoleTypes,
 } from "./types";
 import {
   getConfigAddress,
   getMinterAddress,
-  getBlacklistAddress,
   getExtraAccountMetasAddress,
-  deriveAddresses,
 } from "./pda";
 import { ComplianceModule } from "./compliance";
 
 export class SolanaStablecoin {
   readonly connection: Connection;
   readonly program: Program;
-  readonly mint: PublicKey;
+  /** The mint public key. Use `mintAddress` to avoid collision with the `mint()` method. */
+  readonly mintAddress: PublicKey;
   readonly config: PublicKey;
   private _state: StablecoinConfigState | null = null;
 
   private constructor(
     connection: Connection,
     program: Program,
-    mint: PublicKey,
+    mintAddress: PublicKey,
     config: PublicKey
   ) {
     this.connection = connection;
     this.program = program;
-    this.mint = mint;
+    this.mintAddress = mintAddress;
     this.config = config;
   }
 
@@ -66,7 +55,7 @@ export class SolanaStablecoin {
   static async load(
     connection: Connection,
     authority: Keypair,
-    mint: PublicKey
+    mintAddress: PublicKey
   ): Promise<SolanaStablecoin> {
     const provider = new AnchorProvider(
       connection,
@@ -82,9 +71,10 @@ export class SolanaStablecoin {
         "IDL not found. Run `anchor build` first to generate the IDL."
       );
     }
-    const program = new Program(idl, SSS_TOKEN_PROGRAM_ID, provider);
-    const [config] = getConfigAddress(mint);
-    return new SolanaStablecoin(connection, program, mint, config);
+    // Anchor 0.32: Program(idl, provider?) — program ID is read from idl.address
+    const program = new Program(idl, provider);
+    const [config] = getConfigAddress(mintAddress);
+    return new SolanaStablecoin(connection, program, mintAddress, config);
   }
 
   /** Create and initialize a new stablecoin */
@@ -114,23 +104,27 @@ export class SolanaStablecoin {
       throw new Error("IDL not found. Run `anchor build` first.");
     }
 
-    const program = new Program(idl, SSS_TOKEN_PROGRAM_ID, provider);
+    // Anchor 0.32: Program(idl, provider?) — program ID is read from idl.address
+    const program = new Program(idl, provider);
 
     // Determine SSS-2 flags from preset or explicit options
+    // The `extensions` shorthand object takes lowest precedence; individual flags override it
     const isSSS2 = preset === Presets.SSS_2;
+    const ext = options.extensions ?? {};
     const enablePermanentDelegate =
-      options.enablePermanentDelegate ?? isSSS2;
-    const enableTransferHook = options.enableTransferHook ?? isSSS2;
+      options.enablePermanentDelegate ?? ext.permanentDelegate ?? isSSS2;
+    const enableTransferHook =
+      options.enableTransferHook ?? ext.transferHook ?? isSSS2;
     const defaultAccountFrozen =
-      options.defaultAccountFrozen ?? isSSS2;
+      options.defaultAccountFrozen ?? ext.defaultAccountFrozen ?? isSSS2;
     const hookProgramId = enableTransferHook
       ? TRANSFER_HOOK_PROGRAM_ID
       : null;
 
     // Generate mint keypair
     const mintKeypair = Keypair.generate();
-    const mint = mintKeypair.publicKey;
-    const [config] = getConfigAddress(mint);
+    const mintAddress = mintKeypair.publicKey;
+    const [config] = getConfigAddress(mintAddress);
 
     // Call program initialize instruction
     await program.methods
@@ -147,15 +141,14 @@ export class SolanaStablecoin {
       .accounts({
         authority: authority.publicKey,
         config,
-        mint,
+        mint: mintAddress,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
-        rent: SYSVAR_RENT_PUBKEY,
       })
       .signers([mintKeypair]) // mint keypair must sign account creation
       .rpc({ commitment: "confirmed" });
 
-    const instance = new SolanaStablecoin(connection, program, mint, config);
+    const instance = new SolanaStablecoin(connection, program, mintAddress, config);
 
     // For SSS-2: initialize transfer hook extra accounts
     if (enableTransferHook) {
@@ -197,7 +190,7 @@ export class SolanaStablecoin {
     const signerKey = minter?.publicKey ?? (this.program.provider as AnchorProvider).wallet.publicKey;
 
     const destinationAta = getAssociatedTokenAddressSync(
-      this.mint,
+      this.mintAddress,
       recipient,
       false,
       TOKEN_2022_PROGRAM_ID
@@ -211,7 +204,7 @@ export class SolanaStablecoin {
           signerKey,
           destinationAta,
           recipient,
-          this.mint,
+          this.mintAddress,
           TOKEN_2022_PROGRAM_ID
         )
       );
@@ -223,7 +216,7 @@ export class SolanaStablecoin {
       );
     }
 
-    const [minterRole] = getMinterAddress(this.mint, signerKey);
+    const [minterRole] = getMinterAddress(this.mintAddress, signerKey);
     const minterRoleInfo = await this.connection.getAccountInfo(minterRole);
 
     return await this.program.methods
@@ -231,8 +224,9 @@ export class SolanaStablecoin {
       .accounts({
         authority: signerKey,
         config: this.config,
-        mint: this.mint,
-        minterRole: minterRoleInfo ? minterRole : null,
+        mint: this.mintAddress,
+        // Pass null as undefined to satisfy Anchor's account resolution
+        ...(minterRoleInfo ? { minterRole } : {}),
         destination: destinationAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -247,7 +241,7 @@ export class SolanaStablecoin {
       .accounts({
         authority: authorityKey,
         config: this.config,
-        mint: this.mint,
+        mint: this.mintAddress,
         from,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -262,7 +256,7 @@ export class SolanaStablecoin {
       .accounts({
         authority: authorityKey,
         config: this.config,
-        mint: this.mint,
+        mint: this.mintAddress,
         tokenAccount,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -277,7 +271,7 @@ export class SolanaStablecoin {
       .accounts({
         authority: authorityKey,
         config: this.config,
-        mint: this.mint,
+        mint: this.mintAddress,
         tokenAccount,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -305,13 +299,13 @@ export class SolanaStablecoin {
   /** Add a minter with optional quota (0 = unlimited) */
   async addMinter(minter: PublicKey, quota: bigint = 0n): Promise<string> {
     const authorityKey = (this.program.provider as AnchorProvider).wallet.publicKey;
-    const [minterRole] = getMinterAddress(this.mint, minter);
+    const [minterRole] = getMinterAddress(this.mintAddress, minter);
     return await this.program.methods
       .addMinter(new BN(quota.toString()))
       .accounts({
         authority: authorityKey,
         config: this.config,
-        mint: this.mint,
+        mint: this.mintAddress,
         minterRole,
         minter,
         systemProgram: SystemProgram.programId,
@@ -322,13 +316,13 @@ export class SolanaStablecoin {
   /** Remove a minter */
   async removeMinter(minter: PublicKey): Promise<string> {
     const authorityKey = (this.program.provider as AnchorProvider).wallet.publicKey;
-    const [minterRole] = getMinterAddress(this.mint, minter);
+    const [minterRole] = getMinterAddress(this.mintAddress, minter);
     return await this.program.methods
       .removeMinter()
       .accounts({
         authority: authorityKey,
         config: this.config,
-        mint: this.mint,
+        mint: this.mintAddress,
         minterRole,
       })
       .rpc({ commitment: "confirmed" });
@@ -342,7 +336,7 @@ export class SolanaStablecoin {
       .accounts({
         authority: authorityKey,
         config: this.config,
-        mint: this.mint,
+        mint: this.mintAddress,
         systemProgram: SystemProgram.programId,
       })
       .rpc({ commitment: "confirmed" });
@@ -376,7 +370,7 @@ export class SolanaStablecoin {
   async getTotalSupply(): Promise<bigint> {
     const mintInfo = await getMint(
       this.connection,
-      this.mint,
+      this.mintAddress,
       "confirmed",
       TOKEN_2022_PROGRAM_ID
     );
@@ -386,7 +380,7 @@ export class SolanaStablecoin {
   /** Get token balance for a wallet */
   async getBalance(wallet: PublicKey): Promise<bigint> {
     const ata = getAssociatedTokenAddressSync(
-      this.mint,
+      this.mintAddress,
       wallet,
       false,
       TOKEN_2022_PROGRAM_ID
@@ -407,11 +401,69 @@ export class SolanaStablecoin {
   /** Get the ATA for a wallet */
   getTokenAccount(wallet: PublicKey): PublicKey {
     return getAssociatedTokenAddressSync(
-      this.mint,
+      this.mintAddress,
       wallet,
       false,
       TOKEN_2022_PROGRAM_ID
     );
+  }
+
+  /** List all minter roles for this mint by fetching program accounts */
+  async listMinters(): Promise<Array<{ minter: PublicKey; quota: BN; minted: BN; active: boolean }>> {
+    const accounts = await (this.program.account as any)["minterRole"].all([
+      {
+        memcmp: {
+          offset: 8 + 32, // discriminator + minter pubkey offset; mint is second field
+          bytes: this.mintAddress.toBase58(),
+        },
+      },
+    ]);
+    return accounts.map((a: any) => ({
+      minter: a.account.minter,
+      quota: a.account.quota,
+      minted: a.account.minted,
+      active: a.account.active,
+    }));
+  }
+
+  /** List all token holders with optional minimum balance filter */
+  async listHolders(minBalance = 0n): Promise<Array<{ address: PublicKey; amount: bigint }>> {
+    const tokenAccounts = await this.connection.getTokenAccountsByOwner(
+      // We fetch by mint instead — use getProgramAccounts
+      SystemProgram.programId, // placeholder, overridden below
+      { mint: this.mintAddress, programId: TOKEN_2022_PROGRAM_ID }
+    ).catch(() => ({ value: [] }));
+
+    // Use getProgramAccounts to find all token accounts for this mint
+    const raw = await this.connection.getProgramAccounts(TOKEN_2022_PROGRAM_ID, {
+      filters: [
+        { dataSize: 165 },
+        {
+          memcmp: {
+            offset: 0,
+            bytes: this.mintAddress.toBase58(),
+          },
+        },
+      ],
+    });
+
+    const holders: Array<{ address: PublicKey; amount: bigint }> = [];
+    for (const acct of raw) {
+      try {
+        const tokenAcct = await getAccount(
+          this.connection,
+          acct.pubkey,
+          "confirmed",
+          TOKEN_2022_PROGRAM_ID
+        );
+        if (tokenAcct.amount >= minBalance) {
+          holders.push({ address: tokenAcct.owner, amount: tokenAcct.amount });
+        }
+      } catch {
+        // skip invalid accounts
+      }
+    }
+    return holders;
   }
 
   private async _initializeTransferHookExtraAccounts(
@@ -430,15 +482,16 @@ export class SolanaStablecoin {
       new Wallet(authority),
       { commitment: "confirmed" }
     );
-    const hookProgram = new Program(hookIdl, TRANSFER_HOOK_PROGRAM_ID, provider);
-    const [extraAccountMetas] = getExtraAccountMetasAddress(this.mint);
+    // Anchor 0.32: Program(idl, provider?) — program ID is read from idl.address
+    const hookProgram = new Program(hookIdl, provider);
+    const [extraAccountMetas] = getExtraAccountMetasAddress(this.mintAddress);
 
     await hookProgram.methods
       .initializeExtraAccountMetaList(SSS_TOKEN_PROGRAM_ID)
       .accounts({
         payer: authority.publicKey,
         extraAccountMetaList: extraAccountMetas,
-        mint: this.mint,
+        mint: this.mintAddress,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })

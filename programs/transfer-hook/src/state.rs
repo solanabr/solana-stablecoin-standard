@@ -16,3 +16,18 @@ pub struct BlacklistEntry {
     pub active: bool,
     pub bump: u8,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extra_account_metas_seed() {
+        assert_eq!(EXTRA_ACCOUNT_METAS_SEED, b"extra-account-metas");
+    }
+
+    #[test]
+    fn test_blacklist_seed() {
+        assert_eq!(SSS_BLACKLIST_SEED, b"blacklist");
+    }
+}

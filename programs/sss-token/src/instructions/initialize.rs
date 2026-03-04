@@ -140,6 +140,16 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         .ok_or(StablecoinError::MathOverflow)?;
 
     // ── 2. Allocate the mint account via System Program CPI ───────────────
+    //
+    // IMPORTANT: We allocate only `mint_size` bytes (extension headers only),
+    // because `InitializeMint2` strictly checks that:
+    //   account.data_len() == ExtensionType::try_calculate_account_len(&extensions)
+    //
+    // However, we fund the account with lamports sufficient for `total_size`
+    // (mint extensions + inline metadata TLV bytes).  This pre-funds the
+    // rent-exemption so that the subsequent `initialize_metadata` CPI can
+    // `realloc` the account up to `total_size` without needing an extra
+    // lamport transfer.
     let lamports = ctx.accounts.rent.minimum_balance(total_size);
 
     create_account(
@@ -151,7 +161,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
             },
         ),
         lamports,
-        total_size as u64,
+        mint_size as u64, // data len = mint_size; InitializeMint2 validates this
         &spl_token_2022::ID,
     )?;
 

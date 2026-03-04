@@ -15,14 +15,14 @@ export class ComplianceModule {
   /** Add an address to the blacklist (SSS-2 only) */
   async blacklistAdd(address: PublicKey, reason: string): Promise<string> {
     const authorityKey = (this.parent.program.provider as AnchorProvider).wallet.publicKey;
-    const [blacklistEntry] = getBlacklistAddress(this.parent.mint, address);
+    const [blacklistEntry] = getBlacklistAddress(this.parent.mintAddress, address);
 
     return await this.parent.program.methods
       .addToBlacklist(reason)
       .accounts({
         authority: authorityKey,
         config: this.parent.config,
-        mint: this.parent.mint,
+        mint: this.parent.mintAddress,
         target: address,
         blacklistEntry,
         systemProgram: { programId: "11111111111111111111111111111111" },
@@ -33,14 +33,14 @@ export class ComplianceModule {
   /** Remove an address from the blacklist (SSS-2 only) */
   async blacklistRemove(address: PublicKey): Promise<string> {
     const authorityKey = (this.parent.program.provider as AnchorProvider).wallet.publicKey;
-    const [blacklistEntry] = getBlacklistAddress(this.parent.mint, address);
+    const [blacklistEntry] = getBlacklistAddress(this.parent.mintAddress, address);
 
     return await this.parent.program.methods
       .removeFromBlacklist()
       .accounts({
         authority: authorityKey,
         config: this.parent.config,
-        mint: this.parent.mint,
+        mint: this.parent.mintAddress,
         target: address,
         blacklistEntry,
       })
@@ -56,7 +56,7 @@ export class ComplianceModule {
       .accounts({
         authority: authorityKey,
         config: this.parent.config,
-        mint: this.parent.mint,
+        mint: this.parent.mintAddress,
         fromTokenAccount: options.from,
         toTokenAccount: options.to,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -66,7 +66,7 @@ export class ComplianceModule {
 
   /** Check if an address is blacklisted */
   async isBlacklisted(address: PublicKey): Promise<boolean> {
-    const [pda] = getBlacklistAddress(this.parent.mint, address);
+    const [pda] = getBlacklistAddress(this.parent.mintAddress, address);
     const info = await this.parent.connection.getAccountInfo(pda);
     if (!info) return false;
     try {
@@ -79,7 +79,7 @@ export class ComplianceModule {
 
   /** Get blacklist entry details */
   async getBlacklistEntry(address: PublicKey): Promise<BlacklistEntryState | null> {
-    const [pda] = getBlacklistAddress(this.parent.mint, address);
+    const [pda] = getBlacklistAddress(this.parent.mintAddress, address);
     try {
       const entry = await (this.parent.program.account as any)["blacklistEntry"].fetch(pda);
       return {

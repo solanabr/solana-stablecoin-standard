@@ -67,8 +67,8 @@ interface WebhookPayload {
   signature: string;
 }
 
-async function sendWebhook(event: WebhookPayload): Promise<void> {
-  if (!WEBHOOK_URL) return;
+async function sendWebhook(event: WebhookPayload): Promise<boolean> {
+  if (!WEBHOOK_URL) return true;
 
   const payload = JSON.stringify({
     event: event.type,
@@ -98,22 +98,41 @@ async function sendWebhook(event: WebhookPayload): Promise<void> {
   return new Promise((resolve) => {
     const client = url.protocol === "https:" ? https : http;
     const req = client.request(options, (res) => {
+      const success = res.statusCode !== undefined && res.statusCode < 500;
       logger.info(
         { status: res.statusCode, event: event.type },
-        "webhook delivered",
+        success ? "webhook delivered" : "webhook delivery failed (non-2xx)",
       );
-      resolve();
+      resolve(success);
     });
     req.on("error", (err) => {
       logger.error(
         { err: err.message, event: event.type },
         "webhook delivery failed",
       );
-      resolve(); // non-fatal — continue indexing
+      resolve(false);
     });
     req.write(payload);
     req.end();
   });
+}
+
+async function sendWebhookWithRetry(
+  event: WebhookPayload,
+  maxRetries = 3,
+): Promise<void> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const success = await sendWebhook(event);
+    if (success) return;
+    if (attempt < maxRetries) {
+      const delay = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
+      console.warn(
+        `[indexer] Webhook attempt ${attempt} failed, retrying in ${delay}ms...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  console.error(`[indexer] Webhook failed after ${maxRetries} attempts`);
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +182,7 @@ async function startIndexer(): Promise<void> {
           "SSS event indexed",
         );
 
-        await sendWebhook({
+        await sendWebhookWithRetry({
           type: event.name,
           data: event.data,
           signature,

@@ -13,6 +13,13 @@ export enum Presets {
   SSS_2 = "sss-2",
 }
 
+/** Custom extensions object for declarative config (mirrors Token-2022 extension flags) */
+export interface ExtensionsConfig {
+  permanentDelegate?: boolean;
+  transferHook?: boolean;
+  defaultAccountFrozen?: boolean;
+}
+
 export interface CreateOptions {
   preset?: Presets;
   name: string;
@@ -20,7 +27,8 @@ export interface CreateOptions {
   uri?: string;
   decimals?: number;           // default 6
   authority: any;              // Keypair
-  // SSS-2 custom config (overrides preset defaults)
+  // SSS-2 custom config — use either extensions{} shorthand or individual flags
+  extensions?: ExtensionsConfig;
   enablePermanentDelegate?: boolean;
   enableTransferHook?: boolean;
   defaultAccountFrozen?: boolean;

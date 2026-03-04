@@ -9,7 +9,11 @@ use crate::{error::HookError, state::BlacklistEntry};
 #[derive(Accounts)]
 pub struct TransferHook<'info> {
     /// Source token account (standard hook account 0)
-    #[account(token::mint = mint, token::authority = owner)]
+    ///
+    /// We only validate the mint; we do NOT check `token::authority = owner`
+    /// because seize operations use the config PDA as permanent delegate, which
+    /// means the transfer authority is NOT the source account owner.
+    #[account(token::mint = mint)]
     pub source_token: InterfaceAccount<'info, TokenAccount>,
 
     /// The mint with transfer hook enabled (standard hook account 1)

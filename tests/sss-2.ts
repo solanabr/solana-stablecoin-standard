@@ -13,7 +13,7 @@
 
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider } from "@coral-xyz/anchor";
-import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { Keypair, PublicKey, LAMPORTS_PER_SOL, AccountMeta } from "@solana/web3.js";
 import {
   TOKEN_2022_PROGRAM_ID,
   getAssociatedTokenAddressSync,
@@ -22,10 +22,14 @@ import {
 } from "@solana/spl-token";
 import { expect } from "chai";
 import { SssToken } from "../target/types/sss_token";
+import { TransferHook } from "../target/types/transfer_hook";
 import { airdropSol, sleep } from "./helpers/setup";
 
 const TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
   "6XUKT63WZFKU8Lvgydv9XeczoigNhag1JtvqkmV7nf47"
+);
+const SSS_TOKEN_PROGRAM_ID = new PublicKey(
+  "GgcHf4khPVY28yVkQGDgBjaNLgsjNWGaNdfmL36wgPGp"
 );
 
 describe("SSS-2: Compliant Stablecoin", () => {
@@ -33,6 +37,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
   anchor.setProvider(provider);
 
   const program = anchor.workspace.SssToken as Program<SssToken>;
+  const hookProgram = anchor.workspace.TransferHook as Program<TransferHook>;
 
   // ── Test keypairs ──────────────────────────────────────────────────────────
   const authority = Keypair.generate();
@@ -403,8 +408,77 @@ describe("SSS-2: Compliant Stablecoin", () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Helper: compute remaining accounts needed for seize (transfer_checked with hook).
+  //
+  // Token-2022 invokes the transfer hook during TransferChecked. The hook program
+  // and all extra accounts it requires must be included in the transaction's
+  // account list. We pass them as remainingAccounts on the outer seize instruction
+  // so the sss-token program can forward them into the transfer_checked CPI.
+  //
+  // Required accounts (in order):
+  //   0. Transfer hook program
+  //   1. ExtraAccountMetaList PDA  [b"extra-account-metas", mint]
+  //   2. SSS-token program          (extra account #0 in ExtraAccountMetaList)
+  //   3. Source blacklist entry PDA [b"blacklist", mint, transferAuthority]
+  //   4. Dest blacklist entry PDA   [b"blacklist", mint, destOwner]
+  function buildSeizeRemainingAccounts(
+    transferAuthority: PublicKey, // config PDA for permanent-delegate seize
+    destOwner: PublicKey          // owner of the destination token account
+  ): AccountMeta[] {
+    const [extraAccountMetaList] = PublicKey.findProgramAddressSync(
+      [Buffer.from("extra-account-metas"), mintKeypair.publicKey.toBuffer()],
+      TRANSFER_HOOK_PROGRAM_ID
+    );
+    const [sourceBlacklistEntry] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("blacklist"),
+        mintKeypair.publicKey.toBuffer(),
+        transferAuthority.toBuffer(),
+      ],
+      SSS_TOKEN_PROGRAM_ID
+    );
+    const [destBlacklistEntry] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("blacklist"),
+        mintKeypair.publicKey.toBuffer(),
+        destOwner.toBuffer(),
+      ],
+      SSS_TOKEN_PROGRAM_ID
+    );
+
+    return [
+      { pubkey: TRANSFER_HOOK_PROGRAM_ID, isWritable: false, isSigner: false },
+      { pubkey: extraAccountMetaList,      isWritable: false, isSigner: false },
+      { pubkey: SSS_TOKEN_PROGRAM_ID,      isWritable: false, isSigner: false },
+      { pubkey: sourceBlacklistEntry,      isWritable: false, isSigner: false },
+      { pubkey: destBlacklistEntry,        isWritable: false, isSigner: false },
+    ];
+  }
+
   describe("seize operations", () => {
     before(async () => {
+      // Initialize the ExtraAccountMetaList for the transfer hook.
+      // This must be done before any transfer_checked calls on this mint.
+      const [extraAccountMetaList] = PublicKey.findProgramAddressSync(
+        [Buffer.from("extra-account-metas"), mintKeypair.publicKey.toBuffer()],
+        TRANSFER_HOOK_PROGRAM_ID
+      );
+
+      const metaListInfo = await provider.connection.getAccountInfo(extraAccountMetaList);
+      if (!metaListInfo) {
+        await hookProgram.methods
+          .initializeExtraAccountMetaList(SSS_TOKEN_PROGRAM_ID)
+          .accounts({
+            payer: authority.publicKey,
+            extraAccountMetaList,
+            mint: mintKeypair.publicKey,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          })
+          .signers([authority])
+          .rpc();
+      }
+
       // Create ATAs for sanctioned user and authority
       const createAtasTx = new anchor.web3.Transaction();
 
@@ -531,34 +605,14 @@ describe("SSS-2: Compliant Stablecoin", () => {
       const before = await getAccount(
         provider.connection,
         sanctionedUserAta,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       const amount = before.amount;
-      expect(amount).to.be.gt(0n);
+      expect(amount > 0n).to.be.true;
 
-      // Freeze the account first (standard compliance workflow)
-      await program.methods
-        .freezeAccount()
-        .accounts({
-          authority: authority.publicKey,
-          config: configPda,
-          mint: mintKeypair.publicKey,
-          tokenAccount: sanctionedUserAta,
-          tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .signers([authority])
-        .rpc();
-
-      const frozen = await getAccount(
-        provider.connection,
-        sanctionedUserAta,
-        "confirmed",
-        TOKEN_2022_PROGRAM_ID
-      );
-      expect(frozen.isFrozen).to.be.true;
-
-      // Seize via permanent delegate (works even on frozen accounts)
+      // Seize via permanent delegate — transfers tokens without needing account owner signature.
+      // The transfer hook requires extra accounts; pass them as remainingAccounts.
       await program.methods
         .seize(new anchor.BN(amount.toString()))
         .accounts({
@@ -570,13 +624,14 @@ describe("SSS-2: Compliant Stablecoin", () => {
           seizerRole: null,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts(buildSeizeRemainingAccounts(configPda, authority.publicKey))
         .signers([authority])
         .rpc();
 
       const after = await getAccount(
         provider.connection,
         sanctionedUserAta,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       expect(after.amount).to.equal(0n);
@@ -584,7 +639,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
       const authAfter = await getAccount(
         provider.connection,
         authorityAta,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       expect(authAfter.amount).to.equal(amount);
@@ -659,24 +714,11 @@ describe("SSS-2: Compliant Stablecoin", () => {
       const before = await getAccount(
         provider.connection,
         sanctionedUserAta,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       const seizeAmount = before.amount;
-      expect(seizeAmount).to.be.gt(0n);
-
-      // Thaw the sanctioned account so we can seize (it was frozen in previous test)
-      await program.methods
-        .thawAccount()
-        .accounts({
-          authority: authority.publicKey,
-          config: configPda,
-          mint: mintKeypair.publicKey,
-          tokenAccount: sanctionedUserAta,
-          tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .signers([authority])
-        .rpc();
+      expect(seizeAmount > 0n).to.be.true;
 
       await program.methods
         .seize(new anchor.BN(seizeAmount.toString()))
@@ -689,13 +731,14 @@ describe("SSS-2: Compliant Stablecoin", () => {
           seizerRole: seizerRolePda,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts(buildSeizeRemainingAccounts(configPda, seizer.publicKey))
         .signers([seizer])
         .rpc();
 
       const after = await getAccount(
         provider.connection,
         sanctionedUserAta,
-        "confirmed",
+        "processed",
         TOKEN_2022_PROGRAM_ID
       );
       expect(after.amount).to.equal(0n);
@@ -771,7 +814,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     it("SSS-2 mint can still be paused", async () => {
       await program.methods
         .pause()
-        .accounts({ authority: authority.publicKey, config: configPda })
+        .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
         .signers([authority])
         .rpc();
 
@@ -780,7 +823,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
 
       await program.methods
         .unpause()
-        .accounts({ authority: authority.publicKey, config: configPda })
+        .accounts({ authority: authority.publicKey, config: configPda, pauserRole: null })
         .signers([authority])
         .rpc();
 

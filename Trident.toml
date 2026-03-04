@@ -1,0 +1,6 @@
+[fuzz]
+fuzzing_with_stats = true
+allow_duplicate_txs = false
+
+[fuzz.programs_config]
+"GgcHf4khPVY28yVkQGDgBjaNLgsjNWGaNdfmL36wgPGp" = { instruction_accounts = ["initialize", "mint_to", "burn", "freeze_account", "thaw_account", "pause", "unpause", "add_to_blacklist", "remove_from_blacklist", "seize"] }

@@ -116,3 +116,44 @@ pub struct BlacklistEntry {
     /// Canonical PDA bump.
     pub bump: u8, // 1
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_seed() {
+        assert_eq!(CONFIG_SEED, b"config");
+    }
+
+    #[test]
+    fn test_minter_seed() {
+        assert_eq!(MINTER_SEED, b"minter");
+    }
+
+    #[test]
+    fn test_role_seed() {
+        assert_eq!(ROLE_SEED, b"role");
+    }
+
+    #[test]
+    fn test_blacklist_seed() {
+        assert_eq!(BLACKLIST_SEED, b"blacklist");
+    }
+
+    #[test]
+    fn test_role_type_discriminants() {
+        assert_eq!(RoleType::Blacklister as u8, 0);
+        assert_eq!(RoleType::Pauser as u8, 1);
+        assert_eq!(RoleType::Seizer as u8, 2);
+        assert_eq!(RoleType::Burner as u8, 3);
+        assert_eq!(RoleType::Freezer as u8, 4);
+    }
+
+    #[test]
+    fn test_stablecoin_config_init_space() {
+        // Verify INIT_SPACE is reasonable (not zero, not absurdly large)
+        assert!(StablecoinConfig::INIT_SPACE > 0);
+        assert!(StablecoinConfig::INIT_SPACE < 512);
+    }
+}

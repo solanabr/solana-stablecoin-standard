@@ -3,6 +3,7 @@ export { ComplianceModule } from "./compliance";
 export { Presets, RoleTypes } from "./types";
 export type {
   CreateOptions,
+  ExtensionsConfig,
   MintOptions,
   BlacklistAddOptions,
   SeizeOptions,

@@ -32,7 +32,8 @@ use instructions::{
     pause::{pause_handler, unpause_handler, PauseCtx, UnpauseCtx},
     roles::{
         add_minter_handler, add_role_handler, remove_minter_handler, remove_role_handler,
-        AddMinterCtx, AddRoleCtx, RemoveMinterCtx, RemoveRoleCtx,
+        update_minter_handler, AddMinterCtx, AddRoleCtx, RemoveMinterCtx, RemoveRoleCtx,
+        UpdateMinterCtx,
     },
 };
 use state::RoleType;
@@ -55,6 +56,7 @@ pub(crate) use instructions::roles::__client_accounts_add_minter_ctx;
 pub(crate) use instructions::roles::__client_accounts_add_role_ctx;
 pub(crate) use instructions::roles::__client_accounts_remove_minter_ctx;
 pub(crate) use instructions::roles::__client_accounts_remove_role_ctx;
+pub(crate) use instructions::roles::__client_accounts_update_minter_ctx;
 
 declare_id!("GgcHf4khPVY28yVkQGDgBjaNLgsjNWGaNdfmL36wgPGp");
 
@@ -149,6 +151,13 @@ pub mod sss_token {
         remove_minter_handler(ctx)
     }
 
+    /// Update an existing minter's quota in place without deactivating it.
+    ///
+    /// Master authority only.
+    pub fn update_minter(ctx: Context<UpdateMinterCtx>, new_quota: u64) -> Result<()> {
+        update_minter_handler(ctx, new_quota)
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Role management
     // ─────────────────────────────────────────────────────────────────────
@@ -224,7 +233,7 @@ pub mod sss_token {
     /// absent (e.g. transfer_hook-only SSS-2 configs).
     ///
     /// Requires Seizer role or master authority.
-    pub fn seize(ctx: Context<SeizeCtx>, amount: u64) -> Result<()> {
+    pub fn seize<'info>(ctx: Context<'_, '_, '_, 'info, SeizeCtx<'info>>, amount: u64) -> Result<()> {
         seize_handler(ctx, amount)
     }
 }
