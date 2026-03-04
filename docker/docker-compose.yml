@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  sss-backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - SSS_PORT=4000
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - SOLANA_WS_URL=${SOLANA_WS_URL:-wss://api.devnet.solana.com}
+      - SSS_PROGRAM_ID=${SSS_PROGRAM_ID}
+      - OPERATOR_KEYPAIR=/run/secrets/operator_keypair
+      - IDL_PATH=/app/target/idl/sss_token.json
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sss_indexer
+      - DB_USER=sss
+      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REQUIRE_APPROVAL=true
+      - ALERT_THRESHOLD=${ALERT_THRESHOLD:-1000000000}
+    secrets:
+      - operator_keypair
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=sss_indexer
+      - POSTGRES_USER=sss
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+secrets:
+  operator_keypair:
+    file: ${OPERATOR_KEYPAIR_PATH:-~/.config/solana/id.json}
