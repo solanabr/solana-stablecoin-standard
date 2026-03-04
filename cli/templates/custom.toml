@@ -1,0 +1,37 @@
+# Custom Stablecoin Configuration
+# Mix and match features as needed
+
+[token]
+name = "Custom Stablecoin"
+symbol = "CUSTOM"
+decimals = 6
+uri = "https://example.com/metadata.json"
+
+[extensions]
+# Choose which extensions to enable
+permanent_delegate = false  # Required for token seizure
+transfer_hook = false       # Required for blacklist enforcement
+default_account_frozen = false  # Freeze new accounts by default
+
+[roles]
+# Configure roles as needed
+[[roles.minters]]
+address = "MINTER_1_PUBLIC_KEY"
+daily_quota = 1000000
+
+[[roles.minters]]
+address = "MINTER_2_PUBLIC_KEY"
+daily_quota = 500000
+
+[[roles.burners]]
+address = "BURNER_PUBLIC_KEY"
+
+# Only if compliance enabled
+# [[roles.blacklisters]]
+# address = "BLACKLISTER_PUBLIC_KEY"
+
+# [[roles.seizers]]
+# address = "SEIZER_PUBLIC_KEY"
+
+[[roles.pausers]]
+address = "PAUSER_PUBLIC_KEY"

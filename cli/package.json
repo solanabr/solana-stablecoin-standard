@@ -1,0 +1,42 @@
+{
+  "name": "@stbr/sss-token-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for Solana Stablecoin Standard",
+  "main": "dist/index.js",
+  "bin": {
+    "sss-token": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "prepublish": "npm run build"
+  },
+  "keywords": [
+    "solana",
+    "stablecoin",
+    "cli"
+  ],
+  "author": "Superteam Brazil",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.91.0",
+    "bn.js": "^5.2.1",
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.6",
+    "ora": "^5.4.1",
+    "table": "^6.8.1",
+    "toml": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.5",
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "@stbr/sss-token": "^1.0.0"
+  }
+}

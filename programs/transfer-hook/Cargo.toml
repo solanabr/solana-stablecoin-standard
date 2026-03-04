@@ -1,0 +1,24 @@
+[package]
+name = "transfer-hook"
+version = "1.0.0"
+description = "Transfer hook program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "transfer_hook"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build"]
+default = []
+
+[dependencies]
+anchor-lang = "0.32.1"
+
+[dev-dependencies]
+solana-program-test = "1.18.0"
+solana-sdk = "1.18.0"

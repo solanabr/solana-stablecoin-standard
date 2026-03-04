@@ -1,0 +1,20 @@
+# SSS-1: Minimal Stablecoin Configuration
+# For: Internal tokens, DAO treasuries, ecosystem settlement
+
+[token]
+name = "My Stablecoin"
+symbol = "MYUSD"
+decimals = 6
+uri = "https://example.com/metadata.json"
+
+[extensions]
+# SSS-1 uses minimal extensions
+permanent_delegate = false
+transfer_hook = false
+default_account_frozen = false
+
+[roles]
+# Optional: Add initial minters
+# [[roles.minters]]
+# address = "MINTER_PUBLIC_KEY_HERE"
+# daily_quota = 1000000  # 1M tokens per day

@@ -1,0 +1,56 @@
+{
+  "name": "@stbr/solana-stablecoin-standard",
+  "version": "1.0.0",
+  "description": "Production-ready SDK for creating institutional-grade stablecoins on Solana",
+  "private": true,
+  "workspaces": [
+    "sdk",
+    "cli",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run build:programs && npm run build:sdk && npm run build:cli",
+    "build:programs": "cd programs && anchor build",
+    "build:sdk": "cd sdk && npm run build",
+    "build:cli": "cd cli && npm run build",
+    "test": "npm run test:programs && npm run test:sdk",
+    "test:programs": "cd programs && anchor test",
+    "test:sdk": "cd sdk && npm test",
+    "test:sss1": "cd programs && anchor test -- --grep SSS-1",
+    "test:sss2": "cd programs && anchor test -- --grep SSS-2",
+    "test:integration": "cd tests && npm run test:integration",
+    "test:fuzz": "cd tests && npm run test:fuzz",
+    "deploy:devnet": "cd programs && anchor deploy --provider.cluster devnet",
+    "deploy:mainnet": "cd programs && anchor deploy --provider.cluster mainnet",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,rs}\"",
+    "docs": "typedoc --out docs/api sdk/src"
+  },
+  "keywords": [
+    "solana",
+    "stablecoin",
+    "token-2022",
+    "defi",
+    "compliance",
+    "sdk"
+  ],
+  "author": "Superteam Brazil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solanabr/solana-stablecoin-standard.git"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "typedoc": "^0.25.7",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

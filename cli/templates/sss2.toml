@@ -1,0 +1,34 @@
+# SSS-2: Compliant Stablecoin Configuration
+# For: Regulated stablecoins (USDC/USDT-class)
+
+[token]
+name = "Compliant USD"
+symbol = "CUSD"
+decimals = 6
+uri = "https://example.com/metadata.json"
+
+[extensions]
+# SSS-2 requires these for compliance
+permanent_delegate = true
+transfer_hook = true
+default_account_frozen = false
+
+[roles]
+# Minters with daily quotas
+[[roles.minters]]
+address = "MINTER_PUBLIC_KEY_HERE"
+daily_quota = 10000000  # 10M tokens per day
+
+# Compliance roles
+[[roles.blacklisters]]
+address = "COMPLIANCE_OFFICER_PUBLIC_KEY_HERE"
+
+[[roles.seizers]]
+address = "COMPLIANCE_OFFICER_PUBLIC_KEY_HERE"
+
+# Operational roles
+[[roles.burners]]
+address = "BURNER_PUBLIC_KEY_HERE"
+
+[[roles.pausers]]
+address = "PAUSER_PUBLIC_KEY_HERE"
