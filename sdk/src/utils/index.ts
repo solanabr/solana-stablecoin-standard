@@ -22,11 +22,11 @@ import {
 } from "@solana/spl-token";
 
 export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
-  "SSSTokenxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
 );
 
 export const TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  "SSSHookxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
 );
 
 // ─── PDA derivation ───────────────────────────────────────────────────────────

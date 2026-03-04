@@ -54,4 +54,10 @@ pub enum SssError {
 
     #[msg("Arithmetic overflow")]
     Overflow,
+
+    #[msg("Minter not found")]
+    MinterNotFound,
+    
+    #[msg("Minter is already inactive")]
+    MinterAlreadyInactive,
 }

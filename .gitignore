@@ -1,5 +1,11 @@
+# Node
 node_modules/
 dist/
+*.tgz
+test-cli.sh
+test-local.ts
+
+# Anchor
 target/
 .anchor/
 .env

@@ -6,6 +6,7 @@ import {
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, BN, Idl } from "@coral-xyz/anchor";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 import { Preset, StablecoinConfig, resolvePreset } from "./presets";
 import {
@@ -137,7 +138,7 @@ export class ComplianceModule {
         fromTokenAccount: fromAta,
         treasuryTokenAccount: toAta,
         permanentDelegate,
-        tokenProgram: anchor.utils.token.TOKEN_2022_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([this.sdk.authority])
       .rpc();
@@ -231,7 +232,7 @@ export class SolanaStablecoin {
       enablePermanentDelegate: presetConfig.enablePermanentDelegate ?? false,
       enableTransferHook: presetConfig.enableTransferHook ?? false,
       defaultAccountFrozen: presetConfig.defaultAccountFrozen ?? false,
-      transferHookProgramId: config.enableTransferHook ? TRANSFER_HOOK_PROGRAM_ID : undefined,
+      transferHookProgramId: presetConfig.enableTransferHook ? TRANSFER_HOOK_PROGRAM_ID : undefined,
     } as StablecoinConfig;
 
     const mintKeypair = options.mintKeypair ?? Keypair.generate();
@@ -261,7 +262,7 @@ export class SolanaStablecoin {
     // IDL would be imported from build artifacts in practice
     const idl = await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
     if (!idl) throw new Error("SSS-token IDL not found on-chain");
-    const program = new Program(idl, SSS_TOKEN_PROGRAM_ID, provider);
+    const program = new Program(idl, provider);
 
     // Step 3: Initialize state PDA
     await program.methods
@@ -280,10 +281,10 @@ export class SolanaStablecoin {
         state: statePDA,
         mint: mintKeypair.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
-        tokenProgram: anchor.utils.token.TOKEN_2022_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
-      .signers([authority])
+      .signers([authority, mintKeypair])
       .rpc();
 
     return new SolanaStablecoin(
@@ -308,7 +309,7 @@ export class SolanaStablecoin {
     const provider = new AnchorProvider(connection, new anchor.Wallet(authority), {});
     const idl = await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
     if (!idl) throw new Error("SSS-token IDL not found on-chain");
-    const program = new Program(idl, SSS_TOKEN_PROGRAM_ID, provider);
+    const program = new Program(idl, provider);
 
     const state = await (program.account as any).stablecoinState.fetch(statePDA);
 
@@ -328,7 +329,7 @@ export class SolanaStablecoin {
 
   // ─── Core Operations ────────────────────────────────────────────────────────
 
-  async mint(options: MintOptions): Promise<string> {
+  async mint_token(options: MintOptions): Promise<string> {
     const { recipient, amount, minter } = options;
     const [minterInfoPDA] = findMinterInfoPDA(this.statePDA, minter.publicKey);
     const recipientAta = await getOrCreateTokenAccount(
@@ -348,7 +349,7 @@ export class SolanaStablecoin {
         minterInfo: minterInfoPDA,
         recipientTokenAccount: recipientAta,
         mintAuthority,
-        tokenProgram: anchor.utils.token.TOKEN_2022_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([minter])
       .rpc();
@@ -369,7 +370,7 @@ export class SolanaStablecoin {
         state: this.statePDA,
         mint: this.mint,
         fromTokenAccount: fromAta,
-        tokenProgram: anchor.utils.token.TOKEN_2022_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([this.authority])
       .rpc();
@@ -392,7 +393,7 @@ export class SolanaStablecoin {
         mint: this.mint,
         tokenAccount: ata,
         freezeAuthority,
-        tokenProgram: anchor.utils.token.TOKEN_2022_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([this.authority])
       .rpc();
@@ -415,7 +416,7 @@ export class SolanaStablecoin {
         mint: this.mint,
         tokenAccount: ata,
         freezeAuthority,
-        tokenProgram: anchor.utils.token.TOKEN_2022_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([this.authority])
       .rpc();
@@ -437,15 +438,11 @@ export class SolanaStablecoin {
       .rpc();
   }
 
-  async addMinter(
-    minter: PublicKey,
-    quota: number | bigint = 0,
-    active = true
-  ): Promise<string> {
+  async addMinter(minter: PublicKey, quota: number | bigint = 0): Promise<string> {
     const [minterInfo] = findMinterInfoPDA(this.statePDA, minter);
-
+    
     return this.program.methods
-      .updateMinter(new BN(quota.toString()), active)
+      .addMinter(new BN(quota.toString()))
       .accounts({
         authority: this.authority.publicKey,
         state: this.statePDA,
@@ -458,7 +455,18 @@ export class SolanaStablecoin {
   }
 
   async removeMinter(minter: PublicKey): Promise<string> {
-    return this.addMinter(minter, 0, false);
+    const [minterInfo] = findMinterInfoPDA(this.statePDA, minter);
+    
+    return this.program.methods
+      .removeMinter()
+      .accounts({
+        authority: this.authority.publicKey,
+        state: this.statePDA,
+        minter,
+        minterInfo,
+      })
+      .signers([this.authority])
+      .rpc();
   }
 
   async updateRoles(roles: {

@@ -7,7 +7,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("3rexFCwPqs97GDNZVLBbDioaYRyw2UuWCUGhjS9ZvHRN");
+declare_id!("6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL");
 
 #[program]
 pub mod sss_token {
@@ -54,8 +54,17 @@ pub mod sss_token {
     }
 
     /// Add or update a minter with an optional per-minter quota (0 = unlimited).
-    pub fn update_minter(ctx: Context<UpdateMinter>, quota: u64, active: bool) -> Result<()> {
-        instructions::update_minter::handler(ctx, quota, active)
+    // pub fn update_minter(ctx: Context<UpdateMinter>, quota: u64, active: bool) -> Result<()> {
+    //     instructions::update_minter::handler(ctx, quota, active)
+    // }
+
+    // Replace the old update_minter with:
+    pub fn add_minter(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
+        instructions::update_minter::add_minter_handler(ctx, quota)
+    }
+
+    pub fn remove_minter(ctx: Context<RemoveMinter>) -> Result<()> {
+        instructions::update_minter::remove_minter_handler(ctx)
     }
 
     /// Update role assignments (pauser, burner, blacklister, seizer).

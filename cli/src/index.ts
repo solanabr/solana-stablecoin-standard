@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as toml from "toml";
 
 import { SolanaStablecoin, Preset } from "@stbr/sss-token";
-import { loadConfig, requireMint, saveMintToConfig } from "./config";
+import { loadConfig, requireMint, saveMintToConfig, setDefaultMint } from "./config";
 
 const program = new Command();
 
@@ -31,6 +31,7 @@ initCmd
   .option("--symbol <symbol>", "Token symbol", "MYUSD")
   .option("--uri <uri>", "Metadata URI", "")
   .option("--decimals <decimals>", "Decimal places", "6")
+  .option("--alias <alias>", "Alias for this token (for easy reference)")
   .action(async (opts, cmd) => {
     const globalOpts = cmd.parent?.opts() ?? {};
     const config = loadConfig({
@@ -83,6 +84,7 @@ initCmd
       saveMintToConfig(stable.mint);
       spinner.succeed(
         chalk.green(`✓ Stablecoin initialized!\n`) +
+          `  Alias:   ${chalk.cyan(opts.alias || `token${config.mints.size + 1}`)}\n` +
           `  Mint:    ${chalk.cyan(stable.mint.toBase58())}\n` +
           `  State:   ${chalk.cyan(stable.statePDA.toBase58())}\n` +
           `  Cluster: ${chalk.yellow(config.cluster)}`
@@ -114,7 +116,7 @@ program
         mint,
         config.keypair
       );
-      const sig = await stable.mint({
+      const sig = await stable.mint_token({
         recipient: new PublicKey(recipient),
         amount: BigInt(amount),
         minter: config.keypair,
@@ -133,7 +135,8 @@ program
 
 program
   .command("burn <amount>")
-  .description("Burn tokens from your account")
+  .description("Burn tokens from an account")
+  .option("-f, --from <address>", "Source wallet address (defaults to your keypair)")
   .action(async (amount, opts, cmd) => {
     const globalOpts = cmd.parent?.opts() ?? {};
     const config = loadConfig({
@@ -143,17 +146,33 @@ program
     });
     const mint = requireMint(config);
 
-    const spinner = ora(`Burning ${amount} tokens...`).start();
+    // Determine source address
+    let sourceAddress: PublicKey;
+    if (opts.from) {
+      try {
+        sourceAddress = new PublicKey(opts.from);
+      } catch {
+        console.error(chalk.red(`Invalid source address: ${opts.from}`));
+        process.exit(1);
+      }
+    } else {
+      sourceAddress = config.keypair.publicKey;
+    }
+
+    const spinner = ora(`Burning ${amount} tokens from ${sourceAddress.toBase58().slice(0, 8)}...`).start();
+    
     try {
       const stable = await SolanaStablecoin.load(
         config.connection,
         mint,
         config.keypair
       );
-      const sig = await stable.burn(config.keypair.publicKey, BigInt(amount));
+      
+      const sig = await stable.burn(sourceAddress, BigInt(amount));
+      
       spinner.succeed(
-        chalk.green(`✓ Burned ${amount} tokens\n`) +
-          `  Tx: ${chalk.cyan(sig)}`
+        chalk.green(`✓ Burned ${amount} tokens from ${chalk.cyan(sourceAddress.toBase58())}\n`) +
+        `  Tx: ${chalk.cyan(sig)}`
       );
     } catch (e: any) {
       spinner.fail(chalk.red(e.message));
@@ -283,19 +302,66 @@ program
     }
   });
 
-// ─── status ────────────────────────────────────────────────────────────────────
+
+
+// ─── list ────────────────────────────────────────────────────────────────────
 
 program
-  .command("status")
-  .description("Show stablecoin status")
+  .command("list")
+  .description("List all configured stablecoins")
   .action(async (opts, cmd) => {
     const globalOpts = cmd.parent?.opts() ?? {};
     const config = loadConfig({
       keypair: globalOpts.keypair,
       url: globalOpts.url,
-      mint: globalOpts.mint,
     });
-    const mint = requireMint(config);
+
+    if (config.mints.size === 0) {
+      console.log(chalk.yellow("No stablecoins configured. Create one with 'sss-token init'"));
+      return;
+    }
+
+    const rows = [["Alias", "Mint Address", "Default"]];
+    for (const [alias, address] of config.mints.entries()) {
+      const isDefault = config.currentMint?.toBase58() === address;
+      rows.push([
+        alias,
+        address,
+        isDefault ? chalk.green("✓") : "",
+      ]);
+    }
+    console.log(table(rows));
+  });
+
+// ─── use ─────────────────────────────────────────────────────────────────────
+
+program
+  .command("use <alias-or-address>")
+  .description("Set default stablecoin by alias or address")
+  .action(async (aliasOrAddress, cmd) => {
+    const globalOpts = cmd.parent?.opts() ?? {};
+    const config = loadConfig({
+      keypair: globalOpts.keypair,
+      url: globalOpts.url,
+    });
+
+    setDefaultMint(aliasOrAddress);
+  });
+
+// ─── status (modified) ───────────────────────────────────────────────────────
+
+program
+  .command("status [mint]")
+  .description("Show stablecoin status (optionally specify mint address or alias)")
+  .action(async (mintArg, cmd) => {
+    const globalOpts = cmd.parent?.opts() ?? {};
+    const config = loadConfig({
+      keypair: globalOpts.keypair,
+      url: globalOpts.url,
+      mint: mintArg ? undefined : globalOpts.mint, // Don't use global mint if arg provided
+    });
+    
+    const mint = requireMint(config, mintArg);
 
     const spinner = ora("Fetching status...").start();
     try {
@@ -308,7 +374,17 @@ program
       const supply = await stable.getTotalSupply();
       spinner.stop();
 
+      // Find alias for this mint
+      let alias = "";
+      for (const [a, addr] of config.mints.entries()) {
+        if (addr === mint.toBase58()) {
+          alias = a;
+          break;
+        }
+      }
+
       const rows = [
+        ["Alias", alias || "(unnamed)"],
         ["Name", state.name],
         ["Symbol", state.symbol],
         ["Mint", mint.toBase58()],
@@ -327,19 +403,71 @@ program
     }
   });
 
+
+
+
+
+
+// ─── status ────────────────────────────────────────────────────────────────────
+
+// program
+//   .command("status")
+//   .description("Show stablecoin status")
+//   .action(async (opts, cmd) => {
+//     const globalOpts = cmd.parent?.opts() ?? {};
+//     const config = loadConfig({
+//       keypair: globalOpts.keypair,
+//       url: globalOpts.url,
+//       mint: globalOpts.mint,
+//     });
+//     const mint = requireMint(config);
+
+//     const spinner = ora("Fetching status...").start();
+//     try {
+//       const stable = await SolanaStablecoin.load(
+//         config.connection,
+//         mint,
+//         config.keypair
+//       );
+//       const state = await stable.getState();
+//       const supply = await stable.getTotalSupply();
+//       spinner.stop();
+
+//       const rows = [
+//         ["Name", state.name],
+//         ["Symbol", state.symbol],
+//         ["Mint", mint.toBase58()],
+//         ["Decimals", state.decimals.toString()],
+//         ["Total Supply", supply.toLocaleString()],
+//         ["Paused", state.paused ? chalk.red("YES") : chalk.green("NO")],
+//         ["Compliance (SSS-2)", state.complianceEnabled ? chalk.cyan("Enabled") : "Disabled"],
+//         ["Transfer Hook", state.transferHookEnabled ? chalk.cyan("Enabled") : "Disabled"],
+//         ["Master Authority", state.masterAuthority.toBase58()],
+//       ];
+
+//       console.log(table(rows));
+//     } catch (e: any) {
+//       spinner.fail(chalk.red(e.message));
+//       process.exit(1);
+//     }
+//   });
+
+
+
 // ─── supply ────────────────────────────────────────────────────────────────────
 
 program
-  .command("supply")
-  .description("Show current token supply")
-  .action(async (opts, cmd) => {
+  .command("supply [mint]")
+  .description("Show current token supply (optionally specify mint address or alias)")
+  .action(async (mintArg, cmd) => {
     const globalOpts = cmd.parent?.opts() ?? {};
     const config = loadConfig({
       keypair: globalOpts.keypair,
       url: globalOpts.url,
-      mint: globalOpts.mint,
+      mint: mintArg ? undefined : globalOpts.mint, // Don't use global mint if arg provided
     });
-    const mint = requireMint(config);
+    
+    const mint = requireMint(config, mintArg);
 
     try {
       const stable = await SolanaStablecoin.load(
@@ -348,7 +476,23 @@ program
         config.keypair
       );
       const supply = await stable.getTotalSupply();
-      console.log(`Supply: ${chalk.cyan(supply.toLocaleString())} tokens`);
+      
+      // Find alias for this mint (if any)
+      let alias = "";
+      for (const [a, addr] of config.mints.entries()) {
+        if (addr === mint.toBase58()) {
+          alias = a;
+          break;
+        }
+      }
+
+      if (alias) {
+        console.log(`Supply (${chalk.cyan(alias)}): ${chalk.cyan(supply.toLocaleString())} tokens`);
+        console.log(`Mint: ${chalk.dim(mint.toBase58())}`);
+      } else {
+        console.log(`Supply: ${chalk.cyan(supply.toLocaleString())} tokens`);
+        console.log(`Mint: ${chalk.dim(mint.toBase58())}`);
+      }
     } catch (e: any) {
       console.error(chalk.red(e.message));
       process.exit(1);
