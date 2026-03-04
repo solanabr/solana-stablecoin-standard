@@ -131,24 +131,19 @@ npx sss-token init \
   --preset sss-2
 
 # Mint tokens
-npx sss-token mint \
-  --mint <MINT_PUBKEY> \
-  --recipient <WALLET_PUBKEY> \
-  --amount 1000000
+npx sss-token mint <WALLET_PUBKEY> 1000000 --mint <MINT_PUBKEY>
 
 # Freeze an account
-npx sss-token freeze --mint <MINT_PUBKEY> --account <TOKEN_ACCOUNT>
+npx sss-token freeze <TOKEN_ACCOUNT> --mint <MINT_PUBKEY>
 
 # SSS-2: blacklist an address
-npx sss-token blacklist add \
+npx sss-token blacklist add <WALLET_PUBKEY> \
   --mint <MINT_PUBKEY> \
-  --address <WALLET_PUBKEY> \
   --reason "OFAC SDN"
 
 # SSS-2: seize tokens
-npx sss-token seize \
+npx sss-token seize <TOKEN_ACCOUNT> \
   --mint <MINT_PUBKEY> \
-  --from <TOKEN_ACCOUNT> \
   --to <DEST_ACCOUNT> \
   --amount 1000000
 ```
@@ -209,8 +204,8 @@ npx sss-token seize \
 
 | Program | ID |
 |---|---|
-| `sss_token` | `Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS` |
-| `transfer_hook` | `HmbTLCmaGvZhKnn1Zfa1JVnp7vkMV4DYVxPLWBVoN65` |
+| `sss_token` | `GgcHf4khPVY28yVkQGDgBjaNLgsjNWGaNdfmL36wgPGp` |
+| `transfer_hook` | `6XUKT63WZFKU8Lvgydv9XeczoigNhag1JtvqkmV7nf47` |
 
 ---
 

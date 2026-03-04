@@ -99,6 +99,8 @@ When OFAC publishes an SDN list update:
 3. Emit an internal alert to your compliance officer.
 4. Document the action in your AML records.
 
+**Re-blacklisting previously removed addresses:** If an address was previously blacklisted and later removed (e.g., due to an erroneous match or a subsequent de-listing), it can be re-blacklisted by calling `add_to_blacklist` again without any special handling. The underlying `BlacklistEntry` PDA is preserved on removal (`active` is set to `false` but the account is not closed), and `add_to_blacklist` uses `init_if_needed`, so re-calling the instruction reactivates the existing PDA with the new reason and a fresh timestamp. This means the compliance pipeline can treat `add_to_blacklist` as idempotent for operational purposes.
+
 ---
 
 ## Audit Trail

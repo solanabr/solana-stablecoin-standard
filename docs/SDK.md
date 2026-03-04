@@ -34,7 +34,7 @@ const stable = await SolanaStablecoin.create(connection, {
   authority,
 });
 
-console.log("Mint address:", stable.mint.toBase58());
+console.log("Mint address:", stable.mintAddress.toBase58());
 
 // Mint 1 MUSD to a recipient
 const recipient = new PublicKey("...");
@@ -551,8 +551,8 @@ Convenience function that derives the most commonly needed addresses.
 ```typescript
 import { SSS_TOKEN_PROGRAM_ID, TRANSFER_HOOK_PROGRAM_ID, Presets } from "@stbr/sss-token";
 
-SSS_TOKEN_PROGRAM_ID   // Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS
-TRANSFER_HOOK_PROGRAM_ID  // HmbTLCmaGvZhKnn1Zfa1JVnp7vkMV4DYVxPLWBVoN65
+SSS_TOKEN_PROGRAM_ID   // GgcHf4khPVY28yVkQGDgBjaNLgsjNWGaNdfmL36wgPGp
+TRANSFER_HOOK_PROGRAM_ID  // 6XUKT63WZFKU8Lvgydv9XeczoigNhag1JtvqkmV7nf47
 
 Presets.SSS_1  // "sss-1"
 Presets.SSS_2  // "sss-2"

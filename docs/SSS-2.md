@@ -71,7 +71,7 @@ SSS-2 inherits all SSS-1 instructions (see [SSS-1.md](SSS-1.md)). The following 
 Same as SSS-1 `initialize`, but with:
 - `enable_permanent_delegate = true`
 - `enable_transfer_hook = true`
-- `hook_program_id = HmbTLCmaGvZhKnn1Zfa1JVnp7vkMV4DYVxPLWBVoN65`
+- `hook_program_id = 6XUKT63WZFKU8Lvgydv9XeczoigNhag1JtvqkmV7nf47`
 - `default_account_frozen = true` (optional, for KYC-gated issuers)
 
 After `initialize`, the SDK also calls `initialize_extra_account_meta_list` on the `transfer_hook` program to register the PDA derivation rules for the hook.
@@ -102,6 +102,8 @@ Creates a `BlacklistEntry` PDA for a target address. Immediately blocks all tran
 3. Validates `reason.len() <= 128`.
 4. Creates `BlacklistEntry` PDA with `active = true`, `blacklisted_at = Clock::get()`, `blacklisted_by = caller`.
 5. Emits `BlacklistUpdated { blacklisted: true }`.
+
+**Re-blacklisting:** This instruction uses `init_if_needed` on the `blacklist_entry` account. If an address was previously blacklisted and then removed via `remove_from_blacklist` (which sets `active = false` but preserves the PDA), calling `add_to_blacklist` again reactivates the existing PDA with the new `reason` and a fresh `blacklisted_at` timestamp. No manual cleanup is needed between removals and re-additions.
 
 **Effect:** On the next transfer involving `target` as source or destination owner, the `transfer_hook` program rejects the transfer.
 

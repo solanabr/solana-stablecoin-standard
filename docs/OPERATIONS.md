@@ -23,8 +23,8 @@ anchor keys sync
 
 # 3. Verify program IDs match Anchor.toml
 grep -A2 "\[programs.localnet\]" Anchor.toml
-# sss_token = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-# transfer_hook = "HmbTLCmaGvZhKnn1Zfa1JVnp7vkMV4DYVxPFsLnS"
+# sss_token = "GgcHf4khPVY28yVkQGDgBjaNLgsjNWGaNdfmL36wgPGp"
+# transfer_hook = "6XUKT63WZFKU8Lvgydv9XeczoigNhag1JtvqkmV7nf47"
 
 # 4. Run tests (against localnet)
 anchor test
@@ -33,7 +33,7 @@ anchor test
 anchor deploy --provider.cluster devnet
 
 # 6. Verify deployment
-solana program show Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS --url devnet
+solana program show GgcHf4khPVY28yVkQGDgBjaNLgsjNWGaNdfmL36wgPGp --url devnet
 ```
 
 ### Initialize a Stablecoin
@@ -136,10 +136,7 @@ console.log("Minted. Signature:", sig);
 **Via CLI:**
 
 ```bash
-npx sss-token mint \
-  --mint <MINT_PUBKEY> \
-  --recipient <RECIPIENT_WALLET> \
-  --amount 1000000
+npx sss-token mint <RECIPIENT_WALLET> 1000000 --mint <MINT_PUBKEY>
 ```
 
 **Adding a delegated minter:**
@@ -171,7 +168,7 @@ await stable.addMinter(
 await stable.freezeAccount(tokenAccount);
 
 # Via CLI
-npx sss-token freeze --mint <MINT_PUBKEY> --account <TOKEN_ACCOUNT>
+npx sss-token freeze <TOKEN_ACCOUNT> --mint <MINT_PUBKEY>
 ```
 
 **How to thaw:**
