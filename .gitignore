@@ -1,0 +1,13 @@
+target/
+node_modules/
+.anchor/
+test-ledger/
+dist/
+*.so
+.DS_Store
+*.pem
+*-keypair.json
+*-mint.json
+.env
+.idea/
+.vscode/

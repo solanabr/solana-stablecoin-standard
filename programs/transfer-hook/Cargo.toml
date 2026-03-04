@@ -1,0 +1,26 @@
+[package]
+name = "sss-transfer-hook"
+version = "0.1.0"
+description = "Transfer hook for SSS-2 compliance checks"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_transfer_hook"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { version = "0.30.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.30.1", features = ["token-2022"] }
+spl-token-2022 = { version = "3.0", features = ["no-entrypoint"] }
+spl-transfer-hook-interface = "0.6"
+spl-tlv-account-resolution = "0.6"
+spl-type-length-value = "0.4"
+spl-pod = "0.2"
+sss-token = { path = "../sss-token", features = ["cpi"] }
