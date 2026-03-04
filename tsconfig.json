@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "types": ["mocha", "node"],
+    "typeRoots": ["./node_modules/@types"],
+    "lib": ["es2015"],
+    "module": "commonjs",
+    "target": "es6",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@stbr/sss-token": ["./sdk/core/src/index.ts"]
+    }
+  },
+  "include": [
+    "tests/**/*.ts",
+    "scripts/**/*.ts",
+    "sdk/core/src/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

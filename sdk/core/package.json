@@ -1,0 +1,33 @@
+{
+  "name": "@stbr/sss-token",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard SDK — SSS-1 and SSS-2 presets",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "sss-token": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha -r ts-node/register -r tsconfig-paths/register tests/**/*.test.ts --timeout 30000",
+    "prepublishOnly": "npm run build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.0",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
+    "bn.js": "^5.2.1",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.6",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.14.0",
+    "chai": "^4.3.10",
+    "mocha": "^10.4.0",
+    "ts-mocha": "^10.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.5"
+  }
+}

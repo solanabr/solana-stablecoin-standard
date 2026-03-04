@@ -1,0 +1,32 @@
+# Anchor build artifacts
+target/
+.anchor/
+
+# Node
+node_modules/
+dist/
+*.js.map
+
+# Keys (never commit private keys)
+*.json
+!package.json
+!tsconfig.json
+!Anchor.toml
+
+# Allow specific JSON files
+!programs/**/Cargo.toml
+
+# macOS
+.DS_Store
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+test-ledger/

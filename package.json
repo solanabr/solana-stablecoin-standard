@@ -1,0 +1,39 @@
+{
+  "name": "solana-stablecoin-standard",
+  "version": "0.1.0",
+  "description": "Open-source SDK and standards for stablecoins on Solana (SSS-1, SSS-2)",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "sdk/core"
+  ],
+  "scripts": {
+    "build": "anchor build",
+    "test": "anchor test",
+    "test:sdk": "yarn workspace @stbr/sss-token test",
+    "build:sdk": "yarn workspace @stbr/sss-token build",
+    "lint": "eslint . --ext .ts",
+    "fmt": "prettier --write \"**/*.ts\""
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.32.0",
+    "@solana/web3.js": "^1.98.4",
+    "@solana/spl-token": "^0.4.14",
+    "@types/bn.js": "^5.1.6",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.14.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "chai": "^4.3.10",
+    "eslint": "^8.57.0",
+    "mocha": "^10.4.0",
+    "prettier": "^3.3.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.0",
+    "@solana/web3.js": "^1.98.4",
+    "@solana/spl-token": "^0.4.14"
+  }
+}

@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  mint-service:
+    build: ./mint-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - KEYPAIR_PATH=/app/keypair.json
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ${KEYPAIR_PATH:-~/.config/solana/id.json}:/app/keypair.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  indexer:
+    build: ./indexer
+    environment:
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - RPC_WS_URL=${RPC_WS_URL:-wss://api.devnet.solana.com}
+      - SSS_TOKEN_PROGRAM_ID=${SSS_TOKEN_PROGRAM_ID:-Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS}
+      - WEBHOOK_URL=${WEBHOOK_URL:-}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    restart: unless-stopped
+
+  compliance-service:
+    build: ./compliance-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - KEYPAIR_PATH=/app/keypair.json
+      - SSS_TOKEN_PROGRAM_ID=${SSS_TOKEN_PROGRAM_ID:-Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ${KEYPAIR_PATH:-~/.config/solana/id.json}:/app/keypair.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
