@@ -136,13 +136,16 @@ const supply = await stable.getTotalSupply();
 
 ## Devnet Deployment
 
-The SSS-token program is deployed and verified on Solana Devnet:
+Both programs are deployed and verified on Solana Devnet:
+
+| Program | Program ID | Explorer |
+|---|---|---|
+| **sss-token** | `6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL` | [View](https://explorer.solana.com/address/6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL?cluster=devnet) |
+| **transfer-hook** | `C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V` | [View](https://explorer.solana.com/address/C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V?cluster=devnet) |
 
 | Item | Value |
 |---|---|
-| **Program ID** | `6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL` |
 | **Network** | Devnet |
-| **Explorer** | [View on Solana Explorer](https://explorer.solana.com/address/6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL?cluster=devnet) |
 | **Anchor Version** | 0.32.1 |
 
 > Deploy your own instance: `anchor deploy --provider.cluster devnet`

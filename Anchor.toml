@@ -7,9 +7,11 @@ skip-lint = false
 
 [programs.devnet]
 sss_token = "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
+transfer_hook = "C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V"
 
 [programs.localnet]
 sss_token = "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
+transfer_hook = "C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V"
 
 [registry]
 url = "https://api.apr.dev"
@@ -19,7 +21,7 @@ cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [workspace]
-members = ["programs/sss-token"]
+members = ["programs/sss-token", "programs/transfer-hook"]
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

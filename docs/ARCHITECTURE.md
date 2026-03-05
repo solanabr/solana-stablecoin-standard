@@ -67,7 +67,25 @@ Opinionated combinations of L1 + L2:
 
 ## On-Chain Program Architecture
 
-A single Anchor program (`sss-token`) supports both presets via initialization parameters. The program ID is `6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL`.
+Two Anchor programs work together:
+
+| Program | ID | Purpose |
+|---|---|---|
+| **sss-token** | `6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL` | Core stablecoin logic (SSS-1 & SSS-2) |
+| **transfer-hook** | `C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V` | On-transfer blacklist enforcement (SSS-2) |
+
+The `sss-token` program supports both presets via initialization parameters. The `transfer-hook` program is a standalone enforcer that reads blacklist PDAs owned by `sss-token` and gates every Token-2022 `transfer_checked` call.
+
+### Transfer Hook Instructions
+
+| Instruction | Role | Description |
+|---|---|---|
+| `initialize_extra_account_meta_list` | Admin | Registers blacklist PDAs + hook state so Token-2022 resolves them on transfers |
+| `execute` | Token-2022 | Entrypoint called on every transfer — checks blacklists, increments counter |
+| `pause_hook` | Admin | Emergency halt — blocks ALL transfers through this hook |
+| `unpause_hook` | Admin | Resumes transfers after a pause |
+| `update_hook_admin` | Admin | Transfers hook administration to a new key |
+| `get_hook_info` | Anyone | Emits current hook state (admin, paused, transfer count) as an event |
 
 ### PDA Layout
 
