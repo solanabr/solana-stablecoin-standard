@@ -116,7 +116,7 @@ program
         mint,
         config.keypair
       );
-      const sig = await stable.mint_token({
+      const sig = await stable.mintTokens({
         recipient: new PublicKey(recipient),
         amount: BigInt(amount),
         minter: config.keypair,
@@ -404,54 +404,49 @@ program
   });
 
 
-
-
-
-
 // ─── status ────────────────────────────────────────────────────────────────────
 
-// program
-//   .command("status")
-//   .description("Show stablecoin status")
-//   .action(async (opts, cmd) => {
-//     const globalOpts = cmd.parent?.opts() ?? {};
-//     const config = loadConfig({
-//       keypair: globalOpts.keypair,
-//       url: globalOpts.url,
-//       mint: globalOpts.mint,
-//     });
-//     const mint = requireMint(config);
+program
+  .command("status")
+  .description("Show stablecoin status")
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent?.opts() ?? {};
+    const config = loadConfig({
+      keypair: globalOpts.keypair,
+      url: globalOpts.url,
+      mint: globalOpts.mint,
+    });
+    const mint = requireMint(config);
 
-//     const spinner = ora("Fetching status...").start();
-//     try {
-//       const stable = await SolanaStablecoin.load(
-//         config.connection,
-//         mint,
-//         config.keypair
-//       );
-//       const state = await stable.getState();
-//       const supply = await stable.getTotalSupply();
-//       spinner.stop();
+    const spinner = ora("Fetching status...").start();
+    try {
+      const stable = await SolanaStablecoin.load(
+        config.connection,
+        mint,
+        config.keypair
+      );
+      const state = await stable.getState();
+      const supply = await stable.getTotalSupply();
+      spinner.stop();
 
-//       const rows = [
-//         ["Name", state.name],
-//         ["Symbol", state.symbol],
-//         ["Mint", mint.toBase58()],
-//         ["Decimals", state.decimals.toString()],
-//         ["Total Supply", supply.toLocaleString()],
-//         ["Paused", state.paused ? chalk.red("YES") : chalk.green("NO")],
-//         ["Compliance (SSS-2)", state.complianceEnabled ? chalk.cyan("Enabled") : "Disabled"],
-//         ["Transfer Hook", state.transferHookEnabled ? chalk.cyan("Enabled") : "Disabled"],
-//         ["Master Authority", state.masterAuthority.toBase58()],
-//       ];
+      const rows: string[][] = [
+        ["Name", state.name],
+        ["Symbol", state.symbol],
+        ["Mint", mint.toBase58()],
+        ["Decimals", state.decimals.toString()],
+        ["Total Supply", supply.toLocaleString()],
+        ["Paused", state.paused ? chalk.red("YES") : chalk.green("NO")],
+        ["Compliance (SSS-2)", state.complianceEnabled ? chalk.cyan("Enabled") : "Disabled"],
+        ["Transfer Hook", state.transferHookEnabled ? chalk.cyan("Enabled") : "Disabled"],
+        ["Master Authority", state.masterAuthority.toBase58()],
+      ];
 
-//       console.log(table(rows));
-//     } catch (e: any) {
-//       spinner.fail(chalk.red(e.message));
-//       process.exit(1);
-//     }
-//   });
-
+      console.log(table(rows));
+    } catch (e: any) {
+      spinner.fail(chalk.red(e.message));
+      process.exit(1);
+    }
+  });
 
 
 // ─── supply ────────────────────────────────────────────────────────────────────
@@ -561,6 +556,99 @@ mintersCmd
       spinner.succeed(
         chalk.green(`✓ Minter deactivated\n`) + `  Tx: ${chalk.cyan(sig)}`
       );
+    } catch (e: any) {
+      spinner.fail(chalk.red(e.message));
+      process.exit(1);
+    }
+  });
+
+mintersCmd
+  .command("list")
+  .description("List all minters for this stablecoin")
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent?.parent?.opts() ?? {};
+    const config = loadConfig({
+      keypair: globalOpts.keypair,
+      url: globalOpts.url,
+      mint: globalOpts.mint,
+    });
+    const mint = requireMint(config);
+
+    const spinner = ora("Fetching minters...").start();
+    try {
+      const stable = await SolanaStablecoin.load(
+        config.connection,
+        mint,
+        config.keypair
+      );
+      const minters = await stable.listMinters();
+      spinner.stop();
+
+      if (minters.length === 0) {
+        console.log(chalk.yellow("No minters found."));
+        return;
+      }
+
+      const rows: string[][] = [["Address", "Quota", "Minted (epoch)", "Active"]];
+      for (const m of minters) {
+        rows.push([
+          m.address.toBase58(),
+          m.quota === 0n ? "unlimited" : m.quota.toLocaleString(),
+          m.mintedThisEpoch.toLocaleString(),
+          m.active ? chalk.green("YES") : chalk.red("NO"),
+        ]);
+      }
+      console.log(table(rows));
+    } catch (e: any) {
+      spinner.fail(chalk.red(e.message));
+      process.exit(1);
+    }
+  });
+
+// ─── holders ───────────────────────────────────────────────────────────────────
+
+program
+  .command("holders")
+  .option("--limit <n>", "Max holders to display", "20")
+  .description("List token holders for this stablecoin")
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent?.opts() ?? {};
+    const config = loadConfig({
+      keypair: globalOpts.keypair,
+      url: globalOpts.url,
+      mint: globalOpts.mint,
+    });
+    const mint = requireMint(config);
+
+    const spinner = ora("Fetching holders...").start();
+    try {
+      const stable = await SolanaStablecoin.load(
+        config.connection,
+        mint,
+        config.keypair
+      );
+      const holders = await stable.getHolders();
+      spinner.stop();
+
+      if (holders.length === 0) {
+        console.log(chalk.yellow("No holders found."));
+        return;
+      }
+
+      const limit = parseInt(opts.limit);
+      const display = holders.slice(0, limit);
+      const rows: string[][] = [["#", "Owner", "Balance"]];
+      display.forEach((h, i) => {
+        rows.push([
+          (i + 1).toString(),
+          h.owner.toBase58(),
+          h.balance.toLocaleString(),
+        ]);
+      });
+      console.log(table(rows));
+      if (holders.length > limit) {
+        console.log(chalk.dim(`  ... and ${holders.length - limit} more holders`));
+      }
     } catch (e: any) {
       spinner.fail(chalk.red(e.message));
       process.exit(1);
@@ -716,7 +804,7 @@ program
 
 program
   .command("audit-log")
-  .option("--action <type>", "Filter by action type")
+  .option("--action <type>", "Filter by action type (e.g. Mint, Burn, Pause, Freeze, BlacklistAdd, Seize)")
   .option("--limit <n>", "Max entries to show", "20")
   .description("Show on-chain audit log (from event history)")
   .action(async (opts, cmd) => {
@@ -728,20 +816,91 @@ program
     });
     const mint = requireMint(config);
 
+    const actionFilter = opts.action?.toLowerCase();
+    const limit = parseInt(opts.limit);
+    const fetchLimit = actionFilter ? limit * 5 : limit; // fetch more when filtering
+
     console.log(
       chalk.yellow(
         `Fetching audit log for mint ${mint.toBase58()}...\n` +
+          (actionFilter ? `  Filtering by action: ${opts.action}\n` : "") +
           `(Shows recent on-chain events via getSignaturesForAddress)\n`
       )
     );
 
     const signatures = await config.connection.getSignaturesForAddress(
       mint,
-      { limit: parseInt(opts.limit) }
+      { limit: fetchLimit }
     );
 
-    const rows = [["Signature", "Slot", "Time", "Status"]];
+    // If action filter is set, fetch full transactions and parse logs
+    const rows: string[][] = [["Signature", "Slot", "Time", "Status", "Action"]];
+    let count = 0;
+
     for (const sig of signatures) {
+      if (count >= limit) break;
+
+      let action = "-";
+      if (actionFilter) {
+        try {
+          const tx = await config.connection.getTransaction(sig.signature, {
+            maxSupportedTransactionVersion: 0,
+          });
+          const logs = tx?.meta?.logMessages ?? [];
+          // Anchor events are logged as "Program data: ..." or contain instruction names
+          const logText = logs.join(" ").toLowerCase();
+          // Check for event/instruction keywords
+          const eventPatterns: Record<string, string[]> = {
+            mint: ["tokensminted", "mint_token", "mint"],
+            burn: ["tokensburned", "burn"],
+            pause: ["stablecoinpaused", "pause"],
+            unpause: ["stablecoinunpaused", "unpause"],
+            freeze: ["accountfrozen", "freeze_account"],
+            thaw: ["accountthawed", "thaw_account"],
+            blacklistadd: ["addressblacklisted", "add_to_blacklist"],
+            blacklistremove: ["addressunblacklisted", "remove_from_blacklist"],
+            seize: ["tokensseized", "seize"],
+            addminter: ["minteradded", "add_minter"],
+            removeminter: ["minterremoved", "remove_minter"],
+            updateroles: ["rolesupdated", "update_roles"],
+          };
+
+          const patterns = eventPatterns[actionFilter] ?? [actionFilter];
+          const matches = patterns.some((p) => logText.includes(p));
+          if (!matches) continue;
+
+          // Determine action from all patterns
+          for (const [name, pats] of Object.entries(eventPatterns)) {
+            if (pats.some((p) => logText.includes(p))) {
+              action = name.charAt(0).toUpperCase() + name.slice(1);
+              break;
+            }
+          }
+        } catch {
+          continue; // skip transactions we can't parse
+        }
+      } else {
+        // No filter - try to detect action from a quick log scan
+        try {
+          const tx = await config.connection.getTransaction(sig.signature, {
+            maxSupportedTransactionVersion: 0,
+          });
+          const logs = tx?.meta?.logMessages ?? [];
+          const logText = logs.join(" ").toLowerCase();
+          const quickPatterns: [string, string][] = [
+            ["mint", "Mint"], ["burn", "Burn"], ["pause", "Pause"],
+            ["unpause", "Unpause"], ["freeze", "Freeze"], ["thaw", "Thaw"],
+            ["blacklist", "Blacklist"], ["seize", "Seize"],
+            ["minter", "Minter"], ["role", "Roles"],
+          ];
+          for (const [pat, label] of quickPatterns) {
+            if (logText.includes(pat)) { action = label; break; }
+          }
+        } catch {
+          // ignore parse errors for display
+        }
+      }
+
       rows.push([
         sig.signature.slice(0, 20) + "...",
         sig.slot.toString(),
@@ -749,10 +908,16 @@ program
           ? new Date(sig.blockTime * 1000).toISOString()
           : "unknown",
         sig.err ? chalk.red("FAILED") : chalk.green("OK"),
+        action,
       ]);
+      count++;
     }
 
-    console.log(table(rows));
+    if (rows.length <= 1) {
+      console.log(chalk.yellow("No matching transactions found."));
+    } else {
+      console.log(table(rows));
+    }
   });
 
 program.parse();

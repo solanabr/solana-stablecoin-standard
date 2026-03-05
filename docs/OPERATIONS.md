@@ -86,6 +86,16 @@ sss-token minters remove <ADDRESS>
 sss-token minters list
 ```
 
+## Token Holders
+
+```bash
+# List top 20 token holders
+sss-token holders
+
+# Limit display
+sss-token holders --limit 50
+```
+
 ---
 
 ## SSS-2 Compliance Operations

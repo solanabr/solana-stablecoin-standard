@@ -8,7 +8,9 @@ import {
   findPermanentDelegatePDA,
   findMinterInfoPDA,
   findBlacklistEntryPDA,
+  findExtraAccountMetaListPDA,
   SSS_TOKEN_PROGRAM_ID,
+  TRANSFER_HOOK_PROGRAM_ID,
 } from "../../sdk/src/utils";
 
 describe("Preset Resolution", () => {
@@ -135,5 +137,82 @@ describe("SSS-2 feature gating (SDK layer)", () => {
     } catch (e: any) {
       assert.include(e.message, "SSS-2 compliance is not enabled");
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("Program ID Constants", () => {
+  it("SSS_TOKEN_PROGRAM_ID should be a valid public key", () => {
+    assert.doesNotThrow(() => new PublicKey(SSS_TOKEN_PROGRAM_ID));
+  });
+
+  it("TRANSFER_HOOK_PROGRAM_ID should differ from SSS_TOKEN_PROGRAM_ID", () => {
+    assert.notEqual(
+      SSS_TOKEN_PROGRAM_ID.toBase58(),
+      TRANSFER_HOOK_PROGRAM_ID.toBase58()
+    );
+  });
+
+  it("TRANSFER_HOOK_PROGRAM_ID should be a valid public key", () => {
+    assert.doesNotThrow(() => new PublicKey(TRANSFER_HOOK_PROGRAM_ID));
+  });
+});
+
+describe("PDA Derivation — Extended", () => {
+  const mintKey = Keypair.generate().publicKey;
+  const [statePDA] = findStatePDA(mintKey);
+
+  it("findFreezeAuthorityPDA returns off-curve address", () => {
+    const [freezeAuth] = findFreezeAuthorityPDA(statePDA);
+    assert.isFalse(PublicKey.isOnCurve(freezeAuth.toBytes()));
+  });
+
+  it("findPermanentDelegatePDA returns off-curve address", () => {
+    const [permDelegate] = findPermanentDelegatePDA(statePDA);
+    assert.isFalse(PublicKey.isOnCurve(permDelegate.toBytes()));
+  });
+
+  it("findExtraAccountMetaListPDA returns off-curve address", () => {
+    const [extraMeta] = findExtraAccountMetaListPDA(mintKey);
+    assert.isFalse(PublicKey.isOnCurve(extraMeta.toBytes()));
+  });
+
+  it("findMinterInfoPDA is unique per minter + state", () => {
+    const m1 = Keypair.generate().publicKey;
+    const m2 = Keypair.generate().publicKey;
+    const [pda1] = findMinterInfoPDA(statePDA, m1);
+    const [pda2] = findMinterInfoPDA(statePDA, m2);
+    assert.notEqual(pda1.toBase58(), pda2.toBase58());
+  });
+
+  it("findBlacklistEntryPDA same address + different state yields different PDA", () => {
+    const mint2 = Keypair.generate().publicKey;
+    const [state2] = findStatePDA(mint2);
+    const addr = Keypair.generate().publicKey;
+    const [pda1] = findBlacklistEntryPDA(statePDA, addr);
+    const [pda2] = findBlacklistEntryPDA(state2, addr);
+    assert.notEqual(pda1.toBase58(), pda2.toBase58());
+  });
+});
+
+describe("Preset Configs", () => {
+  it("SSS1_CONFIG should have expected defaults", () => {
+    assert.equal(SSS1_CONFIG.decimals, 6);
+    assert.isFalse(SSS1_CONFIG.enablePermanentDelegate);
+    assert.isFalse(SSS1_CONFIG.enableTransferHook);
+    assert.isFalse(SSS1_CONFIG.defaultAccountFrozen ?? false);
+  });
+
+  it("SSS2_CONFIG should enable compliance features", () => {
+    assert.equal(SSS2_CONFIG.decimals, 6);
+    assert.isTrue(SSS2_CONFIG.enablePermanentDelegate);
+    assert.isTrue(SSS2_CONFIG.enableTransferHook);
+  });
+
+  it("resolvePreset should not mutate the base config", () => {
+    const before = { ...SSS1_CONFIG };
+    resolvePreset(Preset.SSS_1, { enableTransferHook: true });
+    assert.deepEqual(SSS1_CONFIG, before);
   });
 });

@@ -1,16 +1,17 @@
 import { Connection, PublicKey, LogsFilter, Context, Logs } from "@solana/web3.js";
 import { Pool } from "pg";
 import express from "express";
-import * as https from "https";
+import * as http from "http";
 
 const PORT = parseInt(process.env.PORT || "3002");
 const RPC_URL = process.env.RPC_URL || "https://api.devnet.solana.com";
 const WS_URL = process.env.WS_URL || "wss://api.devnet.solana.com";
 const SSS_MINT = process.env.SSS_MINT!;
 const SSS_PROGRAM_ID = new PublicKey(
-  process.env.SSS_TOKEN_PROGRAM_ID || "SSSTokenxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  process.env.SSS_TOKEN_PROGRAM_ID || "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
 );
 const WEBHOOK_SERVICE_URL = process.env.WEBHOOK_SERVICE_URL || "http://webhook:3004";
+const API_KEY = process.env.API_KEY || "";
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
 const connection = new Connection(RPC_URL, {
@@ -142,11 +143,11 @@ async function parseAndStoreEvents(
   blockTime: number | null | undefined,
   logMessages: string[]
 ): Promise<void> {
-  for (const log of logMessages) {
+  for (const logLine of logMessages) {
     // Anchor emits events as "Program data: <base64>"
-    if (!log.startsWith("Program data:")) continue;
+    if (!logLine.startsWith("Program data:")) continue;
 
-    const b64 = log.replace("Program data: ", "").trim();
+    const b64 = logLine.replace("Program data: ", "").trim();
     const decoded = Buffer.from(b64, "base64");
 
     // First 8 bytes are the Anchor event discriminator
@@ -191,9 +192,9 @@ async function parseAndStoreEvents(
 }
 
 function guessEventType(logs: string[]): string | null {
-  for (const log of logs) {
+  for (const logLine of logs) {
     for (const [name, slug] of Object.entries(EVENT_DISCRIMINATORS)) {
-      if (log.includes(name)) return slug;
+      if (logLine.includes(name)) return slug;
     }
   }
   return "unknown_event";
@@ -202,26 +203,29 @@ function guessEventType(logs: string[]): string | null {
 function notifyWebhook(eventType: string, payload: Record<string, any>): void {
   const body = JSON.stringify({ eventType, payload });
   const url = new URL(`${WEBHOOK_SERVICE_URL}/dispatch`);
+  const isHttps = url.protocol === "https:";
+  const transport = isHttps ? require("https") : http;
 
-  const req = https.request(
+  const req = transport.request(
     {
       hostname: url.hostname,
-      port: url.port || 443,
+      port: url.port || (isHttps ? 443 : 80),
       path: url.pathname,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(body),
+        ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
       },
     },
-    (res) => {
+    (res: any) => {
       if (res.statusCode !== 200) {
         log("warn", "Webhook dispatch failed", { statusCode: res.statusCode });
       }
     }
   );
 
-  req.on("error", (e) => log("warn", "Webhook error", { error: e.message }));
+  req.on("error", (e: Error) => log("warn", "Webhook error", { error: e.message }));
   req.write(body);
   req.end();
 }
@@ -242,3 +246,16 @@ runIndexer().catch((e) => {
   console.error("Fatal:", e);
   process.exit(1);
 });
+
+// ─── Graceful shutdown ────────────────────────────────────────────────────────
+
+function shutdown(signal: string): void {
+  log("info", `Received ${signal}, shutting down gracefully...`);
+  db.end().then(() => {
+    log("info", "Shutdown complete");
+    process.exit(0);
+  });
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

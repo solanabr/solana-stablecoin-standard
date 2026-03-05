@@ -16,18 +16,8 @@ services:
       - PORT=3001
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - DATABASE_URL=postgresql://sss:sss@postgres:5432/sss
+      - API_KEY=${API_KEY:-}
     volumes:
-      - ${KEYPAIR_PATH:-./keys}:/keys:ro
-    ports:
-      - "3001:3001"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
   # ─── Core: Event listener/indexer ────────────────────────────────────────────
   event-listener:
@@ -46,11 +36,17 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - DATABASE_URL=postgresql://sss:sss@postgres:5432/sss
       - WEBHOOK_SERVICE_URL=http://webhook:3004
+      - API_KEY=${API_KEY:-}
     ports:
       - "3002:3002"
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   # ─── SSS-2: Compliance service ────────────────────────────────────────────────
   compliance:
@@ -69,6 +65,7 @@ services:
       - DATABASE_URL=postgresql://sss:sss@postgres:5432/sss
       - CHAINALYSIS_API_KEY=${CHAINALYSIS_API_KEY:-}
       - COMPLIANCE_MODE=${COMPLIANCE_MODE:-SSS_2}
+      - API_KEY=${API_KEY:-}
     volumes:
       - ${KEYPAIR_PATH:-./keys}:/keys:ro
     ports:
@@ -91,6 +88,7 @@ services:
       - DATABASE_URL=postgresql://sss:sss@postgres:5432/sss
       - MAX_RETRY_ATTEMPTS=5
       - RETRY_DELAY_MS=1000
+      - API_KEY=${API_KEY:-}
     ports:
       - "3004:3004"
     depends_on:

@@ -18,7 +18,11 @@ pub struct AddToBlacklist<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"stablecoin", state.mint.as_ref()],
+        bump = state.bump,
+    )]
     pub state: Account<'info, StablecoinState>,
 
     /// CHECK: The address being blacklisted
@@ -28,6 +32,12 @@ pub struct AddToBlacklist<'info> {
         init,
         payer = authority,
         space = BlacklistEntry::LEN,
+        seeds = [
+            b"blacklist",
+            state.key().as_ref(),
+            target.key().as_ref(),
+        ],
+        bump,
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
 
@@ -45,24 +55,6 @@ pub fn add_to_blacklist_handler(ctx: Context<AddToBlacklist>, reason: String) ->
         || state.blacklister.map_or(false, |b| b == authority_key);
     require!(is_authorized, SssError::Unauthorized);
 
-    // Verify state is the correct PDA
-    let (expected_state_pda, _) = Pubkey::find_program_address(
-        &[b"stablecoin", state.mint.as_ref()],
-        &crate::ID,
-    );
-    require!(ctx.accounts.state.key() == expected_state_pda, SssError::Unauthorized);
-
-    // Verify blacklist_entry is the correct PDA
-    let (expected_blacklist_pda, bump) = Pubkey::find_program_address(
-        &[
-            b"blacklist",
-            ctx.accounts.state.key().as_ref(),
-            ctx.accounts.target.key().as_ref(),
-        ],
-        &crate::ID,
-    );
-    require!(ctx.accounts.blacklist_entry.key() == expected_blacklist_pda, SssError::Unauthorized);
-
     let entry = &mut ctx.accounts.blacklist_entry;
     entry.stablecoin = ctx.accounts.state.key();
     entry.address = ctx.accounts.target.key();
@@ -70,7 +62,7 @@ pub fn add_to_blacklist_handler(ctx: Context<AddToBlacklist>, reason: String) ->
     entry.added_at = Clock::get()?.unix_timestamp;
     entry.added_by = authority_key;
     entry.active = true;
-    entry.bump = bump;
+    entry.bump = ctx.bumps.blacklist_entry;
 
     emit!(AddressBlacklisted {
         mint: state.mint,
@@ -90,7 +82,11 @@ pub fn add_to_blacklist_handler(ctx: Context<AddToBlacklist>, reason: String) ->
 pub struct RemoveFromBlacklist<'info> {
     pub authority: Signer<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"stablecoin", state.mint.as_ref()],
+        bump = state.bump,
+    )]
     pub state: Account<'info, StablecoinState>,
 
     /// CHECK: The address being removed from the blacklist
@@ -99,6 +95,12 @@ pub struct RemoveFromBlacklist<'info> {
     #[account(
         mut,
         close = authority,
+        seeds = [
+            b"blacklist",
+            state.key().as_ref(),
+            target.key().as_ref(),
+        ],
+        bump = blacklist_entry.bump,
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
 }
@@ -112,28 +114,6 @@ pub fn remove_from_blacklist_handler(
     
     let authority_key = ctx.accounts.authority.key();
     let state = &ctx.accounts.state;
-
-    let is_authorized = authority_key == state.master_authority
-        || state.blacklister.map_or(false, |b| b == authority_key);
-    require!(is_authorized, SssError::Unauthorized);
-
-    // Verify state is the correct PDA
-    let (expected_state_pda, _) = Pubkey::find_program_address(
-        &[b"stablecoin", state.mint.as_ref()],
-        &crate::ID,
-    );
-    require!(ctx.accounts.state.key() == expected_state_pda, SssError::Unauthorized);
-
-    // Verify blacklist_entry is the correct PDA
-    let (expected_blacklist_pda, _) = Pubkey::find_program_address(
-        &[
-            b"blacklist",
-            ctx.accounts.state.key().as_ref(),
-            ctx.accounts.target.key().as_ref(),
-        ],
-        &crate::ID,
-    );
-    require!(ctx.accounts.blacklist_entry.key() == expected_blacklist_pda, SssError::Unauthorized);
 
     let is_authorized = authority_key == state.master_authority
         || state.blacklister.map_or(false, |b| b == authority_key);

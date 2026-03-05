@@ -329,7 +329,11 @@ export class SolanaStablecoin {
 
   // ─── Core Operations ────────────────────────────────────────────────────────
 
-  async mint_token(options: MintOptions): Promise<string> {
+  /**
+   * Mint tokens to a recipient.
+   * Requires the minter to be registered via `addMinter()` and have sufficient quota.
+   */
+  async mintTokens(options: MintOptions): Promise<string> {
     const { recipient, amount, minter } = options;
     const [minterInfoPDA] = findMinterInfoPDA(this.statePDA, minter.publicKey);
     const recipientAta = await getOrCreateTokenAccount(
@@ -528,5 +532,62 @@ export class SolanaStablecoin {
     const { getMint } = await import("@solana/spl-token");
     const { TOKEN_2022_PROGRAM_ID } = await import("@solana/spl-token");
     return getMint(this.connection, this.mint, undefined, TOKEN_2022_PROGRAM_ID);
+  }
+
+  /**
+   * List all minter accounts for this stablecoin.
+   * Returns an array of { address, quota, mintedThisEpoch, active }.
+   */
+  async listMinters(): Promise<Array<{
+    address: PublicKey;
+    quota: bigint;
+    mintedThisEpoch: bigint;
+    active: boolean;
+  }>> {
+    const accounts = await (this.program.account as any).minterInfo.all([
+      { memcmp: { offset: 8, bytes: this.statePDA.toBase58() } },
+    ]);
+    return accounts.map((a: any) => ({
+      address: a.account.minter,
+      quota: BigInt(a.account.quota.toString()),
+      mintedThisEpoch: BigInt(a.account.mintedThisEpoch.toString()),
+      active: a.account.active,
+    }));
+  }
+
+  /**
+   * Get all token holders for this stablecoin mint.
+   * Returns an array of { owner, balance }.
+   * Optionally filter by minimum balance.
+   */
+  async getHolders(minBalance: bigint = 0n): Promise<Array<{
+    owner: PublicKey;
+    balance: bigint;
+  }>> {
+    const { TOKEN_2022_PROGRAM_ID } = await import("@solana/spl-token");
+    const accounts = await this.connection.getParsedProgramAccounts(
+      TOKEN_2022_PROGRAM_ID,
+      {
+        filters: [
+          { dataSize: 165 }, // Token account size
+          { memcmp: { offset: 0, bytes: this.mint.toBase58() } },
+        ],
+      }
+    );
+
+    const holders: Array<{ owner: PublicKey; balance: bigint }> = [];
+    for (const account of accounts) {
+      const parsed = (account.account.data as any)?.parsed?.info;
+      if (!parsed) continue;
+      const balance = BigInt(parsed.tokenAmount?.amount ?? "0");
+      if (balance >= minBalance) {
+        holders.push({
+          owner: new PublicKey(parsed.owner),
+          balance,
+        });
+      }
+    }
+
+    return holders.sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0));
   }
 }

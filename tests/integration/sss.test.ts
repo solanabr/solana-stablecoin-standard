@@ -68,7 +68,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
     it("should mint tokens to recipient", async () => {
       const amount = 1_000_000n; // 1 TUSD
-      const sig = await stable.mint({
+      const sig = await stable.mintTokens({
         recipient: recipient.publicKey,
         amount,
         minter: minterKeypair,
@@ -82,7 +82,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
     it("should reject mint when paused", async () => {
       await stable.pause();
       try {
-        await stable.mint({
+        await stable.mintTokens({
           recipient: recipient.publicKey,
           amount: 1_000_000n,
           minter: minterKeypair,
@@ -106,7 +106,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
       await stable.addMinter(limitedMinter.publicKey, 500_000n);
 
       // Mint within quota — should succeed
-      await stable.mint({
+      await stable.mintTokens({
         recipient: recipient.publicKey,
         amount: 500_000n,
         minter: limitedMinter,
@@ -114,7 +114,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
 
       // Mint over quota — should fail
       try {
-        await stable.mint({
+        await stable.mintTokens({
           recipient: recipient.publicKey,
           amount: 1n,
           minter: limitedMinter,
@@ -256,7 +256,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
       // Mint some tokens to the suspicious wallet first
       const minterKeypair = Keypair.generate();
       await stable.addMinter(minterKeypair.publicKey);
-      await stable.mint({
+      await stable.mintTokens({
         recipient: suspiciousWallet.publicKey,
         amount: 1_000_000n,
         minter: minterKeypair,
@@ -297,7 +297,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
       // Mint tokens to criminal wallet
       const minterKeypair = Keypair.generate();
       await stable.addMinter(minterKeypair.publicKey);
-      await stable.mint({
+      await stable.mintTokens({
         recipient: criminal.publicKey,
         amount: 5_000_000n,
         minter: minterKeypair,
@@ -335,7 +335,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
       await stable.addMinter(minterKeypair.publicKey);
 
       // 1. Mint
-      await stable.mint({
+      await stable.mintTokens({
         recipient: actor.publicKey,
         amount: 10_000_000n,
         minter: minterKeypair,
@@ -360,5 +360,268 @@ describe("SSS-2: Compliant Stablecoin", () => {
         await stable.compliance.isBlacklisted(actor.publicKey)
       );
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("SSS-1: Burn", () => {
+  const connection = new Connection(LOCALNET, "confirmed");
+  const masterAuthority = Keypair.generate();
+  let stable: SolanaStablecoin;
+  const minterKeypair = Keypair.generate();
+  const recipient = Keypair.generate();
+
+  before(async () => {
+    const sig = await connection.requestAirdrop(
+      masterAuthority.publicKey,
+      10 * LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(sig);
+
+    const sig2 = await connection.requestAirdrop(
+      minterKeypair.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(sig2);
+
+    stable = await SolanaStablecoin.create({
+      connection,
+      authority: masterAuthority,
+      preset: Preset.SSS_1,
+      name: "Burn Test",
+      symbol: "BURN",
+      decimals: 6,
+    });
+
+    await stable.addMinter(minterKeypair.publicKey);
+
+    // Mint 10 tokens
+    await stable.mintTokens({
+      recipient: recipient.publicKey,
+      amount: 10_000_000n,
+      minter: minterKeypair,
+    });
+  });
+
+  it("should burn tokens and reduce supply", async () => {
+    const supplyBefore = await stable.getTotalSupply();
+    const sig = await stable.burn(recipient.publicKey, 3_000_000n);
+    assert.isString(sig);
+
+    const supplyAfter = await stable.getTotalSupply();
+    assert.equal(supplyAfter, supplyBefore - 3_000_000n);
+  });
+
+  it("should reject burn when paused", async () => {
+    await stable.pause();
+    try {
+      await stable.burn(recipient.publicKey, 1_000_000n);
+      assert.fail("Should have thrown");
+    } catch (e: any) {
+      assert.include(e.message.toLowerCase(), "paused");
+    }
+    await stable.unpause();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("SSS-1: Minter Management", () => {
+  const connection = new Connection(LOCALNET, "confirmed");
+  const masterAuthority = Keypair.generate();
+  let stable: SolanaStablecoin;
+
+  before(async () => {
+    const sig = await connection.requestAirdrop(
+      masterAuthority.publicKey,
+      10 * LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(sig);
+
+    stable = await SolanaStablecoin.create({
+      connection,
+      authority: masterAuthority,
+      preset: Preset.SSS_1,
+      name: "Minter Mgmt",
+      symbol: "MMGMT",
+      decimals: 6,
+    });
+  });
+
+  it("should add multiple minters and list them", async () => {
+    const minter1 = Keypair.generate();
+    const minter2 = Keypair.generate();
+
+    await stable.addMinter(minter1.publicKey, 1_000_000n);
+    await stable.addMinter(minter2.publicKey, 5_000_000n);
+
+    const minters = await stable.listMinters();
+    assert.isAtLeast(minters.length, 2);
+
+    const m1 = minters.find(
+      (m) => m.address.toBase58() === minter1.publicKey.toBase58()
+    );
+    const m2 = minters.find(
+      (m) => m.address.toBase58() === minter2.publicKey.toBase58()
+    );
+
+    assert.isDefined(m1);
+    assert.isDefined(m2);
+    assert.equal(m1!.quota, 1_000_000n);
+    assert.equal(m2!.quota, 5_000_000n);
+    assert.isTrue(m1!.active);
+    assert.isTrue(m2!.active);
+  });
+
+  it("should remove (deactivate) a minter", async () => {
+    const toRemove = Keypair.generate();
+    await stable.addMinter(toRemove.publicKey);
+
+    const sig = await stable.removeMinter(toRemove.publicKey);
+    assert.isString(sig);
+
+    const minters = await stable.listMinters();
+    const removed = minters.find(
+      (m) => m.address.toBase58() === toRemove.publicKey.toBase58()
+    );
+    // Minter should exist but be inactive
+    assert.isDefined(removed);
+    assert.isFalse(removed!.active);
+  });
+
+  it("should reject mint from deactivated minter", async () => {
+    const minter = Keypair.generate();
+    const airdropSig = await connection.requestAirdrop(
+      minter.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(airdropSig);
+
+    await stable.addMinter(minter.publicKey);
+    await stable.removeMinter(minter.publicKey);
+
+    try {
+      await stable.mintTokens({
+        recipient: Keypair.generate().publicKey,
+        amount: 1_000n,
+        minter,
+      });
+      assert.fail("Should have thrown — minter is inactive");
+    } catch (e: any) {
+      assert.isOk(e);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("SSS-1: Role Updates", () => {
+  const connection = new Connection(LOCALNET, "confirmed");
+  const masterAuthority = Keypair.generate();
+  let stable: SolanaStablecoin;
+
+  before(async () => {
+    const sig = await connection.requestAirdrop(
+      masterAuthority.publicKey,
+      10 * LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(sig);
+
+    stable = await SolanaStablecoin.create({
+      connection,
+      authority: masterAuthority,
+      preset: Preset.SSS_1,
+      name: "Role Test",
+      symbol: "ROLE",
+      decimals: 6,
+    });
+  });
+
+  it("should update pauser and burner roles", async () => {
+    const newPauser = Keypair.generate();
+    const newBurner = Keypair.generate();
+
+    const sig = await stable.updateRoles({
+      pauser: newPauser.publicKey,
+      burner: newBurner.publicKey,
+    });
+    assert.isString(sig);
+  });
+
+  it("should update blacklister and seizer roles (SSS-2 fields)", async () => {
+    const newBlacklister = Keypair.generate();
+    const newSeizer = Keypair.generate();
+
+    const sig = await stable.updateRoles({
+      blacklister: newBlacklister.publicKey,
+      seizer: newSeizer.publicKey,
+    });
+    assert.isString(sig);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("SSS-1: Holders Query", () => {
+  const connection = new Connection(LOCALNET, "confirmed");
+  const masterAuthority = Keypair.generate();
+  let stable: SolanaStablecoin;
+  const minterKeypair = Keypair.generate();
+
+  before(async () => {
+    const sig = await connection.requestAirdrop(
+      masterAuthority.publicKey,
+      10 * LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(sig);
+
+    const sig2 = await connection.requestAirdrop(
+      minterKeypair.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await connection.confirmTransaction(sig2);
+
+    stable = await SolanaStablecoin.create({
+      connection,
+      authority: masterAuthority,
+      preset: Preset.SSS_1,
+      name: "Holder Test",
+      symbol: "HLDR",
+      decimals: 6,
+    });
+
+    await stable.addMinter(minterKeypair.publicKey);
+  });
+
+  it("should return holders after minting", async () => {
+    const holder1 = Keypair.generate();
+    const holder2 = Keypair.generate();
+
+    await stable.mintTokens({
+      recipient: holder1.publicKey,
+      amount: 5_000_000n,
+      minter: minterKeypair,
+    });
+    await stable.mintTokens({
+      recipient: holder2.publicKey,
+      amount: 2_000_000n,
+      minter: minterKeypair,
+    });
+
+    const holders = await stable.getHolders();
+    assert.isAtLeast(holders.length, 2);
+
+    // Should be sorted by balance descending
+    for (let i = 1; i < holders.length; i++) {
+      assert.isTrue(holders[i - 1].balance >= holders[i].balance);
+    }
+  });
+
+  it("should filter holders by minimum balance", async () => {
+    const holders = await stable.getHolders(3_000_000n);
+    for (const h of holders) {
+      assert.isTrue(h.balance >= 3_000_000n);
+    }
   });
 });

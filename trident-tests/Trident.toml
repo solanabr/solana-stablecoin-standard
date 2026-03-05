@@ -1,0 +1,14 @@
+# Trident fuzz testing configuration
+# See: https://ackee.xyz/trident/docs/latest/
+#
+# Run:  trident init          (generates full harness)
+#       trident fuzz run       (starts fuzzing)
+#
+# Schema validation disabled — Trident reads this at runtime, not via taplo.
+#:schema none
+
+[fuzz]
+fuzzing_with_stats = true
+allow_duplicate_txs = false
+programs_data = ["programs/sss-token"]
+accounts_data = []

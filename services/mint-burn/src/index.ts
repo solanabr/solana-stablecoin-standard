@@ -11,6 +11,48 @@ const PORT = parseInt(process.env.PORT || "3001");
 const RPC_URL = process.env.RPC_URL || "https://api.devnet.solana.com";
 const SSS_MINT = process.env.SSS_MINT!;
 const KEYPAIR_PATH = process.env.SSS_KEYPAIR_PATH || "/keys/operator.json";
+const API_KEY = process.env.API_KEY || "";
+
+// // ─── Database ─────────────────────────────────────────────────────────────────
+
+// const db = new Pool({ connectionString: process.env.DATABASE_URL });
+
+// // ─── Solana connection ────────────────────────────────────────────────────────
+
+// const connection = new Connection(RPC_URL, "confirmed");
+// const keypairData = JSON.parse(fs.readFileSync(KEYPAIR_PATH, "utf-8"));
+// const keypair = Keypair.fromSecretKey(Uint8Array.from(keypairData));
+
+// let stablecoin: SolanaStablecoin;
+
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (!API_KEY) return next(); // Auth disabled if no API_KEY configured
+  const token = req.headers["x-api-key"] || req.headers.authorization?.replace("Bearer ", "");
+  if (token !== API_KEY) {
+    res.status(401).json({ error: "Unauthorized — invalid or missing API key" });
+    return;
+  }
+  next();
+}
+
+// ─── Validation helpers ───────────────────────────────────────────────────────
+
+function isValidPublicKey(str: string): boolean {
+  try {
+    new PublicKey(str);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isValidAmount(amount: any): boolean {
+  if (amount === undefined || amount === null) return false;
+  const n = Number(amount);
+  return Number.isFinite(n) && n > 0 && n <= Number.MAX_SAFE_INTEGER;
+}
 
 // ─── Database ─────────────────────────────────────────────────────────────────
 
@@ -38,11 +80,17 @@ app.get("/health", async (_req, res) => {
 
 // ─── Mint request ─────────────────────────────────────────────────────────────
 
-app.post("/mint", async (req, res) => {
+app.post("/mint", requireAuth, async (req, res) => {
   const { recipient, amount, reference } = req.body;
 
   if (!recipient || !amount) {
     return res.status(400).json({ error: "recipient and amount are required" });
+  }
+  if (!isValidPublicKey(recipient)) {
+    return res.status(400).json({ error: "Invalid recipient address" });
+  }
+  if (!isValidAmount(amount)) {
+    return res.status(400).json({ error: "Amount must be a positive number" });
   }
 
   const result = await db.query(
@@ -69,12 +117,19 @@ async function executeMint(
   amount: bigint
 ): Promise<void> {
   try {
+    // Verify step: validate on-chain state before execution
+    const state = await stablecoin.getState();
+    if (state.paused) {
+      throw new Error("Protocol is paused — mint rejected");
+    }
+
     await db.query(
       "UPDATE mint_requests SET status='verified', updated_at=NOW() WHERE id=$1",
       [requestId]
     );
+    log("info", "Mint request verified", { requestId, recipient });
 
-    const sig = await stablecoin.mint({
+    const sig = await stablecoin.mintTokens({
       recipient: new PublicKey(recipient),
       amount,
       minter: keypair,
@@ -104,11 +159,17 @@ async function executeMint(
 
 // ─── Burn request ─────────────────────────────────────────────────────────────
 
-app.post("/burn", async (req, res) => {
+app.post("/burn", requireAuth, async (req, res) => {
   const { from, amount } = req.body;
 
   if (!from || !amount) {
     return res.status(400).json({ error: "from and amount are required" });
+  }
+  if (!isValidPublicKey(from)) {
+    return res.status(400).json({ error: "Invalid source address" });
+  }
+  if (!isValidAmount(amount)) {
+    return res.status(400).json({ error: "Amount must be a positive number" });
   }
 
   const result = await db.query(
@@ -186,6 +247,8 @@ function log(level: string, msg: string, data: Record<string, any> = {}): void {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
+let server: any;
+
 async function main(): Promise<void> {
   stablecoin = await SolanaStablecoin.load(
     connection,
@@ -193,13 +256,32 @@ async function main(): Promise<void> {
     keypair
   );
 
-  app.listen(PORT, () => {
+  server = app.listen(PORT, () => {
     log("info", `Mint-burn service started on port ${PORT}`, {
       mint: SSS_MINT,
       cluster: RPC_URL,
     });
   });
 }
+
+// ─── Graceful shutdown ────────────────────────────────────────────────────────
+
+function shutdown(signal: string): void {
+  log("info", `Received ${signal}, shutting down gracefully...`);
+  if (server) {
+    server.close(() => {
+      db.end().then(() => {
+        log("info", "Shutdown complete");
+        process.exit(0);
+      });
+    });
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 main().catch((e) => {
   console.error("Fatal:", e);

@@ -12,6 +12,8 @@ const RPC_URL = process.env.RPC_URL || "https://api.devnet.solana.com";
 const SSS_MINT = process.env.SSS_MINT!;
 const KEYPAIR_PATH = process.env.SSS_KEYPAIR_PATH || "/keys/operator.json";
 const CHAINALYSIS_API_KEY = process.env.CHAINALYSIS_API_KEY || "";
+const RISK_THRESHOLD = parseInt(process.env.RISK_THRESHOLD || "5");
+const API_KEY = process.env.API_KEY || "";
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
 const connection = new Connection(RPC_URL, "confirmed");
@@ -19,6 +21,27 @@ const keypairData = JSON.parse(fs.readFileSync(KEYPAIR_PATH, "utf-8"));
 const keypair = Keypair.fromSecretKey(Uint8Array.from(keypairData));
 
 let stablecoin: SolanaStablecoin;
+
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (!API_KEY) return next();
+  const token = req.headers["x-api-key"] || req.headers.authorization?.replace("Bearer ", "");
+  if (token !== API_KEY) {
+    res.status(401).json({ error: "Unauthorized — invalid or missing API key" });
+    return;
+  }
+  next();
+}
+
+function isValidPublicKey(str: string): boolean {
+  try {
+    new PublicKey(str);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 
@@ -33,21 +56,25 @@ app.get("/health", async (_req, res) => {
 
 // ─── Blacklist: Add ───────────────────────────────────────────────────────────
 
-app.post("/blacklist", async (req, res) => {
+app.post("/blacklist", requireAuth, async (req, res) => {
   const { address, reason } = req.body;
 
   if (!address || !reason) {
     return res.status(400).json({ error: "address and reason are required" });
+  }
+  if (!isValidPublicKey(address)) {
+    return res.status(400).json({ error: "Invalid Solana address" });
   }
 
   try {
     // Optional: Chainalysis sanctions screening
     if (CHAINALYSIS_API_KEY) {
       const riskScore = await screenAddress(address);
-      if (riskScore < 5) {
+      if (riskScore < RISK_THRESHOLD) {
         return res.status(422).json({
           error: "Address does not meet sanctions threshold for blacklisting",
           riskScore,
+          threshold: RISK_THRESHOLD,
         });
       }
     }
@@ -75,9 +102,9 @@ app.post("/blacklist", async (req, res) => {
 
 // ─── Blacklist: Remove ────────────────────────────────────────────────────────
 
-app.delete("/blacklist/:address", async (req, res) => {
-  const { address } = req.params;
-  const { reason } = req.body;
+app.delete("/blacklist/:address", requireAuth, async (req, res) => {
+  const address = req.params.address as string;
+  const reason: string | undefined = req.body?.reason;
 
   try {
     const sig = await stablecoin.compliance.blacklistRemove(
@@ -122,11 +149,17 @@ app.get("/blacklist/:address", async (req, res) => {
 
 // ─── Seize ────────────────────────────────────────────────────────────────────
 
-app.post("/seize", async (req, res) => {
+app.post("/seize", requireAuth, async (req, res) => {
   const { address, treasury } = req.body;
 
   if (!address || !treasury) {
     return res.status(400).json({ error: "address and treasury are required" });
+  }
+  if (!isValidPublicKey(address)) {
+    return res.status(400).json({ error: "Invalid source address" });
+  }
+  if (!isValidPublicKey(treasury)) {
+    return res.status(400).json({ error: "Invalid treasury address" });
   }
 
   try {
@@ -173,8 +206,6 @@ app.get("/audit-log", async (req, res) => {
 async function screenAddress(address: string): Promise<number> {
   if (!CHAINALYSIS_API_KEY) return 10; // default: pass if no key configured
 
-  // Integration point — replace with actual Chainalysis API call
-  // https://docs.chainalysis.com/api/kyc/
   try {
     const response = await fetch(
       `https://api.chainalysis.com/api/risk/v2/entities/${address}`,
@@ -187,8 +218,9 @@ async function screenAddress(address: string): Promise<number> {
     );
     const data = (await response.json()) as any;
     return data.riskScore ?? 10;
-  } catch {
-    return 10; // fail open if screening unavailable
+  } catch (e: any) {
+    log("warn", "Chainalysis screening unavailable — rejecting action as precaution", { address, error: e.message });
+    return 0; // fail closed: reject if screening unavailable
   }
 }
 
@@ -225,6 +257,8 @@ function log(level: string, msg: string, data: Record<string, any> = {}): void {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
+let server: any;
+
 async function main(): Promise<void> {
   stablecoin = await SolanaStablecoin.load(
     connection,
@@ -232,10 +266,27 @@ async function main(): Promise<void> {
     keypair
   );
 
-  app.listen(PORT, () =>
+  server = app.listen(PORT, () =>
     log("info", `Compliance service started on port ${PORT}`)
   );
 }
+
+function shutdown(signal: string): void {
+  log("info", `Received ${signal}, shutting down gracefully...`);
+  if (server) {
+    server.close(() => {
+      db.end().then(() => {
+        log("info", "Shutdown complete");
+        process.exit(0);
+      });
+    });
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 main().catch((e) => {
   console.error("Fatal:", e);

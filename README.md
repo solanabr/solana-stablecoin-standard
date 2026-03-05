@@ -107,7 +107,7 @@ const compliant = await SolanaStablecoin.create({
 });
 
 // Operations
-await stable.mint({ recipient, amount: 1_000_000n, minter });
+await stable.mintTokens({ recipient, amount: 1_000_000n, minter });
 await compliant.compliance.blacklistAdd(address, "Sanctions match");
 await compliant.compliance.seize(frozenAccount, treasury);
 const supply = await stable.getTotalSupply();
@@ -134,9 +134,67 @@ const supply = await stable.getTotalSupply();
 
 ---
 
+## Devnet Deployment
+
+The SSS-token program is deployed and verified on Solana Devnet:
+
+| Item | Value |
+|---|---|
+| **Program ID** | `6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL` |
+| **Network** | Devnet |
+| **Explorer** | [View on Solana Explorer](https://explorer.solana.com/address/6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL?cluster=devnet) |
+| **Anchor Version** | 0.32.1 |
+
+> Deploy your own instance: `anchor deploy --provider.cluster devnet`
+
+---
+
 ## Architecture
 
-See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the full layer model and data flows.
+```mermaid
+graph TB
+    subgraph "Layer 3 — Standard Presets"
+        SSS1["SSS-1<br/>Minimal Stablecoin"]
+        SSS2["SSS-2<br/>Compliant Stablecoin"]
+    end
+
+    subgraph "Layer 2 — Modules"
+        COMP["Compliance Module<br/>Blacklist · Seize · Transfer Hook"]
+        ROLES["Role Management<br/>Minter · Burner · Pauser"]
+    end
+
+    subgraph "Layer 1 — Base SDK"
+        SDK["TypeScript SDK<br/>SolanaStablecoin.create()"]
+        CLI["Admin CLI<br/>sss-token"]
+        PROG["Anchor Program<br/>sss-token on-chain"]
+    end
+
+    subgraph "Backend Services"
+        MB["Mint/Burn Service<br/>:3001"]
+        EL["Event Listener<br/>:3002"]
+        CS["Compliance Service<br/>:3003"]
+        WH["Webhook Service<br/>:3004"]
+        DB[(PostgreSQL)]
+    end
+
+    SSS1 --> ROLES
+    SSS2 --> ROLES
+    SSS2 --> COMP
+    ROLES --> SDK
+    COMP --> SDK
+    SDK --> PROG
+    CLI --> SDK
+    MB --> SDK
+    CS --> SDK
+    EL --> PROG
+    EL --> WH
+    MB --> DB
+    EL --> DB
+    CS --> DB
+    WH --> DB
+```
+
+See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the full layer model, PDA layout, and security model.
 
 ---
 

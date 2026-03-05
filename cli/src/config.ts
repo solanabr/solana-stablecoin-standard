@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import * as toml from "toml";
-import * as ini from "ini";
 import dotenv from "dotenv";
 import chalk from "chalk";
 

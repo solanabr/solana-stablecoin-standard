@@ -25,8 +25,9 @@ export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
   "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
 );
 
+// Dummy transfer-hook program ID — replace with actual deployed transfer-hook program
 export const TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
+  "HookXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 );
 
 // ─── PDA derivation ───────────────────────────────────────────────────────────

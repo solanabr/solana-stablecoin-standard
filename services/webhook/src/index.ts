@@ -8,8 +8,21 @@ app.use(express.json());
 const PORT = parseInt(process.env.PORT || "3004");
 const MAX_RETRY_ATTEMPTS = parseInt(process.env.MAX_RETRY_ATTEMPTS || "5");
 const BASE_RETRY_DELAY_MS = parseInt(process.env.RETRY_DELAY_MS || "1000");
+const API_KEY = process.env.API_KEY || "";
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
+
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (!API_KEY) return next();
+  const token = req.headers["x-api-key"] || req.headers.authorization?.replace("Bearer ", "");
+  if (token !== API_KEY) {
+    res.status(401).json({ error: "Unauthorized — invalid or missing API key" });
+    return;
+  }
+  next();
+}
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 
@@ -24,7 +37,7 @@ app.get("/health", async (_req, res) => {
 
 // ─── Register webhook endpoint ────────────────────────────────────────────────
 
-app.post("/endpoints", async (req, res) => {
+app.post("/endpoints", requireAuth, async (req, res) => {
   const { url, secret, events = [] } = req.body;
   if (!url) return res.status(400).json({ error: "url is required" });
 
@@ -44,7 +57,7 @@ app.get("/endpoints", async (_req, res) => {
   res.json(result.rows);
 });
 
-app.delete("/endpoints/:id", async (req, res) => {
+app.delete("/endpoints/:id", requireAuth, async (req, res) => {
   await db.query(
     "UPDATE webhook_endpoints SET active=false WHERE id=$1",
     [req.params.id]
@@ -196,5 +209,19 @@ function log(level: string, msg: string, data: Record<string, any> = {}): void {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => log("info", `Webhook service started on port ${PORT}`));
-setInterval(() => processPendingDeliveries().catch(console.error), 5_000);
+const server = app.listen(PORT, () => log("info", `Webhook service started on port ${PORT}`));
+const deliveryInterval = setInterval(() => processPendingDeliveries().catch(console.error), 5_000);
+
+function shutdown(signal: string): void {
+  log("info", `Received ${signal}, shutting down gracefully...`);
+  clearInterval(deliveryInterval);
+  server.close(() => {
+    db.end().then(() => {
+      log("info", "Shutdown complete");
+      process.exit(0);
+    });
+  });
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

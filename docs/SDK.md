@@ -55,7 +55,7 @@ stable.compliance  // ComplianceModule (SSS-2)
 
 ```typescript
 // Mint tokens
-await stable.mint({ recipient: PublicKey, amount: bigint, minter: Keypair }): Promise<string>
+await stable.mintTokens({ recipient: PublicKey, amount: bigint, minter: Keypair }): Promise<string>
 
 // Burn tokens
 await stable.burn(from: PublicKey, amount: bigint): Promise<string>
@@ -98,6 +98,20 @@ await stable.getTotalSupply(): Promise<bigint>
 
 // Get Token-2022 mint info
 await stable.getMintInfo(): Promise<Mint>
+
+// List all minters for this stablecoin
+await stable.listMinters(): Promise<Array<{
+  address: PublicKey;
+  quota: bigint;
+  mintedThisEpoch: bigint;
+  active: boolean;
+}>>
+
+// Get all token holders (sorted by balance, descending)
+await stable.getHolders(minBalance?: bigint): Promise<Array<{
+  owner: PublicKey;
+  balance: bigint;
+}>>
 ```
 
 ---
@@ -164,7 +178,7 @@ All SDK methods throw with descriptive messages. Anchor errors are propagated wi
 
 ```typescript
 try {
-  await stable.mint({ ... });
+  await stable.mintTokens({ ... });
 } catch (e) {
   if (e.message.includes("paused")) {
     // Protocol is paused

@@ -9,7 +9,11 @@ pub struct AddMinter<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"stablecoin", state.mint.as_ref()],
+        bump = state.bump,
+    )]
     pub state: Account<'info, StablecoinState>,
 
     ///CHECK: We only need the minter's pubkey
@@ -35,24 +39,6 @@ pub fn add_minter_handler(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
     // Verify authority
     require!(ctx.accounts.authority.key() == ctx.accounts.state.master_authority, SssError::Unauthorized);
     
-    // Verify state PDA
-    let (expected_state_pda, _) = Pubkey::find_program_address(
-        &[b"stablecoin", ctx.accounts.state.mint.as_ref()],
-        &crate::ID,
-    );
-    require!(ctx.accounts.state.key() == expected_state_pda, SssError::Unauthorized);
-    
-    // Verify minter_info PDA
-    let (expected_minter_pda, bump) = Pubkey::find_program_address(
-        &[
-            b"minter",
-            ctx.accounts.state.key().as_ref(),
-            ctx.accounts.minter.key().as_ref(),
-        ],
-        &crate::ID,
-    );
-    require!(ctx.accounts.minter_info.key() == expected_minter_pda, SssError::Unauthorized);
-    
     let minter_info = &mut ctx.accounts.minter_info;
     
     // Initialize only if it's a new account
@@ -60,7 +46,7 @@ pub fn add_minter_handler(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
         minter_info.stablecoin = ctx.accounts.state.key();
         minter_info.minter = ctx.accounts.minter.key();
         minter_info.minted_this_epoch = 0;
-        minter_info.bump = bump;
+        minter_info.bump = ctx.bumps.minter_info;
     }
 
     // Set active to true and update quota
@@ -89,7 +75,11 @@ pub struct RemoveMinter<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"stablecoin", state.mint.as_ref()],
+        bump = state.bump,
+    )]
     pub state: Account<'info, StablecoinState>,
 
     ///CHECK: We only need the minter's pubkey
@@ -110,13 +100,6 @@ pub struct RemoveMinter<'info> {
 pub fn remove_minter_handler(ctx: Context<RemoveMinter>) -> Result<()> {
     // Verify authority
     require!(ctx.accounts.authority.key() == ctx.accounts.state.master_authority, SssError::Unauthorized);
-    
-    // Verify state PDA
-    let (expected_state_pda, _) = Pubkey::find_program_address(
-        &[b"stablecoin", ctx.accounts.state.mint.as_ref()],
-        &crate::ID,
-    );
-    require!(ctx.accounts.state.key() == expected_state_pda, SssError::Unauthorized);
     
     let minter_info = &mut ctx.accounts.minter_info;
     
