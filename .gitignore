@@ -7,6 +7,8 @@ test-local.ts
 
 # Anchor
 target/
+!target/idl/
+!target/types/
 .anchor/
 .env
 keys/
