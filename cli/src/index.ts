@@ -404,51 +404,6 @@ program
   });
 
 
-// ─── status ────────────────────────────────────────────────────────────────────
-
-program
-  .command("status")
-  .description("Show stablecoin status")
-  .action(async (opts, cmd) => {
-    const globalOpts = cmd.parent?.opts() ?? {};
-    const config = loadConfig({
-      keypair: globalOpts.keypair,
-      url: globalOpts.url,
-      mint: globalOpts.mint,
-    });
-    const mint = requireMint(config);
-
-    const spinner = ora("Fetching status...").start();
-    try {
-      const stable = await SolanaStablecoin.load(
-        config.connection,
-        mint,
-        config.keypair
-      );
-      const state = await stable.getState();
-      const supply = await stable.getTotalSupply();
-      spinner.stop();
-
-      const rows: string[][] = [
-        ["Name", state.name],
-        ["Symbol", state.symbol],
-        ["Mint", mint.toBase58()],
-        ["Decimals", state.decimals.toString()],
-        ["Total Supply", supply.toLocaleString()],
-        ["Paused", state.paused ? chalk.red("YES") : chalk.green("NO")],
-        ["Compliance (SSS-2)", state.complianceEnabled ? chalk.cyan("Enabled") : "Disabled"],
-        ["Transfer Hook", state.transferHookEnabled ? chalk.cyan("Enabled") : "Disabled"],
-        ["Master Authority", state.masterAuthority.toBase58()],
-      ];
-
-      console.log(table(rows));
-    } catch (e: any) {
-      spinner.fail(chalk.red(e.message));
-      process.exit(1);
-    }
-  });
-
-
 // ─── supply ────────────────────────────────────────────────────────────────────
 
 program

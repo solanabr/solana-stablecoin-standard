@@ -18,12 +18,14 @@ export interface StablecoinConfig {
 }
 
 export const SSS1_CONFIG: Partial<StablecoinConfig> = {
+  decimals: 6,
   enablePermanentDelegate: false,
   enableTransferHook: false,
   defaultAccountFrozen: false,
 };
 
 export const SSS2_CONFIG: Partial<StablecoinConfig> = {
+  decimals: 6,
   enablePermanentDelegate: true,
   enableTransferHook: true,
   defaultAccountFrozen: false,

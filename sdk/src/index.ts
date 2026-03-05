@@ -44,6 +44,8 @@ export interface CreateOptions {
   connection: Connection;
   /** Provide an existing mint keypair, otherwise one is generated */
   mintKeypair?: Keypair;
+  /** Optional: provide the IDL directly (for local/test environments where IDL is not on-chain) */
+  idl?: Idl;
 }
 
 // ─── Mint Options ─────────────────────────────────────────────────────────────
@@ -212,12 +214,14 @@ export class SolanaStablecoin {
     } = options;
 
     // Resolve config from preset or custom extensions
+    // Filter out undefined values to prevent overriding preset defaults
+    const cleanOverrides: Partial<StablecoinConfig> = {};
+    if (extensions.permanentDelegate !== undefined) cleanOverrides.enablePermanentDelegate = extensions.permanentDelegate;
+    if (extensions.transferHook !== undefined) cleanOverrides.enableTransferHook = extensions.transferHook;
+    if (extensions.defaultAccountFrozen !== undefined) cleanOverrides.defaultAccountFrozen = extensions.defaultAccountFrozen;
+
     const presetConfig = preset
-      ? resolvePreset(preset, {
-          enablePermanentDelegate: extensions.permanentDelegate,
-          enableTransferHook: extensions.transferHook,
-          defaultAccountFrozen: extensions.defaultAccountFrozen,
-        })
+      ? resolvePreset(preset, cleanOverrides)
       : {
           enablePermanentDelegate: extensions.permanentDelegate ?? false,
           enableTransferHook: extensions.transferHook ?? false,
@@ -259,9 +263,8 @@ export class SolanaStablecoin {
 
     // Step 2: Load the Anchor program
     const provider = new AnchorProvider(connection, new anchor.Wallet(authority), {});
-    // IDL would be imported from build artifacts in practice
-    const idl = await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
-    if (!idl) throw new Error("SSS-token IDL not found on-chain");
+    const idl = options.idl ?? await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
+    if (!idl) throw new Error("SSS-token IDL not found on-chain. Pass idl option for local/test environments.");
     const program = new Program(idl, provider);
 
     // Step 3: Initialize state PDA
@@ -303,13 +306,14 @@ export class SolanaStablecoin {
   static async load(
     connection: Connection,
     mint: PublicKey,
-    authority: Keypair
+    authority: Keypair,
+    idl?: Idl
   ): Promise<SolanaStablecoin> {
     const [statePDA] = findStatePDA(mint);
     const provider = new AnchorProvider(connection, new anchor.Wallet(authority), {});
-    const idl = await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
-    if (!idl) throw new Error("SSS-token IDL not found on-chain");
-    const program = new Program(idl, provider);
+    const resolvedIdl = idl ?? await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
+    if (!resolvedIdl) throw new Error("SSS-token IDL not found on-chain. Pass idl parameter for local/test environments.");
+    const program = new Program(resolvedIdl, provider);
 
     const state = await (program.account as any).stablecoinState.fetch(statePDA);
 
@@ -569,7 +573,6 @@ export class SolanaStablecoin {
       TOKEN_2022_PROGRAM_ID,
       {
         filters: [
-          { dataSize: 165 }, // Token account size
           { memcmp: { offset: 0, bytes: this.mint.toBase58() } },
         ],
       }

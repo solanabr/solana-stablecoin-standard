@@ -18,6 +18,17 @@ services:
       - DATABASE_URL=postgresql://sss:sss@postgres:5432/sss
       - API_KEY=${API_KEY:-}
     volumes:
+      - ${KEYPAIR_PATH:-./keys}:/keys:ro
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   # ─── Core: Event listener/indexer ────────────────────────────────────────────
   event-listener:
@@ -31,7 +42,7 @@ services:
       - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
       - WS_URL=${WS_URL:-wss://api.devnet.solana.com}
       - SSS_MINT=${SSS_MINT}
-      - SSS_TOKEN_PROGRAM_ID=SSSTokenxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      - SSS_TOKEN_PROGRAM_ID=6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL
       - PORT=3002
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - DATABASE_URL=postgresql://sss:sss@postgres:5432/sss
