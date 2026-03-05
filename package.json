@@ -1,0 +1,14 @@
+{
+  "name": "solana-stablecoin-standard",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "sdk",
+    "cli",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w sdk && npm run build -w cli",
+    "test": "cargo test"
+  }
+}

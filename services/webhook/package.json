@@ -1,0 +1,17 @@
+{
+  "name": "webhook-service",
+  "version": "0.1.0",
+  "description": "Webhook service for SSS",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "typescript": "^5.7.2"
+  }
+}

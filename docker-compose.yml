@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mint-burn:
+    build: ./services/mint-burn
+    ports:
+      - "3001:3001"
+    environment:
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID}
+      - RPC_TIMEOUT=30000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  indexer:
+    build: ./services/indexer
+    ports:
+      - "3002:3002"
+    environment:
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  compliance:
+    build: ./services/compliance
+    ports:
+      - "3003:3003"
+    environment:
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  webhook:
+    build: ./services/webhook
+    ports:
+      - "3004:3004"
+    environment:
+      - WEBHOOK_RETRY_MAX=3
+      - WEBHOOK_RETRY_DELAY=1000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
