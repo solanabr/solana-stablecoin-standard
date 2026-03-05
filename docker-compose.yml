@@ -4,8 +4,8 @@ services:
   # ─── Core: Mint/Burn lifecycle service ───────────────────────────────────────
   mint-burn:
     build:
-      context: ./services/mint-burn
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/mint-burn/Dockerfile
     container_name: sss-mint-burn
     restart: unless-stopped
     environment:
@@ -33,8 +33,8 @@ services:
   # ─── Core: Event listener/indexer ────────────────────────────────────────────
   event-listener:
     build:
-      context: ./services/event-listener
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/event-listener/Dockerfile
     container_name: sss-event-listener
     restart: unless-stopped
     environment:
@@ -62,8 +62,8 @@ services:
   # ─── SSS-2: Compliance service ────────────────────────────────────────────────
   compliance:
     build:
-      context: ./services/compliance
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/compliance/Dockerfile
     container_name: sss-compliance
     restart: unless-stopped
     environment:
@@ -88,8 +88,8 @@ services:
   # ─── SSS-2: Webhook service ───────────────────────────────────────────────────
   webhook:
     build:
-      context: ./services/webhook
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/webhook/Dockerfile
     container_name: sss-webhook
     restart: unless-stopped
     environment:
