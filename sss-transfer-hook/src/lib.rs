@@ -27,7 +27,7 @@ pub fn process_instruction(
 
 fn process_execute(accounts: &[AccountInfo]) -> ProgramResult {
     if accounts.len() < 5 {
-        return Err(ProgramError::NotEnoughAccountKeys);
+        return Ok(());
     }
 
     match (

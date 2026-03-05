@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_2022::{transfer_checked, Token2022, TransferChecked};
+use anchor_spl::token_2022::{
+    thaw_account, transfer_checked, ThawAccount, Token2022, TransferChecked,
+};
 use anchor_spl::token_interface::{Mint, TokenAccount};
 
 use crate::errors::StablecoinError;
@@ -56,6 +58,18 @@ pub fn seize(ctx: Context<Seize>) -> Result<()> {
         &[config.bump],
     ];
     let signer_binding = [&signer_seeds[..]];
+
+    let thaw_ctx = CpiContext::new_with_signer(
+        ctx.accounts.token_program.to_account_info(),
+        ThawAccount {
+            account: ctx.accounts.target_ata.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
+            authority: ctx.accounts.config.to_account_info(),
+        },
+        &signer_binding,
+    );
+    thaw_account(thaw_ctx)?;
+
     let cpi_ctx = CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info(),
         TransferChecked {

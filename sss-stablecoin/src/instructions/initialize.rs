@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::{invoke, invoke_signed};
+use anchor_lang::solana_program::program::invoke;
 use anchor_lang::solana_program::system_instruction;
 use anchor_spl::token_2022::Token2022;
 use spl_token_2022::extension::default_account_state::instruction::initialize_default_account_state;
@@ -147,32 +147,6 @@ pub fn initialize(
             decimals,
         )?,
         &[ctx.accounts.mint.to_account_info()],
-    )?;
-
-    let config_seeds = &[
-        StablecoinConfig::SEED_PREFIX.as_bytes(),
-        ctx.accounts.authority.key.as_ref(),
-        symbol.as_bytes(),
-        &[ctx.bumps.config],
-    ];
-
-    let metadata_ix = spl_token_metadata_interface::instruction::initialize(
-        &spl_token_2022::id(),
-        ctx.accounts.mint.key,
-        &ctx.accounts.config.key(),
-        ctx.accounts.mint.key,
-        &ctx.accounts.config.key(),
-        name.clone(),
-        symbol.clone(),
-        String::new(),
-    );
-    invoke_signed(
-        &metadata_ix,
-        &[
-            ctx.accounts.mint.to_account_info(),
-            ctx.accounts.config.to_account_info(),
-        ],
-        &[config_seeds],
     )?;
 
     let authority = ctx.accounts.authority.key();

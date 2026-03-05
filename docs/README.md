@@ -12,7 +12,7 @@ SSS provides a standardized framework for stablecoin issuance on Solana, similar
 import { SolanaStablecoin, Presets } from "@stbr/sss-token";
 import { Connection, Keypair } from "@solana/web3.js";
 
-const connection = new Connection("https://api.devnet.solana.com");
+const connection = new Connection("http://localhost:8899");
 const wallet = Keypair.fromSecretKey(/* ... */);
 
 const stablecoin = await SolanaStablecoin.create({
@@ -67,6 +67,7 @@ npm install -g sss-token
 - [SSS-3 Specification](SSS-3.md) - **The Differentiator**
 - [Compliance](COMPLIANCE.md)
 - [Operations](OPERATIONS.md)
+- [Deployment Proof](DEPLOYMENT.md)
 - [API Reference](API.md)
 
 ## The Differentiator: SSS-3 Private Stablecoin
@@ -102,7 +103,7 @@ sss-token private-send --recipient <addr> --amount 100
 sss-token unshield --amount 500 --to <addr>
 ```
 
-## Program IDs (Devnet)
+## Program IDs (Surfpool Localnet)
 
 - Stablecoin Program: `AmBgA4sV1xFrT4BwbqUU3P3cFqLa6yNJmHyX98k4eW1j`
 - Transfer Hook Program: `FiUMBoLyzCzgXQwysxY7ypo4DcZ21Svd2qScsfdtsrj`
