@@ -8,7 +8,7 @@ import {
 } from "./demo-utils";
 
 async function main(): Promise<void> {
-  const relayUrl = process.env.CLOAK_RELAY_URL ?? "http://localhost:8080";
+  const relayUrl = process.env.CLOAK_RELAY_URL ?? "http://localhost:5500";
   const { provider, walletKeypair } = loadProvider();
   const authority = provider.wallet.publicKey;
 

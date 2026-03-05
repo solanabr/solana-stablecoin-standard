@@ -3,17 +3,18 @@
 ## Environment
 - Network: Surfpool Localnet
 - Validator RPC: `http://localhost:8899`
-- Cloak Relay: `http://localhost:8080` (when running)
+- Cloak Relay: `http://localhost:5500` (when running)
 
 ## Program IDs (Localnet)
 | Program | ID |
 |---------|-----|
 | SSS Stablecoin | `AmBgA4sV1xFrT4BwbqUU3P3cFqLa6yNJmHyX98k4eW1j` |
 | SSS Transfer Hook | `FiUMBoLyzCzgXQwysxY7ypo4DcZ21Svd2qScsfdtsrj` |
+| Cloak Shield Pool | `c1oak6tetxYnNfvXKFkpn1d98FxtK7B68vBQLYQpWKp` |
 
 ## Deployment Transactions (Surfpool)
-- Stablecoin deploy tx: `siD9qHR58bubw73MvZHp9woBjmPGjKSM2TPE8yA1yauAwGeXHjeLrkcKeFvPqqV8axwMfumSL5rrqou5hMxpj4n`
-- Transfer hook deploy tx: `2L5v1LhTsNfq2d5GWxzpJRv9sc4S4oJUW8uu7T4QZygedPk4FaeZBzQgZXYQQ2x1kFbYiQZ8YABhSWdXyFvUsi5x`
+- Stablecoin deploy tx: `5ek8AJdUzRL6tyX3C7qiyMc5L3aB61X28YG82S4kf2CrkauqTDnkbhh1pSUZHS5u8Q6nz5nAWnPK9Mr5RMo4vniw`
+- Transfer hook deploy tx: `yJ8hm1VNdDwfC4xgRqp4hdMkuAf7app49eKXTKvd4r2dZ2N3CFwXN2jSS2E5raJdf3UtFUq4J7nNnqTP9fgC9zH`
 
 ## Demo Flows
 

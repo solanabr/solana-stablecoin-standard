@@ -9,7 +9,7 @@ async function fetchText(url: string): Promise<string> {
 async function main(): Promise<void> {
   console.log("=== Cloak Privacy Demo (same Surfpool localnet) ===\n");
 
-  const relayUrl = process.env.CLOAK_RELAY_URL ?? "http://localhost:8080";
+  const relayUrl = process.env.CLOAK_RELAY_URL ?? "http://localhost:5500";
   console.log("Relay URL:", relayUrl);
 
   console.log("\n1. Checking Cloak relay health...");
