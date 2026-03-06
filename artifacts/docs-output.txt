@@ -1,0 +1,15 @@
+total 112
+drwxr-xr-x@ 14 marcelofeitoza  staff   448 Mar  5 22:30 .
+drwxr-xr-x@ 28 marcelofeitoza  staff   896 Mar  5 22:31 ..
+-rw-r--r--@  1 marcelofeitoza  staff   375 Mar  5 18:08 API.md
+-rw-r--r--@  1 marcelofeitoza  staff  2284 Mar  5 18:08 ARCHITECTURE.md
+-rw-r--r--@  1 marcelofeitoza  staff   468 Mar  5 18:08 COMPLIANCE.md
+-rw-r--r--@  1 marcelofeitoza  staff  2577 Mar  5 19:19 DEPLOYMENT.md
+-rw-r--r--@  1 marcelofeitoza  staff   242 Mar  5 18:36 DEVNET.md
+-rw-r--r--@  1 marcelofeitoza  staff   546 Mar  5 18:08 OPERATIONS.md
+-rw-r--r--@  1 marcelofeitoza  staff  4164 Mar  5 22:30 PR_BODY.md
+-rw-r--r--@  1 marcelofeitoza  staff  3513 Mar  5 18:36 README.md
+-rw-r--r--@  1 marcelofeitoza  staff   692 Mar  5 18:08 SDK.md
+-rw-r--r--@  1 marcelofeitoza  staff   350 Mar  5 18:08 SSS-1.md
+-rw-r--r--@  1 marcelofeitoza  staff   294 Mar  5 18:08 SSS-2.md
+-rw-r--r--@  1 marcelofeitoza  staff  7904 Mar  5 18:08 SSS-3.md
