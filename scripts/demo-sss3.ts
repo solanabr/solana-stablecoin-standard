@@ -15,7 +15,10 @@ async function main(): Promise<void> {
   console.log("=== SSS-3 Demo: Private Stablecoin (Cloak Integration) ===\n");
 
   const mint = Keypair.generate();
-  const symbol = `P${Date.now().toString().slice(-3)}`;
+  const uniqueSuffix = `${Date.now().toString().slice(-5)}${Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0")}`;
+  const symbol = `P${uniqueSuffix}`;
   const [configPda] = deriveConfigPda(authority, symbol);
   const [roleRegistryPda] = deriveRoleRegistryPda(configPda);
 

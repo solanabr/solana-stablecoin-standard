@@ -3,10 +3,9 @@ use anchor_lang::solana_program::program::invoke;
 use anchor_lang::solana_program::system_instruction;
 use anchor_spl::token_2022::Token2022;
 use spl_token_2022::extension::default_account_state::instruction::initialize_default_account_state;
-use spl_token_2022::extension::metadata_pointer::instruction::initialize as initialize_metadata_pointer;
 use spl_token_2022::extension::transfer_hook::instruction::initialize as initialize_transfer_hook;
 use spl_token_2022::extension::ExtensionType;
-use spl_token_2022::instruction as token_2022_instruction;
+use spl_token_2022::instruction as token_instruction;
 use spl_token_2022::state::{AccountState, Mint as SplMint};
 
 use crate::errors::StablecoinError;
@@ -38,7 +37,7 @@ pub struct Initialize<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     /// CHECK: transfer hook program id, required when transfer hook is enabled
-    pub transfer_hook_program: Option<UncheckedAccount<'info>>,
+    pub transfer_hook_program_id: Option<UncheckedAccount<'info>>,
     pub token_program: Program<'info, Token2022>,
     pub system_program: Program<'info, System>,
 }
@@ -62,13 +61,13 @@ pub fn initialize(
         StablecoinError::InvalidRole
     );
 
-    let extensions = selected_extensions(
+    let extension_types = selected_extensions(
         enable_permanent_delegate,
         enable_transfer_hook,
         default_account_frozen,
     );
 
-    let mint_len = ExtensionType::try_calculate_account_len::<SplMint>(&extensions)
+    let mint_len = ExtensionType::try_calculate_account_len::<SplMint>(&extension_types)
         .map_err(|_| error!(StablecoinError::InvalidRole))?;
     let rent = Rent::get()?;
     let lamports = rent.minimum_balance(mint_len);
@@ -84,23 +83,12 @@ pub fn initialize(
         &[
             ctx.accounts.authority.to_account_info(),
             ctx.accounts.mint.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
         ],
-    )?;
-
-    invoke(
-        &initialize_metadata_pointer(
-            &spl_token_2022::id(),
-            ctx.accounts.mint.key,
-            Some(ctx.accounts.config.key()),
-            Some(*ctx.accounts.mint.key),
-        )?,
-        &[ctx.accounts.mint.to_account_info()],
     )?;
 
     if enable_permanent_delegate {
         invoke(
-            &token_2022_instruction::initialize_permanent_delegate(
+            &token_instruction::initialize_permanent_delegate(
                 &spl_token_2022::id(),
                 ctx.accounts.mint.key,
                 &ctx.accounts.config.key(),
@@ -112,7 +100,7 @@ pub fn initialize(
     if enable_transfer_hook {
         let transfer_hook_program = ctx
             .accounts
-            .transfer_hook_program
+            .transfer_hook_program_id
             .as_ref()
             .ok_or_else(|| error!(StablecoinError::ComplianceNotEnabled))?;
 
@@ -139,7 +127,7 @@ pub fn initialize(
     }
 
     invoke(
-        &token_2022_instruction::initialize_mint2(
+        &token_instruction::initialize_mint2(
             &spl_token_2022::id(),
             ctx.accounts.mint.key,
             &ctx.accounts.config.key(),
@@ -191,7 +179,7 @@ fn selected_extensions(
     enable_transfer_hook: bool,
     default_account_frozen: bool,
 ) -> Vec<ExtensionType> {
-    let mut extensions = vec![ExtensionType::MetadataPointer];
+    let mut extensions = Vec::new();
     if enable_permanent_delegate {
         extensions.push(ExtensionType::PermanentDelegate);
     }
@@ -209,42 +197,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn extensions_always_include_metadata_pointer() {
+    fn extensions_are_empty_when_all_flags_disabled() {
         let exts = selected_extensions(false, false, false);
-        assert_eq!(exts, vec![ExtensionType::MetadataPointer]);
+        assert!(exts.is_empty());
     }
 
     #[test]
     fn extensions_include_permanent_delegate_when_enabled() {
         let exts = selected_extensions(true, false, false);
-        assert_eq!(
-            exts,
-            vec![
-                ExtensionType::MetadataPointer,
-                ExtensionType::PermanentDelegate
-            ]
-        );
+        assert_eq!(exts, vec![ExtensionType::PermanentDelegate]);
     }
 
     #[test]
     fn extensions_include_transfer_hook_when_enabled() {
         let exts = selected_extensions(false, true, false);
-        assert_eq!(
-            exts,
-            vec![ExtensionType::MetadataPointer, ExtensionType::TransferHook]
-        );
+        assert_eq!(exts, vec![ExtensionType::TransferHook]);
     }
 
     #[test]
     fn extensions_include_default_account_state_when_enabled() {
         let exts = selected_extensions(false, false, true);
-        assert_eq!(
-            exts,
-            vec![
-                ExtensionType::MetadataPointer,
-                ExtensionType::DefaultAccountState
-            ]
-        );
+        assert_eq!(exts, vec![ExtensionType::DefaultAccountState]);
     }
 
     #[test]
@@ -253,7 +226,6 @@ mod tests {
         assert_eq!(
             exts,
             vec![
-                ExtensionType::MetadataPointer,
                 ExtensionType::PermanentDelegate,
                 ExtensionType::TransferHook,
                 ExtensionType::DefaultAccountState,

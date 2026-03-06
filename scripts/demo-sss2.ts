@@ -1,6 +1,6 @@
 import {
   createAssociatedTokenAccountIdempotentInstruction,
-  createTransferCheckedInstruction,
+  createTransferCheckedWithTransferHookInstruction,
   getAccount,
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
@@ -9,16 +9,19 @@ import { Keypair } from "@solana/web3.js";
 import {
   deriveBlacklistPda,
   deriveConfigPda,
+  deriveExtraAccountMetaListPda,
   deriveRoleRegistryPda,
   ixAddToBlacklist,
   ixFreeze,
   ixInitialize,
+  ixInitializeExtraAccountMetaList,
   ixMint,
   ixSeize,
   ixUpdateMinterAdd,
   ixUpdateRoleAdd,
   loadProvider,
   sendInstructions,
+  SSS_STABLECOIN_PROGRAM_ID,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
 } from "./demo-utils";
 
@@ -30,11 +33,15 @@ async function main(): Promise<void> {
 
   const mint = Keypair.generate();
   const recipient = Keypair.generate();
-  const symbol = `R${Date.now().toString().slice(-3)}`;
+  const uniqueSuffix = `${Date.now().toString().slice(-5)}${Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0")}`;
+  const symbol = `R${uniqueSuffix}`;
   const [configPda] = deriveConfigPda(authority, symbol);
   const [roleRegistryPda] = deriveRoleRegistryPda(configPda);
   const [senderBlacklistPda] = deriveBlacklistPda(configPda, authority);
   const [recipientBlacklistPda] = deriveBlacklistPda(configPda, recipient.publicKey);
+  const [extraAccountMetaListPda] = deriveExtraAccountMetaListPda(mint.publicKey);
 
   const authorityAta = getAssociatedTokenAddressSync(mint.publicKey, authority, false, TOKEN_2022_PROGRAM_ID);
   const recipientAta = getAssociatedTokenAddressSync(mint.publicKey, recipient.publicKey, false, TOKEN_2022_PROGRAM_ID);
@@ -57,6 +64,16 @@ async function main(): Promise<void> {
     }),
   ], [mint]);
   console.log("   TX:", initTx);
+
+  console.log("\n1b. Initializing transfer hook extra account meta list...");
+  const initExtraAccountMetaListTx = await sendInstructions(provider.connection, walletKeypair, [
+    ixInitializeExtraAccountMetaList({
+      extraAccountMetaList: extraAccountMetaListPda,
+      mint: mint.publicKey,
+      payer: authority,
+    }),
+  ]);
+  console.log("   TX:", initExtraAccountMetaListTx);
 
   console.log("\n2. Minting 500,000 RUSD...");
   const ataTx = await sendInstructions(provider.connection, walletKeypair, [
@@ -99,7 +116,8 @@ async function main(): Promise<void> {
   console.log("   Mint TX:", mintTx);
 
   console.log("\n3. Transfer 10,000 RUSD to recipient — should succeed...");
-  const transferOkIx = createTransferCheckedInstruction(
+  const transferOkIx = await createTransferCheckedWithTransferHookInstruction(
+    provider.connection,
     authorityAta,
     mint.publicKey,
     recipientAta,
@@ -107,11 +125,9 @@ async function main(): Promise<void> {
     10_000n * 1_000_000n,
     6,
     [],
+    "confirmed",
     TOKEN_2022_PROGRAM_ID,
   );
-  transferOkIx.keys.push({ pubkey: SSS_TRANSFER_HOOK_PROGRAM_ID, isSigner: false, isWritable: false });
-  transferOkIx.keys.push({ pubkey: senderBlacklistPda, isSigner: false, isWritable: false });
-  transferOkIx.keys.push({ pubkey: recipientBlacklistPda, isSigner: false, isWritable: false });
   const transferOkTx = await sendInstructions(provider.connection, walletKeypair, [transferOkIx]);
   console.log("   TX:", transferOkTx);
 
@@ -145,10 +161,11 @@ async function main(): Promise<void> {
   console.log("   Role TX:", blacklisterRoleTx);
   console.log("   Blacklist TX:", blacklistTx);
 
-  console.log("\n5. Attempting transfer to blacklisted address — expected to fail when hook extra-account resolution is wired...");
+  console.log("\n5. Attempting transfer to blacklisted address — expected to fail...");
   let transferFailed = false;
   try {
-    const transferBlockedIx = createTransferCheckedInstruction(
+    const transferBlockedIx = await createTransferCheckedWithTransferHookInstruction(
+      provider.connection,
       authorityAta,
       mint.publicKey,
       recipientAta,
@@ -156,19 +173,17 @@ async function main(): Promise<void> {
       1_000n * 1_000_000n,
       6,
       [],
+      "confirmed",
       TOKEN_2022_PROGRAM_ID,
     );
-    transferBlockedIx.keys.push({ pubkey: SSS_TRANSFER_HOOK_PROGRAM_ID, isSigner: false, isWritable: false });
-    transferBlockedIx.keys.push({ pubkey: senderBlacklistPda, isSigner: false, isWritable: false });
-    transferBlockedIx.keys.push({ pubkey: recipientBlacklistPda, isSigner: false, isWritable: false });
     const tx = await sendInstructions(provider.connection, walletKeypair, [transferBlockedIx]);
     console.log("   Transfer TX:", tx);
   } catch (error) {
     transferFailed = true;
-    console.log("   Transfer blocked as expected:", error instanceof Error ? error.message : String(error));
+    console.log("   Transfer blocked as expected.");
   }
   if (!transferFailed) {
-    console.log("   NOTE: Transfer hook extra-account resolution is not auto-wired in this flow; blacklist PDA exists and seizure path below is enforced.");
+    console.log("   ERROR: Transfer should have been blocked by the hook!");
   }
 
   console.log("\n6. Freezing blacklisted account...");
@@ -192,15 +207,17 @@ async function main(): Promise<void> {
         mint: mint.publicKey,
         targetAta: recipientAta,
         treasuryAta,
+        transferHookProgram: SSS_TRANSFER_HOOK_PROGRAM_ID,
+        extraAccountMetaList: extraAccountMetaListPda,
+        stablecoinProgram: SSS_STABLECOIN_PROGRAM_ID,
+        senderBlacklist: senderBlacklistPda,
+        receiverBlacklist: recipientBlacklistPda,
         seizer: authority,
       }),
     ]);
     console.log("   TX:", seizeTx);
   } catch (error) {
-    console.log(
-      "   Seize execution blocked by transfer-hook extra-account wiring in this flow:",
-      error instanceof Error ? error.message : String(error),
-    );
+    console.log("   Seize failed:", error instanceof Error ? error.message : String(error));
   }
 
   console.log("\n8. Final balance check...");

@@ -18,7 +18,7 @@ export const SSS_STABLECOIN_PROGRAM_ID = new PublicKey(
   process.env.SSS_STABLECOIN_PROGRAM_ID ?? "AmBgA4sV1xFrT4BwbqUU3P3cFqLa6yNJmHyX98k4eW1j",
 );
 export const SSS_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  process.env.SSS_TRANSFER_HOOK_PROGRAM_ID ?? "FiUMBoLyzCzgXQwysxY7ypo4DcZ21Svd2qScsfdtsrj",
+  process.env.SSS_TRANSFER_HOOK_PROGRAM_ID ?? "GRx8C8nakzmZpHXi3cHbq2X3n8uCX56V6SSNRFY6EJ97",
 );
 
 const initializeLayout = borsh.struct([
@@ -79,6 +79,13 @@ export function deriveBlacklistPda(configPda: PublicKey, address: PublicKey): [P
   );
 }
 
+export function deriveExtraAccountMetaListPda(mint: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("extra-account-metas"), mint.toBuffer()],
+    SSS_TRANSFER_HOOK_PROGRAM_ID,
+  );
+}
+
 export async function sendInstructions(
   connection: Connection,
   payer: Keypair,
@@ -132,6 +139,24 @@ export function ixInitialize(params: {
     programId: SSS_STABLECOIN_PROGRAM_ID,
     keys,
     data: Buffer.concat([discriminator("initialize"), args]),
+  });
+}
+
+export function ixInitializeExtraAccountMetaList(params: {
+  extraAccountMetaList: PublicKey;
+  mint: PublicKey;
+  payer: PublicKey;
+}): TransactionInstruction {
+  const initExtraDiscriminator = Buffer.from([43, 34, 13, 49, 167, 88, 235, 235]);
+  return new TransactionInstruction({
+    programId: SSS_TRANSFER_HOOK_PROGRAM_ID,
+    keys: [
+      { pubkey: params.extraAccountMetaList, isSigner: false, isWritable: true },
+      { pubkey: params.mint, isSigner: false, isWritable: false },
+      { pubkey: params.payer, isSigner: true, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.concat([initExtraDiscriminator, Buffer.from([0, 0, 0, 0])]),
   });
 }
 
@@ -301,6 +326,11 @@ export function ixSeize(params: {
   mint: PublicKey;
   targetAta: PublicKey;
   treasuryAta: PublicKey;
+  transferHookProgram: PublicKey;
+  extraAccountMetaList: PublicKey;
+  stablecoinProgram: PublicKey;
+  senderBlacklist: PublicKey;
+  receiverBlacklist: PublicKey;
   seizer: PublicKey;
 }): TransactionInstruction {
   return new TransactionInstruction({
@@ -311,6 +341,11 @@ export function ixSeize(params: {
       { pubkey: params.mint, isSigner: false, isWritable: true },
       { pubkey: params.targetAta, isSigner: false, isWritable: true },
       { pubkey: params.treasuryAta, isSigner: false, isWritable: true },
+      { pubkey: params.transferHookProgram, isSigner: false, isWritable: false },
+      { pubkey: params.extraAccountMetaList, isSigner: false, isWritable: false },
+      { pubkey: params.stablecoinProgram, isSigner: false, isWritable: false },
+      { pubkey: params.senderBlacklist, isSigner: false, isWritable: false },
+      { pubkey: params.receiverBlacklist, isSigner: false, isWritable: false },
       { pubkey: params.seizer, isSigner: true, isWritable: true },
       { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
     ],

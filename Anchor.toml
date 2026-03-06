@@ -10,11 +10,11 @@ members = ["sss-stablecoin", "sss-transfer-hook"]
 
 [programs.devnet]
 sss_stablecoin = "AmBgA4sV1xFrT4BwbqUU3P3cFqLa6yNJmHyX98k4eW1j"
-sss_transfer_hook = "FiUMBoLyzCzgXQwysxY7ypo4DcZ21Svd2qScsfdtsrj"
+sss_transfer_hook = "GRx8C8nakzmZpHXi3cHbq2X3n8uCX56V6SSNRFY6EJ97"
 
 [programs.localnet]
 sss_stablecoin = "AmBgA4sV1xFrT4BwbqUU3P3cFqLa6yNJmHyX98k4eW1j"
-sss_transfer_hook = "FiUMBoLyzCzgXQwysxY7ypo4DcZ21Svd2qScsfdtsrj"
+sss_transfer_hook = "GRx8C8nakzmZpHXi3cHbq2X3n8uCX56V6SSNRFY6EJ97"
 
 [registry]
 url = "https://api.apr.dev"

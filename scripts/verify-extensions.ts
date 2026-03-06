@@ -44,7 +44,10 @@ async function main(): Promise<void> {
   anchor.setProvider(provider);
 
   const mint = Keypair.generate();
-  const symbol = `R${Date.now().toString().slice(-3)}`;
+  const uniqueSuffix = `${Date.now().toString().slice(-5)}${Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0")}`;
+  const symbol = `R${uniqueSuffix}`;
 
   const [configPda] = PublicKey.findProgramAddressSync(
     [Buffer.from("stablecoin"), provider.wallet.publicKey.toBuffer(), Buffer.from(symbol)],
