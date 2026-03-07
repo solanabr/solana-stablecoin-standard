@@ -6,15 +6,15 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-stablecoin_core = "Dns9MwXRed9RQxaw3ED4PUn7FC9bm2CynPFpzx6eTCFh"
+stablecoin_core = "Hx1FiL4UdbdqiFr9pseWnkDpLtYYm4KsevHSgvgBX4oh"
 transfer_hook = "E2fEodf97kX61uMpt6tWXKLCPxkQRn4oHa26ig85GND1"
 
 [programs.devnet]
-stablecoin_core = "Dns9MwXRed9RQxaw3ED4PUn7FC9bm2CynPFpzx6eTCFh"
+stablecoin_core = "Hx1FiL4UdbdqiFr9pseWnkDpLtYYm4KsevHSgvgBX4oh"
 transfer_hook = "E2fEodf97kX61uMpt6tWXKLCPxkQRn4oHa26ig85GND1"
 
 [programs.mainnet]
-stablecoin_core = "Dns9MwXRed9RQxaw3ED4PUn7FC9bm2CynPFpzx6eTCFh"
+stablecoin_core = "Hx1FiL4UdbdqiFr9pseWnkDpLtYYm4KsevHSgvgBX4oh"
 transfer_hook = "E2fEodf97kX61uMpt6tWXKLCPxkQRn4oHa26ig85GND1"
 
 [registry]

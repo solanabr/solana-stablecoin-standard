@@ -63,5 +63,11 @@ temp/
 *.key
 secrets/
 
+# Development artifacts
+.claude/
+*.bat
+*.so
+pnpm-lock.yaml
+
 # Other projects (keep separate)
 stableswift/

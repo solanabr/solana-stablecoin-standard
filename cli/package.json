@@ -4,13 +4,15 @@
   "description": "CLI tool for Solana Stablecoin Standard",
   "main": "dist/index.js",
   "bin": {
+    "sss": "./dist/index.js",
     "sss-token": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "prepublish": "npm run build"
+    "start": "tsc && node dist/interactive.js",
+    "dev": "ts-node src/interactive.ts",
+    "cli": "node dist/index.js",
+    "prepublish": "pnpm run build"
   },
   "keywords": [
     "solana",
@@ -20,11 +22,13 @@
   "author": "Superteam Brazil",
   "license": "MIT",
   "dependencies": {
+    "@coral-xyz/anchor": "^0.30.0",
     "@solana/web3.js": "^1.91.0",
     "bn.js": "^5.2.1",
-    "commander": "^11.1.0",
+    "boxen": "^8.0.1",
     "chalk": "^4.1.2",
-    "inquirer": "^8.2.6",
+    "commander": "^11.1.0",
+    "inquirer": "^8.2.7",
     "ora": "^5.4.1",
     "table": "^6.8.1",
     "toml": "^3.0.0"
@@ -35,8 +39,5 @@
     "@types/node": "^20.11.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
-  },
-  "peerDependencies": {
-    "@stbr/sss-token": "^1.0.0"
   }
 }

@@ -1,12 +1,12 @@
 import { PublicKey } from '@solana/web3.js';
 
-// Program IDs (deployed)
+// Program IDs (deployed to devnet)
 export const STABLECOIN_CORE_PROGRAM_ID = new PublicKey(
-  'Dns9MwXRed9RQxaw3ED4PUn7FC9bm2CynPFpzx6eTCFh'
+  'Hx1FiL4UdbdqiFr9pseWnkDpLtYYm4KsevHSgvgBX4oh'
 );
 
 export const TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  'E2fEodf97kX61uMpt6tWXKLCPxkQRn4oHa26ig85GND1'
+  'HT1Ut5v68JASHGtPs5v8PzeS4Sg6Y3RpFk6dFWCYX4EZ'
 );
 
 // Seeds for PDA derivation

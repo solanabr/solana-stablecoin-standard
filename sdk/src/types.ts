@@ -3,16 +3,6 @@ import BN from 'bn.js';
 
 // ========== Configuration Types ==========
 
-export interface StablecoinConfig {
-  name: string;
-  symbol: string;
-  uri: string;
-  decimals: number;
-  enablePermanentDelegate: boolean;
-  enableTransferHook: boolean;
-  defaultAccountFrozen: boolean;
-}
-
 export interface CreateStablecoinParams {
   preset?: Preset;
   name: string;

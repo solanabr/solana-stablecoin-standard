@@ -22,7 +22,7 @@ import {
   Preset,
 } from './types';
 import { ComplianceModule } from './modules/compliance';
-import { mergePresetConfig } from './presets';
+import { mergeConfig, getPreset } from './presets';
 import {
   STABLECOIN_CORE_PROGRAM_ID,
   STABLECOIN_SEED,
@@ -69,22 +69,45 @@ export class SolanaStablecoin {
     // Merge preset config if provided
     let config;
     if (params.preset) {
-      config = mergePresetConfig(params.preset, {
+      const presetConfig = getPreset(params.preset);
+      config = mergeConfig(presetConfig, {
         name: params.name,
         symbol: params.symbol,
-        uri: params.uri || '',
         decimals: params.decimals,
-        ...params.extensions,
+        extensions: {
+          metadata: true,
+          freezeAuthority: true,
+          permanentDelegate: params.extensions?.permanentDelegate ?? false,
+          transferHook: params.extensions?.transferHook ?? false,
+          confidentialTransfers: false,
+          defaultAccountFrozen: params.extensions?.defaultAccountFrozen ?? false,
+        },
+        features: {
+          blacklist: false,
+          seizure: false,
+          pause: true,
+          roleBasedAccess: true,
+        },
       });
     } else {
       config = {
         name: params.name,
         symbol: params.symbol,
-        uri: params.uri || '',
         decimals: params.decimals,
-        enablePermanentDelegate: params.extensions?.permanentDelegate ?? false,
-        enableTransferHook: params.extensions?.transferHook ?? false,
-        defaultAccountFrozen: params.extensions?.defaultAccountFrozen ?? false,
+        extensions: {
+          metadata: true,
+          freezeAuthority: true,
+          permanentDelegate: params.extensions?.permanentDelegate ?? false,
+          transferHook: params.extensions?.transferHook ?? false,
+          confidentialTransfers: false,
+          defaultAccountFrozen: params.extensions?.defaultAccountFrozen ?? false,
+        },
+        features: {
+          blacklist: false,
+          seizure: false,
+          pause: true,
+          roleBasedAccess: true,
+        },
       };
     }
     
