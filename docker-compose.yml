@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  # Mint/Burn Service - Coordinates fiat-to-stablecoin lifecycle
+  mint-service:
+    build:
+      context: ./backend/mint-service
+      dockerfile: Dockerfile
+    container_name: sss-mint-service
+    environment:
+      - NODE_ENV=production
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID:-Hx1FiL4UdbdqiFr9pseWnkDpLtYYm4KsevHSgvgBX4oh}
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/mint-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Event Listener/Indexer - Monitors on-chain events
+  event-listener:
+    build:
+      context: ./backend/event-listener
+      dockerfile: Dockerfile
+    container_name: sss-event-listener
+    environment:
+      - NODE_ENV=production
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID:-Hx1FiL4UdbdqiFr9pseWnkDpLtYYm4KsevHSgvgBX4oh}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/sss}
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/event-listener:/app
+      - /app/node_modules
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Compliance Service (SSS-2) - Blacklist management and sanctions screening
+  compliance-service:
+    build:
+      context: ./backend/compliance-service
+      dockerfile: Dockerfile
+    container_name: sss-compliance-service
+    environment:
+      - NODE_ENV=production
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID:-Hx1FiL4UdbdqiFr9pseWnkDpLtYYm4KsevHSgvgBX4oh}
+      - PORT=3003
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/sss}
+    ports:
+      - "3003:3003"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/compliance-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Webhook Service - Configurable event notifications
+  webhook-service:
+    build:
+      context: ./backend/webhook-service
+      dockerfile: Dockerfile
+    container_name: sss-webhook-service
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/sss}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+    ports:
+      - "3004:3004"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/webhook-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: sss-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=sss
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for webhook queue and caching
+  redis:
+    image: redis:7-alpine
+    container_name: sss-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway (Optional) - Unified API endpoint
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: sss-api-gateway
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MINT_SERVICE_URL=http://mint-service:3001
+      - COMPLIANCE_SERVICE_URL=http://compliance-service:3003
+      - WEBHOOK_SERVICE_URL=http://webhook-service:3004
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mint-service
+      - compliance-service
+      - webhook-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  default:
+    name: sss-network

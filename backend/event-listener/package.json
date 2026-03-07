@@ -1,0 +1,25 @@
+{
+  "name": "@sss/event-listener",
+  "version": "1.0.0",
+  "description": "Event listener and indexer for Solana Stablecoin Standard",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.91.0",
+    "@coral-xyz/anchor": "^0.29.0",
+    "pg": "^8.11.3",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.10.9",
+    "typescript": "^5.3.2",
+    "ts-node": "^10.9.1"
+  }
+}
