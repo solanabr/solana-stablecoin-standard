@@ -3,6 +3,7 @@
 //! Assume a Surfpool (or solana-test-validator) RPC is running. Default RPC: http://127.0.0.1:8899.
 //! Override with env `RPC_URL`. Keypairs are created in a temp dir and airdropped in Rust.
 
+use assert_cmd::cargo::cargo_bin_cmd;
 use assert_cmd::Command;
 use predicates::str::contains;
 use solana_client::rpc_client::RpcClient;
@@ -63,7 +64,7 @@ fn sss_token(rpc_url: &str, keypair_path: &std::path::Path, mint: &str, args: &[
         mint,
     ];
     a.extend(args);
-    let mut c = Command::cargo_bin("sss-token").expect("binary");
+    let mut c = cargo_bin_cmd!("sss-token");
     c.args(a);
     c
 }

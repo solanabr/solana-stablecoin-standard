@@ -1,8 +1,11 @@
 {
   "license": "ISC",
+  "workspaces": ["sdk"],
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+    "sdk:build": "yarn workspace @stbr/sss-token build",
+    "sdk:clean": "yarn workspace @stbr/sss-token clean"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
