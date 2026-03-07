@@ -1,0 +1,20 @@
+[toolchain]
+package_manager = "yarn"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+sss = "7qYYBZqC88Vt61pon3cJnbTpukCsgCETypo13cttMVMG"
+transfer_hook = "Fsg5gXrxo5Spx3ffMHVRpGsi919U141fWrd5EDo96iw2"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
