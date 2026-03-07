@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  validator:
+    image: solanalabs/solana:v2.1.0
+    ports:
+      - "8899:8899"
+      - "8900:8900"
+      - "9900:9900"
+    environment:
+      - SOLANA_RUN=true
+    command:
+      - "solana-test-validator"
+      - "--reset"
+      - "--bpf-program"
+      - "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+      - "/usr/lib/solana/deployments/spl_token_2022.so"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8899/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  anchor:
+    build:
+      context: .
+      dockerfile: Dockerfile.anchor
+    volumes:
+      - .:/workspace
+      - anchor-cache:/root/.cache
+    environment:
+      - ANCHOR_PROVIDER_URL=http://validator:8899
+      - ANCHOR_WALLET=/workspace/.wallet/id.json
+    depends_on:
+      validator:
+        condition: service_healthy
+    command: ["tail", "-f", "/dev/null"]
+
+volumes:
+  anchor-cache:

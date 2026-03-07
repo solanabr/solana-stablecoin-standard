@@ -1,0 +1,27 @@
+FROM rust:1.75-bookworm
+
+# Install Solana CLI
+RUN sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.0/install)"
+ENV PATH="/root/.local/share/solana/install/active_release/bin:${PATH}"
+
+# Install Anchor CLI
+RUN cargo install --git https://github.com/coral-xyz/anchor avm --force
+RUN avm install 0.30.1
+RUN avm use 0.30.1
+ENV PATH="/root/.avm/bin:${PATH}"
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+
+# Install build dependencies
+RUN apt-get install -y \
+    pkg-config \
+    build-essential \
+    libudev-dev \
+    libssl-dev \
+    curl
+
+WORKDIR /workspace
+
+CMD ["tail", "-f", "/dev/null"]
