@@ -6,8 +6,11 @@ COPY package.json package-lock.json* ./
 COPY sdk/package.json sdk/
 COPY services/compliance/package.json services/compliance/
 
-# Install root workspace deps (links SDK)
-RUN npm install --workspace=sdk --workspace=services/compliance --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+# Install all root deps (express, pg, @types/* etc.) and link SDK workspace
+RUN npm install --include=dev --ignore-scripts
+RUN npm install --workspace=sdk --include=dev --ignore-scripts 2>/dev/null || true
+# Ensure pg is available for TypeScript compilation (not in root package.json)
+RUN npm install --no-save --ignore-scripts pg
 
 # Copy SDK source and build it
 COPY sdk/ sdk/
@@ -17,7 +20,7 @@ RUN cd sdk && npx tsc || true
 # Copy service source and build
 COPY services/compliance/ services/compliance/
 RUN cd services/compliance && npx tsc
-
+  
 FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /app/services/compliance/dist ./dist

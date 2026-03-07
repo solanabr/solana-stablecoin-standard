@@ -1,0 +1,26 @@
+[package]
+name = "sss-3-private"
+version = "0.1.0"
+description = "SSS-3 Private Stablecoin — Proof of Concept (confidential transfers + scoped allowlists)"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_3_private"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { workspace = true }
+anchor-spl  = { workspace = true }
+spl-token-2022 = { workspace = true }
+
+# NOTE: The following are needed for full confidential transfer support
+# but are gated behind unstable features. Uncomment when stable:
+# solana-zk-sdk = "2.3"

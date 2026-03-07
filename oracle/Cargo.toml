@@ -1,0 +1,22 @@
+[package]
+name = "sss-oracle"
+version = "0.1.0"
+description = "Oracle Integration Module — Switchboard price feeds for non-USD stablecoin pegs"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_oracle"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { workspace = true }
+anchor-spl  = { workspace = true }
+# switchboard-solana = "0.30"  # Uncomment when building with switchboard
