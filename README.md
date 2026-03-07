@@ -165,6 +165,29 @@ docker compose up
 #   http://localhost:3002  — Compliance API (SSS-2)
 ```
 
+## Bonus Features
+
+| Feature | Location | Description |
+|---------|----------|-------------|
+| **SSS-3 Private** | `programs/sss-private/` + [docs/SSS-3.md](docs/SSS-3.md) | Confidential Transfers + allowlists — proof of concept |
+| **Oracle Module** | `sdk/oracle/` + [docs/ORACLE.md](docs/ORACLE.md) | Switchboard price feeds for non-USD pegs (BRL, EUR, XAU) |
+| **Admin TUI** | `cli/tui/` | Interactive terminal UI (`sss-tui --mint <address>`) |
+| **Example Frontend** | `frontend/` | Next.js + Wallet Adapter UI for stablecoin creation and management |
+
+### Run the TUI
+
+```bash
+cd cli/tui && pnpm install && pnpm build
+node dist/index.js --mint <your-mint> --cluster devnet
+```
+
+### Run the Frontend
+
+```bash
+cd frontend && pnpm install && pnpm dev
+# Open http://localhost:3000
+```
+
 ## License
 
 MIT — Copyright 2026 Superteam Brazil

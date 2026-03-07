@@ -2594,6 +2594,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sss-private"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+]
+
+[[package]]
 name = "sss-token"
 version = "0.1.0"
 dependencies = [

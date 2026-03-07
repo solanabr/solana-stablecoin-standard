@@ -1,0 +1,26 @@
+{
+  "name": "@stbr/sss-tui",
+  "version": "0.1.0",
+  "description": "Interactive terminal UI for Solana Stablecoin Standard administration",
+  "bin": {
+    "sss-tui": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.tsx",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.98.0",
+    "@solana/spl-token": "^0.4.10",
+    "ink": "^3.2.0",
+    "ink-spinner": "^4.0.0",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "typescript": "^5.5.0",
+    "ts-node": "^10.9.0"
+  }
+}

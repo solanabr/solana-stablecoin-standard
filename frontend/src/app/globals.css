@@ -1,0 +1,4 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #0f0f0f; color: #e2e8f0; }
+a { color: #9945ff; text-decoration: none; }
+a:hover { text-decoration: underline; }

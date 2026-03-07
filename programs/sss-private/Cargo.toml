@@ -1,0 +1,20 @@
+[package]
+name = "sss-private"
+version = "0.1.0"
+description = "SSS-3 Private Stablecoin — Confidential Transfers + Allowlists (proof of concept)"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_private"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { workspace = true }

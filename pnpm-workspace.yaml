@@ -1,6 +1,9 @@
 packages:
   - "sdk/core"
+  - "sdk/oracle"
   - "cli/sss-token"
+  - "cli/tui"
   - "services/indexer"
   - "services/mint-burn"
   - "services/compliance"
+  - "frontend"
