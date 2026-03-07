@@ -1,0 +1,26 @@
+{
+  "name": "@stbr/sss-token",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard TypeScript SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "src/idl"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "copy-idl": "cp ../../target/idl/sss_token.json src/idl/ && cp ../../target/idl/sss_transfer_hook.json src/idl/ 2>/dev/null || true",
+    "prebuild": "pnpm copy-idl || true"
+  },
+  "peerDependencies": {
+    "@coral-xyz/anchor": ">=0.31.0",
+    "@solana/spl-token": ">=0.4.0",
+    "@solana/web3.js": ">=1.95.0"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.10",
+    "@solana/web3.js": "^1.98.0",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}

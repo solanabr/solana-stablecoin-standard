@@ -1,0 +1,29 @@
+{
+  "name": "@stbr/sss-cli",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard admin CLI",
+  "main": "dist/index.js",
+  "bin": {
+    "sss-token": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stbr/sss-token": "workspace:*",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.10",
+    "@solana/web3.js": "^1.98.0",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.4",
+    "commander": "^12.1.0",
+    "toml": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,8 @@
+[package]
+name = "trident-tests"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fuzz_0"
+path = "fuzz_tests/fuzz_0/test_fuzz.rs"

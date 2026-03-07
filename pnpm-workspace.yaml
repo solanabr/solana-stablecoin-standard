@@ -1,0 +1,6 @@
+packages:
+  - "sdk/core"
+  - "cli/sss-token"
+  - "services/indexer"
+  - "services/mint-burn"
+  - "services/compliance"

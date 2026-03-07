@@ -1,0 +1,13 @@
+.anchor
+.DS_Store
+target/
+node_modules/
+test-ledger/
+*.env
+.env.*
+dist/
+build/
+*.js.map
+**/.turbo/
+pnpm-lock.yaml
+.claude/

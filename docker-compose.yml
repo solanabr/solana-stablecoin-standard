@@ -1,0 +1,78 @@
+version: "3.9"
+
+# SSS Backend Services
+# Usage: docker compose up
+# Prerequisites: build services first with `pnpm build` in each service directory,
+#   or use a multi-stage Dockerfile that compiles TypeScript.
+#
+# Environment variables:
+#   MINT              - Token-2022 mint public key
+#   SSS_PROGRAM_ID    - sss-token program ID
+#   WEBHOOK_URL       - Destination for event webhooks (optional)
+#   RPC_URL           - Solana RPC HTTP endpoint
+#   RPC_WS_URL        - Solana RPC WebSocket endpoint
+
+services:
+  indexer:
+    build:
+      context: ./services/indexer
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3000
+      - RPC_URL=${RPC_URL:-http://host.docker.internal:8899}
+      - RPC_WS_URL=${RPC_WS_URL:-ws://host.docker.internal:8900}
+      - SSS_PROGRAM_ID=${SSS_PROGRAM_ID:-SSTkN3SNHHXbGajVxBJ8vEfaZHu7f4xHibKAzktWPYj}
+      - WEBHOOK_URL=${WEBHOOK_URL:-}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  mint-burn:
+    build:
+      context: ./services/mint-burn
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3001
+      - RPC_URL=${RPC_URL:-http://host.docker.internal:8899}
+      - MINT=${MINT}
+      - AUTHORITY_KEYPAIR_PATH=/secrets/authority.json
+    ports:
+      - "3001:3001"
+    volumes:
+      - ${KEYPAIR_PATH:-~/.config/solana/id.json}:/secrets/authority.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  compliance:
+    build:
+      context: ./services/compliance
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3002
+      - RPC_URL=${RPC_URL:-http://host.docker.internal:8899}
+      - MINT=${MINT}
+      - AUTHORITY_KEYPAIR_PATH=/secrets/authority.json
+      - DB_PATH=/app/data/compliance.db
+    ports:
+      - "3002:3002"
+    volumes:
+      - ${KEYPAIR_PATH:-~/.config/solana/id.json}:/secrets/authority.json:ro
+      - compliance_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  compliance_data:

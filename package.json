@@ -1,0 +1,30 @@
+{
+  "name": "solana-stablecoin-standard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Modular stablecoin SDK and standards for Solana",
+  "scripts": {
+    "build": "anchor build",
+    "test": "anchor test",
+    "test:ts": "pnpm --filter './tests' test",
+    "sdk:build": "pnpm --filter @stbr/sss-token build",
+    "cli:build": "pnpm --filter @stbr/sss-cli build",
+    "lint": "eslint . --ext .ts",
+    "clean": "find . -name 'dist' -not -path '*/node_modules/*' | xargs rm -rf"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.98.0",
+    "@solana/spl-token": "^0.4.10",
+    "@types/bn.js": "^5.1.5",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.0",
+    "mocha": "^10.7.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
