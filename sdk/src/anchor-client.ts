@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Keypair } from '@solana/web3.js';
+import { Connection, PublicKey, Keypair, SystemProgram } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet, BN } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { STABLECOIN_CORE_PROGRAM_ID, STABLECOIN_SEED } from './constants';
@@ -53,7 +53,7 @@ export class AnchorStablecoinClient {
       .accounts({
         state: stablecoinState,
         authority: params.authority.publicKey,
-        systemProgram: PublicKey.default,
+        systemProgram: SystemProgram.programId,
       })
       .signers([params.authority])
       .rpc();
