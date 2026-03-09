@@ -40,7 +40,8 @@ pub struct UpdateMinter<'info> {
     )]
     pub minter_info: Account<'info, MinterInfo>,
 
-    /// CHECK: The wallet address of the minter being managed.
+    /// CHECK: Wallet address of the minter. Only used as PDA seed — not validated
+    /// beyond zero-address check. Minter is activated separately via is_active flag.
     pub minter_wallet: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
@@ -48,6 +49,11 @@ pub struct UpdateMinter<'info> {
 
 pub fn handler(ctx: Context<UpdateMinter>, params: UpdateMinterParams) -> Result<()> {
     require_master_authority(&ctx.accounts.role_registry, &ctx.accounts.authority.key())?;
+
+    require!(
+        ctx.accounts.minter_wallet.key() != Pubkey::default(),
+        SssError::ZeroAuthority
+    );
 
     let clock = Clock::get()?;
     let minter_info = &mut ctx.accounts.minter_info;

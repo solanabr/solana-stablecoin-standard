@@ -55,6 +55,11 @@ pub fn handler(ctx: Context<AttestReserve>, params: AttestReserveParams) -> Resu
         SssError::UriTooLong
     );
 
+    require!(
+        params.total_reserves_usd >= params.total_outstanding,
+        SssError::InsufficientReserves
+    );
+
     let clock = Clock::get()?;
     let config = &ctx.accounts.config;
 

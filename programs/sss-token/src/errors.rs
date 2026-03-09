@@ -37,14 +37,14 @@ pub enum SssError {
     TransferHookNotEnabled,
     #[msg("Confidential transfers require SSS-3 preset")]
     ConfidentialTransfersNotEnabled,
+    #[msg("Custom preset requires all four feature flags to be specified")]
+    CustomFlagsMissing,
 
     // Blacklist (SSS-2)
-    #[msg("Address is already blacklisted")]
-    AlreadyBlacklisted,
-    #[msg("Address is not blacklisted")]
-    NotBlacklisted,
     #[msg("Cannot blacklist the master authority")]
     CannotBlacklistAuthority,
+    #[msg("Cannot mint to a blacklisted recipient")]
+    RecipientBlacklisted,
 
     // Validation
     #[msg("Name exceeds maximum length of 32 characters")]
@@ -71,6 +71,14 @@ pub enum SssError {
     SeizeAmountZero,
     #[msg("Source and destination accounts must be different")]
     SeizeSameAccount,
+
+    // Reserve attestation
+    #[msg("Reserve attestation requires reserves >= outstanding")]
+    InsufficientReserves,
+
+    // Transfer hook
+    #[msg("Invalid transfer hook program ID")]
+    InvalidHookProgram,
 
     // Arithmetic
     #[msg("Arithmetic overflow")]
