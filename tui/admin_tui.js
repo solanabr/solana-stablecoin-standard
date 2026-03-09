@@ -492,7 +492,10 @@ async function refreshData() {
     liveData.loading = false;
     updateTopNav();
     updateStatusBar();
-    renderTabContent();
+    // Don't re-render tabs while a modal is open — it would destroy the modal
+    if (activeModals.length === 0) {
+      renderTabContent();
+    }
   }
 }
 
