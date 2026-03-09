@@ -72,6 +72,27 @@ The test suite runs 60 integration tests across all presets plus SDK integration
 | SDK Integration | 23 | Client construction, PDA derivation, all instructions, error handling |
 | Fuzz / Property | 69 | Validation boundaries, overflow protection, RBAC, proptest generative |
 
+### Backend (Docker)
+
+```bash
+# Set your API key for authenticated endpoints
+export API_KEY=your-secret-key
+
+# Build and start all 4 services
+docker compose up --build
+```
+
+This spins up:
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `sss-api` | 3000 | REST API for all stablecoin operations |
+| `sss-webhook-service` | 3001 | Event dispatch with retry |
+| `sss-compliance-service` | 3002 | Sanctions screening |
+| `sss-event-listener` | -- | On-chain log subscriber |
+
+All POST endpoints require `Authorization: Bearer <API_KEY>` header. GET endpoints are public.
+
 ### Build the CLI
 
 ```bash
