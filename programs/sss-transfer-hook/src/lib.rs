@@ -9,7 +9,14 @@ use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookI
 declare_id!("FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy");
 
 /// The SSS Token program ID — the program that owns BlacklistEntry PDAs.
-/// This is set at deploy time. For devnet/localnet, update after deploying sss-token.
+///
+/// This constant must be updated when deploying to different networks.
+/// Token-2022 transfer hooks cannot dynamically resolve the parent program at
+/// runtime — the extra-account-meta list is written once and baked into on-chain
+/// state. This means the hook must know the sss-token program ID at compile time.
+///
+/// To update: change the pubkey literal below to match your deployed sss-token
+/// program ID, then rebuild and redeploy the transfer-hook program.
 pub const SSS_TOKEN_PROGRAM_ID: Pubkey =
     anchor_lang::solana_program::pubkey!("5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4");
 
@@ -68,6 +75,11 @@ pub mod sss_transfer_hook {
             HookError::Unauthorized
         );
 
+        // The extra account metas use SSS_TOKEN_PROGRAM_ID (a compile-time constant)
+        // because Token-2022's ExtraAccountMetaList is written once at initialization
+        // and cannot perform dynamic program lookups. All `external_pda_with_seeds`
+        // entries reference the sss-token program by index, which resolves to this
+        // constant at account-resolution time.
         let extra_account_metas = build_extra_account_metas()?;
 
         let account_size =
@@ -113,7 +125,7 @@ pub mod sss_transfer_hook {
 
     /// The transfer hook execute handler. Called by Token-2022 on every transfer.
     ///
-    /// Checks if the source authority or destination owner is blacklisted by
+    /// Checks if the source or destination token-account owner is blacklisted by
     /// verifying whether their BlacklistEntry PDA (owned by sss-token) exists.
     /// If either is blacklisted, the transfer is rejected.
     pub fn transfer_hook(ctx: Context<TransferHookExecute>, _amount: u64) -> Result<()> {
@@ -193,7 +205,7 @@ pub mod sss_transfer_hook {
 /// Extra accounts we add (indices 5-8):
 ///   5: sss-token program (literal) — needed for PDA derivation
 ///   6: StablecoinConfig PDA — derived from sss-token: ["config", mint]
-///   7: Source BlacklistEntry PDA — derived from sss-token: ["blacklist", config, authority]
+///   7: Source BlacklistEntry PDA — derived from sss-token: ["blacklist", config, source_owner]
 ///   8: Dest BlacklistEntry PDA — derived from sss-token: ["blacklist", config, dest_owner]
 fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
     Ok(vec![
@@ -215,7 +227,9 @@ fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
         )
         .map_err(|_| anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize))?,
         // Account 7: Source BlacklistEntry PDA
-        // Seeds: ["blacklist", config_key, source_authority]
+        // Seeds: ["blacklist", config_key, source_token_account_owner]
+        // SECURITY: derive from the source token account's owner field (offset 32),
+        // NOT from the authority/delegate (index 3), to prevent delegate bypass.
         ExtraAccountMeta::new_external_pda_with_seeds(
             5, // program index: sss-token program
             &[
@@ -223,7 +237,11 @@ fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
                     bytes: b"blacklist".to_vec(),
                 },
                 Seed::AccountKey { index: 6 }, // config at index 6
-                Seed::AccountKey { index: 3 }, // source authority at index 3
+                Seed::AccountData {
+                    account_index: 0, // source token account at index 0
+                    data_index: 32,   // owner field offset in SPL Token account
+                    length: 32,       // pubkey is 32 bytes
+                },
             ],
             false,
             false,
