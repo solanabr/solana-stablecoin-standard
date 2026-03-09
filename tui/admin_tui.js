@@ -1865,6 +1865,7 @@ function initDashboard() {
   sideMenu.focus();
 
   sideMenu.on('select', (item, index) => {
+    if (activeModals.length > 0) return; // Don't switch tabs while a modal is open
     state.activeTab = index;
     focusPane = 'main';
     updateFocusIndicator();
