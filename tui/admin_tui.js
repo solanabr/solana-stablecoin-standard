@@ -983,14 +983,15 @@ function openActionModal(actionName) {
             const mintPk = new PublicKey(MINT);
             const recipientPk = new PublicKey(values[0]);
             const recipientAta = getAssociatedTokenAddressSync(mintPk, recipientPk, false, TOKEN_2022_PROGRAM_ID);
-            const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-            const [auditPda] = getAuditLogPda(configPda, auditIdx);
+            // Auto-create recipient ATA if it doesn't exist
+            const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+              wallet.publicKey, recipientAta, recipientPk, mintPk, TOKEN_2022_PROGRAM_ID
+            );
             return await program.methods.mintTokens(amount)
-              .accounts({ minter: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
+              .accounts({ minterAuthority: wallet.publicKey, config: configPda,
                 minterInfo: minterPda, mint: mintPk, recipientTokenAccount: recipientAta,
-                auditLog: auditPda, tokenProgram: TOKEN_2022_PROGRAM_ID,
-                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-                systemProgram: SystemProgram.programId })
+                recipientBlacklist: null, tokenProgram: TOKEN_2022_PROGRAM_ID })
+              .preInstructions([createAtaIx])
               .signers([wallet]).rpc();
           });
         });
@@ -1011,7 +1012,8 @@ function openActionModal(actionName) {
             const burnAta = getAssociatedTokenAddressSync(mintPk, burnFrom, false, TOKEN_2022_PROGRAM_ID);
             return await program.methods.burnTokens(amount)
               .accounts({ burner: wallet.publicKey, config: configPda, mint: mintPk,
-                burnTokenAccount: burnAta, tokenProgram: TOKEN_2022_PROGRAM_ID })
+                burnTokenAccount: burnAta,
+                tokenProgram: TOKEN_2022_PROGRAM_ID })
               .signers([wallet]).rpc();
           });
         });
@@ -1025,12 +1027,10 @@ function openActionModal(actionName) {
           const targetPk = new PublicKey(values[0]);
           const mintPk = new PublicKey(MINT);
           const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-          const [auditPda] = getAuditLogPda(configPda, auditIdx);
           return await program.methods.freezeAccount()
             .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              tokenAccount: targetAta, mint: mintPk, auditLog: auditPda,
-              tokenProgram: TOKEN_2022_PROGRAM_ID, systemProgram: SystemProgram.programId })
+              mint: mintPk, targetTokenAccount: targetAta,
+              tokenProgram: TOKEN_2022_PROGRAM_ID })
             .signers([wallet]).rpc();
         });
         break;
@@ -1043,12 +1043,10 @@ function openActionModal(actionName) {
           const targetPk = new PublicKey(values[0]);
           const mintPk = new PublicKey(MINT);
           const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-          const [auditPda] = getAuditLogPda(configPda, auditIdx);
           return await program.methods.thawAccount()
             .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              tokenAccount: targetAta, mint: mintPk, auditLog: auditPda,
-              tokenProgram: TOKEN_2022_PROGRAM_ID, systemProgram: SystemProgram.programId })
+              mint: mintPk, targetTokenAccount: targetAta,
+              tokenProgram: TOKEN_2022_PROGRAM_ID })
             .signers([wallet]).rpc();
         });
         break;
@@ -1067,8 +1065,8 @@ function openActionModal(actionName) {
             const [auditPda] = getAuditLogPda(configPda, auditIdx);
             return await program.methods.blacklistAdd({ reason: values[1] })
               .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-                blacklistEntry: blPda, targetTokenAccount: targetAta, mint: mintPk,
-                auditLog: auditPda, tokenProgram: TOKEN_2022_PROGRAM_ID,
+                blacklistEntry: blPda, addressToBlacklist: targetPk, mint: mintPk,
+                targetTokenAccount: targetAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
                 systemProgram: SystemProgram.programId })
               .signers([wallet]).rpc();
           });
@@ -1120,11 +1118,8 @@ function openActionModal(actionName) {
           executeTx('Pausing Program', async () => {
             const [configPda] = getConfigPda(MINT);
             const [rolesPda] = getRoleRegistryPda(configPda);
-            const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-            const [auditPda] = getAuditLogPda(configPda, auditIdx);
             return await program.methods.pause()
-              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-                auditLog: auditPda, systemProgram: SystemProgram.programId })
+              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda })
               .signers([wallet]).rpc();
           });
         });
@@ -1135,11 +1130,8 @@ function openActionModal(actionName) {
           executeTx('Unpausing Program', async () => {
             const [configPda] = getConfigPda(MINT);
             const [rolesPda] = getRoleRegistryPda(configPda);
-            const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-            const [auditPda] = getAuditLogPda(configPda, auditIdx);
             return await program.methods.unpause()
-              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-                auditLog: auditPda, systemProgram: SystemProgram.programId })
+              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda })
               .signers([wallet]).rpc();
           });
         });
@@ -1178,11 +1170,8 @@ function openActionModal(actionName) {
           const [configPda] = getConfigPda(MINT);
           const [rolesPda] = getRoleRegistryPda(configPda);
           const newHolder = new PublicKey(values[1]);
-          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-          const [auditPda] = getAuditLogPda(configPda, auditIdx);
           return await program.methods.updateRoles({ role: roleEnum, newHolder })
-            .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              auditLog: auditPda, systemProgram: SystemProgram.programId })
+            .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda })
             .signers([wallet]).rpc();
         });
         break;
@@ -1197,12 +1186,9 @@ function openActionModal(actionName) {
           const [rolesPda] = getRoleRegistryPda(configPda);
           const minterPk = new PublicKey(values[0]);
           const [minterPda] = getMinterInfoPda(configPda, minterPk);
-          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-          const [auditPda] = getAuditLogPda(configPda, auditIdx);
           return await program.methods.updateMinter({ isActive, mintQuota: quota })
             .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              minterInfo: minterPda, minter: minterPk, auditLog: auditPda,
-              systemProgram: SystemProgram.programId })
+              minterInfo: minterPda, minterWallet: minterPk })
             .signers([wallet]).rpc();
         });
         break;
