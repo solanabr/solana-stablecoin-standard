@@ -2099,7 +2099,19 @@ let screenContribWidgets = [];
 
 function clearMainContent() {
   dismissAllModals();
-  mainContent.children.slice().forEach(child => child.destroy());
+  // Clean up program-level paste handlers from destroyed textbox inputs
+  mainContent.children.slice().forEach(child => {
+    if (child._pasteHandler) {
+      screen.program.removeListener('keypress', child._pasteHandler);
+    }
+    // Also check grandchildren (inputs inside forms)
+    if (child.children) {
+      child.children.forEach(gc => {
+        if (gc._pasteHandler) screen.program.removeListener('keypress', gc._pasteHandler);
+      });
+    }
+    child.destroy();
+  });
   screenContribWidgets.forEach(w => { try { screen.remove(w); } catch(e) {} });
   screenContribWidgets = [];
 }
@@ -2128,6 +2140,24 @@ function renderTabContent() {
 
   updateStatusBar();
   screen.render();
+}
+
+// Helper: wire Ctrl+V paste for a set of textbox inputs (program-level so it fires before input handler)
+function wireFormInputs(inputList) {
+  inputList.forEach((inp) => {
+    const handler = (ch, key) => {
+      if (screen.focused === inp && key && key.ctrl && key.name === 'v') {
+        const clip = getClipboard();
+        if (clip) {
+          inp.setValue(clip.split(/\r?\n/)[0]);
+          screen.render();
+        }
+      }
+    };
+    screen.program.on('keypress', handler);
+    // Store ref so we could clean up if needed (clearMainContent destroys widgets anyway)
+    inp._pasteHandler = handler;
+  });
 }
 
 // --- 12. TAB RENDERERS ---
