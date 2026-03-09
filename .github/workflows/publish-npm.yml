@@ -1,0 +1,37 @@
+name: Publish SDK to npm
+
+on:
+  release:
+    types: [published]
+  push:
+    tags: ["sdk-v*"]
+
+jobs:
+  publish:
+    name: Publish @stbr/sss-token
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        working-directory: sdk
+        run: npm ci || npm install
+
+      - name: Build
+        working-directory: sdk
+        run: npm run build
+
+      - name: Publish
+        working-directory: sdk
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
