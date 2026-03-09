@@ -9,6 +9,7 @@ use std::path::PathBuf;
 pub struct CliConfig {
     pub rpc_client: RpcClient,
     pub payer: Keypair,
+    #[allow(dead_code)]
     pub commitment: CommitmentConfig,
 }
 

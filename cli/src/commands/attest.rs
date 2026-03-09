@@ -3,7 +3,6 @@ use clap::Args;
 use solana_sdk::{
     pubkey::Pubkey,
     signer::Signer,
-    system_program,
     transaction::Transaction,
 };
 use anchor_lang::{InstructionData, ToAccountMetas, AccountDeserialize};
@@ -54,7 +53,7 @@ pub fn execute(config: &CliConfig, args: &AttestArgs) -> Result<()> {
         config: config_pda,
         role_registry: role_registry_pda,
         attestation: attestation_pda,
-        system_program: system_program::id(),
+        system_program: solana_sdk::pubkey!("11111111111111111111111111111111"),
     }
     .to_account_metas(None);
 

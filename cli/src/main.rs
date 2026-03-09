@@ -2,12 +2,9 @@ mod commands;
 mod config;
 mod display;
 mod pda;
-mod tui;
-
 use anyhow::Result;
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use config::CliConfig;
-use solana_sdk::pubkey::Pubkey;
 
 #[derive(Parser)]
 #[command(name = "sss", about = "Solana Stablecoin Standard CLI")]
@@ -23,12 +20,6 @@ struct Cli {
 
     #[command(subcommand)]
     command: Commands,
-}
-
-#[derive(Args)]
-struct DashboardArgs {
-    #[arg(long)]
-    mint: Pubkey,
 }
 
 #[derive(Subcommand)]
@@ -69,8 +60,6 @@ enum Commands {
     Holders(commands::holders::HoldersArgs),
     /// Show audit log and attestation history
     AuditLog(commands::audit_log::AuditLogArgs),
-    /// Interactive TUI dashboard
-    Dashboard(DashboardArgs),
 }
 
 fn main() -> Result<()> {
@@ -96,6 +85,5 @@ fn main() -> Result<()> {
         Commands::Minters(args) => commands::minters::execute(&config, args),
         Commands::Holders(args) => commands::holders::execute(&config, args),
         Commands::AuditLog(args) => commands::audit_log::execute(&config, args),
-        Commands::Dashboard(args) => tui::run_dashboard(&config, &args.mint),
     }
 }

@@ -3,7 +3,6 @@ use clap::Args;
 use solana_sdk::{
     pubkey::Pubkey,
     signer::Signer,
-    system_program,
     transaction::Transaction,
 };
 use anchor_lang::{InstructionData, ToAccountMetas};
@@ -33,7 +32,7 @@ pub fn execute(config: &CliConfig, args: &MinterArgs) -> Result<()> {
         role_registry: role_registry_pda,
         minter_info: minter_info_pda,
         minter_wallet: args.wallet,
-        system_program: system_program::id(),
+        system_program: solana_sdk::pubkey!("11111111111111111111111111111111"),
     }
     .to_account_metas(None);
 

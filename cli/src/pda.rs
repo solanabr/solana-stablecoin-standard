@@ -35,6 +35,7 @@ pub fn get_reserve_attestation_pda(config: &Pubkey, index: u64) -> (Pubkey, u8) 
     )
 }
 
+#[allow(dead_code)]
 pub fn get_extra_account_meta_list_pda(mint: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[b"extra-account-metas", mint.as_ref()],

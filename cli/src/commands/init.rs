@@ -5,7 +5,6 @@ use solana_sdk::{
     pubkey::Pubkey,
     signature::Keypair,
     signer::Signer,
-    system_program,
     sysvar::rent,
     transaction::Transaction,
     instruction::AccountMeta,
@@ -75,12 +74,28 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
     let uri = toml_config.as_ref().and_then(|c| c.uri.clone()).unwrap_or_else(|| args.uri.clone());
     let decimals = toml_config.as_ref().and_then(|c| c.decimals).unwrap_or(args.decimals);
 
+    let (custom_pd, custom_th, custom_df, custom_ct) = if matches!(args.preset, StablecoinPreset::Custom) {
+        let tc = toml_config.as_ref();
+        (
+            Some(tc.and_then(|c| c.enable_permanent_delegate).unwrap_or(false)),
+            Some(tc.and_then(|c| c.enable_transfer_hook).unwrap_or(false)),
+            Some(tc.and_then(|c| c.default_account_frozen).unwrap_or(false)),
+            Some(tc.and_then(|c| c.enable_confidential_transfers).unwrap_or(false)),
+        )
+    } else {
+        (None, None, None, None)
+    };
+
     let params = sss_token::instructions::InitializeParams {
         name,
         symbol,
         uri,
         decimals,
         preset: args.preset,
+        enable_permanent_delegate: custom_pd,
+        enable_transfer_hook: custom_th,
+        enable_default_state_frozen: custom_df,
+        enable_confidential_transfers: custom_ct,
     };
 
     let mut accounts = sss_token::accounts::Initialize {
@@ -88,14 +103,14 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
         mint: mint.pubkey(),
         config: config_pda,
         role_registry: role_registry_pda,
-        system_program: system_program::id(),
+        system_program: solana_sdk::pubkey!("11111111111111111111111111111111"),
         token_program,
         rent: rent::id(),
     }
     .to_account_metas(None);
 
-    // For SSS-2, add hook program as remaining account
-    if matches!(args.preset, StablecoinPreset::SSS2) {
+    // Add hook program as remaining account when transfer hook is enabled
+    if matches!(args.preset, StablecoinPreset::SSS2) || custom_th == Some(true) {
         accounts.push(AccountMeta::new_readonly(SSS_TRANSFER_HOOK_PROGRAM_ID, false));
     }
 

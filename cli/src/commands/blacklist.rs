@@ -3,7 +3,6 @@ use clap::{Args, Subcommand};
 use solana_sdk::{
     pubkey::Pubkey,
     signer::Signer,
-    system_program,
     transaction::Transaction,
 };
 use anchor_lang::{InstructionData, ToAccountMetas};
@@ -65,7 +64,7 @@ fn execute_add(config: &CliConfig, args: &BlacklistAddArgs) -> Result<()> {
         mint: args.mint,
         target_token_account: args.token_account,
         token_program: spl_token_2022_id(),
-        system_program: system_program::id(),
+        system_program: solana_sdk::pubkey!("11111111111111111111111111111111"),
     }
     .to_account_metas(None);
 

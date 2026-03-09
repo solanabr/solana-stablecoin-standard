@@ -47,6 +47,7 @@ pub fn display_config(config: &StablecoinConfig, roles: &RoleRegistry) {
     println!();
 }
 
+#[allow(dead_code)]
 pub fn display_minter(minter: &MinterInfo) {
     println!();
     println!("{}", "Minter Info".bold().underline());
@@ -59,6 +60,7 @@ pub fn display_minter(minter: &MinterInfo) {
     println!();
 }
 
+#[allow(dead_code)]
 pub fn display_blacklist_entry(entry: &BlacklistEntry) {
     println!();
     println!("{}", "Blacklist Entry".bold().underline());
@@ -69,6 +71,7 @@ pub fn display_blacklist_entry(entry: &BlacklistEntry) {
     println!();
 }
 
+#[allow(dead_code)]
 pub fn display_attestation(attestation: &ReserveAttestation) {
     let hash_hex: String = attestation.reserve_hash.iter().map(|b| format!("{:02x}", b)).collect();
     println!();
