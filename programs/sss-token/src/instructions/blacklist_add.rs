@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::errors::SssError;
 use crate::events::BlacklistAdded;
 use crate::state::*;
-use crate::utils::{require_not_paused, require_role};
+use crate::utils::require_role;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct BlacklistAddParams {
@@ -21,6 +21,7 @@ pub struct BlacklistAdd<'info> {
     pub authority: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [StablecoinConfig::SEED_PREFIX, config.mint.as_ref()],
         bump = config.bump,
     )]
@@ -67,7 +68,6 @@ pub struct BlacklistAdd<'info> {
 
 pub fn handler(ctx: Context<BlacklistAdd>, params: BlacklistAddParams) -> Result<()> {
     let config = &ctx.accounts.config;
-    require_not_paused(config)?;
 
     // Require SSS-2 features
     require!(
@@ -128,6 +128,9 @@ pub fn handler(ctx: Context<BlacklistAdd>, params: BlacklistAddParams) -> Result
         blacklisted_by: ctx.accounts.authority.key(),
         timestamp: clock.unix_timestamp,
     });
+
+    let config = &mut ctx.accounts.config;
+    config.updated_at = clock.unix_timestamp;
 
     Ok(())
 }

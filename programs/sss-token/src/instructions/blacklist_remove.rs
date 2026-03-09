@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::errors::SssError;
 use crate::events::BlacklistRemoved;
 use crate::state::*;
-use crate::utils::{require_not_paused, require_role};
+use crate::utils::require_role;
 
 #[derive(Accounts)]
 pub struct BlacklistRemove<'info> {
@@ -15,6 +15,7 @@ pub struct BlacklistRemove<'info> {
     pub authority: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [StablecoinConfig::SEED_PREFIX, config.mint.as_ref()],
         bump = config.bump,
     )]
@@ -57,7 +58,6 @@ pub struct BlacklistRemove<'info> {
 
 pub fn handler(ctx: Context<BlacklistRemove>) -> Result<()> {
     let config = &ctx.accounts.config;
-    require_not_paused(config)?;
 
     require!(
         config.enable_permanent_delegate,
@@ -99,6 +99,9 @@ pub fn handler(ctx: Context<BlacklistRemove>) -> Result<()> {
         removed_by: ctx.accounts.authority.key(),
         timestamp: clock.unix_timestamp,
     });
+
+    let config = &mut ctx.accounts.config;
+    config.updated_at = clock.unix_timestamp;
 
     Ok(())
 }
