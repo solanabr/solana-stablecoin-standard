@@ -39,6 +39,48 @@ export const PRESET_CONFIGS: Record<StablecoinPreset, PresetConfig> = {
   },
 };
 
+export interface CustomFeatureFlags {
+  enablePermanentDelegate: boolean;
+  enableTransferHook: boolean;
+  enableDefaultStateFrozen: boolean;
+  enableConfidentialTransfers: boolean;
+}
+
+export function buildInitializeParams(
+  name: string,
+  symbol: string,
+  uri: string,
+  decimals: number,
+  preset: StablecoinPreset,
+  customFlags?: CustomFeatureFlags
+): import("./types").InitializeParams {
+  const presetEnum = PRESET_CONFIGS[preset].preset;
+  if (preset === StablecoinPreset.Custom) {
+    const flags = customFlags ?? {
+      enablePermanentDelegate: false,
+      enableTransferHook: false,
+      enableDefaultStateFrozen: false,
+      enableConfidentialTransfers: false,
+    };
+    return {
+      name, symbol, uri, decimals,
+      preset: presetEnum,
+      enablePermanentDelegate: flags.enablePermanentDelegate,
+      enableTransferHook: flags.enableTransferHook,
+      enableDefaultStateFrozen: flags.enableDefaultStateFrozen,
+      enableConfidentialTransfers: flags.enableConfidentialTransfers,
+    };
+  }
+  return {
+    name, symbol, uri, decimals,
+    preset: presetEnum,
+    enablePermanentDelegate: null,
+    enableTransferHook: null,
+    enableDefaultStateFrozen: null,
+    enableConfidentialTransfers: null,
+  };
+}
+
 export function getPresetAnchorEnum(preset: StablecoinPreset): { [key: string]: {} } {
   return PRESET_CONFIGS[preset].preset;
 }

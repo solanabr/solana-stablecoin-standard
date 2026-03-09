@@ -90,6 +90,10 @@ export interface InitializeParams {
   uri: string;
   decimals: number;
   preset: { [K in StablecoinPreset]?: {} };
+  enablePermanentDelegate: boolean | null;
+  enableTransferHook: boolean | null;
+  enableDefaultStateFrozen: boolean | null;
+  enableConfidentialTransfers: boolean | null;
 }
 
 export interface UpdateRoleParams {
