@@ -7,13 +7,14 @@ use anchor_spl::{
 use crate::errors::SssError;
 use crate::events::AccountThawed;
 use crate::state::*;
-use crate::utils::{require_master_authority, require_not_paused};
+use crate::utils::require_freeze_authority;
 
 #[derive(Accounts)]
 pub struct ThawTokenAccount<'info> {
     pub authority: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [StablecoinConfig::SEED_PREFIX, config.mint.as_ref()],
         bump = config.bump,
     )]
@@ -45,8 +46,7 @@ pub struct ThawTokenAccount<'info> {
 
 pub fn handler(ctx: Context<ThawTokenAccount>) -> Result<()> {
     let config = &ctx.accounts.config;
-    require_not_paused(config)?;
-    require_master_authority(&ctx.accounts.role_registry, &ctx.accounts.authority.key())?;
+    require_freeze_authority(&ctx.accounts.role_registry, &ctx.accounts.authority.key())?;
 
     let clock = Clock::get()?;
     let mint_key = config.mint;
@@ -72,6 +72,9 @@ pub fn handler(ctx: Context<ThawTokenAccount>) -> Result<()> {
         target_account: ctx.accounts.target_token_account.key(),
         timestamp: clock.unix_timestamp,
     });
+
+    let config = &mut ctx.accounts.config;
+    config.updated_at = clock.unix_timestamp;
 
     Ok(())
 }

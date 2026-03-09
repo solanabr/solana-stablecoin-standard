@@ -24,3 +24,14 @@ pub fn require_master_authority(
 ) -> Result<()> {
     require_role(roles, authority, Role::MasterAuthority)
 }
+
+pub fn require_freeze_authority(
+    role_registry: &RoleRegistry,
+    authority: &Pubkey,
+) -> Result<()> {
+    require!(
+        *authority == role_registry.master_authority || *authority == role_registry.pauser,
+        SssError::InvalidAuthority
+    );
+    Ok(())
+}
