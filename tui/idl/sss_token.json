@@ -4,7 +4,8 @@
     "name": "sss_token",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "Solana Stablecoin Standard - Token Program"
+    "description": "Solana Stablecoin Standard - Token Program with blacklist, seize, freeze, and GENIUS Act compliance",
+    "repository": "https://github.com/amanhij/solana-stablecoin-standard-pre"
   },
   "instructions": [
     {
@@ -135,6 +136,7 @@
         },
         {
           "name": "config",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -260,6 +262,7 @@
         },
         {
           "name": "config",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -397,7 +400,12 @@
           "writable": true
         },
         {
-          "name": "burner_token_account",
+          "name": "burn_token_account",
+          "docs": [
+            "The token account to burn from. Must belong to this mint.",
+            "If self-burn: token::authority must equal burner.",
+            "If authority burn: burner must be master_authority and permanent delegate must be enabled."
+          ],
           "writable": true
         },
         {
@@ -431,6 +439,7 @@
         },
         {
           "name": "config",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -661,6 +670,79 @@
           "writable": true
         },
         {
+          "name": "recipient_blacklist",
+          "docs": [
+            "Optional blacklist entry for the recipient token account owner.",
+            "If SSS-2 is enabled and this account exists with data, mint is rejected.",
+            "Seeds derived from the actual on-chain owner of recipient_token_account",
+            "to prevent callers from spoofing a clean wallet."
+          ],
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  97,
+                  99,
+                  107,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config"
+              },
+              {
+                "kind": "account",
+                "path": "recipient_token_account.owner"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                67,
+                173,
+                113,
+                232,
+                57,
+                219,
+                159,
+                201,
+                168,
+                44,
+                52,
+                14,
+                204,
+                97,
+                94,
+                255,
+                124,
+                177,
+                114,
+                30,
+                99,
+                177,
+                108,
+                216,
+                188,
+                20,
+                252,
+                206,
+                154,
+                166,
+                119,
+                253
+              ]
+            }
+          }
+        },
+        {
           "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
@@ -881,6 +963,7 @@
         },
         {
           "name": "config",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -1001,7 +1084,8 @@
           }
         },
         {
-          "name": "new_authority"
+          "name": "new_authority",
+          "signer": true
         }
       ],
       "args": []
@@ -1162,7 +1246,10 @@
           }
         },
         {
-          "name": "minter_wallet"
+          "name": "minter_wallet",
+          "docs": [
+            "beyond zero-address check. Minter is activated separately via is_active flag."
+          ]
         },
         {
           "name": "system_program",
@@ -1575,18 +1662,18 @@
     },
     {
       "code": 6013,
-      "name": "AlreadyBlacklisted",
-      "msg": "Address is already blacklisted"
+      "name": "CustomFlagsMissing",
+      "msg": "Custom preset requires all four feature flags to be specified"
     },
     {
       "code": 6014,
-      "name": "NotBlacklisted",
-      "msg": "Address is not blacklisted"
+      "name": "CannotBlacklistAuthority",
+      "msg": "Cannot blacklist the master authority"
     },
     {
       "code": 6015,
-      "name": "CannotBlacklistAuthority",
-      "msg": "Cannot blacklist the master authority"
+      "name": "RecipientBlacklisted",
+      "msg": "Cannot mint to a blacklisted recipient"
     },
     {
       "code": 6016,
@@ -1640,6 +1727,16 @@
     },
     {
       "code": 6026,
+      "name": "InsufficientReserves",
+      "msg": "Reserve attestation requires reserves >= outstanding"
+    },
+    {
+      "code": 6027,
+      "name": "InvalidHookProgram",
+      "msg": "Invalid transfer hook program ID"
+    },
+    {
+      "code": 6028,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
     }
@@ -1897,6 +1994,30 @@
               "defined": {
                 "name": "StablecoinPreset"
               }
+            }
+          },
+          {
+            "name": "enable_permanent_delegate",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "enable_transfer_hook",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "enable_default_state_frozen",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "enable_confidential_transfers",
+            "type": {
+              "option": "bool"
             }
           }
         ]
@@ -2214,6 +2335,10 @@
           },
           {
             "name": "total_burned",
+            "type": "u64"
+          },
+          {
+            "name": "total_seized",
             "type": "u64"
           },
           {
