@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  SOLANA_VERSION: "3.0.15"
-  ANCHOR_VERSION: "0.32.1"
-
 jobs:
   build-programs:
     name: Build Solana Programs
@@ -31,23 +27,23 @@ jobs:
 
       - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
           solana --version
           solana-keygen new --no-bip39-passphrase
 
       - name: Install Anchor CLI
-        run: cargo install --git https://github.com/coral-xyz/anchor avm --force && avm install ${{ env.ANCHOR_VERSION }} && avm use ${{ env.ANCHOR_VERSION }}
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install 0.31.1
+          avm use 0.31.1
 
       - name: Build programs
         run: anchor build
 
-      - name: Cargo check (sss-token)
-        run: cargo check -p sss-token
-
-      - name: Cargo check (sss-transfer-hook)
-        run: cargo check -p sss-transfer-hook
+      - name: Cargo check
+        run: cargo check -p sss-token -p sss-transfer-hook
 
   build-sdk:
     name: Build SDK
@@ -65,10 +61,7 @@ jobs:
         run: |
           npm install
           npm run build
-
-      - name: TypeScript check
-        working-directory: sdk
-        run: npx tsc --noEmit
+          npx tsc --noEmit
 
   build-backend:
     name: Build Backend
