@@ -2,7 +2,7 @@
 
 A modular, compliance-ready stablecoin framework for Solana using Token-2022.
 
-SSS provides a complete on-chain toolkit for issuing and managing stablecoins, from minimal single-authority tokens to fully compliant assets with transfer restrictions, blacklists, asset seizure, and GENIUS Act reserve attestations. The framework ships as two Anchor programs, a TypeScript SDK, and a Rust CLI with an interactive TUI dashboard.
+SSS provides a complete on-chain toolkit for issuing and managing stablecoins, from minimal single-authority tokens to fully compliant assets with transfer restrictions, blacklists, asset seizure, and GENIUS Act reserve attestations. The framework ships as two Anchor programs, a TypeScript SDK, a Rust CLI, and a Node.js interactive TUI dashboard.
 
 <p align="center">
   <img src="demo.gif" alt="SSS Admin TUI Demo" width="720" />
@@ -108,7 +108,8 @@ programs/
   sss-token/          # Core program — 14 instructions, 5 account types, 25 error codes
   sss-transfer-hook/  # Transfer hook — blacklist enforcement on every transfer (SSS-2)
 sdk/                  # TypeScript SDK — SSSClient, PDA helpers, oracle module, presets
-cli/                  # Rust CLI — 14 subcommands + interactive ratatui TUI dashboard
+cli/                  # Rust CLI — 14 subcommands with formatted terminal output
+tui/                  # Node.js TUI — interactive admin dashboard (blessed/blessed-contrib)
 app/                  # Next.js frontend — landing page + wallet-connected dashboard
 backend/              # Express.js REST API wrapping the SDK
 tests/                # Anchor integration + E2E devnet tests
@@ -154,14 +155,18 @@ The SDK includes an `OracleModule` for fetching real-time price data from Pyth p
 
 ### Interactive TUI Dashboard
 
-The CLI ships with an interactive terminal dashboard (powered by ratatui) that displays live stablecoin configuration, supply metrics, role assignments, and minter status.
+The project includes an interactive Node.js terminal dashboard (powered by blessed/blessed-contrib) that displays live stablecoin configuration, supply metrics, role assignments, minter status, and lets operators execute all program operations directly from the terminal.
+
+```bash
+cd tui && npm install && node admin_tui.js --rpc https://api.devnet.solana.com --mint <MINT_ADDRESS> --keypair <PATH>
+```
 
 ## SDK
 
 The TypeScript SDK provides a high-level `SSSClient` for interacting with both programs.
 
 ```bash
-npm install @solana-stablecoin-standard/sdk
+npm install solana-stablecoin-standard
 ```
 
 See [sdk/README.md](sdk/README.md) for the full API reference.
