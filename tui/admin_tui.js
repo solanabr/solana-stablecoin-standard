@@ -628,7 +628,7 @@ async function executeTx(title, txFn) {
   screen.render();
 
   try {
-    // Anchor .rpc() already confirms the transaction
+    // Anchor .rpc() already confirms the transaction — no need for a second confirmTransaction()
     const sig = await txFn();
 
     // Dismiss sending indicator
@@ -983,6 +983,8 @@ function openActionModal(actionName) {
             const mintPk = new PublicKey(MINT);
             const recipientPk = new PublicKey(values[0]);
             const recipientAta = getAssociatedTokenAddressSync(mintPk, recipientPk, false, TOKEN_2022_PROGRAM_ID);
+            const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+            const [auditPda] = getAuditLogPda(configPda, auditIdx);
             // Auto-create recipient ATA if it doesn't exist
             const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
               wallet.publicKey, recipientAta, recipientPk, mintPk, TOKEN_2022_PROGRAM_ID
@@ -1027,6 +1029,8 @@ function openActionModal(actionName) {
           const targetPk = new PublicKey(values[0]);
           const mintPk = new PublicKey(MINT);
           const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
+          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+          const [auditPda] = getAuditLogPda(configPda, auditIdx);
           return await program.methods.freezeAccount()
             .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
               mint: mintPk, targetTokenAccount: targetAta,
@@ -1170,6 +1174,8 @@ function openActionModal(actionName) {
           const [configPda] = getConfigPda(MINT);
           const [rolesPda] = getRoleRegistryPda(configPda);
           const newHolder = new PublicKey(values[1]);
+          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
+          const [auditPda] = getAuditLogPda(configPda, auditIdx);
           return await program.methods.updateRoles({ role: roleEnum, newHolder })
             .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda })
             .signers([wallet]).rpc();
@@ -1188,7 +1194,8 @@ function openActionModal(actionName) {
           const [minterPda] = getMinterInfoPda(configPda, minterPk);
           return await program.methods.updateMinter({ isActive, mintQuota: quota })
             .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              minterInfo: minterPda, minterWallet: minterPk })
+              minterInfo: minterPda, minterWallet: minterPk,
+              systemProgram: SystemProgram.programId })
             .signers([wallet]).rpc();
         });
         break;
@@ -2142,6 +2149,8 @@ function renderTabContent() {
   screen.render();
 }
 
+// --- 12. TAB RENDERERS ---
+
 // Helper: wire Ctrl+V paste for a set of textbox inputs (program-level so it fires before input handler)
 function wireFormInputs(inputList) {
   inputList.forEach((inp) => {
@@ -2159,8 +2168,6 @@ function wireFormInputs(inputList) {
     inp._pasteHandler = handler;
   });
 }
-
-// --- 12. TAB RENDERERS ---
 
 // === (renderOverviewTab removed — replaced by Command Hub) ===
 
@@ -2191,19 +2198,18 @@ function renderSupplyTab() {
     border: { type: 'line', fg: colors.border }, label: ' Execute Mint '
   });
   blessed.text({ parent: mintForm, top: 1, left: 2, content: 'Recipient Address:' });
-  const addrInput = blessed.textarea({
-    parent: mintForm, name: 'recipientAddress', top: 2, left: 2, width: '90%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  const addrInput = blessed.textbox({
+    parent: mintForm, name: 'recipientAddress', top: 2, left: 2, width: '90%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  addrInput.key(['C-v'], () => { const c = getClipboard(); if (c) { addrInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
-  blessed.text({ parent: mintForm, top: 6, left: 2, content: 'Amount:' });
-  const amtInput = blessed.textarea({
-    parent: mintForm, name: 'amount', top: 7, left: 2, width: '90%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  blessed.text({ parent: mintForm, top: 4, left: 2, content: 'Amount:' });
+  const amtInput = blessed.textbox({
+    parent: mintForm, name: 'amount', top: 5, left: 2, width: '90%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  amtInput.key(['C-v'], () => { const c = getClipboard(); if (c) { amtInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
+  wireFormInputs([addrInput, amtInput]);
   const mintSubmitBtn = blessed.button({
-    parent: mintForm, top: 11, left: 2, width: 20, height: 1,
+    parent: mintForm, top: 7, left: 2, width: 20, height: 1,
     content: ' [ SUBMIT MINT ] ', style: { bg: colors.secondary, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
@@ -2212,7 +2218,9 @@ function renderSupplyTab() {
     const recipient = addrInput.getValue().trim();
     const amountStr = amtInput.getValue().trim();
     if (!recipient || !amountStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
-    const amount = new BN(parseFloat(amountStr) * Math.pow(10, dec));
+    if (!isValidPubkey(recipient)) { showMessage('Error', 'Invalid recipient address.', 2000); return; }
+    const amount = parseTokenAmount(amountStr, dec);
+    if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
     executeTx('Minting Tokens', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2222,19 +2230,20 @@ function renderSupplyTab() {
       const recipientAta = getAssociatedTokenAddressSync(mintPk, recipientPk, false, TOKEN_2022_PROGRAM_ID);
       const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
       const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        wallet.publicKey, recipientAta, recipientPk, mintPk, TOKEN_2022_PROGRAM_ID
+      );
       return await program.methods.mintTokens(amount)
         .accounts({
-          minter: wallet.publicKey,
+          minterAuthority: wallet.publicKey,
           config: configPda,
-          roleRegistry: rolesPda,
           minterInfo: minterPda,
           mint: mintPk,
           recipientTokenAccount: recipientAta,
-          auditLog: auditPda,
+          recipientBlacklist: null,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
         })
+        .preInstructions([createAtaIx])
         .signers([wallet])
         .rpc();
     });
@@ -2246,43 +2255,41 @@ function renderSupplyTab() {
     border: { type: 'line', fg: colors.danger }, label: ' Execute Burn '
   });
   blessed.text({ parent: burnForm, top: 1, left: 2, content: 'Source Account:' });
-  const burnSourceInput = blessed.textarea({
-    parent: burnForm, name: 'sourceAddress', top: 2, left: 2, width: '90%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  const burnSourceInput = blessed.textbox({
+    parent: burnForm, name: 'sourceAddress', top: 2, left: 2, width: '90%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  burnSourceInput.key(['C-v'], () => { const c = getClipboard(); if (c) { burnSourceInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
-  blessed.text({ parent: burnForm, top: 6, left: 2, content: 'Burn Amount:' });
-  const burnAmtInput = blessed.textarea({
-    parent: burnForm, name: 'burnAmount', top: 7, left: 2, width: '90%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  blessed.text({ parent: burnForm, top: 4, left: 2, content: 'Burn Amount:' });
+  const burnAmtInput = blessed.textbox({
+    parent: burnForm, name: 'burnAmount', top: 5, left: 2, width: '90%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  burnAmtInput.key(['C-v'], () => { const c = getClipboard(); if (c) { burnAmtInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
+  wireFormInputs([burnSourceInput, burnAmtInput]);
   const burnSubmitBtn = blessed.button({
-    parent: burnForm, top: 11, left: 2, width: 20, height: 1,
+    parent: burnForm, top: 7, left: 2, width: 20, height: 1,
     content: ' [ SUBMIT BURN ] ', style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
 
   burnSubmitBtn.on('press', () => {
-    const source = burnSourceInput.getValue().trim();
+    const sourceAddr = burnSourceInput.getValue().trim();
     const amountStr = burnAmtInput.getValue().trim();
-    if (!source || !amountStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
-    const amount = new BN(parseFloat(amountStr) * Math.pow(10, dec));
+    if (!amountStr) { showMessage('Error', 'Enter an amount.', 2000); return; }
+    if (sourceAddr && !isValidPubkey(sourceAddr)) { showMessage('Error', 'Invalid source address.', 2000); return; }
+    const amount = parseTokenAmount(amountStr, dec);
+    if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
+    const burnFrom = sourceAddr && isValidPubkey(sourceAddr) ? new PublicKey(sourceAddr) : wallet.publicKey;
     executeTx('Burning Tokens', async () => {
       const [configPda] = getConfigPda(MINT);
       const mintPk = new PublicKey(MINT);
-      const sourcePk = new PublicKey(source);
-      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      const burnAta = getAssociatedTokenAddressSync(mintPk, burnFrom, false, TOKEN_2022_PROGRAM_ID);
       return await program.methods.burnTokens(amount)
         .accounts({
           burner: wallet.publicKey,
           config: configPda,
           mint: mintPk,
-          tokenAccount: sourcePk,
-          auditLog: auditPda,
+          burnTokenAccount: burnAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
         })
         .signers([wallet])
         .rpc();
@@ -2319,13 +2326,13 @@ function renderSupplyTab() {
     border: { type: 'line', fg: colors.danger }, label: ' Freeze Account '
   });
   blessed.text({ parent: freezeForm, top: 1, left: 2, content: 'Target Address:', style: { fg: colors.danger } });
-  const freezeAddrInput = blessed.textarea({
-    parent: freezeForm, name: 'freezeAddress', top: 2, left: 2, width: '90%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  const freezeAddrInput = blessed.textbox({
+    parent: freezeForm, name: 'freezeAddress', top: 2, left: 2, width: '90%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  freezeAddrInput.key(['C-v'], () => { const c = getClipboard(); if (c) { freezeAddrInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
+  wireFormInputs([freezeAddrInput]);
   const freezeBtn = blessed.button({
-    parent: freezeForm, top: 6, left: 2, width: 22, height: 1,
+    parent: freezeForm, top: 4, left: 2, width: 22, height: 1,
     content: ' [ FREEZE ACCOUNT ] ', style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
@@ -2344,8 +2351,8 @@ function renderSupplyTab() {
       return await program.methods.freezeAccount()
         .accounts({
           authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-          tokenAccount: targetAta, mint: mintPk, auditLog: auditPda,
-          tokenProgram: TOKEN_2022_PROGRAM_ID, systemProgram: SystemProgram.programId,
+          mint: mintPk, targetTokenAccount: targetAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
         }).signers([wallet]).rpc();
     });
   });
@@ -2356,13 +2363,13 @@ function renderSupplyTab() {
     border: { type: 'line', fg: colors.success }, label: ' Thaw Account '
   });
   blessed.text({ parent: thawForm, top: 1, left: 2, content: 'Target Address:', style: { fg: colors.success } });
-  const thawAddrInput = blessed.textarea({
-    parent: thawForm, name: 'thawAddress', top: 2, left: 2, width: '90%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  const thawAddrInput = blessed.textbox({
+    parent: thawForm, name: 'thawAddress', top: 2, left: 2, width: '90%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  thawAddrInput.key(['C-v'], () => { const c = getClipboard(); if (c) { thawAddrInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
+  wireFormInputs([thawAddrInput]);
   const thawBtn = blessed.button({
-    parent: thawForm, top: 6, left: 2, width: 22, height: 1,
+    parent: thawForm, top: 4, left: 2, width: 22, height: 1,
     content: ' [ THAW ACCOUNT ] ', style: { bg: colors.success, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
@@ -2381,8 +2388,8 @@ function renderSupplyTab() {
       return await program.methods.thawAccount()
         .accounts({
           authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-          tokenAccount: targetAta, mint: mintPk, auditLog: auditPda,
-          tokenProgram: TOKEN_2022_PROGRAM_ID, systemProgram: SystemProgram.programId,
+          mint: mintPk, targetTokenAccount: targetAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
         }).signers([wallet]).rpc();
     });
   });
@@ -2431,19 +2438,18 @@ function renderBlacklistTab() {
     border: { type: 'line', fg: colors.danger }, label: ' Add to Blacklist '
   });
   blessed.text({ parent: formBox, top: 1, left: 2, content: 'Address:' });
-  const blAddrInput = blessed.textarea({
-    parent: formBox, name: 'blAddress', top: 1, left: 12, width: '40%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  const blAddrInput = blessed.textbox({
+    parent: formBox, name: 'blAddress', top: 1, left: 12, width: '40%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  blAddrInput.key(['C-v'], () => { const c = getClipboard(); if (c) { blAddrInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
-  blessed.text({ parent: formBox, top: 4, left: 2, content: 'Reason:' });
-  const blReasonInput = blessed.textarea({
-    parent: formBox, name: 'blReason', top: 4, left: 12, width: '40%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  blessed.text({ parent: formBox, top: 3, left: 2, content: 'Reason:' });
+  const blReasonInput = blessed.textbox({
+    parent: formBox, name: 'blReason', top: 3, left: 12, width: '40%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  blReasonInput.key(['C-v'], () => { const c = getClipboard(); if (c) { blReasonInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
+  wireFormInputs([blAddrInput, blReasonInput]);
   const blSubmit = blessed.button({
-    parent: formBox, top: 8, left: 2, width: 22, height: 1,
+    parent: formBox, top: 5, left: 2, width: 22, height: 1,
     content: ' [ ADD TO BLACKLIST ] ', style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
@@ -2466,9 +2472,9 @@ function renderBlacklistTab() {
           config: configPda,
           roleRegistry: rolesPda,
           blacklistEntry: blPda,
-          targetTokenAccount: targetAta,
+          addressToBlacklist: targetPk,
           mint: mintPk,
-          auditLog: auditPda,
+          targetTokenAccount: targetAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
@@ -2598,14 +2604,14 @@ function renderRolesTab() {
   });
 
   blessed.text({ parent: formBox, top: 1, left: 35, content: 'New Address:' });
-  const roleAddrInput = blessed.textarea({
-    parent: formBox, name: 'roleAddress', top: 1, left: 49, width: '40%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  const roleAddrInput = blessed.textbox({
+    parent: formBox, name: 'roleAddress', top: 1, left: 49, width: '40%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  roleAddrInput.key(['C-v'], () => { const c = getClipboard(); if (c) { roleAddrInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
+  wireFormInputs([roleAddrInput]);
 
   const roleSubmit = blessed.button({
-    parent: formBox, top: 5, left: 2, width: 20, height: 1,
+    parent: formBox, top: 3, left: 2, width: 20, height: 1,
     content: ' [ UPDATE ROLE ] ', style: { bg: colors.secondary, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
@@ -2626,8 +2632,6 @@ function renderRolesTab() {
           authority: wallet.publicKey,
           config: configPda,
           roleRegistry: rolesPda,
-          auditLog: auditPda,
-          systemProgram: SystemProgram.programId,
         })
         .signers([wallet])
         .rpc();
@@ -2685,19 +2689,18 @@ function renderMintersTab() {
     border: { type: 'line', fg: colors.border }, label: ' Add / Update Minter '
   });
   blessed.text({ parent: formBox, top: 1, left: 2, content: 'Address:' });
-  const minterAddrInput = blessed.textarea({
-    parent: formBox, name: 'minterAddress', top: 1, left: 12, width: '40%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  const minterAddrInput = blessed.textbox({
+    parent: formBox, name: 'minterAddress', top: 1, left: 12, width: '40%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  minterAddrInput.key(['C-v'], () => { const c = getClipboard(); if (c) { minterAddrInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
-  blessed.text({ parent: formBox, top: 4, left: 2, content: 'Quota:' });
-  const minterQuotaInput = blessed.textarea({
-    parent: formBox, name: 'minterQuota', top: 4, left: 12, width: '20%', height: 3,
-    style: { bg: colors.border, fg: colors.text }, inputOnFocus: true, mouse: true
+  blessed.text({ parent: formBox, top: 3, left: 2, content: 'Quota:' });
+  const minterQuotaInput = blessed.textbox({
+    parent: formBox, name: 'minterQuota', top: 3, left: 12, width: '20%', height: 1,
+    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
   });
-  minterQuotaInput.key(['C-v'], () => { const c = getClipboard(); if (c) { minterQuotaInput.setValue(c.split(/\r?\n/)[0]); screen.render(); } });
+  wireFormInputs([minterAddrInput, minterQuotaInput]);
   const minterSubmit = blessed.button({
-    parent: formBox, top: 8, left: 2, width: 22, height: 1,
+    parent: formBox, top: 5, left: 2, width: 22, height: 1,
     content: ' [ UPDATE MINTER ] ', style: { bg: colors.secondary, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
@@ -2705,7 +2708,9 @@ function renderMintersTab() {
     const address = minterAddrInput.getValue().trim();
     const quotaStr = minterQuotaInput.getValue().trim();
     if (!address || !quotaStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
-    const quota = new BN(parseFloat(quotaStr) * Math.pow(10, dec));
+    if (!isValidPubkey(address)) { showMessage('Error', 'Invalid minter address.', 2000); return; }
+    const quota = parseTokenAmount(quotaStr, dec);
+    if (!quota) { showMessage('Error', 'Invalid quota format.', 2000); return; }
     executeTx('Updating Minter', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2719,8 +2724,7 @@ function renderMintersTab() {
           config: configPda,
           roleRegistry: rolesPda,
           minterInfo: minterPda,
-          minter: minterPk,
-          auditLog: auditPda,
+          minterWallet: minterPk,
           systemProgram: SystemProgram.programId,
         })
         .signers([wallet])
@@ -3069,15 +3073,11 @@ function renderSystemConfigTab() {
     executeTx('Pausing Program', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
-      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-      const [auditPda] = getAuditLogPda(configPda, auditIdx);
       return await program.methods.pause()
         .accounts({
           authority: wallet.publicKey,
           config: configPda,
           roleRegistry: rolesPda,
-          auditLog: auditPda,
-          systemProgram: SystemProgram.programId,
         })
         .signers([wallet])
         .rpc();
@@ -3094,15 +3094,11 @@ function renderSystemConfigTab() {
     executeTx('Unpausing Program', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
-      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-      const [auditPda] = getAuditLogPda(configPda, auditIdx);
       return await program.methods.unpause()
         .accounts({
           authority: wallet.publicKey,
           config: configPda,
           roleRegistry: rolesPda,
-          auditLog: auditPda,
-          systemProgram: SystemProgram.programId,
         })
         .signers([wallet])
         .rpc();
