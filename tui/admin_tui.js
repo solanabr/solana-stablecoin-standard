@@ -1905,7 +1905,7 @@ function initDashboard() {
   const tabKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
   tabKeys.forEach((key, idx) => {
     screen.key([key], () => {
-      if (screen.focused && (screen.focused.type === 'textbox' || screen.focused.type === 'textarea')) return;
+      if (isModalOrInputFocused()) return;
       state.activeTab = idx;
       sideMenu.select(idx);
       renderTabContent();
@@ -1913,7 +1913,7 @@ function initDashboard() {
   });
 
   screen.key(['r'], () => {
-    if (screen.focused && (screen.focused.type === 'textbox' || screen.focused.type === 'textarea')) return;
+    if (isModalOrInputFocused()) return;
     refreshData();
   });
 
@@ -2029,7 +2029,7 @@ function initDashboard() {
   }
 
   screen.key([':'], () => {
-    if (screen.focused && (screen.focused.type === 'textbox' || screen.focused.type === 'textarea')) return;
+    if (isModalOrInputFocused()) return;
     if (commandInput) return;
     openCommandPalette();
   });
@@ -3421,8 +3421,7 @@ function renderPlaceholderTab() {
 
 // --- 13. GLOBAL KEYBINDS ---
 screen.key(['q', 'C-c'], () => {
-  if (screen.focused && (screen.focused.type === 'textbox' || screen.focused.type === 'textarea')) return;
-  if (activeModals.length > 0) return;
+  if (isModalOrInputFocused()) return;
   if (refreshTimer) clearTimeout(refreshTimer);
   process.exit(0);
 });
