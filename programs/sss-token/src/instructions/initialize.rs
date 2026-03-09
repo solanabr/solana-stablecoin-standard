@@ -21,6 +21,10 @@ pub struct InitializeParams {
     pub uri: String,
     pub decimals: u8,
     pub preset: StablecoinPreset,
+    pub enable_permanent_delegate: Option<bool>,
+    pub enable_transfer_hook: Option<bool>,
+    pub enable_default_state_frozen: Option<bool>,
+    pub enable_confidential_transfers: Option<bool>,
 }
 
 #[derive(Accounts)]
@@ -60,15 +64,19 @@ pub struct Initialize<'info> {
 
 pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
     require!(
-        params.name.len() <= StablecoinConfig::MAX_NAME_LEN,
+        ctx.accounts.authority.key() != Pubkey::default(),
+        SssError::ZeroAuthority
+    );
+    require!(
+        !params.name.is_empty() && params.name.len() <= StablecoinConfig::MAX_NAME_LEN,
         SssError::NameTooLong
     );
     require!(
-        params.symbol.len() <= StablecoinConfig::MAX_SYMBOL_LEN,
+        !params.symbol.is_empty() && params.symbol.len() <= StablecoinConfig::MAX_SYMBOL_LEN,
         SssError::SymbolTooLong
     );
     require!(
-        params.uri.len() <= StablecoinConfig::MAX_URI_LEN,
+        !params.uri.is_empty() && params.uri.len() <= StablecoinConfig::MAX_URI_LEN,
         SssError::UriTooLong
     );
     require!(params.decimals <= 18, SssError::InvalidDecimals);
@@ -82,7 +90,13 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
             StablecoinPreset::SSS1 => (false, false, false, false),
             StablecoinPreset::SSS2 => (true, true, false, false),
             StablecoinPreset::SSS3 => (true, false, false, true),
-            StablecoinPreset::Custom => (false, false, false, false),
+            StablecoinPreset::Custom => {
+                let pd = params.enable_permanent_delegate.ok_or(SssError::CustomFlagsMissing)?;
+                let th = params.enable_transfer_hook.ok_or(SssError::CustomFlagsMissing)?;
+                let df = params.enable_default_state_frozen.ok_or(SssError::CustomFlagsMissing)?;
+                let ct = params.enable_confidential_transfers.ok_or(SssError::CustomFlagsMissing)?;
+                (pd, th, df, ct)
+            }
         };
 
     // Build extension list for mint space calculation
@@ -156,6 +170,11 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
             .map(|a| a.key())
             .ok_or(SssError::TransferHookNotEnabled)?;
 
+        require!(
+            hook_program_id != Pubkey::default(),
+            SssError::InvalidHookProgram
+        );
+
         invoke(
             &spl_token_2022::extension::transfer_hook::instruction::initialize(
                 &token_2022::Token2022::id(),
@@ -222,6 +241,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     config.is_paused = false;
     config.total_minted = 0;
     config.total_burned = 0;
+    config.total_seized = 0;
     config.audit_log_index = 0;
     config.reserve_attestation_index = 0;
     config.created_at = clock.unix_timestamp;
