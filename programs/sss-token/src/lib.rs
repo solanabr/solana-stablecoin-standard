@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs, ambiguous_glob_reexports, deprecated)]
+
 use anchor_lang::prelude::*;
 
 pub mod errors;

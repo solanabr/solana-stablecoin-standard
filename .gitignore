@@ -8,3 +8,5 @@ test-ledger
 dist
 .env
 .vercel
+.lockstep/
+*.lockstep.yml

@@ -192,7 +192,7 @@ When the StablecoinConfig PDA is the transfer authority (as it would be during a
 blacklister calls blacklist_add(address, reason)
     |
     v
-1. Validate: blacklister role, not paused, address != master authority
+1. Validate: blacklister role, address != master authority
     |
     v
 2. Create BlacklistEntry PDA: ["blacklist", config, address]
@@ -238,7 +238,7 @@ Seize recovers tokens from a blacklisted address. It cannot use `transfer_checke
 seizer calls seize(amount, from_account, to_account)
     |
     v
-1. Validate: seizer role, target is blacklisted, not paused, amount > 0
+1. Validate: seizer role, target is blacklisted, amount > 0
     |
     v
 2. Thaw the from_account (blacklisted accounts are frozen)

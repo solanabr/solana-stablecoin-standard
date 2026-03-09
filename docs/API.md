@@ -10,9 +10,33 @@ http://localhost:3001/api/stablecoin
 
 ## Authentication
 
-The backend signs transactions using a server-side keypair configured at startup. The signing keypair must hold the appropriate role for each operation (e.g., minter role for `/mint`, blacklister role for `/blacklist/add`).
+All POST endpoints require a valid API key via the `Authorization` header. GET endpoints are public (read-only data).
 
-API-level authentication (API keys, JWT, IP allowlisting) should be configured at the reverse proxy or middleware layer before exposing the backend to external clients. The routes themselves do not enforce caller authentication -- they trust the backend's internal keypair.
+**Setup:** Set the `API_KEY` environment variable before starting the server. The server refuses to start without it.
+
+**Usage:** Include the API key as a Bearer token on every POST request:
+
+```
+Authorization: Bearer <your-api-key>
+```
+
+**Error responses:**
+
+| Status | Body | Cause |
+|--------|------|-------|
+| 401 | `{ "error": "Unauthorized: invalid or missing API key" }` | Missing, malformed, or incorrect API key |
+| 500 | `{ "error": "Server misconfigured: API_KEY not set" }` | `API_KEY` env var not set (should not happen — server exits on startup without it) |
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3001/api/stablecoin/initialize \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer my-secret-key" \
+  -d '{"name":"USD Coin","symbol":"USDC","uri":"https://example.com/meta.json","decimals":6,"preset":"sss2"}'
+```
+
+The backend also signs transactions using a server-side keypair configured at startup. The signing keypair must hold the appropriate role for each operation (e.g., minter role for `/mint`, blacklister role for `/blacklist/add`).
 
 ## Error Handling
 
@@ -645,22 +669,22 @@ These errors occur during `transfer_checked` calls on SSS-2 mints and are not di
 
 ## Endpoint Summary
 
-| Method | Path | Description | Required Role |
-|--------|------|-------------|---------------|
-| GET | `/:mint` | Fetch config and roles | None |
-| GET | `/:mint/minter/:address` | Fetch minter info | None |
-| GET | `/:mint/blacklist/:address` | Check blacklist status | None |
-| GET | `/:mint/attestation/:index` | Fetch attestation by index | None |
-| POST | `/initialize` | Initialize new stablecoin | Deployer |
-| POST | `/:mint/mint` | Mint tokens | Active minter |
-| POST | `/:mint/burn` | Burn tokens | Token holder |
-| POST | `/:mint/pause` | Pause operations | Pauser |
-| POST | `/:mint/unpause` | Unpause operations | Pauser |
-| POST | `/:mint/freeze` | Freeze token account | Master authority / Pauser |
-| POST | `/:mint/thaw` | Thaw token account | Master authority / Pauser |
-| POST | `/:mint/blacklist/add` | Add to blacklist | Blacklister |
-| POST | `/:mint/blacklist/remove` | Remove from blacklist | Blacklister |
-| POST | `/:mint/seize` | Seize tokens | Seizer |
-| POST | `/:mint/roles` | Update role assignment | Master authority |
-| POST | `/:mint/minter` | Configure minter | Master authority |
-| POST | `/:mint/attest` | Submit reserve attestation | Master authority |
+| Method | Path | Description | Auth | Required Role |
+|--------|------|-------------|------|---------------|
+| GET | `/:mint` | Fetch config and roles | Public | None |
+| GET | `/:mint/minter/:address` | Fetch minter info | Public | None |
+| GET | `/:mint/blacklist/:address` | Check blacklist status | Public | None |
+| GET | `/:mint/attestation/:index` | Fetch attestation by index | Public | None |
+| POST | `/initialize` | Initialize new stablecoin | API Key | Deployer |
+| POST | `/:mint/mint` | Mint tokens | API Key | Active minter |
+| POST | `/:mint/burn` | Burn tokens | API Key | Token holder |
+| POST | `/:mint/pause` | Pause operations | API Key | Pauser |
+| POST | `/:mint/unpause` | Unpause operations | API Key | Pauser |
+| POST | `/:mint/freeze` | Freeze token account | API Key | Master authority / Pauser |
+| POST | `/:mint/thaw` | Thaw token account | API Key | Master authority / Pauser |
+| POST | `/:mint/blacklist/add` | Add to blacklist | API Key | Blacklister |
+| POST | `/:mint/blacklist/remove` | Remove from blacklist | API Key | Blacklister |
+| POST | `/:mint/seize` | Seize tokens | API Key | Seizer |
+| POST | `/:mint/roles` | Update role assignment | API Key | Master authority |
+| POST | `/:mint/minter` | Configure minter | API Key | Master authority |
+| POST | `/:mint/attest` | Submit reserve attestation | API Key | Master authority |
