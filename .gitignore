@@ -10,3 +10,4 @@ dist
 .vercel
 .lockstep/
 *.lockstep.yml
+tui/AUDIT_REPORT.md
