@@ -1,0 +1,11 @@
+node_modules/
+dist/
+target/
+.env
+keypairs/
+*.json
+!package.json
+!tsconfig.json
+!Anchor.toml
+test-ledger/
+.anchor/
