@@ -5,8 +5,8 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-sss_core = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-transfer_hook = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+sss_core = "451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp"
+transfer_hook = "5cs7VzZny1XMj4TAJy2xVqo2tCHM8Vwe9bNbL6uRmbxk"
 
 [registry]
 url = "https://api.apr.dev"
