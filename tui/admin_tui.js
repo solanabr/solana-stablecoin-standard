@@ -784,7 +784,7 @@ function openActionModal(actionName) {
 
   const ACTIONS = {
     mint: { title: 'Mint Tokens', fields: ['Recipient Address', 'Amount'], danger: 'high' },
-    burn: { title: 'Burn Tokens', fields: ['Wallet Address (ATA auto-derived)', 'Amount'], danger: 'high' },
+    burn: { title: 'Burn Tokens', fields: ['Wallet Address (empty = self)', 'Amount'], danger: 'high' },
     freeze: { title: 'Freeze Account', fields: ['Target Address'], danger: 'high' },
     thaw: { title: 'Thaw Account', fields: ['Target Address'], danger: 'normal' },
     blacklistAdd: { title: 'Add to Blacklist', fields: ['Target Address', 'Reason'], danger: 'high' },
@@ -997,21 +997,21 @@ function openActionModal(actionName) {
         break;
       }
       case 'burn': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid wallet address.', 2000); return; }
+        const burnTarget = values[0].trim();
         const amount = parseTokenAmount(values[1], dec);
         if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
-        confirmAction('Burn Tokens', 'Burning: ' + formatUsd(amount.toNumber(), 0) + ' ' + symbol + '\nFrom: ' + shortAddr(values[0]), 'high', () => {
+        // If address is empty or matches signer, burn from self. Otherwise authority burn.
+        const burnFrom = burnTarget && isValidPubkey(burnTarget) ? new PublicKey(burnTarget) : wallet.publicKey;
+        const isSelf = burnFrom.equals(wallet.publicKey);
+        const label = isSelf ? 'your wallet' : shortAddr(burnFrom.toBase58());
+        confirmAction('Burn Tokens', 'Burning: ' + formatUsd(amount.toNumber(), 0) + ' ' + symbol + '\nFrom: ' + label, 'high', () => {
           executeTx('Burning Tokens', async () => {
             const [configPda] = getConfigPda(MINT);
             const mintPk = new PublicKey(MINT);
-            const sourcePk = new PublicKey(values[0]);
-            const sourceAta = getAssociatedTokenAddressSync(mintPk, sourcePk, false, TOKEN_2022_PROGRAM_ID);
-            const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-            const [auditPda] = getAuditLogPda(configPda, auditIdx);
+            const burnAta = getAssociatedTokenAddressSync(mintPk, burnFrom, false, TOKEN_2022_PROGRAM_ID);
             return await program.methods.burnTokens(amount)
               .accounts({ burner: wallet.publicKey, config: configPda, mint: mintPk,
-                tokenAccount: sourceAta, auditLog: auditPda,
-                tokenProgram: TOKEN_2022_PROGRAM_ID, systemProgram: SystemProgram.programId })
+                burnTokenAccount: burnAta, tokenProgram: TOKEN_2022_PROGRAM_ID })
               .signers([wallet]).rpc();
           });
         });
