@@ -617,17 +617,100 @@ async function executeTx(title, txFn) {
     showMessage('No Wallet', 'Pass --keypair <path> to enable transactions.', 3000);
     return false;
   }
-  showMessage(title, 'Sending transaction...', 10000);
+  // Show sending indicator
+  const sendingMsg = blessed.message({
+    parent: screen, top: 'center', left: 'center', width: '50%', height: 'shrink',
+    border: { type: 'line', fg: colors.accent }, label: ` ${title} `,
+    style: { bg: colors.bg, fg: colors.text }, tags: true,
+  });
+  activeModals.push(sendingMsg);
+  sendingMsg.display('Sending transaction...', 0, () => {});
   screen.render();
+
   try {
+    // Anchor .rpc() already confirms the transaction
     const sig = await txFn();
-    await connection.confirmTransaction(sig, 'confirmed');
-    showMessage('Success', `Transaction confirmed!\n\nSignature:\n${sig}`, 5000);
-    setTimeout(() => refreshData(), 1000);
+
+    // Dismiss sending indicator
+    activeModals = activeModals.filter(m => m !== sendingMsg);
+    sendingMsg.destroy();
+
+    // Show success with full signature and explorer link
+    const cluster = connection.rpcEndpoint.includes('devnet') ? 'devnet' :
+                    connection.rpcEndpoint.includes('mainnet') ? 'mainnet-beta' : 'devnet';
+    const successBox = blessed.box({
+      parent: screen, top: 'center', left: 'center',
+      width: '65%', height: 10,
+      border: { type: 'line', fg: colors.success },
+      label: ' Transaction Confirmed ',
+      style: { bg: colors.bg, fg: colors.text },
+      tags: true, mouse: true, keys: true,
+    });
+    activeModals.push(successBox);
+    successBox.focus(); // Grab focus so keypresses don't leak to buttons underneath
+
+    blessed.text({
+      parent: successBox, top: 1, left: 2,
+      content: '{green-fg}{bold}SUCCESS{/bold}{/green-fg}', tags: true,
+      style: { fg: colors.success }
+    });
+    blessed.text({
+      parent: successBox, top: 3, left: 2,
+      content: 'Signature:', style: { fg: colors.dim }
+    });
+    blessed.text({
+      parent: successBox, top: 4, left: 2,
+      content: sig, style: { fg: colors.accent }
+    });
+    blessed.text({
+      parent: successBox, top: 6, left: 2,
+      content: `Explorer: explorer.solana.com/tx/${sig.slice(0,20)}...?cluster=${cluster}`,
+      style: { fg: colors.dim }
+    });
+    blessed.text({
+      parent: successBox, top: 8, left: 2,
+      content: '[Enter/Esc] Close    [Signature copied to clipboard]',
+      style: { fg: colors.dim }
+    });
+
+    // Copy signature to clipboard
+    try {
+      const { execSync } = require('child_process');
+      if (_isWSL) {
+        execSync('echo ' + sig + ' | clip.exe', { timeout: 2000, stdio: 'ignore' });
+      } else if (process.platform === 'darwin') {
+        execSync('echo ' + sig + ' | pbcopy', { timeout: 2000, stdio: 'ignore' });
+      } else {
+        execSync('echo ' + sig + ' | xclip -selection clipboard', { timeout: 2000, stdio: 'ignore' });
+      }
+    } catch {}
+
+    screen.render();
+
+    // Close on Enter or Escape only — prevents accidental double-fire from any key
+    let successClosed = false;
+    const closeSuccess = (ch, key) => {
+      if (successClosed) return;
+      if (!key || (key.name !== 'enter' && key.name !== 'return' && key.name !== 'escape')) return;
+      successClosed = true;
+      screen.program.removeListener('keypress', closeSuccess);
+      activeModals = activeModals.filter(m => m !== successBox);
+      successBox.destroy();
+      screen.render();
+      // Refresh data after a tick to avoid re-entrancy
+      setTimeout(() => refreshData(), 50);
+    };
+    successBox._programKeyHandler = closeSuccess;
+    screen.program.on('keypress', closeSuccess);
+
     return true;
   } catch (err) {
+    // Dismiss sending indicator
+    activeModals = activeModals.filter(m => m !== sendingMsg);
+    sendingMsg.destroy();
+
     const msg = err.message || String(err);
-    showMessage('Transaction Failed', msg.slice(0, 200), 6000);
+    showMessage('Transaction Failed', msg.slice(0, 300), 8000);
     return false;
   }
 }
