@@ -725,7 +725,11 @@ function confirmAction(title, details, dangerLevel, onConfirm) {
     label: ` CONFIRM: ${title} `,
     style: { bg: colors.bg, fg: colors.text, border: { fg: borderColor } },
     tags: true, padding: { left: 2, right: 2, top: 1, bottom: 1 },
+    keys: true, mouse: true,
   });
+  activeModals.push(confirmBox);
+  confirmBox.focus(); // Grab focus to prevent key leaking to elements underneath
+
   let content = '';
   if (dangerLevel === 'critical') {
     content += '{red-fg}{bold}!! CRITICAL ACTION !!{/bold}{/red-fg}\n\n';
@@ -739,14 +743,21 @@ function confirmAction(title, details, dangerLevel, onConfirm) {
     content: content, tags: true, style: { fg: colors.text }
   });
   screen.render();
+
+  let confirmed = false;
   const handler = (ch, key) => {
+    if (confirmed) return;
     if (key.name === 'y') {
+      confirmed = true;
       screen.unkey(['y', 'n', 'escape'], handler);
+      activeModals = activeModals.filter(m => m !== confirmBox);
       confirmBox.destroy();
       screen.render();
       onConfirm();
     } else if (key.name === 'n' || key.name === 'escape') {
+      confirmed = true;
       screen.unkey(['y', 'n', 'escape'], handler);
+      activeModals = activeModals.filter(m => m !== confirmBox);
       confirmBox.destroy();
       screen.render();
       showMessage('Cancelled', 'Action cancelled by operator.', 2000);
