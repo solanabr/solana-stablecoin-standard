@@ -31,6 +31,7 @@ pub struct StablecoinConfig {
     pub is_paused: bool,
     pub total_minted: u64,
     pub total_burned: u64,
+    pub total_seized: u64,
     pub audit_log_index: u64,
     pub reserve_attestation_index: u64,
 
@@ -47,9 +48,9 @@ impl StablecoinConfig {
     pub const SEED_PREFIX: &'static [u8] = b"config";
 
     // 8 (discriminator) + 1 + 32 + 32 + (4+32) + (4+10) + (4+200) + 1
-    // + 1 + 1 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 8 + 8 + 8
+    // + 1 + 1 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 8 + 8 + 8 + 8
     pub const SPACE: usize = 8 + 1 + 32 + 32 + (4 + 32) + (4 + 10) + (4 + 200)
-        + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 8 + 8 + 8;
+        + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 8 + 8 + 8 + 8;
 
     pub fn current_supply(&self) -> u64 {
         self.total_minted.saturating_sub(self.total_burned)

@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::errors::SssError;
 use crate::events::TokensSeized;
 use crate::state::*;
-use crate::utils::{require_not_paused, require_role};
+use crate::utils::require_role;
 
 #[derive(Accounts)]
 pub struct Seize<'info> {
@@ -65,7 +65,6 @@ pub struct Seize<'info> {
 
 pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
     let config = &ctx.accounts.config;
-    require_not_paused(config)?;
 
     require!(
         config.enable_permanent_delegate,
@@ -92,6 +91,11 @@ pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
         mint_key.as_ref(),
         &[config.bump],
     ]];
+
+    require!(
+        ctx.accounts.from_token_account.amount >= amount,
+        SssError::InsufficientBalance
+    );
 
     // Step 1: Thaw the frozen account (blacklisted accounts are frozen)
     token_2022::thaw_account(CpiContext::new_with_signer(
@@ -146,6 +150,10 @@ pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
     ))?;
 
     let config = &mut ctx.accounts.config;
+    config.total_seized = config
+        .total_seized
+        .checked_add(amount)
+        .ok_or(SssError::Overflow)?;
     config.updated_at = clock.unix_timestamp;
 
     emit!(TokensSeized {

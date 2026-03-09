@@ -46,6 +46,11 @@ pub fn handler(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
     let config = &ctx.accounts.config;
     require_not_paused(config)?;
 
+    require!(
+        ctx.accounts.burner_token_account.amount >= amount,
+        SssError::InsufficientBalance
+    );
+
     let clock = Clock::get()?;
 
     // Burn tokens — the burner signs as token account owner
