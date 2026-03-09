@@ -557,7 +557,13 @@ function showMessage(title, text, timeoutMs) {
 }
 
 function dismissAllModals() {
-  activeModals.forEach(m => { try { m.destroy(); } catch(e) {} });
+  activeModals.forEach(m => {
+    // Clean up any program-level keypress handlers attached to the modal
+    if (m._programKeyHandler) {
+      try { screen.program.removeListener('keypress', m._programKeyHandler); } catch {}
+    }
+    try { m.destroy(); } catch(e) {}
+  });
   activeModals = [];
 }
 
