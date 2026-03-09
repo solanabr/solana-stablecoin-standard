@@ -44,6 +44,21 @@ pub struct MintTokens<'info> {
     )]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
 
+    /// Optional blacklist entry for the recipient token account owner.
+    /// If SSS-2 is enabled and this account exists with data, mint is rejected.
+    /// Seeds derived from the actual on-chain owner of recipient_token_account
+    /// to prevent callers from spoofing a clean wallet.
+    #[account(
+        seeds = [
+            BlacklistEntry::SEED_PREFIX,
+            config.key().as_ref(),
+            recipient_token_account.owner.as_ref(),
+        ],
+        bump,
+        seeds::program = crate::ID,
+    )]
+    pub recipient_blacklist: Option<Account<'info, BlacklistEntry>>,
+
     pub token_program: Program<'info, Token2022>,
 }
 
@@ -52,6 +67,13 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
 
     let config = &ctx.accounts.config;
     require_not_paused(config)?;
+
+    // SSS-2: Reject minting to blacklisted recipients
+    if config.enable_permanent_delegate {
+        if let Some(ref _bl) = ctx.accounts.recipient_blacklist {
+            return Err(SssError::RecipientBlacklisted.into());
+        }
+    }
 
     let minter_info = &ctx.accounts.minter_info;
     require!(minter_info.is_active, SssError::MinterNotActive);
