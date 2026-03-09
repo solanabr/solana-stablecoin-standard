@@ -58,9 +58,14 @@ const MINT = mintIdx >= 0 ? args[mintIdx + 1] : (process.env.MINT || '9MmnDN61Fa
 const KEYPAIR_PATH = keypairIdx >= 0 ? args[keypairIdx + 1] : (process.env.KEYPAIR_PATH || DEFAULT_KEYPAIR);
 const PROGRAM_ID = programIdx >= 0 ? args[programIdx + 1] : (process.env.PROGRAM_ID || '5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4');
 
-// Suppress unhandled rejections from leaking onto the blessed screen
-process.on('unhandledRejection', () => {});
-process.on('uncaughtException', () => {});
+// Log unhandled errors to file instead of swallowing silently
+const _errLog = path.join(__dirname, 'error.log');
+process.on('unhandledRejection', (err) => {
+  try { fs.appendFileSync(_errLog, `[${new Date().toISOString()}] UNHANDLED REJECTION: ${err?.stack || err}\n`); } catch {}
+});
+process.on('uncaughtException', (err) => {
+  try { fs.appendFileSync(_errLog, `[${new Date().toISOString()}] UNCAUGHT EXCEPTION: ${err?.stack || err}\n`); } catch {}
+});
 
 const connection = new Connection(RPC_URL, { commitment: 'confirmed', disableRetryOnRateLimit: false });
 const coder = new BorshAccountsCoder(idl);
