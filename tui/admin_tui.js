@@ -801,7 +801,7 @@ function openActionModal(actionName) {
   const action = ACTIONS[actionName];
   if (!action) { showMessage('Error', 'Unknown action: ' + actionName, 2000); return; }
 
-  const modalHeight = Math.max(10, action.fields.length * 4 + 9);
+  const modalHeight = Math.max(8, action.fields.length * 3 + 7);
   const modal = blessed.box({
     parent: screen,
     top: 'center', left: 'center',
@@ -810,41 +810,52 @@ function openActionModal(actionName) {
     label: ` ${action.title} `,
     style: { bg: colors.bg, fg: colors.text },
     tags: true,
+    mouse: true,
   });
   activeModals.push(modal);
 
+  // Build input fields as plain boxes — we handle all keystrokes manually
   const inputs = [];
+  const inputValues = [];
   action.fields.forEach((field, i) => {
     blessed.text({
-      parent: modal, top: 1 + i * 4, left: 2,
+      parent: modal, top: 1 + i * 3, left: 2,
       content: field + ':', style: { fg: colors.accent }
     });
-    const input = blessed.textarea({
-      parent: modal, top: 2 + i * 4, left: 2,
-      width: '90%', height: 3,
+    const input = blessed.box({
+      parent: modal, top: 2 + i * 3, left: 2,
+      width: '90%', height: 1,
       style: { bg: colors.border, fg: colors.text },
-      inputOnFocus: true, mouse: true
+      content: '',
+      mouse: true, clickable: true,
     });
-    input.key(['C-v'], () => {
-      const clip = getClipboard();
-      if (clip) {
-        input.setValue(clip.split(/\r?\n/)[0]);
-        screen.render();
-      }
-    });
+    input.getValue = () => inputValues[i] || '';
+    input.on('click', () => { activateInput(i); });
     inputs.push(input);
+    inputValues.push('');
   });
 
-  // Wire Tab to cycle between inputs and submit button
-  inputs.forEach((inp, idx) => {
-    inp.key(['tab'], () => {
-      const next = idx < inputs.length - 1 ? inputs[idx + 1] : submitBtn;
-      next.focus();
-      screen.render();
+  let activeIdx = inputs.length > 0 ? 0 : -1;
+
+  function activateInput(idx) {
+    activeIdx = idx;
+    inputs.forEach((inp, j) => {
+      inp.style.bg = j === idx ? '#333333' : colors.border;
     });
-  });
+    screen.render();
+  }
 
-  const btnTop = action.fields.length > 0 ? 2 + action.fields.length * 4 : 1;
+  function renderInputContent(idx) {
+    const val = inputValues[idx] || '';
+    inputs[idx].setContent(val + (idx === activeIdx ? '_' : ''));
+    screen.render();
+  }
+
+  function renderAllInputs() {
+    inputs.forEach((_, i) => renderInputContent(i));
+  }
+
+  const btnTop = action.fields.length > 0 ? 2 + action.fields.length * 3 : 1;
   const submitBtn = blessed.button({
     parent: modal, top: btnTop, left: 2, width: 20, height: 1,
     content: ' [ SUBMIT ] ',
@@ -861,18 +872,90 @@ function openActionModal(actionName) {
 
   blessed.text({
     parent: modal, top: btnTop + 2, left: 2,
-    content: '[Ctrl+V] Paste  [Tab] Next field  [Enter] Submit  [Esc] Cancel',
+    content: '[Ctrl+V] Paste  [Tab] Next  [Enter] Submit  [Esc] Cancel',
     style: { fg: colors.dim }
   });
 
+  // Single program-level keypress handler for ALL modal input
+  const modalKeyHandler = (ch, key) => {
+    if (!key) return;
+
+    // Escape — close modal
+    if (key.name === 'escape') { closeModal(); return; }
+
+    // If no input is active (focus on buttons etc), skip
+    if (activeIdx < 0) return;
+
+    // Tab — next field or submit button
+    if (key.name === 'tab') {
+      if (activeIdx < inputs.length - 1) {
+        activateInput(activeIdx + 1);
+      } else {
+        activeIdx = -1;
+        inputs.forEach(inp => { inp.style.bg = colors.border; });
+        submitBtn.focus();
+      }
+      renderAllInputs();
+      return;
+    }
+
+    // Enter — if last field submit, else next field
+    if (key.name === 'enter' || key.name === 'return') {
+      if (activeIdx < inputs.length - 1) {
+        activateInput(activeIdx + 1);
+        renderAllInputs();
+      } else {
+        submitBtn.press();
+      }
+      return;
+    }
+
+    // Ctrl+V — paste
+    if (key.ctrl && key.name === 'v') {
+      const clip = getClipboard();
+      if (clip) {
+        inputValues[activeIdx] = clip.split(/\r?\n/)[0];
+        renderInputContent(activeIdx);
+      }
+      return;
+    }
+
+    // Backspace
+    if (key.name === 'backspace') {
+      if (inputValues[activeIdx].length > 0) {
+        inputValues[activeIdx] = inputValues[activeIdx].slice(0, -1);
+        renderInputContent(activeIdx);
+      }
+      return;
+    }
+
+    // Regular printable character
+    if (ch && ch.length === 1 && !key.ctrl && !key.meta) {
+      inputValues[activeIdx] += ch;
+      renderInputContent(activeIdx);
+    }
+  };
+  screen.program.on('keypress', modalKeyHandler);
+  modal._programKeyHandler = modalKeyHandler; // Tag for cleanup by dismissAllModals
+
+  // Clicking a button should deactivate input fields
+  submitBtn.on('focus', () => { activeIdx = -1; renderAllInputs(); });
+  cancelBtn.on('focus', () => { activeIdx = -1; renderAllInputs(); });
+
+  // Initialize first input as active
+  if (inputs.length > 0) {
+    activateInput(0);
+    renderAllInputs();
+  }
+
   function closeModal() {
+    screen.program.removeListener('keypress', modalKeyHandler);
     modal.destroy();
     activeModals = activeModals.filter(m => m !== modal);
     screen.render();
   }
 
   cancelBtn.on('press', closeModal);
-  modal.key(['escape'], closeModal);
 
   submitBtn.on('press', () => {
     const values = inputs.map(inp => inp.getValue().trim());
