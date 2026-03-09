@@ -532,8 +532,8 @@ function getContentBounds() {
 
 let activeModals = [];
 
-function showMessage(title, text, timeout) {
-  timeout = timeout || 3000;
+function showMessage(title, text, timeoutMs) {
+  timeoutMs = timeoutMs || 3000;
   const msg = blessed.message({
     parent: screen,
     top: 'center',
@@ -546,7 +546,9 @@ function showMessage(title, text, timeout) {
     tags: true,
   });
   activeModals.push(msg);
-  msg.display(text, timeout, () => {
+  // blessed.message.display() expects seconds, not milliseconds
+  const timeoutSec = Math.max(1, Math.round(timeoutMs / 1000));
+  msg.display(text, timeoutSec, () => {
     activeModals = activeModals.filter(m => m !== msg);
     msg.destroy();
     screen.render();
