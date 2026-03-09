@@ -48,6 +48,31 @@ pub fn handler(ctx: Context<BurnFrom>, amount: u64) -> Result<()> {
     // burn_from uses permanent delegate — only available on SSS-2/SSS-3
     require!(ctx.accounts.config.preset.has_compliance_features(), SssError::PresetFeatureUnavailable);
 
+    // Check that the source wallet owner is not blacklisted.
+    // Caller must pass the blacklist entry PDA as the first remaining account.
+    {
+        let from_data = ctx.accounts.from.try_borrow_data()?;
+        require!(from_data.len() >= 64, SssError::InvalidInput);
+        let from_owner = Pubkey::try_from(&from_data[32..64]).unwrap();
+        drop(from_data);
+
+        let (hook_config_key, _) = Pubkey::find_program_address(
+            &[b"hook_config", ctx.accounts.config.mint.as_ref()],
+            &ctx.accounts.config.transfer_hook_program,
+        );
+        let (bl_pda, _) = Pubkey::find_program_address(
+            &[b"blacklist", hook_config_key.as_ref(), from_owner.as_ref()],
+            &ctx.accounts.config.transfer_hook_program,
+        );
+
+        let bl_account = ctx.remaining_accounts.first()
+            .ok_or(SssError::BlacklistEntryRequired)?;
+        require!(bl_account.key() == bl_pda, SssError::InvalidInput);
+        if bl_account.lamports() > 0 && bl_account.data_len() > 0 {
+            return Err(SssError::Blacklisted.into());
+        }
+    }
+
     let config = &ctx.accounts.config;
     let cs = crate::utils::ConfigSeeds::new(config);
     let seeds = cs.as_seeds();

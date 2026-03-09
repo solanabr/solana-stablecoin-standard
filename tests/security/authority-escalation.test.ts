@@ -14,6 +14,7 @@ import {
   createTokenAccount,
   airdropSol,
   initializeHook,
+  blacklistWallet,
 } from "../helpers/setup";
 import { ROLE, TOKEN_2022_PROGRAM_ID } from "../helpers/constants";
 
@@ -115,7 +116,7 @@ describe("security: authority escalation", () => {
     const result = await createSSS2Mint(treasury.publicKey);
     const cfg = result.configPda;
     const mint = result.mintKeypair;
-    await initializeHook(mint.publicKey, cfg);
+    const hookResult = await initializeHook(mint.publicKey, cfg);
 
     const burner = Keypair.generate();
     await airdropSol(burner.publicKey);
@@ -126,6 +127,10 @@ describe("security: authority escalation", () => {
     await airdropSol(target.publicKey);
     const targetAta = await createTokenAccount(mint.publicKey, target.publicKey);
     const treasuryAta = await createTokenAccount(mint.publicKey, treasury.publicKey);
+
+    // Blacklist target and pass blacklist PDA (seize always requires it on SSS-2)
+    await blacklistWallet(hookResult.hookConfig, cfg, target.publicKey);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookResult.hookConfig, target.publicKey);
 
     try {
       await coreProgram.methods
@@ -139,6 +144,7 @@ describe("security: authority escalation", () => {
           treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burner])
         .rpc();
       expect.fail("Burner should not be able to seize");

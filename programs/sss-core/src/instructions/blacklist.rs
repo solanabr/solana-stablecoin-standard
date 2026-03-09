@@ -44,6 +44,9 @@ pub fn handler(ctx: Context<Blacklist>, wallet: Pubkey) -> Result<()> {
     // Note: blacklist/unblacklist are exempt from pause checks — compliance must operate during emergencies
     let config = &ctx.accounts.config;
 
+    // Only SSS-2/SSS-3 have compliance features
+    require!(config.preset.has_compliance_features(), SssError::PresetFeatureUnavailable);
+
     // Prevent blacklisting admin, pending_admin, or treasury — would brick the stablecoin
     require!(wallet != config.admin, SssError::CannotBlacklistProtectedAddress);
     require!(wallet != config.treasury, SssError::CannotBlacklistProtectedAddress);

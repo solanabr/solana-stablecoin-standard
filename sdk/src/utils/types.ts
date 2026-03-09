@@ -29,12 +29,14 @@ export interface MintToParams {
   mint: PublicKey;
   to: PublicKey;
   amount: BN;
+  toOwner?: PublicKey;
 }
 
 export interface BurnFromParams {
   mint: PublicKey;
   from: PublicKey;
   amount: BN;
+  fromOwner: PublicKey;
 }
 
 export interface SeizeParams {
@@ -42,6 +44,7 @@ export interface SeizeParams {
   from: PublicKey;
   treasuryAta: PublicKey;
   amount: BN;
+  fromOwner: PublicKey;
 }
 
 export interface GrantRoleParams {

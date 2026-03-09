@@ -6,18 +6,21 @@
     "sdk",
     "cli",
     "backend",
-    "tests"
+    "tests",
+    "frontend"
   ],
   "scripts": {
     "build:sdk": "yarn workspace @sss/sdk build",
     "build:cli": "yarn workspace @sss/cli build",
     "build:backend": "yarn workspace @sss/backend build",
+    "build:frontend": "yarn workspace @sss/frontend build",
+    "dev:frontend": "yarn workspace @sss/frontend dev",
     "build:programs": "anchor build",
     "test:programs": "anchor test",
     "test:sdk": "yarn workspace @sss/sdk test",
     "test:e2e": "yarn workspace @sss/tests test",
     "lint": "eslint . --ext .ts",
-    "clean": "rm -rf node_modules sdk/node_modules cli/node_modules backend/node_modules tests/node_modules"
+    "clean": "rm -rf node_modules sdk/node_modules cli/node_modules backend/node_modules tests/node_modules frontend/node_modules"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

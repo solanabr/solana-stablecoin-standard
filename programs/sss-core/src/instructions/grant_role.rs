@@ -40,7 +40,7 @@ pub struct GrantRole<'info> {
 }
 
 pub fn handler(ctx: Context<GrantRole>, role: Role, allowance: u64) -> Result<()> {
-    require!(!ctx.accounts.config.paused, SssError::Paused);
+    // Note: grant_role is exempt from pause — admin must manage roles during emergencies
     require!(ctx.accounts.holder.key() != Pubkey::default(), SssError::InvalidInput);
 
     let role_account = &mut ctx.accounts.role_account;

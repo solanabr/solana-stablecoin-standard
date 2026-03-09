@@ -9,7 +9,7 @@ pub mod utils;
 use instructions::*;
 use state::Role;
 
-declare_id!("FH3XosNdAdUPfcxVxjUrUoCrGaLw9L3i9eadu7M8nQZQ");
+declare_id!("GmG49Q2d988k5C6dkTLLCihGfH5G6QVg5Rbgv54Z7iw4");
 
 #[program]
 pub mod sss_core {

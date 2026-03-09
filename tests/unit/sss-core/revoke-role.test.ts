@@ -221,7 +221,7 @@ describe("revoke-role", () => {
     expect(balanceAfter).to.be.greaterThan(balanceBefore - 5000); // allow for tx fee
   });
 
-  it("rejects when paused", async () => {
+  it("succeeds when paused (governance exempt from pause)", async () => {
     const roleAccount = await grantRole(
       configPda,
       holderKeypair.publicKey,
@@ -234,21 +234,19 @@ describe("revoke-role", () => {
       .accounts({ authority: admin.publicKey, config: configPda, roleAccount: null })
       .rpc();
 
-    try {
-      await coreProgram.methods
-        .revokeRole()
-        .accounts({
-          admin: admin.publicKey,
-          config: configPda,
-          holder: holderKeypair.publicKey,
-          roleAccount,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
-      expect.fail("Should fail when paused");
-    } catch (err: any) {
-      expect(err.toString()).to.include("Paused");
-    }
+    await coreProgram.methods
+      .revokeRole()
+      .accounts({
+        admin: admin.publicKey,
+        config: configPda,
+        holder: holderKeypair.publicKey,
+        roleAccount,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    const accountInfo = await provider.connection.getAccountInfo(roleAccount);
+    expect(accountInfo).to.be.null;
   });
 
   it("role PDA no longer exists after revoke", async () => {

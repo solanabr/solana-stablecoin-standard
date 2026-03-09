@@ -1,11 +1,11 @@
 import { PublicKey } from "@solana/web3.js";
 
 export const SSS_CORE_PROGRAM_ID = new PublicKey(
-  "FH3XosNdAdUPfcxVxjUrUoCrGaLw9L3i9eadu7M8nQZQ"
+  "GmG49Q2d988k5C6dkTLLCihGfH5G6QVg5Rbgv54Z7iw4"
 );
 
 export const SSS_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  "Hook1111111111111111111111111111111111111111"
+  "2b5HCPo4PC7w63MmUnXxuR9kwtaQpni8AXktfZHiMf2p"
 );
 
 export function findConfigPda(

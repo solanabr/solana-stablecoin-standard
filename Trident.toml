@@ -1,0 +1,10 @@
+[fuzz]
+# Fuzz testing configuration for SSS programs
+fuzzing_with_stats = true
+allow_duplicate_txs = false
+
+[fuzz.env]
+programs = [
+    { address = "GmG49Q2d988k5C6dkTLLCihGfH5G6QVg5Rbgv54Z7iw4", program = "sss_core" },
+    { address = "2b5HCPo4PC7w63MmUnXxuR9kwtaQpni8AXktfZHiMf2p", program = "sss_transfer_hook" },
+]

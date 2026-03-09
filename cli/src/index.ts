@@ -1,576 +1,493 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { AnchorProvider, Wallet, BN } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 import chalk from "chalk";
-import fs from "fs";
-import path from "path";
-import { SolanaStablecoin, Preset, Role } from "@sss/sdk";
+import {
+  createSdk,
+  parseRole,
+  logSuccess,
+  logError,
+  formatAmount,
+  formatPubkey,
+  getConnectionAndKeypair,
+} from "./utils";
 
 const program = new Command();
 
-function loadKeypair(keypairPath: string): Keypair {
-  const resolved = keypairPath.startsWith("~")
-    ? path.join(process.env.HOME!, keypairPath.slice(1))
-    : keypairPath;
-  const secret = JSON.parse(fs.readFileSync(resolved, "utf-8"));
-  return Keypair.fromSecretKey(Uint8Array.from(secret));
-}
-
-function getProvider(rpcUrl: string, keypairPath: string): AnchorProvider {
-  const connection = new Connection(rpcUrl, "confirmed");
-  const wallet = new Wallet(loadKeypair(keypairPath));
-  return new AnchorProvider(connection, wallet, { commitment: "confirmed" });
-}
-
-function loadIdl(): any {
-  const idlPath = path.resolve(__dirname, "../../target/idl/sss_core.json");
-  if (!fs.existsSync(idlPath)) {
-    console.error(chalk.red("IDL not found. Run 'anchor build' first."));
-    process.exit(1);
-  }
-  return JSON.parse(fs.readFileSync(idlPath, "utf-8"));
-}
-
-function getStablecoin(provider: AnchorProvider): SolanaStablecoin {
-  return new SolanaStablecoin(provider, loadIdl());
-}
-
-function parseRole(s: string): Role {
-  switch (s.toLowerCase()) {
-    case "minter": return Role.Minter;
-    case "burner": return Role.Burner;
-    case "seizer": return Role.Seizer;
-    case "pauser": return Role.Pauser;
-    case "compliance":
-    case "complianceofficer": return Role.ComplianceOfficer;
-    default: throw new Error("Unknown role: " + s + ". Use: minter, burner, seizer, pauser, compliance");
-  }
-}
-
-function parsePreset(s: string): Preset {
-  switch (s.toLowerCase()) {
-    case "sss-1": return Preset.SSS1;
-    case "sss-2": return Preset.SSS2;
-    case "sss-3": return Preset.SSS3;
-    default: throw new Error("Unknown preset: " + s);
-  }
-}
-
 program
-  .name("sss-token")
+  .name("sss")
   .description("CLI for Solana Stablecoin Standard")
   .version("0.1.0")
-  .option("-u, --url <string>", "RPC URL", "http://localhost:8899")
-  .option("-k, --keypair <string>", "Path to keypair file", "~/.config/solana/id.json");
+  .option("--rpc-url <url>", "Solana RPC URL", "https://api.devnet.solana.com")
+  .option("--keypair <path>", "Path to keypair file", "~/.config/solana/id.json");
 
-// === create ===
+// Helper: get global opts
+function globalOpts() {
+  const opts = program.opts<{ rpcUrl: string; keypair: string }>();
+  return opts;
+}
+
+// ─── info <mint> ────────────────────────────────────────────────────────────
 program
-  .command("create")
-  .description("Create a new stablecoin mint")
-  .requiredOption("--name <string>", "Token name")
-  .requiredOption("--symbol <string>", "Token symbol")
-  .option("--uri <string>", "Metadata URI", "")
-  .option("--decimals <number>", "Decimal places", "6")
-  .option("--preset <string>", "Preset: sss-1, sss-2, or sss-3", "sss-1")
-  .option("--transfer-hook-program <string>", "Transfer hook program ID (SSS-2/3)")
-  .option("--treasury <string>", "Treasury address (SSS-2/3)")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .command("info <mint>")
+  .description("Get stablecoin info")
+  .action(async (mintStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      const preset = parsePreset(opts.preset);
-      const transferHookProgram = opts.transferHookProgram ? new PublicKey(opts.transferHookProgram) : undefined;
-      const treasury = opts.treasury ? new PublicKey(opts.treasury) : undefined;
+      const sdk = createSdk(rpcUrl, keypair);
+      const mint = new PublicKey(mintStr);
+      const info = await sdk.getStablecoinInfo(mint);
 
-      console.log(chalk.blue(`Creating ${opts.preset.toUpperCase()} stablecoin: ${opts.name} (${opts.symbol})`));
+      const presetName =
+        info.preset === 0 ? "SSS-1" : info.preset === 1 ? "SSS-2" : "SSS-3";
 
-      const { signature, mint, config } = await stablecoin.createMint({
-        name: opts.name,
-        symbol: opts.symbol,
-        uri: opts.uri,
-        decimals: parseInt(opts.decimals),
-        preset,
-        transferHookProgram,
-        treasury,
-      });
-
-      console.log(chalk.green("Mint created successfully"));
-      console.log(chalk.green("  Mint:"), mint.toBase58());
-      console.log(chalk.green("  Config:"), config.toBase58());
-      console.log(chalk.green("  Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      console.log("");
+      console.log("  Stablecoin Info");
+      console.log("  ─────────────────────────────────────────────────────");
+      console.log(`  Admin            : ${info.admin.toBase58()}`);
+      console.log(`  Pending Admin    : ${info.pendingAdmin.toBase58()}`);
+      console.log(`  Mint             : ${info.mint.toBase58()}`);
+      console.log(`  Preset           : ${presetName}`);
+      console.log(`  Paused           : ${info.paused ? "YES" : "no"}`);
+      console.log(`  Treasury         : ${info.treasury ? info.treasury.toBase58() : "(none)"}`);
+      console.log(`  Total Minted     : ${formatAmount(info.totalMinted)}`);
+      console.log(`  Total Burned     : ${formatAmount(info.totalBurned)}`);
+      console.log(`  Total Seized     : ${formatAmount(info.totalSeized)}`);
+      console.log(
+        `  Transfer Hook    : ${info.transferHookProgram ? info.transferHookProgram.toBase58() : "(none)"}`
+      );
+      console.log("  ─────────────────────────────────────────────────────");
+      console.log("");
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === mint ===
+// ─── mint-to <mint> <to-ata> <amount> ───────────────────────────────────────
 program
-  .command("mint")
-  .description("Mint tokens to an account")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--to <string>", "Destination token account")
-  .requiredOption("--amount <string>", "Amount to mint")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .command("mint-to <mint> <toAta> <amount>")
+  .description("Mint tokens to a token account")
+  .option("--to-owner <owner>", "Owner of the destination ATA (for blacklist check)")
+  .action(async (mintStr: string, toAtaStr: string, amountStr: string, opts: { toOwner?: string }) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue(`Minting ${opts.amount} tokens`));
-      const signature = await stablecoin.mintTo({
-        mint: new PublicKey(opts.mint),
-        to: new PublicKey(opts.to),
-        amount: new BN(opts.amount),
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.mintTo({
+        mint: new PublicKey(mintStr),
+        to: new PublicKey(toAtaStr),
+        amount: new BN(amountStr),
+        toOwner: opts.toOwner ? new PublicKey(opts.toOwner) : undefined,
       });
-      console.log(chalk.green("Tokens minted. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Minted ${formatAmount({ toString: () => amountStr })} tokens. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === burn ===
+// ─── burn-from <mint> <from-ata> <amount> ───────────────────────────────────
 program
-  .command("burn")
-  .description("Burn tokens from an account (permanent delegate)")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--from <string>", "Source token account")
-  .requiredOption("--amount <string>", "Amount to burn")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .command("burn-from <mint> <fromAta> <amount>")
+  .description("Burn tokens from a token account (permanent delegate)")
+  .requiredOption("--from-owner <owner>", "Owner of the source ATA")
+  .action(async (mintStr: string, fromAtaStr: string, amountStr: string, opts: { fromOwner: string }) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue(`Burning ${opts.amount} tokens`));
-      const signature = await stablecoin.burnFrom({
-        mint: new PublicKey(opts.mint),
-        from: new PublicKey(opts.from),
-        amount: new BN(opts.amount),
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.burnFrom({
+        mint: new PublicKey(mintStr),
+        from: new PublicKey(fromAtaStr),
+        amount: new BN(amountStr),
+        fromOwner: new PublicKey(opts.fromOwner),
       });
-      console.log(chalk.green("Tokens burned. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Burned ${formatAmount({ toString: () => amountStr })} tokens. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === seize ===
+// ─── seize <mint> <from-ata> <treasury-ata> <amount> ───────────────────────
 program
-  .command("seize")
+  .command("seize <mint> <fromAta> <treasuryAta> <amount>")
   .description("Seize tokens via burn+mint (Seizer role)")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--from <string>", "Source token account to seize from")
-  .requiredOption("--treasury-ata <string>", "Treasury ATA to receive minted tokens")
-  .requiredOption("--amount <string>", "Amount to seize")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .requiredOption("--from-owner <owner>", "Owner of the source ATA")
+  .action(async (
+    mintStr: string,
+    fromAtaStr: string,
+    treasuryAtaStr: string,
+    amountStr: string,
+    opts: { fromOwner: string }
+  ) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue(`Seizing ${opts.amount} tokens`));
-      const signature = await stablecoin.seize({
-        mint: new PublicKey(opts.mint),
-        from: new PublicKey(opts.from),
-        treasuryAta: new PublicKey(opts.treasuryAta),
-        amount: new BN(opts.amount),
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.seize({
+        mint: new PublicKey(mintStr),
+        from: new PublicKey(fromAtaStr),
+        treasuryAta: new PublicKey(treasuryAtaStr),
+        amount: new BN(amountStr),
+        fromOwner: new PublicKey(opts.fromOwner),
       });
-      console.log(chalk.green("Tokens seized. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Seized ${formatAmount({ toString: () => amountStr })} tokens. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === grant-role ===
+// ─── grant-role <mint> <holder> <role> [allowance] ──────────────────────────
 program
-  .command("grant-role")
+  .command("grant-role <mint> <holder> <role> [allowance]")
   .description("Grant a role to a wallet")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--holder <string>", "Wallet to grant role to")
-  .requiredOption("--role <string>", "Role: minter, burner, seizer, pauser, compliance")
-  .option("--allowance <string>", "Allowance for minter role", "0")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string, holderStr: string, roleStr: string, allowanceStr?: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      const role = parseRole(opts.role);
-      console.log(chalk.blue(`Granting ${opts.role} role`));
-      const signature = await stablecoin.grantRole({
-        mint: new PublicKey(opts.mint),
-        holder: new PublicKey(opts.holder),
+      const sdk = createSdk(rpcUrl, keypair);
+      const role = parseRole(roleStr);
+      const sig = await sdk.grantRole({
+        mint: new PublicKey(mintStr),
+        holder: new PublicKey(holderStr),
         role,
-        allowance: new BN(opts.allowance),
+        allowance: new BN(allowanceStr ?? "0"),
       });
-      console.log(chalk.green("Role granted. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Role '${roleStr}' granted to ${formatPubkey(new PublicKey(holderStr))}. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === revoke-role ===
+// ─── revoke-role <mint> <holder> <role> ─────────────────────────────────────
 program
-  .command("revoke-role")
+  .command("revoke-role <mint> <holder> <role>")
   .description("Revoke a role from a wallet")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--holder <string>", "Wallet to revoke role from")
-  .requiredOption("--role <string>", "Role to revoke")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string, holderStr: string, roleStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      const role = parseRole(opts.role);
-      console.log(chalk.blue(`Revoking ${opts.role} role`));
-      const signature = await stablecoin.revokeRole(
-        new PublicKey(opts.mint),
-        new PublicKey(opts.holder),
+      const sdk = createSdk(rpcUrl, keypair);
+      const role = parseRole(roleStr);
+      const sig = await sdk.revokeRole(
+        new PublicKey(mintStr),
+        new PublicKey(holderStr),
         role
       );
-      console.log(chalk.green("Role revoked. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Role '${roleStr}' revoked from ${formatPubkey(new PublicKey(holderStr))}. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === increment-allowance ===
+// ─── increment-allowance <mint> <minter> <amount> ───────────────────────────
 program
-  .command("increment-allowance")
+  .command("increment-allowance <mint> <minter> <amount>")
   .description("Increment minter allowance")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--minter <string>", "Minter wallet address")
-  .requiredOption("--amount <string>", "Amount to increment")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string, minterStr: string, amountStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue(`Incrementing allowance by ${opts.amount}`));
-      const signature = await stablecoin.incrementAllowance(
-        new PublicKey(opts.mint),
-        new PublicKey(opts.minter),
-        new BN(opts.amount)
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.incrementAllowance(
+        new PublicKey(mintStr),
+        new PublicKey(minterStr),
+        new BN(amountStr)
       );
-      console.log(chalk.green("Allowance incremented. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Allowance incremented by ${formatAmount({ toString: () => amountStr })}. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === blacklist ===
+// ─── blacklist <mint> <wallet> ───────────────────────────────────────────────
 program
-  .command("blacklist")
+  .command("blacklist <mint> <wallet>")
   .description("Add wallet to blacklist")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--wallet <string>", "Wallet to blacklist")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string, walletStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Blacklisting wallet"));
-      const signature = await stablecoin.blacklist({
-        mint: new PublicKey(opts.mint),
-        wallet: new PublicKey(opts.wallet),
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.blacklist({
+        mint: new PublicKey(mintStr),
+        wallet: new PublicKey(walletStr),
       });
-      console.log(chalk.green("Wallet blacklisted. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Wallet ${formatPubkey(new PublicKey(walletStr))} blacklisted. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === unblacklist ===
+// ─── unblacklist <mint> <wallet> ────────────────────────────────────────────
 program
-  .command("unblacklist")
+  .command("unblacklist <mint> <wallet>")
   .description("Remove wallet from blacklist")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--wallet <string>", "Wallet to unblacklist")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string, walletStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Unblacklisting wallet"));
-      const signature = await stablecoin.unblacklist({
-        mint: new PublicKey(opts.mint),
-        wallet: new PublicKey(opts.wallet),
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.unblacklist({
+        mint: new PublicKey(mintStr),
+        wallet: new PublicKey(walletStr),
       });
-      console.log(chalk.green("Wallet unblacklisted. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Wallet ${formatPubkey(new PublicKey(walletStr))} unblacklisted. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === pause / unpause ===
+// ─── freeze <mint> <token-account> ──────────────────────────────────────────
 program
-  .command("pause")
-  .description("Pause stablecoin")
-  .requiredOption("--mint <string>", "Mint address")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .command("freeze <mint> <tokenAccount>")
+  .description("Freeze a token account (ComplianceOfficer or Admin)")
+  .action(async (mintStr: string, tokenAccountStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Pausing stablecoin"));
-      const signature = await stablecoin.pause(new PublicKey(opts.mint));
-      console.log(chalk.green("Stablecoin paused. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.freezeAccount(
+        new PublicKey(mintStr),
+        new PublicKey(tokenAccountStr)
+      );
+      logSuccess(`Account ${formatPubkey(new PublicKey(tokenAccountStr))} frozen. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
+// ─── thaw <mint> <token-account> ────────────────────────────────────────────
 program
-  .command("unpause")
-  .description("Unpause stablecoin")
-  .requiredOption("--mint <string>", "Mint address")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .command("thaw <mint> <tokenAccount>")
+  .description("Thaw a token account (ComplianceOfficer or Admin)")
+  .action(async (mintStr: string, tokenAccountStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Unpausing stablecoin"));
-      const signature = await stablecoin.unpause(new PublicKey(opts.mint));
-      console.log(chalk.green("Stablecoin unpaused. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.thawAccount(
+        new PublicKey(mintStr),
+        new PublicKey(tokenAccountStr)
+      );
+      logSuccess(`Account ${formatPubkey(new PublicKey(tokenAccountStr))} thawed. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === transfer-admin / accept-admin ===
+// ─── pause <mint> ───────────────────────────────────────────────────────────
 program
-  .command("transfer-admin")
+  .command("pause <mint>")
+  .description("Pause the stablecoin")
+  .action(async (mintStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
+    try {
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.pause(new PublicKey(mintStr));
+      logSuccess(`Stablecoin paused. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// ─── unpause <mint> ─────────────────────────────────────────────────────────
+program
+  .command("unpause <mint>")
+  .description("Unpause the stablecoin")
+  .action(async (mintStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
+    try {
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.unpause(new PublicKey(mintStr));
+      logSuccess(`Stablecoin unpaused. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// ─── transfer-admin <mint> <new-admin> ──────────────────────────────────────
+program
+  .command("transfer-admin <mint> <newAdmin>")
   .description("Initiate admin transfer (two-step)")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--new-admin <string>", "New admin address")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string, newAdminStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Initiating admin transfer"));
-      const signature = await stablecoin.transferAdmin(
-        new PublicKey(opts.mint),
-        new PublicKey(opts.newAdmin)
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.transferAdmin(
+        new PublicKey(mintStr),
+        new PublicKey(newAdminStr)
       );
-      console.log(chalk.green("Admin transfer initiated. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      logSuccess(`Admin transfer initiated to ${formatPubkey(new PublicKey(newAdminStr))}. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
+// ─── accept-admin <mint> ────────────────────────────────────────────────────
 program
-  .command("accept-admin")
+  .command("accept-admin <mint>")
   .description("Accept pending admin transfer")
-  .requiredOption("--mint <string>", "Mint address")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Accepting admin transfer"));
-      const signature = await stablecoin.acceptAdmin(new PublicKey(opts.mint));
-      console.log(chalk.green("Admin transfer accepted. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.acceptAdmin(new PublicKey(mintStr));
+      logSuccess(`Admin transfer accepted. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === freeze / thaw ===
+// ─── init-hook <mint> ───────────────────────────────────────────────────────
 program
-  .command("freeze")
-  .description("Freeze a token account (ComplianceOfficer)")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--account <string>", "Token account to freeze")
-  .action(async (opts) => {
-    const parent = program.opts();
-    try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Freezing account"));
-      const signature = await stablecoin.freezeAccount(
-        new PublicKey(opts.mint),
-        new PublicKey(opts.account)
-      );
-      console.log(chalk.green("Account frozen. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
-      process.exit(1);
-    }
-  });
-
-program
-  .command("thaw")
-  .description("Thaw a token account (ComplianceOfficer)")
-  .requiredOption("--mint <string>", "Mint address")
-  .requiredOption("--account <string>", "Token account to thaw")
-  .action(async (opts) => {
-    const parent = program.opts();
-    try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Thawing account"));
-      const signature = await stablecoin.thawAccount(
-        new PublicKey(opts.mint),
-        new PublicKey(opts.account)
-      );
-      console.log(chalk.green("Account thawed. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
-      process.exit(1);
-    }
-  });
-
-// === init-hook ===
-program
-  .command("init-hook")
+  .command("init-hook <mint>")
   .description("Initialize transfer hook for SSS-2/SSS-3 mint")
-  .requiredOption("--mint <string>", "Mint address")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Initializing transfer hook"));
-      const signature = await stablecoin.initializeHook(new PublicKey(opts.mint));
-      console.log(chalk.green("Transfer hook initialized. Signature:"), signature);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+      const sdk = createSdk(rpcUrl, keypair);
+      const sig = await sdk.initializeHook(new PublicKey(mintStr));
+      logSuccess(`Transfer hook initialized. Signature: ${sig}`);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
       process.exit(1);
     }
   });
 
-// === info ===
+// ─── is-blacklisted <mint> <wallet> ─────────────────────────────────────────
 program
-  .command("info")
-  .description("Get stablecoin info")
-  .requiredOption("--mint <string>", "Mint address")
-  .action(async (opts) => {
-    const parent = program.opts();
-    try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Fetching stablecoin info"));
-      const info = await stablecoin.getStablecoinInfo(new PublicKey(opts.mint));
-
-      const presetName = info.preset === 0 ? "SSS-1" : info.preset === 1 ? "SSS-2" : "SSS-3";
-      console.log(chalk.green("Stablecoin info"));
-      console.log(chalk.green("  Admin:"), info.admin.toBase58());
-      console.log(chalk.green("  Pending Admin:"), info.pendingAdmin.toBase58());
-      console.log(chalk.green("  Mint:"), info.mint.toBase58());
-      console.log(chalk.green("  Preset:"), presetName);
-      console.log(chalk.green("  Paused:"), info.paused);
-      console.log(chalk.green("  Total Minted:"), info.totalMinted.toString());
-      console.log(chalk.green("  Total Burned:"), info.totalBurned.toString());
-      console.log(chalk.green("  Total Seized:"), info.totalSeized.toString());
-      if (info.transferHookProgram) {
-        console.log(chalk.green("  Transfer Hook:"), info.transferHookProgram.toBase58());
-      }
-      if (info.treasury) {
-        console.log(chalk.green("  Treasury:"), info.treasury.toBase58());
-      }
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
-      process.exit(1);
-    }
-  });
-
-// === set-metadata ===
-program
-  .command("set-metadata")
-  .description("Set token metadata (name, symbol, URI)")
-  .requiredOption("--mint <pubkey>", "Mint address")
-  .requiredOption("--name <string>", "Token name")
-  .requiredOption("--symbol <string>", "Token symbol")
-  .requiredOption("--uri <string>", "Token URI")
-  .action(async (opts) => {
-    const parent = program.opts();
-    try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      console.log(chalk.blue("Setting metadata..."));
-      const sig = await stablecoin.setMetadata({
-        mint: new PublicKey(opts.mint),
-        name: opts.name,
-        symbol: opts.symbol,
-        uri: opts.uri,
-      });
-      console.log(chalk.green("Metadata set:"), sig);
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
-      process.exit(1);
-    }
-  });
-
-// === role-info ===
-program
-  .command("role-info")
-  .description("Get role information for a holder")
-  .requiredOption("--mint <pubkey>", "Mint address")
-  .requiredOption("--holder <pubkey>", "Role holder address")
-  .requiredOption("--role <string>", "Role: minter, burner, seizer, pauser, compliance-officer")
-  .action(async (opts) => {
-    const parent = program.opts();
-    try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      const roleMap: Record<string, Role> = {
-        minter: Role.Minter,
-        burner: Role.Burner,
-        seizer: Role.Seizer,
-        pauser: Role.Pauser,
-        "compliance-officer": Role.ComplianceOfficer,
-      };
-      const role = roleMap[opts.role];
-      if (role === undefined) {
-        console.error(chalk.red("Invalid role. Use: minter, burner, seizer, pauser, compliance-officer"));
-        process.exit(1);
-      }
-      const info = await stablecoin.getRoleInfo(new PublicKey(opts.mint), new PublicKey(opts.holder), role);
-      if (info) {
-        console.log(chalk.green("Role info:"));
-        console.log(chalk.green("  Holder:"), info.holder.toBase58());
-        console.log(chalk.green("  Role:"), opts.role);
-        console.log(chalk.green("  Allowance:"), info.allowance.toString());
-      } else {
-        console.log(chalk.yellow("No role found for this holder"));
-      }
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
-      process.exit(1);
-    }
-  });
-
-// === is-blacklisted ===
-program
-  .command("is-blacklisted")
+  .command("is-blacklisted <mint> <wallet>")
   .description("Check if a wallet is blacklisted")
-  .requiredOption("--mint <pubkey>", "Mint address")
-  .requiredOption("--wallet <pubkey>", "Wallet address to check")
-  .action(async (opts) => {
-    const parent = program.opts();
+  .action(async (mintStr: string, walletStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
     try {
-      const provider = getProvider(parent.url, parent.keypair);
-      const stablecoin = getStablecoin(provider);
-      const blacklisted = await stablecoin.isBlacklisted(new PublicKey(opts.mint), new PublicKey(opts.wallet));
-      if (blacklisted) {
-        console.log(chalk.red("Wallet is BLACKLISTED"));
+      const sdk = createSdk(rpcUrl, keypair);
+      const result = await sdk.isBlacklisted(
+        new PublicKey(mintStr),
+        new PublicKey(walletStr)
+      );
+      if (result) {
+        console.log(`Wallet ${walletStr} is BLACKLISTED`);
       } else {
-        console.log(chalk.green("Wallet is NOT blacklisted"));
+        logSuccess(`Wallet ${walletStr} is NOT blacklisted`);
       }
-    } catch (error: any) {
-      console.error(chalk.red("Error:"), error.message);
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// ─── role-info <mint> <holder> <role> ───────────────────────────────────────
+program
+  .command("role-info <mint> <holder> <role>")
+  .description("Get role information for a holder")
+  .action(async (mintStr: string, holderStr: string, roleStr: string) => {
+    const { rpcUrl, keypair } = globalOpts();
+    try {
+      const sdk = createSdk(rpcUrl, keypair);
+      const role = parseRole(roleStr);
+      const info = await sdk.getRoleInfo(
+        new PublicKey(mintStr),
+        new PublicKey(holderStr),
+        role
+      );
+      if (info) {
+        console.log("");
+        console.log("  Role Info");
+        console.log("  ─────────────────────────────────────");
+        console.log(`  Holder    : ${info.holder.toBase58()}`);
+        console.log(`  Role      : ${roleStr}`);
+        console.log(`  Allowance : ${formatAmount(info.allowance)}`);
+        console.log("  ─────────────────────────────────────");
+        console.log("");
+      } else {
+        console.log(`No role '${roleStr}' found for holder ${formatPubkey(new PublicKey(holderStr))}`);
+      }
+    } catch (err: unknown) {
+      logError(`Error: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// ─── oracle-price <feed> ─────────────────────────────────────────────────────
+program
+  .command("oracle-price <feed>")
+  .description("Get price from a Pyth oracle feed (address or name like USDC/USD)")
+  .action(async (feed: string) => {
+    const { rpcUrl } = globalOpts();
+    try {
+      const { connection } = getConnectionAndKeypair(rpcUrl);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { PriceFeedMonitor, PYTH_FEEDS_DEVNET } = require("@sss/sdk");
+      const monitor = new PriceFeedMonitor(connection);
+
+      let feedPk: PublicKey;
+      if (PYTH_FEEDS_DEVNET[feed]) {
+        feedPk = PYTH_FEEDS_DEVNET[feed];
+      } else {
+        feedPk = new PublicKey(feed);
+      }
+
+      const price = await monitor.getPrice(feedPk);
+      console.log(`\n  Feed:       ${price.feedAddress}`);
+      console.log(`  Price:      $${price.price.toFixed(6)}`);
+      console.log(`  Confidence: ±$${price.confidence.toFixed(6)}`);
+      console.log(`  Status:     ${price.status}`);
+      console.log(`  Published:  ${new Date(price.publishTime * 1000).toISOString()}\n`);
+    } catch (err: unknown) {
+      logError((err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ─── oracle-check-peg <feed> ─────────────────────────────────────────────────
+program
+  .command("oracle-check-peg <feed>")
+  .description("Check stablecoin peg status against $1.00")
+  .option("--target <price>", "Target peg price", "1.0")
+  .option("--tolerance <bps>", "Tolerance in basis points", "50")
+  .action(async (feed: string, opts: { target: string; tolerance: string }) => {
+    const { rpcUrl } = globalOpts();
+    try {
+      const { connection } = getConnectionAndKeypair(rpcUrl);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { PriceFeedMonitor, PYTH_FEEDS_DEVNET } = require("@sss/sdk");
+      const monitor = new PriceFeedMonitor(connection);
+
+      let feedPk: PublicKey;
+      if (PYTH_FEEDS_DEVNET[feed]) {
+        feedPk = PYTH_FEEDS_DEVNET[feed];
+      } else {
+        feedPk = new PublicKey(feed);
+      }
+
+      const pegStatus = await monitor.checkPeg(
+        feedPk,
+        parseFloat(opts.target),
+        parseInt(opts.tolerance)
+      );
+      const statusColor =
+        pegStatus.status === "pegged"
+          ? chalk.green
+          : pegStatus.status === "warning"
+          ? chalk.yellow
+          : chalk.red;
+
+      console.log(`\n  Price:      $${pegStatus.price.toFixed(6)}`);
+      console.log(`  Target:     $${pegStatus.targetPrice.toFixed(2)}`);
+      console.log(`  Deviation:  ${pegStatus.deviationBps} bps`);
+      console.log(`  Tolerance:  ${pegStatus.toleranceBps} bps`);
+      console.log(`  Status:     ${statusColor(pegStatus.status.toUpperCase())}`);
+      console.log(`  Pegged:     ${pegStatus.isPegged ? chalk.green("YES") : chalk.red("NO")}\n`);
+    } catch (err: unknown) {
+      logError((err as Error).message);
       process.exit(1);
     }
   });

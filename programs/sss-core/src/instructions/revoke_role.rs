@@ -38,7 +38,7 @@ pub struct RevokeRole<'info> {
 }
 
 pub fn handler(ctx: Context<RevokeRole>) -> Result<()> {
-    require!(!ctx.accounts.config.paused, SssError::Paused);
+    // Note: revoke_role is exempt from pause — admin must revoke compromised roles during emergencies
 
     emit!(RoleRevoked {
         config: ctx.accounts.config.key(),

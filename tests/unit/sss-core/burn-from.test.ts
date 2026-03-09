@@ -13,12 +13,15 @@ import {
   airdropSol,
   initializeHook,
   findRolePda,
+  findHookConfigPda,
+  findBlacklistEntryPda,
 } from "../../helpers/setup";
 import { TOKEN_2022_PROGRAM_ID, ROLE } from "../../helpers/constants";
 
 describe("burn-from", () => {
   let mintPubkey: anchor.web3.PublicKey;
   let configPda: anchor.web3.PublicKey;
+  let hookConfig: anchor.web3.PublicKey;
   let burnerKeypair: Keypair;
   let minterKeypair: Keypair;
   let treasuryKeypair: Keypair;
@@ -36,6 +39,9 @@ describe("burn-from", () => {
     mintPubkey = result.mintKeypair.publicKey;
     configPda = result.configPda;
 
+    const [hc] = findHookConfigPda(mintPubkey);
+    hookConfig = hc;
+
     await initializeHook(mintPubkey, configPda);
 
     holderAta = await createTokenAccount(mintPubkey, admin.publicKey);
@@ -47,6 +53,9 @@ describe("burn-from", () => {
       minterKeypair.publicKey,
       ROLE.Minter
     );
+
+    // SSS-2 mintTo requires blacklist PDA for the recipient (admin.publicKey)
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     await coreProgram.methods
       .mintTo(new BN(1_000_000))
       .accounts({
@@ -57,6 +66,7 @@ describe("burn-from", () => {
         to: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
   });
@@ -69,6 +79,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     await coreProgram.methods
       .burnFrom(new BN(500_000))
       .accounts({
@@ -79,6 +90,7 @@ describe("burn-from", () => {
         from: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -97,6 +109,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     try {
       await coreProgram.methods
         .burnFrom(new BN(100))
@@ -108,6 +121,7 @@ describe("burn-from", () => {
           from: holderAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([nonBurner])
         .rpc();
       expect.fail("Should have thrown");
@@ -124,6 +138,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     try {
       await coreProgram.methods
         .burnFrom(new BN(0))
@@ -135,6 +150,7 @@ describe("burn-from", () => {
           from: holderAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burnerKeypair])
         .rpc();
       expect.fail("Should have thrown");
@@ -161,6 +177,7 @@ describe("burn-from", () => {
       })
       .rpc();
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     try {
       await coreProgram.methods
         .burnFrom(new BN(100))
@@ -172,6 +189,7 @@ describe("burn-from", () => {
           from: holderAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burnerKeypair])
         .rpc();
       expect.fail("Should have thrown");
@@ -189,6 +207,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     await coreProgram.methods
       .burnFrom(new BN(250_000))
       .accounts({
@@ -199,6 +218,7 @@ describe("burn-from", () => {
         from: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -214,6 +234,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     const txSig = await coreProgram.methods
       .burnFrom(new BN(100_000))
       .accounts({
@@ -224,6 +245,7 @@ describe("burn-from", () => {
         from: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -242,12 +264,13 @@ describe("burn-from", () => {
     const separateHolder = Keypair.generate();
     const separateAta = await createTokenAccount(mintPubkey, separateHolder.publicKey);
 
-    // Mint to separate holder
+    // Mint to separate holder (SSS-2 requires blacklist PDA for the recipient)
     const [minterRoleAccount] = findRolePda(
       configPda,
       minterKeypair.publicKey,
       ROLE.Minter
     );
+    const [separateHolderBlacklistEntry] = findBlacklistEntryPda(hookConfig, separateHolder.publicKey);
     await coreProgram.methods
       .mintTo(new BN(200_000))
       .accounts({
@@ -258,6 +281,7 @@ describe("burn-from", () => {
         to: separateAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: separateHolderBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
 
@@ -279,6 +303,7 @@ describe("burn-from", () => {
         from: separateAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: separateHolderBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -294,6 +319,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     try {
       await coreProgram.methods
         .burnFrom(new BN(2_000_000)) // more than 1_000_000 minted
@@ -305,6 +331,7 @@ describe("burn-from", () => {
           from: holderAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burnerKeypair])
         .rpc();
       expect.fail("Should have thrown");
@@ -321,6 +348,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     await coreProgram.methods
       .burnFrom(new BN(100_000))
       .accounts({
@@ -331,6 +359,7 @@ describe("burn-from", () => {
         from: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -344,6 +373,7 @@ describe("burn-from", () => {
         from: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -359,6 +389,7 @@ describe("burn-from", () => {
       ROLE.Burner
     );
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     await coreProgram.methods
       .burnFrom(new BN(1_000_000))
       .accounts({
@@ -369,6 +400,7 @@ describe("burn-from", () => {
         from: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -390,6 +422,7 @@ describe("burn-from", () => {
     );
 
     // holderAta is owned by admin, not burnerKeypair — still works via permanent delegate
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     await coreProgram.methods
       .burnFrom(new BN(50_000))
       .accounts({
@@ -400,6 +433,7 @@ describe("burn-from", () => {
         from: holderAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burnerKeypair])
       .rpc();
 
@@ -417,6 +451,7 @@ describe("burn-from", () => {
 
     const fakeMint = Keypair.generate().publicKey;
 
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
     try {
       await coreProgram.methods
         .burnFrom(new BN(100))
@@ -428,6 +463,7 @@ describe("burn-from", () => {
           from: holderAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burnerKeypair])
         .rpc();
       expect.fail("Should have thrown");

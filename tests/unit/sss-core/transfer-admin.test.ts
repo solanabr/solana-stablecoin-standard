@@ -84,22 +84,20 @@ describe("sss-core: transfer_admin", () => {
     expect(config.pendingAdmin.toBase58()).to.equal(admin.publicKey.toBase58());
   });
 
-  it("rejects when paused", async () => {
+  it("succeeds when paused (governance exempt from pause)", async () => {
     await coreProgram.methods
       .pause()
       .accounts({ authority: admin.publicKey, config: configPda, roleAccount: null })
       .rpc();
 
     const newAdmin = Keypair.generate().publicKey;
-    try {
-      await coreProgram.methods
-        .transferAdmin(newAdmin)
-        .accounts({ admin: admin.publicKey, config: configPda })
-        .rpc();
-      expect.fail("Should fail when paused");
-    } catch (error) {
-      expect(error).to.exist;
-    }
+    await coreProgram.methods
+      .transferAdmin(newAdmin)
+      .accounts({ admin: admin.publicKey, config: configPda })
+      .rpc();
+
+    const config = await coreProgram.account.stablecoinConfig.fetch(configPda);
+    expect(config.pendingAdmin.toBase58()).to.equal(newAdmin.toBase58());
   });
 
   it("rejects transfer to zero address", async () => {

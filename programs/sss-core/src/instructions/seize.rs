@@ -51,6 +51,32 @@ pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.config.paused, SssError::Paused);
     require!(ctx.accounts.config.preset.has_compliance_features(), SssError::PresetFeatureUnavailable);
 
+    // Verify the source account owner is blacklisted — seizure is only valid for blacklisted wallets
+    {
+        let from_data = ctx.accounts.from.try_borrow_data()?;
+        require!(from_data.len() >= 64, SssError::InvalidInput);
+        let from_owner = Pubkey::try_from(&from_data[32..64])
+            .map_err(|_| SssError::InvalidInput)?;
+        drop(from_data);
+
+        let (hook_config_key, _) = Pubkey::find_program_address(
+            &[b"hook_config", ctx.accounts.config.mint.as_ref()],
+            &ctx.accounts.config.transfer_hook_program,
+        );
+        let (bl_pda, _) = Pubkey::find_program_address(
+            &[b"blacklist", hook_config_key.as_ref(), from_owner.as_ref()],
+            &ctx.accounts.config.transfer_hook_program,
+        );
+
+        let bl_account = ctx.remaining_accounts.first()
+            .ok_or(SssError::BlacklistEntryRequired)?;
+        require!(bl_account.key() == bl_pda, SssError::InvalidInput);
+        require!(
+            bl_account.lamports() > 0 && bl_account.data_len() > 0,
+            SssError::NotBlacklisted
+        );
+    }
+
     // Validate treasury ATA: must be owned by Token-2022, correct mint, correct owner
     require!(
         *ctx.accounts.treasury_ata.owner == Token2022::id(),

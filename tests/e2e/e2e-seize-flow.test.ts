@@ -18,6 +18,7 @@ import {
   createTokenAccount,
   airdropSol,
   initializeHook,
+  blacklistWallet,
 } from "../helpers/setup";
 import { ROLE, TOKEN_2022_PROGRAM_ID } from "../helpers/constants";
 
@@ -65,6 +66,7 @@ describe("e2e: seize flow", () => {
 
     // 1. Mint tokens to target
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
     await coreProgram.methods
       .mintTo(new BN(50_000))
       .accounts({
@@ -75,11 +77,11 @@ describe("e2e: seize flow", () => {
         to: targetAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
 
     // 2. Blacklist target
-    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
     await coreProgram.methods
       .blacklist(target.publicKey)
       .accounts({
@@ -87,13 +89,13 @@ describe("e2e: seize flow", () => {
         admin: admin.publicKey,
         config: configPda,
         hookConfig,
-        blacklistEntry,
+        blacklistEntry: targetBlacklistEntry,
         transferHookProgram: hookProgram.programId,
         systemProgram: SystemProgram.programId,
       })
       .rpc();
 
-    const blEntry = await provider.connection.getAccountInfo(blacklistEntry);
+    const blEntry = await provider.connection.getAccountInfo(targetBlacklistEntry);
     expect(blEntry).to.not.be.null;
 
     // 3. Freeze target account
@@ -124,6 +126,7 @@ describe("e2e: seize flow", () => {
         treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -142,6 +145,7 @@ describe("e2e: seize flow", () => {
     const targetAta = await createTokenAccount(mintKeypair.publicKey, target.publicKey);
 
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
     await coreProgram.methods
       .mintTo(new BN(10_000))
       .accounts({
@@ -152,8 +156,12 @@ describe("e2e: seize flow", () => {
         to: targetAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
+
+    // Blacklist target before seizing
+    await blacklistWallet(hookConfig, configPda, target.publicKey);
 
     const [seizerRole] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
     await coreProgram.methods
@@ -167,6 +175,7 @@ describe("e2e: seize flow", () => {
         treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -178,6 +187,10 @@ describe("e2e: seize flow", () => {
     const target = Keypair.generate();
     await airdropSol(target.publicKey);
     const targetAta = await createTokenAccount(mintKeypair.publicKey, target.publicKey);
+
+    // Blacklist target (required even for failure tests)
+    await blacklistWallet(hookConfig, configPda, target.publicKey);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
 
     const random = Keypair.generate();
     await airdropSol(random.publicKey);
@@ -195,6 +208,7 @@ describe("e2e: seize flow", () => {
           treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([random])
         .rpc();
       expect.fail("Should have failed");
@@ -212,6 +226,8 @@ describe("e2e: seize flow", () => {
     const ata2 = await createTokenAccount(mintKeypair.publicKey, target2.publicKey);
 
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [blacklistEntry1] = findBlacklistEntryPda(hookConfig, target1.publicKey);
+    const [blacklistEntry2] = findBlacklistEntryPda(hookConfig, target2.publicKey);
 
     await coreProgram.methods
       .mintTo(new BN(5_000))
@@ -219,6 +235,7 @@ describe("e2e: seize flow", () => {
         minter: minterKeypair.publicKey, config: configPda, roleAccount: minterRole,
         mint: mintKeypair.publicKey, to: ata1, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry1, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
 
@@ -228,8 +245,13 @@ describe("e2e: seize flow", () => {
         minter: minterKeypair.publicKey, config: configPda, roleAccount: minterRole,
         mint: mintKeypair.publicKey, to: ata2, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry2, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
+
+    // Blacklist both targets
+    await blacklistWallet(hookConfig, configPda, target1.publicKey);
+    await blacklistWallet(hookConfig, configPda, target2.publicKey);
 
     const [seizerRole] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
 
@@ -242,6 +264,7 @@ describe("e2e: seize flow", () => {
         seizer: seizerKeypair.publicKey, config: configPda, roleAccount: seizerRole,
         mint: mintKeypair.publicKey, from: ata1, treasuryAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry1, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -251,6 +274,7 @@ describe("e2e: seize flow", () => {
         seizer: seizerKeypair.publicKey, config: configPda, roleAccount: seizerRole,
         mint: mintKeypair.publicKey, from: ata2, treasuryAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry2, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -265,14 +289,18 @@ describe("e2e: seize flow", () => {
     const targetAta = await createTokenAccount(mintKeypair.publicKey, target.publicKey);
 
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
     await coreProgram.methods
       .mintTo(new BN(7_777))
       .accounts({
         minter: minterKeypair.publicKey, config: configPda, roleAccount: minterRole,
         mint: mintKeypair.publicKey, to: targetAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
+
+    await blacklistWallet(hookConfig, configPda, target.publicKey);
 
     const [seizerRole] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
     await coreProgram.methods
@@ -281,6 +309,7 @@ describe("e2e: seize flow", () => {
         seizer: seizerKeypair.publicKey, config: configPda, roleAccount: seizerRole,
         mint: mintKeypair.publicKey, from: targetAta, treasuryAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -294,14 +323,18 @@ describe("e2e: seize flow", () => {
     const targetAta = await createTokenAccount(mintKeypair.publicKey, target.publicKey);
 
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
     await coreProgram.methods
       .mintTo(new BN(100))
       .accounts({
         minter: minterKeypair.publicKey, config: configPda, roleAccount: minterRole,
         mint: mintKeypair.publicKey, to: targetAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
+
+    await blacklistWallet(hookConfig, configPda, target.publicKey);
 
     const [seizerRole] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
     try {
@@ -311,6 +344,7 @@ describe("e2e: seize flow", () => {
           seizer: seizerKeypair.publicKey, config: configPda, roleAccount: seizerRole,
           mint: mintKeypair.publicKey, from: targetAta, treasuryAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([seizerKeypair])
         .rpc();
       expect.fail("Should fail - seize exceeds balance");
@@ -324,6 +358,10 @@ describe("e2e: seize flow", () => {
     await airdropSol(target.publicKey);
     const targetAta = await createTokenAccount(mintKeypair.publicKey, target.publicKey);
 
+    // Blacklist target (required for seize even if amount is zero)
+    await blacklistWallet(hookConfig, configPda, target.publicKey);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
+
     const [seizerRole] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
     try {
       await coreProgram.methods
@@ -332,6 +370,7 @@ describe("e2e: seize flow", () => {
           seizer: seizerKeypair.publicKey, config: configPda, roleAccount: seizerRole,
           mint: mintKeypair.publicKey, from: targetAta, treasuryAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([seizerKeypair])
         .rpc();
       expect.fail("Should fail - zero seize");
@@ -350,6 +389,10 @@ describe("e2e: seize flow", () => {
     await airdropSol(target.publicKey);
     const targetAta = await createTokenAccount(mintKeypair.publicKey, target.publicKey);
 
+    // Blacklist target (required for seize even when paused)
+    await blacklistWallet(hookConfig, configPda, target.publicKey);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
+
     const [seizerRole] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
     try {
       await coreProgram.methods
@@ -358,6 +401,7 @@ describe("e2e: seize flow", () => {
           seizer: seizerKeypair.publicKey, config: configPda, roleAccount: seizerRole,
           mint: mintKeypair.publicKey, from: targetAta, treasuryAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([seizerKeypair])
         .rpc();
       expect.fail("Should fail when paused");

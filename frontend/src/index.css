@@ -1,0 +1,169 @@
+/* ── Wallet Adapter UI overrides ── */
+@import "@solana/wallet-adapter-react-ui/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg:      #0f1224;
+    --color-surface: #161b35;
+    --color-border:  #2a3055;
+    --color-text:    #e2e8f0;
+    --color-muted:   #94a3b8;
+    --color-accent:  #4f46e5;
+  }
+
+  * {
+    @apply border-surface-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-[#0f1224] text-slate-200 font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(79,70,229,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(124,58,237,0.06) 0%, transparent 60%);
+    min-height: 100vh;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-surface;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-600;
+  }
+}
+
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-surface-card rounded-xl border border-surface-border shadow-card;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full bg-surface border border-surface-border rounded-lg px-3 py-2
+           text-slate-200 placeholder-slate-500 text-sm
+           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+           transition-colors duration-150;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg
+           px-4 py-2 text-sm transition-all duration-150 focus:outline-none
+           focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500
+           shadow-md hover:shadow-glow;
+  }
+  .btn-secondary {
+    @apply btn bg-surface-hover hover:bg-dark-800 text-slate-200 border border-surface-border
+           focus:ring-indigo-500;
+  }
+  .btn-danger {
+    @apply btn bg-red-700 hover:bg-red-600 text-white focus:ring-red-500;
+  }
+  .btn-success {
+    @apply btn bg-emerald-700 hover:bg-emerald-600 text-white focus:ring-emerald-500;
+  }
+  .btn-ghost {
+    @apply btn text-slate-400 hover:text-slate-200 hover:bg-surface-hover focus:ring-indigo-500;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-green  { @apply badge bg-emerald-900/60 text-emerald-300 border border-emerald-700/40; }
+  .badge-red    { @apply badge bg-red-900/60 text-red-300 border border-red-700/40; }
+  .badge-yellow { @apply badge bg-amber-900/60 text-amber-300 border border-amber-700/40; }
+  .badge-blue   { @apply badge bg-indigo-900/60 text-indigo-300 border border-indigo-700/40; }
+  .badge-gray   { @apply badge bg-slate-800/60 text-slate-400 border border-slate-700/40; }
+
+  /* Stat card */
+  .stat-card {
+    @apply card p-5 flex flex-col gap-1;
+  }
+  .stat-value {
+    @apply text-2xl font-bold text-white;
+  }
+  .stat-label {
+    @apply text-xs text-slate-500 uppercase tracking-wider;
+  }
+
+  /* Section heading */
+  .section-title {
+    @apply text-lg font-semibold text-white;
+  }
+  .section-subtitle {
+    @apply text-sm text-slate-500;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-surface-border my-4;
+  }
+
+  /* Table */
+  .table-wrapper {
+    @apply card overflow-hidden;
+  }
+  .table-base {
+    @apply w-full text-sm;
+  }
+  .table-base thead {
+    @apply bg-surface border-b border-surface-border;
+  }
+  .table-base th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider;
+  }
+  .table-base td {
+    @apply px-4 py-3 text-slate-300 border-b border-surface-border/50;
+  }
+  .table-base tr:last-child td {
+    @apply border-b-0;
+  }
+  .table-base tbody tr:hover {
+    @apply bg-surface-hover/40;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-brand;
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+  .animate-slide-in {
+    animation: slideIn 0.25s ease-out;
+  }
+}
+
+/* Wallet adapter button styling */
+.wallet-adapter-button {
+  @apply !bg-indigo-600 !text-white !font-medium !text-sm !rounded-lg !px-4 !py-2
+         hover:!bg-indigo-500 !transition-colors !duration-150 !h-auto !leading-normal;
+}
+.wallet-adapter-modal-wrapper {
+  @apply !bg-surface-card !border !border-surface-border;
+}
+.wallet-adapter-modal-title {
+  @apply !text-white;
+}

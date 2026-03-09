@@ -112,6 +112,7 @@ describe("e2e: SSS-3 basic tests", () => {
       const [minterRole] = findRolePda(config, minter.publicKey, ROLE.Minter);
 
       // Mint
+      const [blEntry] = findBlacklistEntryPda(hookConfig, user.publicKey);
       await coreProgram.methods
         .mintTo(new BN(1000))
         .accounts({
@@ -122,6 +123,7 @@ describe("e2e: SSS-3 basic tests", () => {
           to: userAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: blEntry, isWritable: false, isSigner: false }])
         .signers([minter])
         .rpc();
 

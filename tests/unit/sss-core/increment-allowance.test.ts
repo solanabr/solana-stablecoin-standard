@@ -137,21 +137,19 @@ describe("sss-core: increment_allowance", () => {
     expect(role.allowance.toNumber()).to.equal(1_000 + 999_999_999);
   });
 
-  it("rejects when paused", async () => {
+  it("succeeds when paused (governance exempt from pause)", async () => {
     await coreProgram.methods
       .pause()
       .accounts({ authority: admin.publicKey, config: configPda, roleAccount: null })
       .rpc();
 
-    try {
-      await coreProgram.methods
-        .incrementAllowance(new BN(100))
-        .accounts({ admin: admin.publicKey, config: configPda, minterRoleAccount })
-        .rpc();
-      expect.fail("Should fail when paused");
-    } catch (error) {
-      expect(error).to.exist;
-    }
+    await coreProgram.methods
+      .incrementAllowance(new BN(100))
+      .accounts({ admin: admin.publicKey, config: configPda, minterRoleAccount })
+      .rpc();
+
+    const role = await coreProgram.account.roleAccount.fetch(minterRoleAccount);
+    expect(role.allowance.toNumber()).to.equal(1_100);
   });
 
   it("increment after partial mint works", async () => {

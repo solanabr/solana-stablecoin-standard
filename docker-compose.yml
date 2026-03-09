@@ -18,8 +18,8 @@ services:
     command: >
       solana-test-validator
       --reset
-      --bpf-program FH3XosNdAdUPfcxVxjUrUoCrGaLw9L3i9eadu7M8nQZQ target/deploy/sss_core.so
-      --bpf-program Hook1111111111111111111111111111111111111111 target/deploy/sss_transfer_hook.so
+      --bpf-program GmG49Q2d988k5C6dkTLLCihGfH5G6QVg5Rbgv54Z7iw4 target/deploy/sss_core.so
+      --bpf-program 2b5HCPo4PC7w63MmUnXxuR9kwtaQpni8AXktfZHiMf2p target/deploy/sss_transfer_hook.so
     ports:
       - "8899:8899"
       - "8900:8900"

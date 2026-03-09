@@ -1,7 +1,12 @@
 import BN from "bn.js";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { expect } from "chai";
-import { findRolePda } from "../../helpers/setup";
+import {
+  findRolePda,
+  findHookConfigPda,
+  findBlacklistEntryPda,
+  blacklistWallet,
+} from "../../helpers/setup";
 import {
   provider,
   coreProgram,
@@ -18,6 +23,7 @@ import { ROLE, TOKEN_2022_PROGRAM_ID } from "../../helpers/constants";
 describe("sss-core: seize", () => {
   let mintKeypair: Keypair;
   let configPda: PublicKey;
+  let hookConfig: PublicKey;
   let treasuryKeypair: Keypair;
   let treasuryAta: PublicKey;
   let targetKeypair: Keypair;
@@ -40,6 +46,9 @@ describe("sss-core: seize", () => {
     mintKeypair = result.mintKeypair;
     configPda = result.configPda;
 
+    const [hc] = findHookConfigPda(mintKeypair.publicKey);
+    hookConfig = hc;
+
     await initializeHook(mintKeypair.publicKey, configPda);
     await grantRole(configPda, seizerKeypair.publicKey, ROLE.Seizer);
     await grantRole(configPda, minterKeypair.publicKey, ROLE.Minter, 1_000_000);
@@ -48,8 +57,9 @@ describe("sss-core: seize", () => {
     treasuryAta = await createTokenAccount(mintKeypair.publicKey, treasuryKeypair.publicKey);
     targetAta = await createTokenAccount(mintKeypair.publicKey, targetKeypair.publicKey);
 
-    // Mint tokens to target
+    // Mint tokens to target (SSS-2 requires blacklist PDA as remainingAccounts)
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
     await coreProgram.methods
       .mintTo(new BN(10_000))
       .accounts({
@@ -60,12 +70,17 @@ describe("sss-core: seize", () => {
         to: targetAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
   });
 
   it("seizer can seize tokens (thaw -> burn -> freeze -> mint to treasury)", async () => {
     const [roleAccount] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    // Must blacklist target before seizing
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     const tx = await coreProgram.methods
       .seize(new BN(5_000))
@@ -78,6 +93,7 @@ describe("sss-core: seize", () => {
         treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -88,6 +104,10 @@ describe("sss-core: seize", () => {
     const randomUser = Keypair.generate();
     await airdropSol(randomUser.publicKey);
     const [roleAccount] = findRolePda(configPda, randomUser.publicKey, ROLE.Seizer);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    // Blacklist target (seize always requires it on-chain)
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     try {
       await coreProgram.methods
@@ -101,6 +121,7 @@ describe("sss-core: seize", () => {
           treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
         .signers([randomUser])
         .rpc();
       expect.fail("Should have failed");
@@ -111,6 +132,10 @@ describe("sss-core: seize", () => {
 
   it("rejects zero amount", async () => {
     const [roleAccount] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    // Blacklist target (seize always requires it on-chain)
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     try {
       await coreProgram.methods
@@ -124,6 +149,7 @@ describe("sss-core: seize", () => {
           treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
         .signers([seizerKeypair])
         .rpc();
       expect.fail("Should have failed");
@@ -139,6 +165,10 @@ describe("sss-core: seize", () => {
       .rpc();
 
     const [roleAccount] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    // Blacklist target (seize always requires it on-chain)
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     try {
       await coreProgram.methods
@@ -152,6 +182,7 @@ describe("sss-core: seize", () => {
           treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
         .signers([seizerKeypair])
         .rpc();
       expect.fail("Should have failed");
@@ -162,6 +193,10 @@ describe("sss-core: seize", () => {
 
   it("updates totalSeized counter", async () => {
     const [roleAccount] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    // Must blacklist target before seizing
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     await coreProgram.methods
       .seize(new BN(3_000))
@@ -174,6 +209,7 @@ describe("sss-core: seize", () => {
         treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -183,6 +219,9 @@ describe("sss-core: seize", () => {
 
   it("seize partial amount", async () => {
     const [roleAccount] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     await coreProgram.methods
       .seize(new BN(2_000))
@@ -195,6 +234,7 @@ describe("sss-core: seize", () => {
         treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -204,6 +244,9 @@ describe("sss-core: seize", () => {
 
   it("multiple seizes accumulate totalSeized", async () => {
     const [roleAccount] = findRolePda(configPda, seizerKeypair.publicKey, ROLE.Seizer);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     await coreProgram.methods
       .seize(new BN(1_000))
@@ -216,6 +259,7 @@ describe("sss-core: seize", () => {
         treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -230,6 +274,7 @@ describe("sss-core: seize", () => {
         treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizerKeypair])
       .rpc();
 
@@ -239,6 +284,9 @@ describe("sss-core: seize", () => {
 
   it("requires Seizer role specifically", async () => {
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, targetKeypair.publicKey);
+
+    await blacklistWallet(hookConfig, configPda, targetKeypair.publicKey);
 
     try {
       await coreProgram.methods
@@ -252,6 +300,7 @@ describe("sss-core: seize", () => {
           treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
         .signers([minterKeypair])
         .rpc();
       expect.fail("Should have failed");

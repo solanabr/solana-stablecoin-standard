@@ -20,3 +20,5 @@ export type {
   StablecoinInfo,
   RoleInfo,
 } from "./utils/types";
+export { PriceFeedMonitor, PYTH_FEEDS_MAINNET, PYTH_FEEDS_DEVNET } from "./oracle";
+export type { PriceData, PegStatus } from "./oracle";

@@ -47,6 +47,31 @@ pub fn handler(ctx: Context<MintTo>, amount: u64) -> Result<()> {
     require!(amount > 0, SssError::ZeroAmount);
     require!(!ctx.accounts.config.paused, SssError::Paused);
 
+    // For SSS-2/SSS-3: check that the destination wallet owner is not blacklisted.
+    // Caller must pass the blacklist entry PDA as the first remaining account.
+    if ctx.accounts.config.preset.has_compliance_features() {
+        let to_data = ctx.accounts.to.try_borrow_data()?;
+        require!(to_data.len() >= 64, SssError::InvalidInput);
+        let to_owner = Pubkey::try_from(&to_data[32..64]).unwrap();
+        drop(to_data);
+
+        let (hook_config_key, _) = Pubkey::find_program_address(
+            &[b"hook_config", ctx.accounts.config.mint.as_ref()],
+            &ctx.accounts.config.transfer_hook_program,
+        );
+        let (bl_pda, _) = Pubkey::find_program_address(
+            &[b"blacklist", hook_config_key.as_ref(), to_owner.as_ref()],
+            &ctx.accounts.config.transfer_hook_program,
+        );
+
+        let bl_account = ctx.remaining_accounts.first()
+            .ok_or(SssError::BlacklistEntryRequired)?;
+        require!(bl_account.key() == bl_pda, SssError::InvalidInput);
+        if bl_account.lamports() > 0 && bl_account.data_len() > 0 {
+            return Err(SssError::Blacklisted.into());
+        }
+    }
+
     // Decrement allowance — always enforced, allowance=0 means no remaining allowance
     let role_account = &mut ctx.accounts.role_account;
     require!(amount <= role_account.allowance, SssError::AllowanceExceeded);

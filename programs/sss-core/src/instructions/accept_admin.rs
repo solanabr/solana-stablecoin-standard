@@ -21,8 +21,7 @@ pub struct AcceptAdmin<'info> {
 }
 
 pub fn handler(ctx: Context<AcceptAdmin>) -> Result<()> {
-    require!(!ctx.accounts.config.paused, SssError::Paused);
-
+    // No pause check: admin governance must work even when paused to prevent bricking
     let config = &mut ctx.accounts.config;
     let previous_admin = config.admin;
     config.admin = config.pending_admin;

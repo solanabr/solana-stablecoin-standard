@@ -67,4 +67,10 @@ pub enum SssError {
 
     #[msg("Cannot blacklist a protected address (admin or treasury)")]
     CannotBlacklistProtectedAddress,
+
+    #[msg("Wallet must be blacklisted before seizure")]
+    NotBlacklisted,
+
+    #[msg("Blacklist entry account is required")]
+    BlacklistEntryRequired,
 }

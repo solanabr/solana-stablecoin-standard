@@ -41,6 +41,10 @@ pub struct Unblacklist<'info> {
 pub fn handler(ctx: Context<Unblacklist>, wallet: Pubkey) -> Result<()> {
     // Note: blacklist/unblacklist are exempt from pause checks — compliance must operate during emergencies
     let config = &ctx.accounts.config;
+
+    // Only SSS-2/SSS-3 have compliance features
+    require!(config.preset.has_compliance_features(), SssError::PresetFeatureUnavailable);
+
     let cs = crate::utils::ConfigSeeds::new(config);
     let seeds = cs.as_seeds();
     let signer_seeds: &[&[&[u8]]] = &[&seeds];

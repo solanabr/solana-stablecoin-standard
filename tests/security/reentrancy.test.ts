@@ -135,14 +135,16 @@ describe("security: reentrancy guards", () => {
     const targetAta = await createTokenAccount(mintKeypair.publicKey, target.publicKey);
     const treasuryAta = await createTokenAccount(mintKeypair.publicKey, treasuryKeypair.publicKey);
 
-    // Mint to target
+    // Mint to target (SSS-2 requires blacklist PDA for recipient as remainingAccounts)
     const [minterRole] = findRolePda(configPda, minter.publicKey, ROLE.Minter);
+    const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
     await coreProgram.methods
       .mintTo(new BN(10_000))
       .accounts({
         minter: minter.publicKey, config: configPda, roleAccount: minterRole,
         mint: mintKeypair.publicKey, to: targetAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([minter])
       .rpc();
 
@@ -167,6 +169,7 @@ describe("security: reentrancy guards", () => {
         mint: mintKeypair.publicKey, from: targetAta, treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .signers([seizer])
       .rpc();
 

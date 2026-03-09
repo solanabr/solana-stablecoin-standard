@@ -32,7 +32,7 @@ pub struct IncrementAllowance<'info> {
 }
 
 pub fn handler(ctx: Context<IncrementAllowance>, amount: u64) -> Result<()> {
-    require!(!ctx.accounts.config.paused, SssError::Paused);
+    // Note: increment_allowance is exempt from pause — admin must prepare for unpause
     require!(amount > 0, SssError::ZeroAmount);
 
     let role_account = &mut ctx.accounts.minter_role_account;

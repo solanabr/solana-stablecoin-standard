@@ -166,7 +166,7 @@ describe("grant-role", () => {
     expect(roleState.allowance.toNumber()).to.equal(0);
   });
 
-  it("rejects when paused", async () => {
+  it("succeeds when paused (governance exempt from pause)", async () => {
     await coreProgram.methods
       .pause()
       .accounts({ authority: admin.publicKey, config: configPda, roleAccount: null })
@@ -175,21 +175,19 @@ describe("grant-role", () => {
     const target = Keypair.generate();
     const [roleAccount] = findRolePda(configPda, target.publicKey, ROLE.Minter);
 
-    try {
-      await coreProgram.methods
-        .grantRole({ minter: {} }, new BN(100))
-        .accounts({
-          admin: admin.publicKey,
-          config: configPda,
-          holder: target.publicKey,
-          roleAccount,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
-      expect.fail("Should fail when paused");
-    } catch (err: any) {
-      expect(err.toString()).to.include("Paused");
-    }
+    await coreProgram.methods
+      .grantRole({ minter: {} }, new BN(100))
+      .accounts({
+        admin: admin.publicKey,
+        config: configPda,
+        holder: target.publicKey,
+        roleAccount,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    const roleState = await coreProgram.account.roleAccount.fetch(roleAccount);
+    expect(roleState.allowance.toNumber()).to.equal(100);
   });
 
   it("rejects Pubkey::default() as holder", async () => {

@@ -21,7 +21,7 @@ pub struct TransferAdmin<'info> {
 
 pub fn handler(ctx: Context<TransferAdmin>, new_admin: Pubkey) -> Result<()> {
     require!(new_admin != Pubkey::default(), SssError::InvalidInput);
-    require!(!ctx.accounts.config.paused, SssError::Paused);
+    // No pause check: admin governance must work even when paused to prevent bricking
 
     let config = &mut ctx.accounts.config;
     config.pending_admin = new_admin;

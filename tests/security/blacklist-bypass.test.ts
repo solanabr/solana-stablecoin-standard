@@ -3,6 +3,7 @@ import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import { expect } from "chai";
 import {
   findRolePda,
+  findHookConfigPda,
   findBlacklistEntryPda,
 } from "@sss/sdk";
 import {
@@ -56,12 +57,14 @@ describe("security: blacklist bypass attempts", () => {
 
     // Mint to sender
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [senderBlEntry] = findBlacklistEntryPda(hookConfig, sender.publicKey);
     await coreProgram.methods
       .mintTo(new BN(1_000))
       .accounts({
         minter: minterKeypair.publicKey, config: configPda, roleAccount: minterRole,
         mint: mintKeypair.publicKey, to: senderAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: senderBlEntry, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
 
@@ -85,12 +88,14 @@ describe("security: blacklist bypass attempts", () => {
 
     // Mint to sender
     const [minterRole] = findRolePda(configPda, minterKeypair.publicKey, ROLE.Minter);
+    const [senderBlEntry2] = findBlacklistEntryPda(hookConfig, sender.publicKey);
     await coreProgram.methods
       .mintTo(new BN(1_000))
       .accounts({
         minter: minterKeypair.publicKey, config: configPda, roleAccount: minterRole,
         mint: mintKeypair.publicKey, to: senderAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: senderBlEntry2, isWritable: false, isSigner: false }])
       .signers([minterKeypair])
       .rpc();
 

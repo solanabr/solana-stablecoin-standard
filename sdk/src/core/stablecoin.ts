@@ -89,7 +89,7 @@ export class SolanaStablecoin {
       Role.Minter
     );
 
-    return this.program.methods
+    let builder = this.program.methods
       .mintTo(params.amount)
       .accounts({
         minter: this.provider.wallet.publicKey,
@@ -98,8 +98,15 @@ export class SolanaStablecoin {
         mint: params.mint,
         to: params.to,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc();
+      });
+
+    if (params.toOwner) {
+      const [hookConfig] = findHookConfigPda(params.mint);
+      const [blacklistEntry] = findBlacklistEntryPda(hookConfig, params.toOwner);
+      builder = builder.remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }]);
+    }
+
+    return builder.rpc();
   }
 
   async burnFrom(params: BurnFromParams): Promise<TransactionSignature> {
@@ -109,6 +116,8 @@ export class SolanaStablecoin {
       this.provider.wallet.publicKey,
       Role.Burner
     );
+    const [hookConfig] = findHookConfigPda(params.mint);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, params.fromOwner);
 
     return this.program.methods
       .burnFrom(params.amount)
@@ -120,6 +129,7 @@ export class SolanaStablecoin {
         from: params.from,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .rpc();
   }
 
@@ -130,6 +140,8 @@ export class SolanaStablecoin {
       this.provider.wallet.publicKey,
       Role.Seizer
     );
+    const [hookConfig] = findHookConfigPda(params.mint);
+    const [blacklistEntry] = findBlacklistEntryPda(hookConfig, params.fromOwner);
 
     return this.program.methods
       .seize(params.amount)
@@ -142,6 +154,7 @@ export class SolanaStablecoin {
         treasuryAta: params.treasuryAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: blacklistEntry, isWritable: false, isSigner: false }])
       .rpc();
   }
 

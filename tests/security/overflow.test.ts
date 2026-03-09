@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import BN from "bn.js";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { expect } from "chai";
-import { findRolePda } from "@sss/sdk";
+import { findRolePda, findHookConfigPda, findBlacklistEntryPda } from "@sss/sdk";
 import {
   coreProgram,
   admin,
@@ -92,12 +92,15 @@ describe("security: overflow protection", () => {
     const sss2Config = sss2Result.configPda;
     await initializeHook(sss2Mint, sss2Config);
 
+    const [hookConfig] = findHookConfigPda(sss2Mint);
+
     const burner = Keypair.generate();
     await airdropSol(burner.publicKey);
     await grantRole(sss2Config, burner.publicKey, ROLE.Burner);
     const [burnerRole] = findRolePda(sss2Config, burner.publicKey, ROLE.Burner);
 
     const burnTarget = await createTokenAccount(sss2Mint, admin.publicKey);
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
 
     try {
       await coreProgram.methods
@@ -110,6 +113,7 @@ describe("security: overflow protection", () => {
           from: burnTarget,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burner])
         .rpc();
       expect.fail("Zero burn should fail");
@@ -190,14 +194,17 @@ describe("security: overflow protection", () => {
     const sss2Config = sss2Result.configPda;
     await initializeHook(sss2Mint, sss2Config);
 
+    const [hookConfig] = findHookConfigPda(sss2Mint);
+
     const sss2Minter = Keypair.generate();
     await airdropSol(sss2Minter.publicKey);
     await grantRole(sss2Config, sss2Minter.publicKey, ROLE.Minter, 10_000);
     const [sss2MinterRole] = findRolePda(sss2Config, sss2Minter.publicKey, ROLE.Minter);
 
     const burnTarget = await createTokenAccount(sss2Mint, admin.publicKey);
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
 
-    // Mint some tokens first
+    // Mint some tokens first (SSS-2 requires blacklist PDA for recipient)
     await coreProgram.methods
       .mintTo(new BN(5_000))
       .accounts({
@@ -208,6 +215,7 @@ describe("security: overflow protection", () => {
         to: burnTarget,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([sss2Minter])
       .rpc();
 
@@ -226,6 +234,7 @@ describe("security: overflow protection", () => {
         from: burnTarget,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([burner])
       .rpc();
 
@@ -242,12 +251,15 @@ describe("security: overflow protection", () => {
     const sss2Config = sss2Result.configPda;
     await initializeHook(sss2Mint, sss2Config);
 
+    const [hookConfig] = findHookConfigPda(sss2Mint);
+
     const sss2Minter = Keypair.generate();
     await airdropSol(sss2Minter.publicKey);
     await grantRole(sss2Config, sss2Minter.publicKey, ROLE.Minter, 1_000);
     const [sss2MinterRole] = findRolePda(sss2Config, sss2Minter.publicKey, ROLE.Minter);
 
     const burnTarget = await createTokenAccount(sss2Mint, admin.publicKey);
+    const [adminBlacklistEntry] = findBlacklistEntryPda(hookConfig, admin.publicKey);
 
     await coreProgram.methods
       .mintTo(new BN(100))
@@ -255,6 +267,7 @@ describe("security: overflow protection", () => {
         minter: sss2Minter.publicKey, config: sss2Config, roleAccount: sss2MinterRole,
         mint: sss2Mint, to: burnTarget, tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
       .signers([sss2Minter])
       .rpc();
 
@@ -270,6 +283,7 @@ describe("security: overflow protection", () => {
           burner: burner.publicKey, config: sss2Config, roleAccount: burnerRole,
           mint: sss2Mint, from: burnTarget, tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: adminBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burner])
         .rpc();
       expect.fail("Should fail - burn exceeds balance");

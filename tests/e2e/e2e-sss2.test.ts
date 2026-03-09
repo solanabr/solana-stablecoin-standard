@@ -18,6 +18,7 @@ import {
   createTokenAccount,
   initializeHook,
   airdropSol,
+  blacklistWallet,
 } from "../helpers/setup";
 import { ROLE, TOKEN_2022_PROGRAM_ID } from "../helpers/constants";
 
@@ -94,6 +95,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
     it("minter can mint 1000 tokens to user", async () => {
       const userAta = await createTokenAccount(mint, user.publicKey);
       const [minterRole] = findRolePda(config, minter.publicKey, ROLE.Minter);
+      const [userBlacklistEntry] = findBlacklistEntryPda(hookConfig, user.publicKey);
 
       await coreProgram.methods
         .mintTo(new BN(1000))
@@ -105,6 +107,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
           to: userAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: userBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([minter])
         .rpc();
 
@@ -117,6 +120,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
     it("burner burns 200 tokens from user via permanent delegate", async () => {
       const userAta = await createTokenAccount(mint, user.publicKey);
       const [burnerRole] = findRolePda(config, burner.publicKey, ROLE.Burner);
+      const [userBlacklistEntry] = findBlacklistEntryPda(hookConfig, user.publicKey);
 
       await coreProgram.methods
         .burnFrom(new BN(200))
@@ -128,6 +132,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
           from: userAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: userBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([burner])
         .rpc();
 
@@ -229,6 +234,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
       const userAta = await createTokenAccount(mint, user.publicKey);
       const treasuryAta = await createTokenAccount(mint, treasury.publicKey);
       const [seizerRole] = findRolePda(config, seizer.publicKey, ROLE.Seizer);
+      const [userBlacklistEntry] = findBlacklistEntryPda(hookConfig, user.publicKey);
 
       // Mint some tokens to user first
       const [minterRole] = findRolePda(config, minter.publicKey, ROLE.Minter);
@@ -238,8 +244,12 @@ describe("e2e: SSS-2 full lifecycle", () => {
           minter: minter.publicKey, config, roleAccount: minterRole,
           mint, to: userAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: userBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([minter])
         .rpc();
+
+      // Blacklist user before seizing (seize requires blacklisted target)
+      await blacklistWallet(hookConfig, config, user.publicKey);
 
       await coreProgram.methods
         .seize(new BN(100))
@@ -252,6 +262,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
           treasuryAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: userBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([seizer])
         .rpc();
 
@@ -350,6 +361,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
       await airdropSol(target.publicKey);
       const targetAta = await createTokenAccount(mint, target.publicKey);
       const treasuryAta = await createTokenAccount(mint, treasury.publicKey);
+      const [targetBlacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
 
       const [minterRole] = findRolePda(config, minter.publicKey, ROLE.Minter);
       await coreProgram.methods
@@ -358,16 +370,16 @@ describe("e2e: SSS-2 full lifecycle", () => {
           minter: minter.publicKey, config, roleAccount: minterRole,
           mint, to: targetAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([minter])
         .rpc();
 
       // Blacklist via CPI
-      const [blacklistEntry] = findBlacklistEntryPda(hookConfig, target.publicKey);
       await coreProgram.methods
         .blacklist(target.publicKey)
         .accounts({
           payer: admin.publicKey, admin: admin.publicKey, config,
-          hookConfig, blacklistEntry,
+          hookConfig, blacklistEntry: targetBlacklistEntry,
           transferHookProgram: hookProgram.programId,
           systemProgram: SystemProgram.programId,
         })
@@ -394,6 +406,7 @@ describe("e2e: SSS-2 full lifecycle", () => {
           seizer: seizer.publicKey, config, roleAccount: seizerRole,
           mint, from: targetAta, treasuryAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
+        .remainingAccounts([{ pubkey: targetBlacklistEntry, isWritable: false, isSigner: false }])
         .signers([seizer])
         .rpc();
 

@@ -73,7 +73,9 @@ pub fn handler(ctx: Context<CreateMint>, params: CreateMintParams) -> Result<()>
     };
 
     let treasury = if preset.has_compliance_features() {
-        params.treasury.unwrap()
+        let t = params.treasury.unwrap();
+        require!(t != Pubkey::default(), SssError::InvalidInput);
+        t
     } else {
         Pubkey::default()
     };
