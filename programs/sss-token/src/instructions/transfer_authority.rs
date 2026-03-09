@@ -23,8 +23,7 @@ pub struct TransferAuthority<'info> {
     )]
     pub role_registry: Account<'info, RoleRegistry>,
 
-    /// CHECK: The new authority pubkey. Validated in handler logic.
-    pub new_authority: UncheckedAccount<'info>,
+    pub new_authority: Signer<'info>,
 }
 
 pub fn handler(ctx: Context<TransferAuthority>) -> Result<()> {
@@ -51,6 +50,17 @@ pub fn handler(ctx: Context<TransferAuthority>) -> Result<()> {
     // Update role registry
     let role_registry = &mut ctx.accounts.role_registry;
     role_registry.master_authority = new_authority_key;
+
+    // Cascade role updates: any role pointing to the old authority moves to the new one
+    if role_registry.pauser == old_authority {
+        role_registry.pauser = new_authority_key;
+    }
+    if role_registry.blacklister == old_authority {
+        role_registry.blacklister = new_authority_key;
+    }
+    if role_registry.seizer == old_authority {
+        role_registry.seizer = new_authority_key;
+    }
 
     emit!(AuthorityTransferred {
         config: config.key(),
