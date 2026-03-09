@@ -1,18 +1,40 @@
 {
   "name": "@stbr/sss-token",
   "version": "0.1.0",
-  "description": "TypeScript SDK for the Solana Stablecoin Standard (SSS)",
+  "description": "TypeScript SDK for the Solana Stablecoin Standard (SSS) — mint, burn, blacklist, seize, freeze, oracle, and GENIUS Act compliance",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "dist",
     "src"
   ],
-  "license": "ISC",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amanhij/solana-stablecoin-standard-pre.git",
+    "directory": "sdk"
+  },
+  "homepage": "https://github.com/amanhij/solana-stablecoin-standard-pre#readme",
+  "keywords": [
+    "solana",
+    "stablecoin",
+    "token-2022",
+    "spl",
+    "defi",
+    "blacklist",
+    "compliance",
+    "genius-act",
+    "oracle",
+    "anchor"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
     "@solana/spl-token": "^0.4.14",
