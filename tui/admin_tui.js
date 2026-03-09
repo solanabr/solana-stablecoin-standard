@@ -100,6 +100,9 @@ function loadWallet() {
 loadWallet();
 
 // --- CLIPBOARD UTILITY (cross-platform) ---
+const _isWSL = process.platform === 'linux' && fs.existsSync('/proc/version') &&
+  fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
+
 function getClipboard() {
   try {
     const { execSync } = require('child_process');
@@ -108,13 +111,13 @@ function getClipboard() {
       cmds = ['powershell.exe -NoProfile -Command Get-Clipboard'];
     } else if (process.platform === 'darwin') {
       cmds = ['pbpaste'];
+    } else if (_isWSL) {
+      cmds = ['powershell.exe -NoProfile -Command Get-Clipboard'];
     } else {
-      // Linux — try Wayland, X11, then WSL powershell fallback
       cmds = [
         'wl-paste --no-newline',
         'xclip -selection clipboard -o',
         'xsel --clipboard --output',
-        'powershell.exe -NoProfile -Command Get-Clipboard',
       ];
     }
     for (const cmd of cmds) {
