@@ -32,13 +32,13 @@ jobs:
       - name: Install Solana CLI
         run: |
           sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          solana --version
+          solana-keygen new --no-bip39-passphrase
 
       - name: Install Anchor CLI
         run: cargo install --git https://github.com/coral-xyz/anchor avm --force && avm install ${{ env.ANCHOR_VERSION }} && avm use ${{ env.ANCHOR_VERSION }}
-
-      - name: Generate keypair
-        run: solana-keygen new --no-bip39-passphrase
 
       - name: Build programs
         run: anchor build
@@ -73,6 +73,7 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
+    needs: build-sdk
     steps:
       - uses: actions/checkout@v4
 
