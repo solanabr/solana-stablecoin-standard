@@ -43,6 +43,12 @@ function loadKeypair(keypairPath: string): Keypair {
 // ---------------------------------------------------------------------------
 
 function main(): void {
+  // Require API_KEY for POST endpoint authentication
+  if (!process.env.API_KEY) {
+    console.error("FATAL: API_KEY environment variable is required but not set.");
+    process.exit(1);
+  }
+
   // Load authority keypair
   const keypair = loadKeypair(KEYPAIR_PATH);
   console.log(`Authority: ${keypair.publicKey.toBase58()}`);

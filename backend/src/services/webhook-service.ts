@@ -214,6 +214,15 @@ app.get("/health", (_req: Request, res: Response) => {
 
 // Register a new webhook
 app.post("/webhook/register", (req: Request, res: Response) => {
+  const apiKey = process.env.API_KEY;
+  if (apiKey) {
+    const auth = req.headers.authorization;
+    if (!auth || auth !== `Bearer ${apiKey}`) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+  }
+
   const { url, eventTypes, secret } = req.body as {
     url?: string;
     eventTypes?: string[];
@@ -263,6 +272,15 @@ app.post("/webhook/register", (req: Request, res: Response) => {
 
 // Dispatch event to all matching webhooks
 app.post("/webhook/dispatch", async (req: Request, res: Response) => {
+  const apiKey = process.env.API_KEY;
+  if (apiKey) {
+    const auth = req.headers.authorization;
+    if (!auth || auth !== `Bearer ${apiKey}`) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+  }
+
   const { eventType, payload } = req.body as DispatchRequest;
 
   if (!eventType) {
@@ -309,6 +327,15 @@ app.get("/webhook/status", (_req: Request, res: Response) => {
 
 // Delete a webhook
 app.delete("/webhook/:id", (req: Request, res: Response) => {
+  const apiKey = process.env.API_KEY;
+  if (apiKey) {
+    const auth = req.headers.authorization;
+    if (!auth || auth !== `Bearer ${apiKey}`) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+  }
+
   const id = req.params.id as string;
 
   if (!webhooks.has(id)) {

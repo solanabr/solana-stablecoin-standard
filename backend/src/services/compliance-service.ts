@@ -317,6 +317,15 @@ app.get("/health", (_req: Request, res: Response) => {
 
 // Screen a single address
 app.post("/compliance/screen", async (req: Request, res: Response) => {
+  const apiKey = process.env.API_KEY;
+  if (apiKey) {
+    const auth = req.headers.authorization;
+    if (!auth || auth !== `Bearer ${apiKey}`) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+  }
+
   const { address } = req.body as { address?: string };
 
   if (!address) {
@@ -340,6 +349,15 @@ app.post("/compliance/screen", async (req: Request, res: Response) => {
 
 // Batch screening
 app.post("/compliance/batch", async (req: Request, res: Response) => {
+  const apiKey = process.env.API_KEY;
+  if (apiKey) {
+    const auth = req.headers.authorization;
+    if (!auth || auth !== `Bearer ${apiKey}`) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+  }
+
   const { addresses } = req.body as { addresses?: string[] };
 
   if (!addresses || !Array.isArray(addresses)) {

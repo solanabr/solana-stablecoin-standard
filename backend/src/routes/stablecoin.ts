@@ -8,6 +8,7 @@ import {
   PRESET_CONFIGS,
   SSS_TRANSFER_HOOK_PROGRAM_ID,
 } from "../../../sdk/src";
+import { requireApiKey } from "../middleware/auth";
 
 /**
  * Creates the stablecoin router.
@@ -250,7 +251,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
   );
 
   // -----------------------------------------------------------------------
-  // POST endpoints
+  // POST endpoints (all require API key authentication)
   // -----------------------------------------------------------------------
 
   /**
@@ -261,9 +262,20 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/initialize",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { name, symbol, uri, decimals, preset } = req.body;
+        const {
+          name,
+          symbol,
+          uri,
+          decimals,
+          preset,
+          enablePermanentDelegate,
+          enableTransferHook,
+          enableDefaultStateFrozen,
+          enableConfidentialTransfers,
+        } = req.body;
 
         const presetEnum = preset as StablecoinPreset;
         const presetConfig = PRESET_CONFIGS[presetEnum];
@@ -286,6 +298,10 @@ export function createStablecoinRouter(client: SSSClient): Router {
           uri,
           decimals: typeof decimals === "number" ? decimals : parseInt(decimals, 10),
           preset: getPresetAnchorEnum(presetEnum),
+          enablePermanentDelegate: enablePermanentDelegate ?? null,
+          enableTransferHook: enableTransferHook ?? null,
+          enableDefaultStateFrozen: enableDefaultStateFrozen ?? null,
+          enableConfidentialTransfers: enableConfidentialTransfers ?? null,
         };
 
         // For SSS-2 preset, pass the hook program ID
@@ -318,6 +334,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/mint",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -340,6 +357,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/burn",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -361,6 +379,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/pause",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -379,6 +398,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/unpause",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -398,6 +418,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/freeze",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -419,6 +440,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/thaw",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -440,6 +462,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/blacklist/add",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -468,6 +491,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/blacklist/remove",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -494,6 +518,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/seize",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -525,6 +550,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/roles",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -552,6 +578,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/minter",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
@@ -579,6 +606,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
    */
   router.post(
     "/:mint/attest",
+    requireApiKey,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const mint = new PublicKey(req.params.mint);
