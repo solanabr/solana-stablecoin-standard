@@ -2191,6 +2191,8 @@ let screenContribWidgets = [];
 
 function clearMainContent() {
   dismissAllModals();
+  _formInputActive = false;
+  _activeFormValues = [];
   // Clean up program-level paste handlers from destroyed textbox inputs
   mainContent.children.slice().forEach(child => {
     if (child._pasteHandler) {
@@ -2236,22 +2238,126 @@ function renderTabContent() {
 
 // --- 12. TAB RENDERERS ---
 
-// Helper: wire Ctrl+V paste for a set of textbox inputs (program-level so it fires before input handler)
-function wireFormInputs(inputList) {
-  inputList.forEach((inp) => {
-    const handler = (ch, key) => {
-      if (screen.focused === inp && key && key.ctrl && key.name === 'v') {
-        const clip = getClipboard();
-        if (clip) {
-          inp.setValue(clip.split(/\r?\n/)[0]);
-          screen.render();
-        }
-      }
-    };
-    screen.program.on('keypress', handler);
-    // Store ref so we could clean up if needed (clearMainContent destroys widgets anyway)
-    inp._pasteHandler = handler;
+// Build manual-input form fields (same design as modal inputs — no blessed textbox quirks)
+// fields: [{ parent, label, top, left, width }]
+// submitBtn: the button to focus after last field / press on Enter from last field
+// Returns { inputs, values, cleanup } — inputs[i].getValue() returns current value
+function createFormInputs(fields, submitBtn) {
+  const inputs = [];
+  const values = [];
+  _activeFormValues.push(values);  // Track so auto-refresh won't destroy forms with data
+
+  fields.forEach((f, i) => {
+    if (f.label) {
+      blessed.text({ parent: f.parent, top: f.top, left: f.left || 2, content: f.label + ':', style: { fg: colors.accent } });
+    }
+    const inputTop = f.label ? f.top + 1 : f.top;
+    const input = blessed.box({
+      parent: f.parent, top: inputTop, left: f.left || 2,
+      width: f.width || '90%', height: 1,
+      style: { bg: colors.border, fg: colors.text },
+      content: '', mouse: true, clickable: true,
+    });
+    values.push('');
+    input.getValue = () => values[i] || '';
+    input.on('click', () => activateInput(i));
+    inputs.push(input);
   });
+
+  let activeIdx = -1;
+
+  function deactivateInputs() {
+    activeIdx = -1;
+    _formInputActive = false;
+    inputs.forEach(inp => { inp.style.bg = colors.border; });
+    renderAllInputs();
+  }
+
+  function activateInput(idx) {
+    activeIdx = idx;
+    _formInputActive = idx >= 0;
+    inputs.forEach((inp, j) => {
+      inp.style.bg = j === idx ? '#333333' : colors.border;
+    });
+    renderAllInputs();
+  }
+
+  function renderInputContent(idx) {
+    const val = values[idx] || '';
+    inputs[idx].setContent(val + (idx === activeIdx ? '_' : ''));
+    screen.render();
+  }
+
+  function renderAllInputs() {
+    inputs.forEach((_, i) => renderInputContent(i));
+  }
+
+  const handler = (ch, key) => {
+    if (!key || activeIdx < 0) return;
+
+    if (key.name === 'escape') {
+      deactivateInputs();
+      return;
+    }
+
+    if (key.name === 'tab') {
+      if (activeIdx < inputs.length - 1) {
+        activateInput(activeIdx + 1);
+      } else if (submitBtn) {
+        deactivateInputs();
+        submitBtn.focus();
+      }
+      return;
+    }
+
+    if (key.name === 'enter' || key.name === 'return') {
+      if (activeIdx < inputs.length - 1) {
+        activateInput(activeIdx + 1);
+      } else if (submitBtn) {
+        // Deactivate form inputs before pressing submit so confirmAction gets clean focus.
+        deactivateInputs();
+        submitBtn.focus();
+        submitBtn.press();
+      }
+      return;
+    }
+
+    if (key.ctrl && key.name === 'v') {
+      const clip = getClipboard();
+      if (clip) {
+        values[activeIdx] = clip.split(/\r?\n/)[0];
+        renderInputContent(activeIdx);
+      }
+      return;
+    }
+
+    if (key.name === 'backspace') {
+      if (values[activeIdx].length > 0) {
+        values[activeIdx] = values[activeIdx].slice(0, -1);
+        renderInputContent(activeIdx);
+      }
+      return;
+    }
+
+    if (ch && ch.length === 1 && !key.ctrl && !key.meta) {
+      values[activeIdx] += ch;
+      renderInputContent(activeIdx);
+    }
+  };
+  screen.program.on('keypress', handler);
+
+  // Tag for cleanup by clearMainContent
+  inputs.forEach(inp => { inp._pasteHandler = handler; });
+
+  // Click on submit deactivates inputs
+  if (submitBtn) {
+    const prepareSubmit = () => { deactivateInputs(); };
+    submitBtn.on('focus', prepareSubmit);
+    submitBtn.on('click', prepareSubmit);
+    submitBtn.on('press', prepareSubmit);
+  }
+
+  return { inputs, values, activateFirst: () => activateInput(0) };
 }
 
 // === (renderOverviewTab removed — replaced by Command Hub) ===
