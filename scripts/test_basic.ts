@@ -1,59 +1,54 @@
 import { Connection, Keypair } from "@solana/web3.js";
-import { Wallet } from "@coral-xyz/anchor";
 import { StablecoinSDK } from "../sdk/src/index";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import * as fs from "fs";
 import * as os from "os";
 
 async function main() {
-    console.log("=== SSS-1 Basic Flow Test ===");
+    console.log("=== SSS-2 Compliant Flow Test (Seize) ===");
 
     const keypairPath = `${os.homedir()}/.config/solana/id.json`;
-    const secretKeyString = fs.readFileSync(keypairPath, "utf8");
-    const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
-
-    const adminKeypair = Keypair.fromSecretKey(secretKey);
-    const wallet = new Wallet(adminKeypair);
+    const adminKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, "utf8"))));
 
     const connection = new Connection("http://127.0.0.1:8899", "confirmed");
 
+    // УБЕДИСЬ ЧТО ТУТ ТВОЙ PROGRAM ID!
     const programId = "451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp";
-
-    const sdk = new StablecoinSDK(connection, wallet, programId);
-
-    //console.log(`keypairPath: ${keypairPath}`)
-    //console.log(`secketKeeyString: ${secretKeyString}`)
-    //console.log(`secretKey: ${secretKey}`)
-    //console.log(`adminKeypair: ${adminKeypair}`)
-    //console.log(`wallet: ${wallet}`)
-    //console.log(`sdk: ${sdk}`)
+    
+    // Передаем Keypair напрямую!
+    const sdk = new StablecoinSDK(connection, adminKeypair, programId);
 
     try {
-        console.log("\n--- Creating Token ---");
-
+        // 1. Создаем SSS-2 токен (с включенным Permanent Delegate)
         const mintAddress = await sdk.create(
-            "Super USD",
-            "SUSD",
-            "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+            "Regulated USD",
+            "RUSD",
+            "https://example.com/logo.png",
+            6,
+            true, // enablePermanentDelegate = TRUE
+            false // transferHook пока выключен
         );
 
-        console.log("Mint address:", mintAddress.toBase58());
+        // 2. Создаем кошелек "плохого парня" и наш (treasury)
+        const badGuy = Keypair.generate();
+        const treasury = adminKeypair.publicKey;
 
-        // 🔎 ДИАГНОСТИКА
-        const info = await connection.getAccountInfo(mintAddress);
+        // 3. Печатаем 1000 токенов плохому парню
+        console.log("\n--- Minting to Bad Guy ---");
+        await sdk.mint(mintAddress, badGuy.publicKey, 1000);
 
-        if (info) {
-            console.log("Mint owner:", info.owner.toBase58());
-            console.log("Mint data length:", info.data.length);
-            console.log("Mint lamports:", info.lamports);
-        } else {
-            console.log("Mint account not found");
-        }
+        // Вычисляем ATA адреса
+        // Используем импорт прямо из @solana/spl-token
+        const { TOKEN_2022_PROGRAM_ID } = require("@solana/spl-token");
+        const badGuyAta = getAssociatedTokenAddressSync(mintAddress, badGuy.publicKey, false, TOKEN_2022_PROGRAM_ID);
+        const treasuryAta = getAssociatedTokenAddressSync(mintAddress, treasury, false, TOKEN_2022_PROGRAM_ID);
+        console.log(`treasuryAta: ${treasuryAta}`)
 
-        console.log("\n--- Minting Tokens ---");
+        // 4. КОНФИСКАЦИЯ!
+        console.log("\n--- SEIZING TOKENS ---");
+        await sdk.seize(mintAddress, badGuyAta, treasury, 1000);
 
-        await sdk.mint(mintAddress, adminKeypair.publicKey, 1000);
-
-        console.log("\n✅ Test completed successfully!");
+        console.log("\n✅ Seize completed successfully! Compliance module works!");
 
     } catch (error) {
         console.error("❌ Error during test:", error);

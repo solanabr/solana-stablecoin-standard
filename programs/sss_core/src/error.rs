@@ -2,8 +2,10 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum StablecoinError {
-    #[msg("You are not authorized to perform this action.")]
+    #[msg("Unauthorized access")]
     Unauthorized,
-    #[msg("The stablecoin contract is currently paused.")]
-    Paused,
+    #[msg("Contract is paused")]
+    ContractPaused,
+    #[msg("Feature not enabled for this stablecoin preset")]
+    FeatureNotEnabled, // <-- ДОБАВИЛИ ЭТО
 }
