@@ -2620,26 +2620,21 @@ function renderBlacklistTab() {
     parent: mainContent, top: formTop - 3, left: 2, width: '95%', height: 12,
     border: { type: 'line', fg: colors.danger }, label: ' Add to Blacklist '
   });
-  blessed.text({ parent: formBox, top: 1, left: 2, content: 'Address:' });
-  const blAddrInput = blessed.textbox({
-    parent: formBox, name: 'blAddress', top: 1, left: 12, width: '40%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  blessed.text({ parent: formBox, top: 3, left: 2, content: 'Reason:' });
-  const blReasonInput = blessed.textbox({
-    parent: formBox, name: 'blReason', top: 3, left: 12, width: '40%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  wireFormInputs([blAddrInput, blReasonInput]);
   const blSubmit = blessed.button({
     parent: formBox, top: 5, left: 2, width: 22, height: 1,
     content: ' [ ADD TO BLACKLIST ] ', style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
-  blSubmit.on('press', () => {
-    const address = blAddrInput.getValue().trim();
-    const reason = blReasonInput.getValue().trim();
+  const blInputs = createFormInputs([
+    { parent: formBox, label: 'Address', top: 1 },
+    { parent: formBox, label: 'Reason', top: 3 },
+  ], blSubmit);
+  bindSafePress(blSubmit, 'Add to Blacklist', () => {
+    const address = blInputs.inputs[0].getValue().trim();
+    const reason = blInputs.inputs[1].getValue().trim();
     if (!address || !reason) { showMessage('Error', 'Fill in all fields.', 2000); return; }
+    if (!isValidPubkey(address)) { showMessage('Error', 'Invalid address.', 2000); return; }
+    confirmAction('Add to Blacklist', 'Address: ' + shortAddr(address) + '\nReason: ' + reason, 'high', () => {
     executeTx('Adding to Blacklist', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2647,8 +2642,9 @@ function renderBlacklistTab() {
       const [blPda] = getBlacklistPda(configPda, targetPk);
       const mintPk = new PublicKey(MINT);
       const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-      const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-      const [auditPda] = getAuditLogPda(configPda, auditIdx);
+      const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+        wallet.publicKey, targetAta, targetPk, mintPk, TOKEN_2022_PROGRAM_ID
+      );
       return await program.methods.blacklistAdd({ reason })
         .accounts({
           authority: wallet.publicKey,
@@ -2661,8 +2657,10 @@ function renderBlacklistTab() {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
+        .preInstructions([createAtaIx])
         .signers([wallet])
         .rpc();
+    });
     });
   });
 
