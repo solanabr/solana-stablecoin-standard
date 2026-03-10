@@ -22,6 +22,11 @@ pub fn handle_transfer_authority(
     ctx: Context<TransferAuthority>,
     new_authority: Pubkey,
 ) -> Result<()> {
+    require!(
+        new_authority != Pubkey::default(),
+        SSSError::InvalidAuthority
+    );
+
     let config = &mut ctx.accounts.config;
     config.pending_authority = new_authority;
 

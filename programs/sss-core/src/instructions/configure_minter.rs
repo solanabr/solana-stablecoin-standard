@@ -46,7 +46,10 @@ pub fn handle_configure_minter(
     minter_state.quota = quota;
     minter_state.enabled = true;
     minter_state.bump = ctx.bumps.minter_state;
-    // Note: minted_amount is preserved if already initialized (init_if_needed)
+    // Design: init_if_needed preserves minted_amount across re-configuration.
+    // This means re-enabling a removed minter does NOT reset their consumed quota,
+    // preventing infinite mint exploits via remove+re-add cycles. The quota is a
+    // lifetime ceiling per the Circle FiatToken v2 model.
 
     // ── EMIT EVENT ──────────────────────────────────────────────────────────
     emit!(MinterConfigured {

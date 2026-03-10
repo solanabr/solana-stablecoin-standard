@@ -269,6 +269,93 @@ describe("Access Control", () => {
     });
   });
 
+  // ── Blacklister Role (SSS-2 only) ────────────────────────────────────────
+
+  describe("blacklister can freeze/thaw on SSS-2", () => {
+    let sss2Stablecoin: StablecoinCtx;
+    let blacklisterKeypair: Keypair;
+    let targetAta: PublicKey;
+
+    before(async () => {
+      // Need SSS-2 stablecoin for blacklister role
+      const hookProgram = anchor.workspace.sssHook;
+      sss2Stablecoin = await initializeStablecoin(
+        program,
+        provider,
+        2, // PRESET_COMPLIANT
+        hookProgram.programId
+      );
+
+      blacklisterKeypair = Keypair.generate();
+      await airdrop(provider, blacklisterKeypair.publicKey);
+
+      // Assign blacklister role
+      await program.methods
+        .updateRole({ blacklister: {} }, blacklisterKeypair.publicKey)
+        .accounts({
+          authority: authority.publicKey,
+          config: sss2Stablecoin.configPda,
+        })
+        .rpc();
+
+      // Create a target ATA (will be frozen by default on SSS-2)
+      targetAta = await createAta(
+        provider,
+        sss2Stablecoin.mint.publicKey,
+        Keypair.generate().publicKey
+      );
+    });
+
+    it("blacklister can thaw an account on SSS-2", async () => {
+      await program.methods
+        .thawAccount()
+        .accounts({
+          signer: blacklisterKeypair.publicKey,
+          config: sss2Stablecoin.configPda,
+          mint: sss2Stablecoin.mint.publicKey,
+          targetTokenAccount: targetAta,
+          mintAuthority: sss2Stablecoin.mintAuthorityPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([blacklisterKeypair])
+        .rpc();
+    });
+
+    it("blacklister can freeze an account on SSS-2", async () => {
+      await program.methods
+        .freezeAccount()
+        .accounts({
+          signer: blacklisterKeypair.publicKey,
+          config: sss2Stablecoin.configPda,
+          mint: sss2Stablecoin.mint.publicKey,
+          targetTokenAccount: targetAta,
+          mintAuthority: sss2Stablecoin.mintAuthorityPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([blacklisterKeypair])
+        .rpc();
+    });
+
+    it("blacklister role assignment is blocked on SSS-1", async () => {
+      // On SSS-1, the blacklister role cannot be reassigned because
+      // update_role rejects blacklister changes for non-compliant presets.
+      const sss1Blacklister = Keypair.generate();
+
+      try {
+        await program.methods
+          .updateRole({ blacklister: {} }, sss1Blacklister.publicKey)
+          .accounts({
+            authority: authority.publicKey,
+            config: stablecoin.configPda,
+          })
+          .rpc();
+        assert.fail("Should have thrown");
+      } catch (e: any) {
+        assert.include(e.toString(), "PresetFeatureUnavailable");
+      }
+    });
+  });
+
   // ── Edge Cases ───────────────────────────────────────────────────────────
 
   describe("edge cases", () => {
@@ -291,8 +378,7 @@ describe("Access Control", () => {
           .rpc();
         assert.fail("Should have thrown");
       } catch (e: any) {
-        // Already paused
-        assert.ok(true);
+        assert.include(e.toString(), "Paused");
       }
 
       await program.methods
@@ -316,6 +402,21 @@ describe("Access Control", () => {
         assert.fail("Should have thrown");
       } catch (e: any) {
         assert.include(e.toString(), "NotPaused");
+      }
+    });
+
+    it("transfer_authority rejects Pubkey::default() as new authority", async () => {
+      try {
+        await program.methods
+          .transferAuthority(PublicKey.default)
+          .accounts({
+            authority: authority.publicKey,
+            config: stablecoin.configPda,
+          })
+          .rpc();
+        assert.fail("Should have thrown");
+      } catch (e: any) {
+        assert.include(e.toString(), "InvalidAuthority");
       }
     });
 

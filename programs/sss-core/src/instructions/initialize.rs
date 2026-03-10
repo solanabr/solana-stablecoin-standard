@@ -160,7 +160,16 @@ pub fn handle_initialize(ctx: Context<Initialize>, params: InitializeParams) -> 
 
     // SSS-2 specific extensions
     if params.preset == PRESET_COMPLIANT {
-        let hook_program = ctx.accounts.hook_program.as_ref().unwrap();
+        // Safety: hook_program presence validated by require! above.
+        // The authority chooses the hook program for their stablecoin — this is
+        // a trust assumption: the deployer is responsible for providing the correct
+        // hook program. The hook program address is stored on-chain in the mint's
+        // TransferHook extension and can be verified by any user or auditor.
+        let hook_program = ctx
+            .accounts
+            .hook_program
+            .as_ref()
+            .ok_or(SSSError::HookProgramRequired)?;
 
         // PermanentDelegate → enables seize/clawback via the mint authority PDA
         permanent_delegate_initialize(
@@ -250,6 +259,7 @@ pub fn handle_initialize(ctx: Context<Initialize>, params: InitializeParams) -> 
     config.paused = false;
     config.total_minted = 0;
     config.total_burned = 0;
+    config.total_seized = 0;
     config.bump = ctx.bumps.config;
     config.mint_authority_bump = mint_authority_bump;
 

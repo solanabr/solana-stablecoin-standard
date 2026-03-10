@@ -636,6 +636,13 @@ export type SssHook = {
             "type": "u64"
           },
           {
+            "name": "totalSeized",
+            "docs": [
+              "Lifetime total tokens seized via permanent delegate (SSS-2 audit trail)."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "bump",
             "docs": [
               "Bump for this config PDA."

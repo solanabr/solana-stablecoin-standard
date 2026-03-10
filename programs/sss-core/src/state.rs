@@ -40,6 +40,9 @@ pub struct StablecoinConfig {
     /// Lifetime total tokens burned (for audit trail).
     pub total_burned: u64,
 
+    /// Lifetime total tokens seized via permanent delegate (SSS-2 audit trail).
+    pub total_seized: u64,
+
     // ── PDA Bumps ───────────────────────────────────────────────────────────
     /// Bump for this config PDA.
     pub bump: u8,

@@ -283,6 +283,12 @@ describe("SSS-2 (Compliant Preset)", () => {
       // 500M minted - 100M seized = 400M remaining
       assert.equal(sourceAccount.amount.toString(), "400000000");
       assert.equal(destAccount.amount.toString(), "100000000");
+
+      // Verify total_seized is tracked on-chain
+      const config = await coreProgram.account.stablecoinConfig.fetch(
+        stablecoin.configPda
+      );
+      assert.ok(config.totalSeized.eq(new anchor.BN(100_000_000)));
     });
   });
 
@@ -396,6 +402,218 @@ describe("SSS-2 (Compliant Preset)", () => {
       } catch (e: any) {
         assert.include(e.toString(), "ReasonTooLong");
       }
+    });
+  });
+
+  // ── Transfer Hook Enforcement ───────────────────────────────────────────
+
+  describe("transfer hook blocks blacklisted transfers", () => {
+    let sender: Keypair;
+    let receiver: Keypair;
+    let senderAta: PublicKey;
+    let receiverAta: PublicKey;
+    let minterStatePda: PublicKey;
+
+    before(async () => {
+      // Create fresh SSS-2 stablecoin for this test group
+      stablecoin = await initializeStablecoin(
+        coreProgram,
+        provider,
+        PRESET_COMPLIANT,
+        hookProgram.programId
+      );
+
+      // Initialize hook
+      const [hookConfigPda] = findHookConfigPda(
+        stablecoin.mint.publicKey,
+        hookProgram.programId
+      );
+      const [eamPda] = findExtraAccountMetaListPda(
+        stablecoin.mint.publicKey,
+        hookProgram.programId
+      );
+
+      await hookProgram.methods
+        .initializeHook()
+        .accounts({
+          authority: authority.publicKey,
+          mint: stablecoin.mint.publicKey,
+          stablecoinConfig: stablecoin.configPda,
+          hookConfig: hookConfigPda,
+          extraAccountMetaList: eamPda,
+          coreProgram: coreProgram.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      // Set up sender and receiver
+      sender = Keypair.generate();
+      receiver = Keypair.generate();
+      await airdrop(provider, sender.publicKey);
+      await airdrop(provider, receiver.publicKey);
+
+      // Create and thaw ATAs
+      senderAta = await createAta(provider, stablecoin.mint.publicKey, sender.publicKey);
+      receiverAta = await createAta(provider, stablecoin.mint.publicKey, receiver.publicKey);
+
+      // Thaw both
+      for (const ata of [senderAta, receiverAta]) {
+        await coreProgram.methods
+          .thawAccount()
+          .accounts({
+            signer: authority.publicKey,
+            config: stablecoin.configPda,
+            mint: stablecoin.mint.publicKey,
+            targetTokenAccount: ata,
+            mintAuthority: stablecoin.mintAuthorityPda,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+          })
+          .rpc();
+      }
+
+      // Configure minter and mint to sender
+      const minter = Keypair.generate();
+      await airdrop(provider, minter.publicKey);
+      minterStatePda = await configureMinter(
+        coreProgram,
+        stablecoin,
+        minter.publicKey,
+        new anchor.BN(1_000_000_000)
+      );
+      await mintTokens(
+        coreProgram,
+        stablecoin,
+        minter,
+        senderAta,
+        new anchor.BN(500_000_000),
+        minterStatePda
+      );
+    });
+
+    it("blacklisted receiver cannot receive tokens via transfer_checked", async () => {
+      // Blacklist the receiver
+      const [blacklistEntryPda] = findBlacklistEntryPda(
+        stablecoin.mint.publicKey,
+        receiver.publicKey,
+        hookProgram.programId
+      );
+
+      await hookProgram.methods
+        .addToBlacklist(receiver.publicKey, "Compliance block")
+        .accounts({
+          blacklister: authority.publicKey,
+          mint: stablecoin.mint.publicKey,
+          stablecoinConfig: stablecoin.configPda,
+          blacklistEntry: blacklistEntryPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      // Attempt transfer via Token-2022 transfer_checked — should fail via hook
+      const { createTransferCheckedInstruction } = await import("@solana/spl-token");
+      const transferIx = createTransferCheckedInstruction(
+        senderAta,
+        stablecoin.mint.publicKey,
+        receiverAta,
+        sender.publicKey,
+        500_000_000n,
+        6, // decimals
+        [],
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      // Resolve hook extra accounts
+      await addExtraAccountMetasForExecute(
+        provider.connection,
+        transferIx,
+        hookProgram.programId,
+        senderAta,
+        stablecoin.mint.publicKey,
+        receiverAta,
+        sender.publicKey,
+        BigInt(500_000_000),
+      );
+
+      const tx = new anchor.web3.Transaction().add(transferIx);
+      try {
+        await provider.sendAndConfirm(tx, [sender]);
+        assert.fail("Transfer to blacklisted receiver should have failed");
+      } catch (e: any) {
+        // Hook should reject with Blacklisted error
+        assert.include(e.toString(), "custom program error");
+      }
+
+      // Verify sender balance unchanged
+      const sourceAccount = await getAccount(
+        provider.connection,
+        senderAta,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      assert.equal(sourceAccount.amount.toString(), "500000000");
+    });
+
+    it("transfer succeeds after removing from blacklist", async () => {
+      const [blacklistEntryPda] = findBlacklistEntryPda(
+        stablecoin.mint.publicKey,
+        receiver.publicKey,
+        hookProgram.programId
+      );
+
+      // Remove from blacklist
+      await hookProgram.methods
+        .removeFromBlacklist()
+        .accounts({
+          blacklister: authority.publicKey,
+          mint: stablecoin.mint.publicKey,
+          stablecoinConfig: stablecoin.configPda,
+          blacklistEntry: blacklistEntryPda,
+        })
+        .rpc();
+
+      // Now transfer should succeed
+      const { createTransferCheckedInstruction } = await import("@solana/spl-token");
+      const transferIx = createTransferCheckedInstruction(
+        senderAta,
+        stablecoin.mint.publicKey,
+        receiverAta,
+        sender.publicKey,
+        100_000_000n,
+        6,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      await addExtraAccountMetasForExecute(
+        provider.connection,
+        transferIx,
+        hookProgram.programId,
+        senderAta,
+        stablecoin.mint.publicKey,
+        receiverAta,
+        sender.publicKey,
+        BigInt(100_000_000),
+      );
+
+      const tx = new anchor.web3.Transaction().add(transferIx);
+      await provider.sendAndConfirm(tx, [sender]);
+
+      // Verify balances
+      const sourceAccount = await getAccount(
+        provider.connection,
+        senderAta,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      const destAccount = await getAccount(
+        provider.connection,
+        receiverAta,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      assert.equal(sourceAccount.amount.toString(), "400000000"); // 500M - 100M
+      assert.equal(destAccount.amount.toString(), "100000000");
     });
   });
 

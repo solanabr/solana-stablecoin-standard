@@ -53,6 +53,9 @@ pub enum SSSError {
     #[msg("Hook program is required for SSS-2 preset")]
     HookProgramRequired,
 
+    #[msg("Invalid authority: cannot transfer to the zero address")]
+    InvalidAuthority,
+
     #[msg("Name exceeds maximum length")]
     NameTooLong,
 

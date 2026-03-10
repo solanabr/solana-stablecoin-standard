@@ -96,20 +96,25 @@ fn check_blacklist(account: &UncheckedAccount) -> Result<()> {
 }
 
 /// Check if the stablecoin is paused by reading the config account.
+/// Fail-closed: if the config is missing or malformed, block the transfer.
 fn check_paused(config_account: &UncheckedAccount) -> Result<()> {
+    // Fail-closed: if config doesn't exist, block the transfer.
+    // A missing config indicates a misconfigured deployment — safer to block.
     if config_account.data_is_empty() {
-        return Ok(());
+        return err!(HookError::ContractPaused);
     }
 
     let data = config_account.try_borrow_data()?;
+
+    // Fail-closed: malformed account data blocks transfers.
     if data.len() < 8 {
-        return Ok(());
+        return err!(HookError::ContractPaused);
     }
 
     // Check discriminator matches StablecoinConfig
     let expected_discriminator = sss_core::state::StablecoinConfig::DISCRIMINATOR;
     if data[..8] != *expected_discriminator {
-        return Ok(());
+        return err!(HookError::ContractPaused);
     }
 
     let config = sss_core::state::StablecoinConfig::try_deserialize(&mut &data[..])?;

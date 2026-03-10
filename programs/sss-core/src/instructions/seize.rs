@@ -14,6 +14,7 @@ pub struct Seize<'info> {
     pub authority: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [CONFIG_SEED, config.mint.as_ref()],
         bump = config.bump,
         constraint = authority.key() == config.authority @ SSSError::NotAuthority,
@@ -97,7 +98,14 @@ pub fn handle_seize<'a>(ctx: Context<'_, '_, 'a, 'a, Seize<'a>>, amount: u64) ->
 
     invoke_signed(&ix, &account_infos, signer_seeds)?;
 
-    // ── 3. EMIT EVENT ───────────────────────────────────────────────────────
+    // ── 3. UPDATE STATE: Track seized amount for audit trail ─────────────
+    let config = &mut ctx.accounts.config;
+    config.total_seized = config
+        .total_seized
+        .checked_add(amount)
+        .ok_or(SSSError::ArithmeticOverflow)?;
+
+    // ── 4. EMIT EVENT ───────────────────────────────────────────────────────
     emit!(TokensSeized {
         config: ctx.accounts.config.key(),
         from_account: ctx.accounts.source_token_account.key(),

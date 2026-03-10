@@ -26,6 +26,8 @@ export interface StablecoinConfig {
   totalMinted: BN;
   /** Lifetime total tokens burned (for audit trail). */
   totalBurned: BN;
+  /** Lifetime total tokens seized via permanent delegate (SSS-2 audit trail). */
+  totalSeized: BN;
   /** Bump for this config PDA. */
   bump: number;
   /** Bump for the mint authority PDA. */

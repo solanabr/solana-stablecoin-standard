@@ -16,7 +16,8 @@ pub struct ThawTokenAccount<'info> {
         seeds = [CONFIG_SEED, config.mint.as_ref()],
         bump = config.bump,
         constraint = (
-            signer.key() == config.authority || signer.key() == config.blacklister
+            signer.key() == config.authority
+            || (signer.key() == config.blacklister && config.preset >= PRESET_COMPLIANT)
         ) @ SSSError::Unauthorized,
     )]
     pub config: Account<'info, StablecoinConfig>,

@@ -1,11 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { BN, Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import { Connection, PublicKey, SystemProgram, TransactionInstruction } from "@solana/web3.js";
+import { TOKEN_2022_PROGRAM_ID, addExtraAccountMetasForExecute } from "@solana/spl-token";
 
 import { SSS_CORE_PROGRAM_ID, SSS_HOOK_PROGRAM_ID } from "./constants";
 import {
   findConfigPda,
+  findMintAuthorityPda,
   findHookConfigPda,
   findBlacklistEntryPda,
   findExtraAccountMetaListPda,
@@ -167,6 +168,83 @@ export class ComplianceClient extends StablecoinClient {
         `Failed to remove wallet ${wallet.toBase58()} from blacklist: ${
           err instanceof Error ? err.message : String(err)
         }`
+      );
+    }
+  }
+
+  /**
+   * Seize tokens from a source account using the permanent delegate (SSS-2 only).
+   *
+   * Overrides the base class to resolve transfer hook extra accounts automatically.
+   * The hook program's ExtraAccountMetaList is read on-chain and the required
+   * accounts are appended as remainingAccounts so Token-2022's transfer_checked
+   * can invoke the transfer hook correctly.
+   *
+   * @param mint                     The stablecoin mint address.
+   * @param sourceTokenAccount       The account to seize tokens from.
+   * @param destinationTokenAccount  The account that receives the seized tokens.
+   * @param amount                   Amount to seize (in base units).
+   * @returns                        Transaction signature.
+   */
+  async seize(
+    mint: PublicKey,
+    sourceTokenAccount: PublicKey,
+    destinationTokenAccount: PublicKey,
+    amount: BN
+  ): Promise<string> {
+    try {
+      const program = this.getProgram();
+      const [config] = findConfigPda(mint, this.programId);
+      const [mintAuthority] = findMintAuthorityPda(mint, this.programId);
+
+      // Build a placeholder transfer instruction to resolve hook extra accounts.
+      // addExtraAccountMetasForExecute reads the on-chain ExtraAccountMetaList
+      // and appends the resolved accounts to the instruction's keys.
+      const transferIx = new TransactionInstruction({
+        programId: TOKEN_2022_PROGRAM_ID,
+        keys: [
+          { pubkey: sourceTokenAccount, isSigner: false, isWritable: true },
+          { pubkey: mint, isSigner: false, isWritable: false },
+          { pubkey: destinationTokenAccount, isSigner: false, isWritable: true },
+          { pubkey: mintAuthority, isSigner: false, isWritable: false },
+        ],
+        data: Buffer.alloc(0),
+      });
+
+      await addExtraAccountMetasForExecute(
+        this.connection,
+        transferIx,
+        this.hookProgramId,
+        sourceTokenAccount,
+        mint,
+        destinationTokenAccount,
+        mintAuthority,
+        BigInt(amount.toString()),
+      );
+
+      // Extract hook remaining accounts (everything after the 4 base accounts)
+      const hookRemainingAccounts = transferIx.keys.slice(4).map(k => ({
+        pubkey: k.pubkey,
+        isSigner: false,
+        isWritable: k.isWritable,
+      }));
+
+      return await program.methods
+        .seize(amount)
+        .accountsPartial({
+          authority: this.wallet.publicKey,
+          config,
+          mint,
+          sourceTokenAccount,
+          destinationTokenAccount,
+          mintAuthority,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .remainingAccounts(hookRemainingAccounts)
+        .rpc();
+    } catch (err) {
+      throw new Error(
+        `Failed to seize tokens: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
