@@ -771,6 +771,7 @@ async function executeTx(title, txFn) {
 function confirmAction(title, details, dangerLevel, onConfirm) {
   const borderColor = dangerLevel === 'critical' ? colors.danger :
                       dangerLevel === 'high' ? colors.accent : colors.secondary;
+  const previousFocus = screen.focused;
   const confirmBox = blessed.box({
     parent: screen,
     top: 'center', left: 'center', width: '60%', height: 'shrink',
@@ -797,26 +798,36 @@ function confirmAction(title, details, dangerLevel, onConfirm) {
   });
   screen.render();
 
-  let confirmed = false;
-  const handler = (ch, key) => {
-    if (confirmed) return;
-    if (key.name === 'y') {
-      confirmed = true;
-      screen.unkey(['y', 'n', 'escape'], handler);
-      activeModals = activeModals.filter(m => m !== confirmBox);
-      confirmBox.destroy();
-      screen.render();
-      onConfirm();
-    } else if (key.name === 'n' || key.name === 'escape') {
-      confirmed = true;
-      screen.unkey(['y', 'n', 'escape'], handler);
-      activeModals = activeModals.filter(m => m !== confirmBox);
-      confirmBox.destroy();
-      screen.render();
-      showMessage('Cancelled', 'Action cancelled by operator.', 2000);
+  let resolved = false;
+  const closeConfirm = (didConfirm) => {
+    if (resolved) return;
+    resolved = true;
+    screen.program.removeListener('keypress', handler);
+    activeModals = activeModals.filter(m => m !== confirmBox);
+    if (!confirmBox.destroyed) confirmBox.destroy();
+    if (previousFocus && !previousFocus.destroyed && activeModals.length === 0) {
+      try { previousFocus.focus(); } catch {}
     }
+    screen.render();
+    if (didConfirm) {
+      try {
+        onConfirm();
+      } catch (err) {
+        reportUiError(title, err);
+      }
+      return;
+    }
+    showMessage('Cancelled', 'Action cancelled by operator.', 2000);
   };
-  screen.key(['y', 'n', 'escape'], handler);
+
+  const handler = (ch, key) => {
+    if (!key || resolved) return;
+    if (activeModals[activeModals.length - 1] !== confirmBox) return;
+    if (key.name === 'y') closeConfirm(true);
+    else if (key.name === 'n' || key.name === 'escape') closeConfirm(false);
+  };
+  confirmBox._programKeyHandler = handler;
+  screen.program.on('keypress', handler);
 }
 
 function exportCsv(filename, headers, rows) {
