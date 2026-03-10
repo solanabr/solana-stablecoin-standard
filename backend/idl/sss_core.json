@@ -1,0 +1,1388 @@
+{
+  "address": "CZzvCtyZC8KR37DNDeGYpwN46YEc7WEh6RyeSRdhjY4Y",
+  "metadata": {
+    "name": "sss_core",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Core stablecoin program for the Solana Stablecoin Standard"
+  },
+  "instructions": [
+    {
+      "name": "accept_authority",
+      "docs": [
+        "Accept a pending authority transfer. Must be called by the pending authority."
+      ],
+      "discriminator": [
+        107,
+        86,
+        198,
+        91,
+        33,
+        12,
+        107,
+        160
+      ],
+      "accounts": [
+        {
+          "name": "new_authority",
+          "docs": [
+            "The pending authority accepting the transfer."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "burn_tokens",
+      "docs": [
+        "Burn tokens from the signer's token account."
+      ],
+      "discriminator": [
+        76,
+        15,
+        51,
+        254,
+        229,
+        215,
+        121,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "burner",
+          "docs": [
+            "The token holder burning their tokens."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "token_account",
+          "docs": [
+            "Token account to burn from. Must be owned by the burner."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "configure_minter",
+      "docs": [
+        "Configure a new minter or update an existing minter's quota."
+      ],
+      "discriminator": [
+        182,
+        155,
+        212,
+        100,
+        11,
+        175,
+        51,
+        242
+      ],
+      "accounts": [
+        {
+          "name": "master_minter",
+          "docs": [
+            "The master minter who is configuring this minter."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "The stablecoin config. Validates signer is master_minter and not paused."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "minter_state",
+          "docs": [
+            "Per-minter state. Created if it doesn't exist, updated if it does."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config"
+              },
+              {
+                "kind": "arg",
+                "path": "minter_wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "minter_wallet",
+          "type": "pubkey"
+        },
+        {
+          "name": "quota",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "freeze_account",
+      "docs": [
+        "Freeze a token account. Available to authority and blacklister.",
+        "Works even when paused (emergency power)."
+      ],
+      "discriminator": [
+        253,
+        75,
+        82,
+        133,
+        167,
+        238,
+        43,
+        130
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "Must be either the authority or the blacklister."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "target_token_account",
+          "writable": true
+        },
+        {
+          "name": "mint_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "docs": [
+        "Initialize a new stablecoin with the specified preset and metadata."
+      ],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Authority who will own this stablecoin. Pays for account creation."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "Fresh keypair for the Token-2022 mint. Client generates and signs."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "Stablecoin configuration PDA."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_authority",
+          "docs": [
+            "Mint authority PDA — holds mint, freeze, and permanent delegate authority."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "hook_program",
+          "docs": [
+            "The hook program ID for SSS-2. Required if preset == 2."
+          ],
+          "optional": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "InitializeParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "mint_tokens",
+      "docs": [
+        "Mint tokens to a destination account. Enforces minter quota."
+      ],
+      "discriminator": [
+        59,
+        132,
+        24,
+        246,
+        122,
+        39,
+        8,
+        243
+      ],
+      "accounts": [
+        {
+          "name": "minter",
+          "docs": [
+            "The authorized minter."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "Stablecoin config. Must not be paused."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "minter_state",
+          "docs": [
+            "Minter's state. Must be enabled and match signer."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config"
+              },
+              {
+                "kind": "account",
+                "path": "minter"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "The stablecoin mint."
+          ],
+          "writable": true
+        },
+        {
+          "name": "destination",
+          "docs": [
+            "Destination token account to receive minted tokens."
+          ],
+          "writable": true
+        },
+        {
+          "name": "mint_authority",
+          "docs": [
+            "Mint authority PDA."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "docs": [
+        "Pause all minting, burning, and transfer operations."
+      ],
+      "discriminator": [
+        211,
+        22,
+        221,
+        251,
+        74,
+        121,
+        193,
+        47
+      ],
+      "accounts": [
+        {
+          "name": "pauser",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "remove_minter",
+      "docs": [
+        "Disable a minter. Account is preserved for audit trail."
+      ],
+      "discriminator": [
+        241,
+        69,
+        84,
+        16,
+        164,
+        232,
+        131,
+        79
+      ],
+      "accounts": [
+        {
+          "name": "master_minter",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "minter_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config"
+              },
+              {
+                "kind": "account",
+                "path": "minter_state.minter",
+                "account": "MinterState"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "seize",
+      "docs": [
+        "Seize tokens from a target account using the permanent delegate (SSS-2 only)."
+      ],
+      "discriminator": [
+        129,
+        159,
+        143,
+        31,
+        161,
+        224,
+        241,
+        84
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Only the authority can seize tokens."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "source_token_account",
+          "docs": [
+            "The target account to seize tokens from."
+          ],
+          "writable": true
+        },
+        {
+          "name": "destination_token_account",
+          "docs": [
+            "Treasury or authority's token account to receive seized tokens."
+          ],
+          "writable": true
+        },
+        {
+          "name": "mint_authority",
+          "docs": [
+            "Mint authority PDA acting as permanent delegate."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "thaw_account",
+      "docs": [
+        "Thaw a frozen token account. Available to authority and blacklister.",
+        "Works even when paused (emergency power)."
+      ],
+      "discriminator": [
+        115,
+        152,
+        79,
+        213,
+        213,
+        169,
+        184,
+        35
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "Must be either the authority or the blacklister."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "target_token_account",
+          "writable": true
+        },
+        {
+          "name": "mint_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "transfer_authority",
+      "docs": [
+        "Initiate a two-step authority transfer."
+      ],
+      "discriminator": [
+        48,
+        169,
+        76,
+        72,
+        229,
+        180,
+        55,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_authority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "unpause",
+      "docs": [
+        "Resume operations after a pause."
+      ],
+      "discriminator": [
+        169,
+        144,
+        4,
+        38,
+        10,
+        141,
+        188,
+        255
+      ],
+      "accounts": [
+        {
+          "name": "pauser",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_role",
+      "docs": [
+        "Update a role assignment. Only the authority can call this."
+      ],
+      "discriminator": [
+        36,
+        223,
+        162,
+        98,
+        168,
+        209,
+        75,
+        151
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Only the authority can update roles."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "role",
+          "type": {
+            "defined": {
+              "name": "RoleType"
+            }
+          }
+        },
+        {
+          "name": "new_address",
+          "type": "pubkey"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "MinterState",
+      "discriminator": [
+        251,
+        69,
+        145,
+        137,
+        48,
+        218,
+        88,
+        148
+      ]
+    },
+    {
+      "name": "StablecoinConfig",
+      "discriminator": [
+        127,
+        25,
+        244,
+        213,
+        1,
+        192,
+        101,
+        6
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidPreset",
+      "msg": "Invalid preset: must be 1 (Minimal) or 2 (Compliant)"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidDecimals",
+      "msg": "Invalid decimals: must be between 0 and 9"
+    },
+    {
+      "code": 6002,
+      "name": "Paused",
+      "msg": "Operations are paused"
+    },
+    {
+      "code": 6003,
+      "name": "NotPaused",
+      "msg": "Operations are not paused"
+    },
+    {
+      "code": 6004,
+      "name": "NotAuthority",
+      "msg": "Unauthorized: caller is not the authority"
+    },
+    {
+      "code": 6005,
+      "name": "NotMasterMinter",
+      "msg": "Unauthorized: caller is not the master minter"
+    },
+    {
+      "code": 6006,
+      "name": "NotPauser",
+      "msg": "Unauthorized: caller is not the pauser"
+    },
+    {
+      "code": 6007,
+      "name": "NotBlacklister",
+      "msg": "Unauthorized: caller is not the blacklister"
+    },
+    {
+      "code": 6008,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: caller does not have the required role"
+    },
+    {
+      "code": 6009,
+      "name": "MinterDisabled",
+      "msg": "Minter is not enabled"
+    },
+    {
+      "code": 6010,
+      "name": "QuotaExceeded",
+      "msg": "Minting quota exceeded"
+    },
+    {
+      "code": 6011,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6012,
+      "name": "NoPendingAuthority",
+      "msg": "No pending authority transfer"
+    },
+    {
+      "code": 6013,
+      "name": "NotPendingAuthority",
+      "msg": "Caller is not the pending authority"
+    },
+    {
+      "code": 6014,
+      "name": "PresetFeatureUnavailable",
+      "msg": "Feature not available for this preset"
+    },
+    {
+      "code": 6015,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6016,
+      "name": "HookProgramRequired",
+      "msg": "Hook program is required for SSS-2 preset"
+    },
+    {
+      "code": 6017,
+      "name": "NameTooLong",
+      "msg": "Name exceeds maximum length"
+    },
+    {
+      "code": 6018,
+      "name": "SymbolTooLong",
+      "msg": "Symbol exceeds maximum length"
+    },
+    {
+      "code": 6019,
+      "name": "UriTooLong",
+      "msg": "URI exceeds maximum length"
+    }
+  ],
+  "types": [
+    {
+      "name": "InitializeParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "preset",
+            "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MinterState",
+      "docs": [
+        "Per-minter state tracking quotas and usage.",
+        "",
+        "PDA: `[b\"minter\", config.key().as_ref(), minter.key().as_ref()]`"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "config",
+            "docs": [
+              "The parent stablecoin config."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "minter",
+            "docs": [
+              "The minter's wallet address."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "quota",
+            "docs": [
+              "Maximum tokens this minter is allowed to mint."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minted_amount",
+            "docs": [
+              "Tokens minted so far (consumed quota). Burning does NOT reduce this."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "enabled",
+            "docs": [
+              "Whether this minter is currently active."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for this minter PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RoleType",
+      "docs": [
+        "Role type enum for the update_role instruction."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "MasterMinter"
+          },
+          {
+            "name": "Pauser"
+          },
+          {
+            "name": "Blacklister"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StablecoinConfig",
+      "docs": [
+        "Global configuration for a stablecoin deployment.",
+        "One per stablecoin mint. Stores role assignments, pause state, and audit counters.",
+        "",
+        "PDA: `[b\"config\", mint.key().as_ref()]`"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "docs": [
+              "The Token-2022 mint address for this stablecoin."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "preset",
+            "docs": [
+              "Preset type: 1 = SSS-1 (Minimal), 2 = SSS-2 (Compliant)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Master authority. Can update all other roles and perform seize (SSS-2)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_authority",
+            "docs": [
+              "Pending authority for two-step ownership transfer. Default = Pubkey::default()."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "master_minter",
+            "docs": [
+              "Master minter. Can configure/remove minters and set quotas."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pauser",
+            "docs": [
+              "Pauser. Can pause/unpause all operations."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "blacklister",
+            "docs": [
+              "Blacklister. Can add/remove wallets from blacklist (SSS-2 only)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Whether operations are paused."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "total_minted",
+            "docs": [
+              "Lifetime total tokens minted (for audit trail)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_burned",
+            "docs": [
+              "Lifetime total tokens burned (for audit trail)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for this config PDA."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "mint_authority_bump",
+            "docs": [
+              "Bump for the mint authority PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

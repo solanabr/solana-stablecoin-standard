@@ -1,0 +1,13 @@
+[package]
+name = "sss-events"
+version = "0.1.0"
+edition = "2021"
+description = "Shared event definitions for the Solana Stablecoin Standard"
+license = "MIT"
+
+[dependencies]
+anchor-lang = { workspace = true }
+
+[features]
+default = []
+idl-build = ["anchor-lang/idl-build"]

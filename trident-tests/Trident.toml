@@ -1,0 +1,17 @@
+[fuzz.metrics]
+enabled = true
+dashboard = false
+
+[fuzz.regression]
+enabled = true
+
+[fuzz.coverage]
+enable = false
+
+[[fuzz.programs]]
+address = "CZzvCtyZC8KR37DNDeGYpwN46YEc7WEh6RyeSRdhjY4Y"
+program = "../target/deploy/sss_core.so"
+
+[[fuzz.programs]]
+address = "9aw7Ac4aGMMfND3BvYgGEcASuvyJiBXnQizbhNBphcNM"
+program = "../target/deploy/sss_hook.so"

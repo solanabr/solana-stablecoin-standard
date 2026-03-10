@@ -1,0 +1,58 @@
+# Anchor
+.anchor
+target
+
+# Node
+node_modules
+dist
+.yarn
+.pnp.*
+
+# Solana
+test-ledger
+.DS_Store
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.*
+*.pem
+*.key
+
+# Rust
+**/*.rs.bk
+Cargo.lock.bak
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend build artifacts
+backend/dist
+backend/build
+backend/node_modules
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Coverage
+coverage
+.nyc_output
+
+# Internal research notes
+research/
+
+# Claude Code
+.claude/

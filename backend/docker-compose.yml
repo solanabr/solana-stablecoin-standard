@@ -1,0 +1,77 @@
+version: "3.9"
+
+x-common: &common
+  build: .
+  restart: unless-stopped
+  env_file: .env
+  volumes:
+    - sss-data:/app/data
+    - ${KEYPAIR_PATH:-~/.config/solana/id.json}:/app/keypair.json:ro
+  environment:
+    DATABASE_PATH: /app/data/sss.db
+    KEYPAIR_PATH: /app/keypair.json
+
+services:
+  api:
+    <<: *common
+    command: ["node", "dist/index.js"]
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_PATH: /app/data/sss.db
+      KEYPAIR_PATH: /app/keypair.json
+      SERVICE_MODE: api
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  indexer:
+    <<: *common
+    command: ["node", "dist/services/indexer.js"]
+    environment:
+      DATABASE_PATH: /app/data/sss.db
+      KEYPAIR_PATH: /app/keypair.json
+      SERVICE_MODE: indexer
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  compliance:
+    <<: *common
+    command: ["node", "dist/index.js", "--service", "compliance"]
+    ports:
+      - "${COMPLIANCE_PORT:-3002}:3002"
+    environment:
+      DATABASE_PATH: /app/data/sss.db
+      KEYPAIR_PATH: /app/keypair.json
+      PORT: "3002"
+      SERVICE_MODE: compliance
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  webhook:
+    <<: *common
+    command: ["node", "dist/services/webhook.js"]
+    environment:
+      DATABASE_PATH: /app/data/sss.db
+      KEYPAIR_PATH: /app/keypair.json
+      SERVICE_MODE: webhook
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3003/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  sss-data:

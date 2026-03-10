@@ -1,0 +1,20 @@
+[workspace]
+members = [
+    "programs/sss-core",
+    "programs/sss-hook",
+    "modules/sss-events",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.32.1"
+anchor-spl = "0.32.1"
+
+# Pin transitive deps that require edition2024 (incompatible with platform-tools Cargo 1.84)
+[workspace.dependencies.blake3]
+version = "=1.6.1"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1

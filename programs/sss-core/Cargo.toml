@@ -1,0 +1,22 @@
+[package]
+name = "sss-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core stablecoin program for the Solana Stablecoin Standard"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { workspace = true, features = ["token_2022", "token_2022_extensions"] }
+sss-events = { path = "../../modules/sss-events" }
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "sss-events/idl-build"]
