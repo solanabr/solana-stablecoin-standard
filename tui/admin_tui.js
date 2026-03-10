@@ -2784,24 +2784,23 @@ function renderRolesTab() {
     keys: true, mouse: true
   });
 
-  blessed.text({ parent: formBox, top: 1, left: 35, content: 'New Address:' });
-  const roleAddrInput = blessed.textbox({
-    parent: formBox, name: 'roleAddress', top: 1, left: 49, width: '40%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  wireFormInputs([roleAddrInput]);
-
   const roleSubmit = blessed.button({
     parent: formBox, top: 3, left: 2, width: 20, height: 1,
     content: ' [ UPDATE ROLE ] ', style: { bg: colors.secondary, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
-  roleSubmit.on('press', () => {
-    const address = roleAddrInput.getValue().trim();
+  const roleInputs = createFormInputs([
+    { parent: formBox, label: 'New Address', top: 1, left: 35 },
+  ], roleSubmit);
+  bindSafePress(roleSubmit, 'Update Role', () => {
+    const address = roleInputs.inputs[0].getValue().trim();
     if (!address) { showMessage('Error', 'Enter a new address.', 2000); return; }
+    if (!isValidPubkey(address)) { showMessage('Error', 'Invalid address.', 2000); return; }
     const selectedIdx = roleList.selected || 0;
+    const roleNames = ['Pauser', 'Blacklister', 'Seizer'];
     const roleEnums = [{ pauser: {} }, { blacklister: {} }, { seizer: {} }];
     const roleEnum = roleEnums[selectedIdx];
+    confirmAction('Update Role', 'Role: ' + roleNames[selectedIdx] + '\nNew Holder: ' + shortAddr(address), 'high', () => {
     executeTx('Updating Role', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2817,6 +2816,7 @@ function renderRolesTab() {
         .signers([wallet])
         .rpc();
     });
+    });
   });
 
   table.focus();
@@ -2825,6 +2825,7 @@ function renderRolesTab() {
 // === TAB 5: MINTERS ===
 function renderMintersTab() {
   const b = getContentBounds();
+  const cfg = liveData.config;
 
   const table = contrib.table({
     top: b.top, left: b.left, width: b.width, height: Math.floor(b.height * 0.55),
