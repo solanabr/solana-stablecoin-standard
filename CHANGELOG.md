@@ -11,9 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - On-chain seizure audit trail (`total_seized` counter in StablecoinConfig)
 - Fail-closed transfer hook: pause check now blocks transfers when config is unreadable
 - Blacklister role can freeze/thaw accounts on SSS-2 preset (compound constraint with authority)
-- `Pubkey::default()` rejection in `transfer_authority` (prevents locking out authority)
+- `Pubkey::default()` rejection in `transfer_authority` and `update_role` (prevents bricking roles)
 - `ComplianceClient.seize()` with proper transfer hook account resolution
-- 6 new integration tests: hook enforcement for blacklisted receiver, transfer after unblacklist, blacklister freeze/thaw on SSS-2, blacklister role blocked on SSS-1, zero-address authority rejection
+- 9 new integration tests: freeze blocks transfers, pause blocks transfers via hook, hook enforcement for blacklisted receiver, transfer after unblacklist, blacklister freeze/thaw on SSS-2, blacklister role blocked on SSS-1, zero-address rejection for authority transfer and role updates
 
 ### Fixed
 
@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Removed `unwrap()` in SSS-2 initialization; replaced with `ok_or(SSSError::HookProgramRequired)`
 - Access control test for pause: assert on error message instead of `assert.ok(true)`
 - SSS-1 blacklister role assignment test: now correctly verifies `PresetFeatureUnavailable` instead of testing freeze
+- Blacklist hook test: assert specific error code `0x1770` instead of generic "custom program error"
 
 ## [0.1.0-rc.1] - 2026-03-07
 

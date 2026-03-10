@@ -49,7 +49,7 @@ cd sdk && yarn install && cd ..
 # Build on-chain programs
 anchor build
 
-# Run the full test suite (58 tests)
+# Run the full test suite (61 tests)
 anchor test
 
 # Build the SDK and CLI
@@ -265,7 +265,7 @@ solana-stablecoin-standard/
 
 ## Testing
 
-The test suite contains 58 integration tests covering both presets, all instructions, access control, transfer hook enforcement, and edge cases. Tests run against a local validator using Anchor's test harness.
+The test suite contains 61 integration tests covering both presets, all instructions, access control, transfer hook enforcement, and edge cases. Tests run against a local validator using Anchor's test harness.
 
 ```bash
 # Run all tests

@@ -420,6 +420,21 @@ describe("Access Control", () => {
       }
     });
 
+    it("update_role rejects Pubkey::default() as new address", async () => {
+      try {
+        await program.methods
+          .updateRole({ pauser: {} }, PublicKey.default)
+          .accounts({
+            authority: authority.publicKey,
+            config: stablecoin.configPda,
+          })
+          .rpc();
+        assert.fail("Should have thrown");
+      } catch (e: any) {
+        assert.include(e.toString(), "InvalidAuthority");
+      }
+    });
+
     it("accept_authority fails with no pending authority", async () => {
       try {
         await program.methods

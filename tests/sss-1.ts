@@ -7,7 +7,11 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import {
+  TOKEN_2022_PROGRAM_ID,
+  createTransferCheckedInstruction,
+  getAccount,
+} from "@solana/spl-token";
 import { SssCore } from "../target/types/sss_core";
 import {
   PRESET_MINIMAL,
@@ -592,6 +596,87 @@ describe("SSS-1 (Minimal Preset)", () => {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
+    });
+
+    it("frozen account rejects outgoing transfers", async () => {
+      // Create a recipient to transfer to
+      const recipient = Keypair.generate();
+      const recipientAta = await createAta(
+        provider,
+        stablecoin.mint.publicKey,
+        recipient.publicKey
+      );
+
+      // Freeze the user's account
+      await program.methods
+        .freezeAccount()
+        .accounts({
+          signer: authority.publicKey,
+          config: stablecoin.configPda,
+          mint: stablecoin.mint.publicKey,
+          targetTokenAccount: userAta,
+          mintAuthority: stablecoin.mintAuthorityPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc();
+
+      // Attempt transfer from frozen account — should fail
+      const transferIx = createTransferCheckedInstruction(
+        userAta,
+        stablecoin.mint.publicKey,
+        recipientAta,
+        user.publicKey,
+        1_000_000n, // 1 token
+        6,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      const tx = new anchor.web3.Transaction().add(transferIx);
+      try {
+        await provider.sendAndConfirm(tx, [user]);
+        assert.fail("Transfer from frozen account should have failed");
+      } catch (e: any) {
+        // Token-2022 AccountFrozen error (code 17 = 0x11)
+        assert.include(e.toString(), "0x11");
+      }
+
+      // Thaw the account
+      await program.methods
+        .thawAccount()
+        .accounts({
+          signer: authority.publicKey,
+          config: stablecoin.configPda,
+          mint: stablecoin.mint.publicKey,
+          targetTokenAccount: userAta,
+          mintAuthority: stablecoin.mintAuthorityPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc();
+
+      // Now transfer should succeed
+      const transferIx2 = createTransferCheckedInstruction(
+        userAta,
+        stablecoin.mint.publicKey,
+        recipientAta,
+        user.publicKey,
+        1_000_000n,
+        6,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      const tx2 = new anchor.web3.Transaction().add(transferIx2);
+      await provider.sendAndConfirm(tx2, [user]);
+
+      // Verify recipient received the tokens
+      const destAccount = await getAccount(
+        provider.connection,
+        recipientAta,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      assert.equal(destAccount.amount.toString(), "1000000");
     });
 
     it("freeze works even when paused (emergency)", async () => {

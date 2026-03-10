@@ -26,6 +26,12 @@ pub fn handle_update_role(
 ) -> Result<()> {
     let config = &mut ctx.accounts.config;
 
+    // Prevent setting any role to the zero address (would permanently brick the role)
+    require!(
+        new_address != Pubkey::default(),
+        SSSError::InvalidAuthority
+    );
+
     // Blacklister role only available on SSS-2
     if role == RoleType::Blacklister {
         require!(

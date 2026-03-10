@@ -540,8 +540,8 @@ describe("SSS-2 (Compliant Preset)", () => {
         await provider.sendAndConfirm(tx, [sender]);
         assert.fail("Transfer to blacklisted receiver should have failed");
       } catch (e: any) {
-        // Hook should reject with Blacklisted error
-        assert.include(e.toString(), "custom program error");
+        // Hook error code 6000 (Blacklisted) = 0x1770
+        assert.include(e.toString(), "0x1770");
       }
 
       // Verify sender balance unchanged
@@ -614,6 +614,68 @@ describe("SSS-2 (Compliant Preset)", () => {
       );
       assert.equal(sourceAccount.amount.toString(), "400000000"); // 500M - 100M
       assert.equal(destAccount.amount.toString(), "100000000");
+    });
+
+    it("pause blocks transfers via transfer hook", async () => {
+      // Pause the contract
+      await coreProgram.methods
+        .pause()
+        .accounts({
+          pauser: authority.publicKey,
+          config: stablecoin.configPda,
+        })
+        .rpc();
+
+      // Attempt transfer — hook should reject with ContractPaused
+      const { createTransferCheckedInstruction } = await import("@solana/spl-token");
+      const transferIx = createTransferCheckedInstruction(
+        senderAta,
+        stablecoin.mint.publicKey,
+        receiverAta,
+        sender.publicKey,
+        50_000_000n,
+        6,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      await addExtraAccountMetasForExecute(
+        provider.connection,
+        transferIx,
+        hookProgram.programId,
+        senderAta,
+        stablecoin.mint.publicKey,
+        receiverAta,
+        sender.publicKey,
+        BigInt(50_000_000),
+      );
+
+      const tx = new anchor.web3.Transaction().add(transferIx);
+      try {
+        await provider.sendAndConfirm(tx, [sender]);
+        assert.fail("Transfer while paused should have failed");
+      } catch (e: any) {
+        // Hook error code 6001 (ContractPaused) = 0x1771
+        assert.include(e.toString(), "0x1771");
+      }
+
+      // Verify sender balance unchanged
+      const sourceAccount = await getAccount(
+        provider.connection,
+        senderAta,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      assert.equal(sourceAccount.amount.toString(), "400000000");
+
+      // Unpause for remaining tests
+      await coreProgram.methods
+        .unpause()
+        .accounts({
+          pauser: authority.publicKey,
+          config: stablecoin.configPda,
+        })
+        .rpc();
     });
   });
 
