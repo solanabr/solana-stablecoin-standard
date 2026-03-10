@@ -1,0 +1,44 @@
+use anchor_lang::prelude::*;
+use anchor_spl::{
+    token_interface::{Mint, TokenAccount, TokenInterface},
+    token_2022,
+};
+use crate::state::StablecoinConfig;
+use crate::error::StablecoinError;
+use crate::events::MintEvent;
+
+#[derive(Accounts)]
+pub struct MintToken<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(seeds = [b"config"], bump = config.bump)]
+    pub config: Account<'info, StablecoinConfig>,
+    #[account(mut, address = config.mint)]
+    pub mint: InterfaceAccount<'info, Mint>,
+    #[account(mut)]
+    pub token_account: InterfaceAccount<'info, TokenAccount>,
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
+pub fn process_mint(ctx: Context<MintToken>, amount: u64) -> Result<()> {
+    let config = &ctx.accounts.config;
+    require_keys_eq!(ctx.accounts.signer.key(), config.minter_authority, StablecoinError::Unauthorized);
+    
+    let seeds = &[b"config".as_ref(), &[config.bump]];
+    let signer = &[&seeds[..]];
+    
+    let cpi_accounts = token_2022::MintTo {
+        mint: ctx.accounts.mint.to_account_info(),
+        to: ctx.accounts.token_account.to_account_info(),
+        authority: config.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer);
+    token_2022::mint_to(cpi_ctx, amount)?;
+
+    emit!(MintEvent {
+        to: ctx.accounts.token_account.key(),
+        amount,
+    });
+
+    Ok(())
+}

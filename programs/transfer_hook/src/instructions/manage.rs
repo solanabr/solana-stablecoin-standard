@@ -1,6 +1,13 @@
 use anchor_lang::prelude::*;
 use crate::state::BlacklistRecord;
 
+// ДОБАВЛЯЕМ СОБЫТИЕ
+#[event]
+pub struct BlacklistedEvent { 
+    pub wallet: Pubkey, 
+    pub reason: String 
+}
+
 #[derive(Accounts)]
 #[instruction(wallet: Pubkey)]
 pub struct ManageBlacklist<'info> {
@@ -18,8 +25,15 @@ pub struct ManageBlacklist<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn add_to_blacklist(ctx: Context<ManageBlacklist>, _wallet: Pubkey) -> Result<()> {
+pub fn add_to_blacklist(ctx: Context<ManageBlacklist>, wallet: Pubkey) -> Result<()> {
     ctx.accounts.blacklist_record.bump = ctx.bumps.blacklist_record;
+    
+    // ВЫЗЫВАЕМ СОБЫТИЕ
+    emit!(BlacklistedEvent {
+        wallet,
+        reason: "Added to blacklist via Hook".to_string() // В идеале передавать reason в аргументах
+    });
+    
     Ok(())
 }
 

@@ -273,6 +273,60 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "BurnEvent",
+      "discriminator": [
+        33,
+        89,
+        47,
+        117,
+        82,
+        124,
+        238,
+        250
+      ]
+    },
+    {
+      "name": "MintEvent",
+      "discriminator": [
+        197,
+        144,
+        146,
+        149,
+        66,
+        164,
+        95,
+        16
+      ]
+    },
+    {
+      "name": "SeizedEvent",
+      "discriminator": [
+        181,
+        141,
+        141,
+        100,
+        201,
+        74,
+        161,
+        191
+      ]
+    },
+    {
+      "name": "StablecoinInitializedEvent",
+      "discriminator": [
+        130,
+        6,
+        78,
+        77,
+        127,
+        253,
+        70,
+        201
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -291,6 +345,54 @@
     }
   ],
   "types": [
+    {
+      "name": "BurnEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MintEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "to",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SeizedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "StablecoinConfig",
       "type": {
@@ -351,6 +453,30 @@
           {
             "name": "seizer_authority",
             "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StablecoinInitializedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
           }
         ]
       }
