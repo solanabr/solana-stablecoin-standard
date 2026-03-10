@@ -3247,18 +3247,20 @@ function renderSystemConfigTab() {
     style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
-  pauseBtn.on('press', () => {
-    executeTx('Pausing Program', async () => {
-      const [configPda] = getConfigPda(MINT);
-      const [rolesPda] = getRoleRegistryPda(configPda);
-      return await program.methods.pause()
-        .accounts({
-          authority: wallet.publicKey,
-          config: configPda,
-          roleRegistry: rolesPda,
-        })
-        .signers([wallet])
-        .rpc();
+  bindSafePress(pauseBtn, 'Pause Program', () => {
+    confirmAction('Pause Program', 'This will HALT all token operations.', 'high', () => {
+      executeTx('Pausing Program', async () => {
+        const [configPda] = getConfigPda(MINT);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        return await program.methods.pause()
+          .accounts({
+            authority: wallet.publicKey,
+            config: configPda,
+            roleRegistry: rolesPda,
+          })
+          .signers([wallet])
+          .rpc();
+      });
     });
   });
 
@@ -3268,18 +3270,20 @@ function renderSystemConfigTab() {
     style: { bg: colors.success, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
-  unpauseBtn.on('press', () => {
-    executeTx('Unpausing Program', async () => {
-      const [configPda] = getConfigPda(MINT);
-      const [rolesPda] = getRoleRegistryPda(configPda);
-      return await program.methods.unpause()
-        .accounts({
-          authority: wallet.publicKey,
-          config: configPda,
-          roleRegistry: rolesPda,
-        })
-        .signers([wallet])
-        .rpc();
+  bindSafePress(unpauseBtn, 'Unpause Program', () => {
+    confirmAction('Unpause Program', 'This will RESUME all token operations.', 'high', () => {
+      executeTx('Unpausing Program', async () => {
+        const [configPda] = getConfigPda(MINT);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        return await program.methods.unpause()
+          .accounts({
+            authority: wallet.publicKey,
+            config: configPda,
+            roleRegistry: rolesPda,
+          })
+          .signers([wallet])
+          .rpc();
+      });
     });
   });
 
