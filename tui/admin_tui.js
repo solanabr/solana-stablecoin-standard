@@ -521,8 +521,9 @@ async function refreshData() {
     liveData.loading = false;
     updateTopNav();
     updateStatusBar();
-    // Don't re-render tabs while a modal is open — it would destroy the modal
-    if (activeModals.length === 0) {
+    // Don't re-render tabs while a modal or form input is active — it would destroy them
+    const formHasData = _formInputActive || _activeFormValues.some(arr => arr.some(v => v.length > 0));
+    if (activeModals.length === 0 && !formHasData) {
       renderTabContent();
     }
   }
@@ -560,6 +561,8 @@ function getContentBounds() {
 }
 
 let activeModals = [];
+let _formInputActive = false;
+let _activeFormValues = [];  // References to all live createFormInputs value arrays
 
 function showMessage(title, text, timeoutMs) {
   timeoutMs = timeoutMs || 3000;
@@ -594,6 +597,27 @@ function dismissAllModals() {
     try { m.destroy(); } catch(e) {}
   });
   activeModals = [];
+}
+
+function reportUiError(context, err) {
+  const msg = err && (err.message || String(err)) ? (err.message || String(err)) : String(err);
+  try {
+    fs.appendFileSync(_errLog, `[${new Date().toISOString()}] UI ACTION ${context}: ${err?.stack || err}\n`);
+  } catch {}
+  showMessage('UI Error', `${context} failed:\n${msg.slice(0, 240)}`, 5000);
+}
+
+function bindSafePress(button, context, handler) {
+  button.on('press', () => {
+    try {
+      const result = handler();
+      if (result && typeof result.then === 'function') {
+        result.catch(err => reportUiError(context, err));
+      }
+    } catch (err) {
+      reportUiError(context, err);
+    }
+  });
 }
 
 function shortAddr(addr) {
