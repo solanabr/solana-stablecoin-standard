@@ -259,7 +259,7 @@ async function fetchMinters(configPda) {
     const programId = new PublicKey(PROGRAM_ID);
     const accounts = await connection.getProgramAccounts(programId, {
       filters: [
-        { dataSize: 113 },
+        { dataSize: 106 },
         { memcmp: { offset: 9, bytes: configPda.toBase58() } }
       ]
     });
