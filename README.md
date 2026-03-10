@@ -255,6 +255,10 @@ solana-stablecoin-standard/
 │   ├── sss-2.ts           # SSS-2 integration tests
 │   ├── access-control.ts  # Role-based access control tests
 │   └── helpers.ts         # Shared test utilities
+├── tui/                   # Interactive admin TUI dashboard (blessed)
+│   └── src/
+├── frontend/              # Example web dashboard (Next.js + wallet adapter)
+│   └── src/
 ├── backend/               # Reference implementation (REST API, indexer, webhooks)
 │   └── src/
 ├── docs/                  # Architecture, SDK, operations, compliance docs
@@ -291,6 +295,30 @@ Both programs are deployed and verified on Solana Devnet:
 - sss-hook: [`4eD6WaU5UXhz8oTmQLPymXZpWBSQe9BLbxwsyVMAMFNuuuz37GckcTgEXJsshC8ztarA57AmrXe1Ekf7WA7QyX65`](https://explorer.solana.com/tx/4eD6WaU5UXhz8oTmQLPymXZpWBSQe9BLbxwsyVMAMFNuuuz37GckcTgEXJsshC8ztarA57AmrXe1Ekf7WA7QyX65?cluster=devnet)
 
 IDL accounts are published on-chain for both programs, enabling automatic client generation.
+
+## Bonus Features
+
+### Interactive Admin TUI
+
+A terminal-based dashboard for monitoring stablecoin state in real-time. Built with [blessed](https://github.com/chjj/blessed).
+
+```bash
+cd tui && npm install
+npx tsx src/index.ts --mint <MINT_ADDRESS> --rpc https://api.devnet.solana.com
+```
+
+Features: live supply/roles/minters/blacklist panels, auto-refresh, keyboard navigation (`q` quit, `r` refresh, `Tab` focus), adaptive layout for SSS-1 vs SSS-2.
+
+### Example Frontend
+
+A Next.js web dashboard with Solana wallet integration for managing SSS stablecoins. Built with Next.js 15, Tailwind CSS, and `@solana/wallet-adapter-react`.
+
+```bash
+cd frontend && npm install && npm run dev
+# Open http://localhost:3000
+```
+
+Features: wallet connection (Phantom, Solflare, etc.), tabbed dashboard (Overview, Minters, Operations, Roles, Compliance), on-chain data fetching with auto-refresh, full transaction signing for all operations (mint, burn, freeze, thaw, pause, role updates, blacklist, seize).
 
 ## Security Considerations
 

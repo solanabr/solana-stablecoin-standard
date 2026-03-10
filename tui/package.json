@@ -1,0 +1,24 @@
+{
+  "name": "sss-tui",
+  "version": "0.1.0",
+  "description": "Admin TUI dashboard for Solana Stablecoin Standard",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "npx tsx src/index.ts",
+    "dev": "npx tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@solana/web3.js": "^1.95.0",
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/blessed": "^0.1.27",
+    "@types/bn.js": "^5.2.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}

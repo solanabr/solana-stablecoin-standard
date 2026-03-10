@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a25;
+  --bg-input: #14141e;
+  --border: #2a2a3a;
+  --border-focus: #4a4a6a;
+  --text-primary: #e4e4ed;
+  --text-secondary: #8888a0;
+  --text-muted: #55556a;
+  --accent: #6366f1;
+  --accent-hover: #7578f5;
+  --accent-muted: rgba(99, 102, 241, 0.15);
+  --success: #22c55e;
+  --success-muted: rgba(34, 197, 94, 0.12);
+  --danger: #ef4444;
+  --danger-muted: rgba(239, 68, 68, 0.12);
+  --warning: #f59e0b;
+  --warning-muted: rgba(245, 158, 11, 0.12);
+  --info: #06b6d4;
+  --info-muted: rgba(6, 182, 212, 0.12);
+}
+
+@theme inline {
+  --font-inter: var(--font-inter);
+  --font-jetbrains: var(--font-jetbrains);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-focus);
+}
+
+/* Wallet adapter overrides */
+.wallet-adapter-button {
+  font-family: inherit !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  font-family: inherit !important;
+}
+
+/* Input autofill styling for dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-input) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Number input - hide spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}

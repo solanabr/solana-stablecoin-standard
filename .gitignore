@@ -44,6 +44,10 @@ backend/dist
 backend/build
 backend/node_modules
 
+# Frontend build artifacts
+frontend/.next
+frontend/out
+
 # TypeScript build info
 *.tsbuildinfo
 

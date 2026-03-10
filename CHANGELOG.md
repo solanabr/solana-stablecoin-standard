@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Interactive Admin TUI** (`tui/`): Terminal dashboard with blessed — live supply, roles, minters, blacklist panels, auto-refresh, keyboard navigation
+- **Example Frontend** (`frontend/`): Next.js 15 web dashboard with Solana wallet adapter — tabbed UI for all SSS operations (mint, burn, freeze, thaw, pause, roles, blacklist, seize), auto-refresh via TanStack Query
 - On-chain seizure audit trail (`total_seized` counter in StablecoinConfig)
 - Fail-closed transfer hook: pause check now blocks transfers when config is unreadable
 - Blacklister role can freeze/thaw accounts on SSS-2 preset (compound constraint with authority)
