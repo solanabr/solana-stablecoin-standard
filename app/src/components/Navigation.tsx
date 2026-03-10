@@ -37,7 +37,7 @@ export default function Navigation() {
 
   const externalLinks = [
     { label: "Github", href: "https://github.com/amanhij/solana-stablecoin-standard-pre" },
-    { label: "Documentation", href: "https://amanhij.github.io/solana-stablecoin-standard-pre/" },
+    { label: "Documentation", href: "https://docs-site-three-theta.vercel.app" },
   ];
 
   return (

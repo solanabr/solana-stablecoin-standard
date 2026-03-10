@@ -10,7 +10,7 @@ export default function Footer() {
         Now.
       </h2>
       <a
-        href="https://amanhij.github.io/solana-stablecoin-standard-pre/"
+        href="https://docs-site-three-theta.vercel.app"
         target="_blank"
         rel="noopener noreferrer"
         className="brutal-btn bg-paper text-ink px-12 py-6 font-display font-bold uppercase tracking-widest text-2xl hover-target mb-24"
