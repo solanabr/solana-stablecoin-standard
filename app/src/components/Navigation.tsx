@@ -37,7 +37,7 @@ export default function Navigation() {
 
   const externalLinks = [
     { label: "Github", href: "https://github.com/amanhij/solana-stablecoin-standard-pre" },
-    { label: "Documentation", href: "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/feat/sss-full-implementation/docs" },
+    { label: "Documentation", href: "https://amanhij.github.io/solana-stablecoin-standard-pre/" },
   ];
 
   return (
