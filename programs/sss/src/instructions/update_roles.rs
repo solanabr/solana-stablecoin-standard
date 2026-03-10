@@ -160,6 +160,7 @@ pub fn handler<'c: 'info, 'info>(
                 bump: new_bump,
                 allowance: update.allowance,
                 minted: 0,
+                mint: mint_key,
             };
             let encoded = account.try_to_vec()?;
             data[disc.len()..disc.len() + encoded.len()].copy_from_slice(&encoded);

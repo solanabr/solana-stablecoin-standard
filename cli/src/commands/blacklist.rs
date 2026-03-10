@@ -52,7 +52,7 @@ async fn add(cfg: CliConfig, add_args: BlacklistAddArgs) -> Result<()> {
 
     let signer = Rc::new(cfg.keypair);
     let signer_pubkey = signer.pubkey();
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let (config_pda, _) = pda::config_pda(&PROGRAM_ID, &mint);
     let (blacklisted_entry, _) = pda::blacklisted_entry_pda(&PROGRAM_ID, &mint, &wallet);
@@ -93,7 +93,7 @@ async fn remove(cfg: CliConfig, remove_args: BlacklistRemoveArgs) -> Result<()> 
 
     let signer = Rc::new(cfg.keypair);
     let signer_pubkey = signer.pubkey();
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let (config_pda, _) = pda::config_pda(&PROGRAM_ID, &mint);
     let (blacklisted_entry, _) = pda::blacklisted_entry_pda(&PROGRAM_ID, &mint, &wallet);

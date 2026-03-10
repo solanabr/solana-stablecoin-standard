@@ -11,7 +11,7 @@ use crate::{
 
 pub async fn run(cfg: CliConfig) -> Result<()> {
     let rpc = RpcClient::new_with_commitment(cfg.rpc_url.clone(), CommitmentConfig::confirmed());
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let (config_pda, _) = pda::config_pda(&PROGRAM_ID, &mint);
 

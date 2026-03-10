@@ -22,7 +22,7 @@ pub struct BurnArgs {
 pub async fn run(cfg: CliConfig, burn_args: BurnArgs) -> Result<()> {
     let signer = Rc::new(cfg.keypair);
     let signer_pubkey = signer.pubkey();
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let from_ata = get_associated_token_address_with_program_id(&signer_pubkey, &mint, &TOKEN_2022_PROGRAM_ID);
     let (burner_role, _) = pda::burner_role_pda(&PROGRAM_ID, &mint, &signer_pubkey);

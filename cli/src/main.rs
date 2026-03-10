@@ -87,7 +87,8 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let cfg = CliConfig::load(cli.rpc_url, cli.mint, cli.keypair)?;
+    let require_mint = !matches!(cli.command, Commands::Init(_));
+    let cfg = CliConfig::load(cli.rpc_url, cli.mint, cli.keypair, require_mint)?;
 
     match cli.command {
         Commands::Init(args) => init::run(cfg, args).await,

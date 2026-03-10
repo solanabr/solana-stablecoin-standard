@@ -150,6 +150,7 @@ pub fn handler(
     ctx.accounts.minter_account.bump = ctx.bumps.minter_account;
     ctx.accounts.minter_account.allowance = initial_allowance;
     ctx.accounts.minter_account.minted = 0;
+    ctx.accounts.minter_account.mint = ctx.accounts.mint.key();
 
     let standard_str = match ctx.accounts.config.standard {
         crate::state::config::Standard::SSS1 => "SSS1".to_string(),

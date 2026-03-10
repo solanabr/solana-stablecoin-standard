@@ -31,7 +31,7 @@ pub async fn run(cfg: CliConfig, holders_args: HoldersArgs) -> Result<()> {
                 // Token accounts are at least 165 bytes
                 RpcFilterType::DataSize(165),
                 // Mint at offset 0
-                RpcFilterType::Memcmp(Memcmp::new_base58_encoded(0, &cfg.mint.to_bytes())),
+                RpcFilterType::Memcmp(Memcmp::new_base58_encoded(0, &cfg.mint.expect("mint required").to_bytes())),
             ]),
             account_config: RpcAccountInfoConfig {
                 encoding: Some(UiAccountEncoding::Base64),

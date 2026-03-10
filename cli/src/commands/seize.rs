@@ -39,7 +39,7 @@ pub async fn run(cfg: CliConfig, seize_args: SeizeArgs) -> Result<()> {
 
     let signer = Rc::new(cfg.keypair);
     let signer_pubkey = signer.pubkey();
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let rpc = RpcClient::new_with_commitment(cfg.rpc_url.clone(), CommitmentConfig::confirmed());
 

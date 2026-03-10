@@ -33,7 +33,7 @@ pub async fn run(cfg: CliConfig, mint_args: MintArgs) -> Result<()> {
 
     let signer = Rc::new(cfg.keypair);
     let signer_pubkey = signer.pubkey();
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let (minter_account, _) = pda::minter_account_pda(&PROGRAM_ID, &mint, &signer_pubkey);
     let (mint_authority, _) = pda::mint_authority_pda(&PROGRAM_ID, &mint);

@@ -7,13 +7,14 @@ use anchor_lang::solana_program::program_pack::Pack;
 use crate::config::CliConfig;
 
 pub async fn run(cfg: CliConfig) -> Result<()> {
+    let mint = cfg.mint.expect("mint required");
     let rpc = RpcClient::new_with_commitment(cfg.rpc_url.clone(), CommitmentConfig::confirmed());
 
-    let mint_data = rpc.get_account_data(&cfg.mint)?;
+    let mint_data = rpc.get_account_data(&mint)?;
     let mint_state = Mint::unpack_from_slice(&mint_data[..Mint::LEN])
         .map_err(|_| anyhow::anyhow!("Failed to parse mint account"))?;
 
-    println!("Mint:    {}", cfg.mint);
+    println!("Mint:    {}", mint);
     println!("Supply:  {} (base units)", mint_state.supply);
 
     Ok(())

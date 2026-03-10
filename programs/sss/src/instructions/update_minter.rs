@@ -89,6 +89,7 @@ pub fn handler(
                 bump,
                 allowance,
                 minted: 0,
+                mint: mint_key,
             };
             let encoded = account.try_to_vec()?;
             data[disc.len()..disc.len() + encoded.len()]

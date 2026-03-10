@@ -54,12 +54,17 @@ pub async fn run(cfg: CliConfig, cmd: MintersCommands) -> Result<()> {
 }
 
 async fn list(cfg: CliConfig) -> Result<()> {
+    let mint = cfg.mint.expect("mint required");
     let rpc = RpcClient::new_with_commitment(cfg.rpc_url.clone(), CommitmentConfig::confirmed());
 
     // MinterAccount discriminator (8 bytes). Use Base64 so RPC compares account[0..8]; some nodes
     // (e.g. Surfpool) only match when bytes are sent as Base64, not raw Bytes.
     let discriminator = sss::accounts::MinterAccount::DISCRIMINATOR;
     let disc_b64 = base64::engine::general_purpose::STANDARD.encode(discriminator);
+    // Mint is at offset 8 (disc) + 1 (bump) + 8 (allowance) + 8 (minted) = 25. Filter by mint so we
+    // only list minters for this mint (not all minters across all mints).
+    const MINT_OFFSET: usize = 8 + 1 + 8 + 8;
+    let mint_b64 = base64::engine::general_purpose::STANDARD.encode(mint.to_bytes());
 
     let accounts_raw = rpc.get_program_accounts_with_config(
         &PROGRAM_ID,
@@ -68,6 +73,10 @@ async fn list(cfg: CliConfig) -> Result<()> {
                 RpcFilterType::Memcmp(Memcmp::new(
                     0,
                     MemcmpEncodedBytes::Base64(disc_b64),
+                )),
+                RpcFilterType::Memcmp(Memcmp::new(
+                    MINT_OFFSET,
+                    MemcmpEncodedBytes::Base64(mint_b64),
                 )),
             ]),
             account_config: RpcAccountInfoConfig {
@@ -80,11 +89,11 @@ async fn list(cfg: CliConfig) -> Result<()> {
     )?;
 
     if accounts_raw.is_empty() {
-        println!("No minters found for mint {}", cfg.mint);
+        println!("No minters found for mint {}", mint);
         return Ok(());
     }
 
-    println!("Minters for mint {}:", cfg.mint);
+    println!("Minters for mint {}:", mint);
     for (pubkey, account) in &accounts_raw {
         if let Ok(minter) = sss::accounts::MinterAccount::try_deserialize(&mut account.data.as_slice()) {
             println!(
@@ -102,7 +111,7 @@ async fn add(cfg: CliConfig, add_args: MinterAddArgs) -> Result<()> {
 
     let signer = Rc::new(cfg.keypair);
     let signer_pubkey = signer.pubkey();
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let (master_role, _) = pda::master_role_pda(&PROGRAM_ID, &mint, &signer_pubkey);
     let (update_minter_pda, _) = pda::minter_account_pda(&PROGRAM_ID, &mint, &minter_wallet);
@@ -144,7 +153,7 @@ async fn remove(cfg: CliConfig, remove_args: MinterRemoveArgs) -> Result<()> {
 
     let signer = Rc::new(cfg.keypair);
     let signer_pubkey = signer.pubkey();
-    let mint = cfg.mint;
+    let mint = cfg.mint.expect("mint required");
 
     let (master_role, _) = pda::master_role_pda(&PROGRAM_ID, &mint, &signer_pubkey);
     let (update_minter_pda, _) = pda::minter_account_pda(&PROGRAM_ID, &mint, &minter_wallet);
