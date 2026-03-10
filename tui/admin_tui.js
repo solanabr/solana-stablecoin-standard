@@ -901,6 +901,12 @@ function openActionModal(actionName) {
 
   let activeIdx = inputs.length > 0 ? 0 : -1;
 
+  function deactivateInputSelection() {
+    activeIdx = -1;
+    inputs.forEach(inp => { inp.style.bg = colors.border; });
+    renderAllInputs();
+  }
+
   function activateInput(idx) {
     activeIdx = idx;
     inputs.forEach((inp, j) => {
@@ -955,11 +961,9 @@ function openActionModal(actionName) {
       if (activeIdx < inputs.length - 1) {
         activateInput(activeIdx + 1);
       } else {
-        activeIdx = -1;
-        inputs.forEach(inp => { inp.style.bg = colors.border; });
+        deactivateInputSelection();
         submitBtn.focus();
       }
-      renderAllInputs();
       return;
     }
 
@@ -967,8 +971,9 @@ function openActionModal(actionName) {
     if (key.name === 'enter' || key.name === 'return') {
       if (activeIdx < inputs.length - 1) {
         activateInput(activeIdx + 1);
-        renderAllInputs();
       } else {
+        deactivateInputSelection();
+        submitBtn.focus();
         submitBtn.press();
       }
       return;
@@ -1003,8 +1008,13 @@ function openActionModal(actionName) {
   modal._programKeyHandler = modalKeyHandler; // Tag for cleanup by dismissAllModals
 
   // Clicking a button should deactivate input fields
-  submitBtn.on('focus', () => { activeIdx = -1; renderAllInputs(); });
-  cancelBtn.on('focus', () => { activeIdx = -1; renderAllInputs(); });
+  const prepareModalButtons = () => { deactivateInputSelection(); };
+  submitBtn.on('focus', prepareModalButtons);
+  submitBtn.on('click', prepareModalButtons);
+  submitBtn.on('press', prepareModalButtons);
+  cancelBtn.on('focus', prepareModalButtons);
+  cancelBtn.on('click', prepareModalButtons);
+  cancelBtn.on('press', prepareModalButtons);
 
   // Initialize first input as active
   if (inputs.length > 0) {
@@ -1129,13 +1139,15 @@ function openActionModal(actionName) {
             const [blPda] = getBlacklistPda(configPda, targetPk);
             const mintPk = new PublicKey(MINT);
             const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-            const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-            const [auditPda] = getAuditLogPda(configPda, auditIdx);
+            const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+              wallet.publicKey, targetAta, targetPk, mintPk, TOKEN_2022_PROGRAM_ID
+            );
             return await program.methods.blacklistAdd({ reason: values[1] })
               .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
                 blacklistEntry: blPda, addressToBlacklist: targetPk, mint: mintPk,
                 targetTokenAccount: targetAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
                 systemProgram: SystemProgram.programId })
+              .preInstructions([createAtaIx])
               .signers([wallet]).rpc();
           });
         });
