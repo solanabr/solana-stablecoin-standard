@@ -2366,6 +2366,7 @@ function createFormInputs(fields, submitBtn) {
 function renderSupplyTab() {
   const cfg = liveData.config;
   const dec = cfg ? cfg.decimals : 6;
+  const symbol = (cfg && cfg.symbol) || state.config.symbol || 'tokens';
 
   // Supply summary at top
   const summaryBox = blessed.box({
@@ -2388,30 +2389,25 @@ function renderSupplyTab() {
     parent: mainContent, top: 7, left: 2, width: '45%', height: 16,
     border: { type: 'line', fg: colors.border }, label: ' Execute Mint '
   });
-  blessed.text({ parent: mintForm, top: 1, left: 2, content: 'Recipient Address:' });
-  const addrInput = blessed.textbox({
-    parent: mintForm, name: 'recipientAddress', top: 2, left: 2, width: '90%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  blessed.text({ parent: mintForm, top: 4, left: 2, content: 'Amount:' });
-  const amtInput = blessed.textbox({
-    parent: mintForm, name: 'amount', top: 5, left: 2, width: '90%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  wireFormInputs([addrInput, amtInput]);
   const mintSubmitBtn = blessed.button({
     parent: mintForm, top: 7, left: 2, width: 20, height: 1,
     content: ' [ SUBMIT MINT ] ', style: { bg: colors.secondary, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
+  const mintInputs = createFormInputs([
+    { parent: mintForm, label: 'Recipient Address', top: 1 },
+    { parent: mintForm, label: 'Amount', top: 3 },
+  ], mintSubmitBtn);
 
-  mintSubmitBtn.on('press', () => {
-    const recipient = addrInput.getValue().trim();
-    const amountStr = amtInput.getValue().trim();
+  bindSafePress(mintSubmitBtn, 'Mint Tokens', () => {
+    const recipient = mintInputs.inputs[0].getValue().trim();
+    const amountStr = mintInputs.inputs[1].getValue().trim();
     if (!recipient || !amountStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
     if (!isValidPubkey(recipient)) { showMessage('Error', 'Invalid recipient address.', 2000); return; }
     const amount = parseTokenAmount(amountStr, dec);
     if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
+    const preview = formatUsd(amount.toNumber(), 0) + ' ' + symbol;
+    confirmAction('Mint Tokens', 'Minting: ' + preview + '\nTo: ' + shortAddr(recipient), 'high', () => {
     executeTx('Minting Tokens', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2438,6 +2434,7 @@ function renderSupplyTab() {
         .signers([wallet])
         .rpc();
     });
+    });
   });
 
   // Burn Form
@@ -2445,31 +2442,27 @@ function renderSupplyTab() {
     parent: mainContent, top: 7, left: '50%', width: '45%', height: 16,
     border: { type: 'line', fg: colors.danger }, label: ' Execute Burn '
   });
-  blessed.text({ parent: burnForm, top: 1, left: 2, content: 'Source Account:' });
-  const burnSourceInput = blessed.textbox({
-    parent: burnForm, name: 'sourceAddress', top: 2, left: 2, width: '90%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  blessed.text({ parent: burnForm, top: 4, left: 2, content: 'Burn Amount:' });
-  const burnAmtInput = blessed.textbox({
-    parent: burnForm, name: 'burnAmount', top: 5, left: 2, width: '90%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  wireFormInputs([burnSourceInput, burnAmtInput]);
   const burnSubmitBtn = blessed.button({
     parent: burnForm, top: 7, left: 2, width: 20, height: 1,
     content: ' [ SUBMIT BURN ] ', style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
+  const burnInputs = createFormInputs([
+    { parent: burnForm, label: 'Source (empty = self)', top: 1 },
+    { parent: burnForm, label: 'Burn Amount', top: 3 },
+  ], burnSubmitBtn);
 
-  burnSubmitBtn.on('press', () => {
-    const sourceAddr = burnSourceInput.getValue().trim();
-    const amountStr = burnAmtInput.getValue().trim();
+  bindSafePress(burnSubmitBtn, 'Burn Tokens', () => {
+    const sourceAddr = burnInputs.inputs[0].getValue().trim();
+    const amountStr = burnInputs.inputs[1].getValue().trim();
     if (!amountStr) { showMessage('Error', 'Enter an amount.', 2000); return; }
     if (sourceAddr && !isValidPubkey(sourceAddr)) { showMessage('Error', 'Invalid source address.', 2000); return; }
     const amount = parseTokenAmount(amountStr, dec);
     if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
     const burnFrom = sourceAddr && isValidPubkey(sourceAddr) ? new PublicKey(sourceAddr) : wallet.publicKey;
+    const isSelf = burnFrom.equals(wallet.publicKey);
+    const label = isSelf ? 'your wallet' : shortAddr(burnFrom.toBase58());
+    confirmAction('Burn Tokens', 'Burning: ' + formatUsd(amount.toNumber(), 0) + ' ' + symbol + '\nFrom: ' + label, 'high', () => {
     executeTx('Burning Tokens', async () => {
       const [configPda] = getConfigPda(MINT);
       const mintPk = new PublicKey(MINT);
@@ -2484,6 +2477,7 @@ function renderSupplyTab() {
         })
         .signers([wallet])
         .rpc();
+    });
     });
   });
 
@@ -2516,21 +2510,19 @@ function renderSupplyTab() {
     parent: mainContent, top: '55%', left: 2, width: '45%', height: 12,
     border: { type: 'line', fg: colors.danger }, label: ' Freeze Account '
   });
-  blessed.text({ parent: freezeForm, top: 1, left: 2, content: 'Target Address:', style: { fg: colors.danger } });
-  const freezeAddrInput = blessed.textbox({
-    parent: freezeForm, name: 'freezeAddress', top: 2, left: 2, width: '90%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  wireFormInputs([freezeAddrInput]);
   const freezeBtn = blessed.button({
     parent: freezeForm, top: 4, left: 2, width: 22, height: 1,
     content: ' [ FREEZE ACCOUNT ] ', style: { bg: colors.danger, fg: 'white', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
-  freezeBtn.on('press', () => {
-    const address = freezeAddrInput.getValue().trim();
+  const freezeInputs = createFormInputs([
+    { parent: freezeForm, label: 'Target Address', top: 1 },
+  ], freezeBtn);
+  bindSafePress(freezeBtn, 'Freeze Account', () => {
+    const address = freezeInputs.inputs[0].getValue().trim();
     if (!address) { showMessage('Error', 'Enter a target address.', 2000); return; }
     if (!isValidPubkey(address)) { showMessage('Error', 'Invalid target address.', 2000); return; }
+    confirmAction('Freeze Account', 'Target: ' + shortAddr(address), 'high', () => {
     executeTx('Freezing Account', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2546,6 +2538,7 @@ function renderSupplyTab() {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         }).signers([wallet]).rpc();
     });
+    });
   });
 
   // Thaw Form (merged from Freeze/Thaw tab)
@@ -2553,21 +2546,19 @@ function renderSupplyTab() {
     parent: mainContent, top: '55%', left: '50%', width: '45%', height: 12,
     border: { type: 'line', fg: colors.success }, label: ' Thaw Account '
   });
-  blessed.text({ parent: thawForm, top: 1, left: 2, content: 'Target Address:', style: { fg: colors.success } });
-  const thawAddrInput = blessed.textbox({
-    parent: thawForm, name: 'thawAddress', top: 2, left: 2, width: '90%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  wireFormInputs([thawAddrInput]);
   const thawBtn = blessed.button({
     parent: thawForm, top: 4, left: 2, width: 22, height: 1,
     content: ' [ THAW ACCOUNT ] ', style: { bg: colors.success, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
-  thawBtn.on('press', () => {
-    const address = thawAddrInput.getValue().trim();
+  const thawInputs = createFormInputs([
+    { parent: thawForm, label: 'Target Address', top: 1 },
+  ], thawBtn);
+  bindSafePress(thawBtn, 'Thaw Account', () => {
+    const address = thawInputs.inputs[0].getValue().trim();
     if (!address) { showMessage('Error', 'Enter a target address.', 2000); return; }
     if (!isValidPubkey(address)) { showMessage('Error', 'Invalid target address.', 2000); return; }
+    confirmAction('Thaw Account', 'Target: ' + shortAddr(address), 'normal', () => {
     executeTx('Thawing Account', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2582,6 +2573,7 @@ function renderSupplyTab() {
           mint: mintPk, targetTokenAccount: targetAta,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         }).signers([wallet]).rpc();
+    });
     });
   });
 }
