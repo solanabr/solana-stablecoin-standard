@@ -1,11 +1,11 @@
-# @solana-stablecoin-standard/sdk
+# solana-stablecoin-standard
 
 TypeScript SDK for the Solana Stablecoin Standard (SSS). Provides a high-level client for interacting with both the `sss-token` and `sss-transfer-hook` programs, PDA derivation helpers, event parsing, oracle integration, and preset configuration utilities.
 
 ## Installation
 
 ```bash
-npm install @solana-stablecoin-standard/sdk
+npm install solana-stablecoin-standard
 ```
 
 **Peer dependencies**: `@solana/web3.js` (^1.95), `@coral-xyz/anchor` (^0.31.1), `@solana/spl-token` (^0.4), `bn.js` (^5.2).
@@ -15,7 +15,7 @@ npm install @solana-stablecoin-standard/sdk
 ```typescript
 import { Connection, Keypair } from "@solana/web3.js";
 import { Wallet, BN } from "@coral-xyz/anchor";
-import { SSSClient, StablecoinPreset, getPresetAnchorEnum } from "@solana-stablecoin-standard/sdk";
+import { SSSClient, StablecoinPreset, getPresetAnchorEnum } from "solana-stablecoin-standard";
 
 // Connect
 const connection = new Connection("http://localhost:8899", "confirmed");
@@ -126,7 +126,7 @@ All instruction methods return `Promise<{ signature: string }>`.
 The SDK provides utilities to parse Anchor events from transaction logs.
 
 ```typescript
-import { createEventParser, parseTransactionEvents } from "@solana-stablecoin-standard/sdk";
+import { createEventParser, parseTransactionEvents } from "solana-stablecoin-standard";
 
 // Parse events from a transaction
 const tx = await connection.getTransaction(signature, {
@@ -153,7 +153,7 @@ for (const event of events) {
 The `OracleModule` provides Pyth price feed integration and reserve data construction.
 
 ```typescript
-import { OracleModule } from "@solana-stablecoin-standard/sdk";
+import { OracleModule } from "solana-stablecoin-standard";
 
 const oracle = new OracleModule(connection);
 
@@ -192,7 +192,7 @@ await client.attestReserve(mint, {
 ## Presets Helper
 
 ```typescript
-import { PRESET_CONFIGS, getPresetAnchorEnum, StablecoinPreset } from "@solana-stablecoin-standard/sdk";
+import { PRESET_CONFIGS, getPresetAnchorEnum, StablecoinPreset } from "solana-stablecoin-standard";
 
 // Get the full preset configuration
 const sss2Config = PRESET_CONFIGS[StablecoinPreset.SSS2];
@@ -214,7 +214,7 @@ const presetEnum = getPresetAnchorEnum(StablecoinPreset.SSS2);
 All client methods wrap Anchor errors into `SSSError` instances with typed error codes.
 
 ```typescript
-import { SSSError } from "@solana-stablecoin-standard/sdk";
+import { SSSError } from "solana-stablecoin-standard";
 
 try {
   await client.mintTokens(mint, amount, recipientATA);
@@ -236,7 +236,7 @@ import {
   TOKEN_2022_PROGRAM_ID,         // TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
   ASSOCIATED_TOKEN_PROGRAM_ID,   // ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
   SEEDS,                         // PDA seed buffers
-} from "@solana-stablecoin-standard/sdk";
+} from "solana-stablecoin-standard";
 ```
 
 ## License
