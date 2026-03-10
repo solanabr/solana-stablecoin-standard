@@ -1953,8 +1953,8 @@ function initDashboard() {
     focusPane = 'main';
     updateFocusIndicator();
     renderTabContent();
-    // Focus first interactive child in main content
-    const firstChild = mainContent.children.find(c => c.focus && (c.type === 'list-table' || c.type === 'textbox' || c.type === 'textarea' || c.type === 'button' || c.type === 'list'));
+    // Focus first interactive child in main content (skip textboxes — they block hotkeys)
+    const firstChild = mainContent.children.find(c => c.focus && (c.type === 'list-table' || c.type === 'button' || c.type === 'list'));
     if (firstChild) firstChild.focus();
   });
 
@@ -1962,7 +1962,7 @@ function initDashboard() {
     if (isModalOrInputFocused()) return;
     if (focusPane === 'sidebar') {
       focusPane = 'main';
-      const firstChild = mainContent.children.find(c => c.focus && (c.type === 'list-table' || c.type === 'textbox' || c.type === 'textarea' || c.type === 'button' || c.type === 'list'));
+      const firstChild = mainContent.children.find(c => c.focus && (c.type === 'list-table' || c.type === 'button' || c.type === 'list'));
       if (firstChild) firstChild.focus();
       else mainContent.focus();
     } else {
@@ -2120,25 +2120,34 @@ function initDashboard() {
   // --- Action Hotkey Routing ---
   const ACTION_HOTKEYS = {
     m: 'mint', b: 'burn', f: 'freeze', t: 'thaw',
-    k: 'blacklistAdd', s: 'seize', p: 'pause', a: 'attest',
+    k: 'blacklistAdd', s: 'seize', p: null, a: 'attest',
     d: 'blacklistRemove', e: null, // 'e' is context-dependent
   };
 
   function isModalOrInputFocused() {
     if (activeModals.length > 0) return true;
+    if (_formInputActive) return true;
     if (screen.focused && (screen.focused.type === 'textbox' || screen.focused.type === 'textarea')) return true;
     if (commandInput) return true;
     return false;
   }
 
-  // Hub hotkeys: M, B, F, T, K, S, P, A
-  ['m', 'b', 'f', 't', 'k', 's', 'p', 'a'].forEach(key => {
+  // Hub hotkeys: M, B, F, T, K, S, A
+  ['m', 'b', 'f', 't', 'k', 's', 'a'].forEach(key => {
     screen.key([key], () => {
       if (isModalOrInputFocused()) return;
       if (state.activeTab === 0) {
         openActionModal(ACTION_HOTKEYS[key]);
       }
     });
+  });
+
+  // P toggles pause/unpause based on current state
+  screen.key(['p'], () => {
+    if (isModalOrInputFocused()) return;
+    if (state.activeTab === 0) {
+      openActionModal(state.isPaused ? 'unpause' : 'pause');
+    }
   });
 
   // Supply tab hotkeys: M, B, F, T
