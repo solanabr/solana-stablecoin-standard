@@ -20,6 +20,13 @@ async function main() {
 
     const sdk = new StablecoinSDK(connection, wallet, programId);
 
+    //console.log(`keypairPath: ${keypairPath}`)
+    //console.log(`secketKeeyString: ${secretKeyString}`)
+    //console.log(`secretKey: ${secretKey}`)
+    //console.log(`adminKeypair: ${adminKeypair}`)
+    //console.log(`wallet: ${wallet}`)
+    //console.log(`sdk: ${sdk}`)
+
     try {
         console.log("\n--- Creating Token ---");
 

@@ -1,7 +1,6 @@
 [package]
-name = "transfer_hook"
+name = "transfer-hook"
 version = "0.1.0"
-description = "Created with Anchor"
 edition = "2021"
 
 [lib]
@@ -10,19 +9,9 @@ name = "transfer_hook"
 
 [features]
 default = []
-cpi = ["no-entrypoint"]
-no-entrypoint = []
-no-idl = []
-no-log-ix-name = []
-idl-build = ["anchor-lang/idl-build"]
-anchor-debug = []
-custom-heap = []
-custom-panic = []
-
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
-anchor-lang = "0.32.1"
-
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
+anchor-lang = "0.30.1"
+anchor-spl = { version = "0.30.1", features = ["token_2022"] }
+spl-transfer-hook-interface = "0.3.0"

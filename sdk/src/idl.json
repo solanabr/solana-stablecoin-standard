@@ -100,7 +100,13 @@
           }
         },
         {
-          "name": "mint"
+          "name": "mint",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "transfer_hook_program_id",
+          "optional": true
         },
         {
           "name": "token_program"
@@ -112,19 +118,19 @@
       ],
       "args": [
         {
-          "name": "_decimals",
+          "name": "decimals",
           "type": "u8"
         },
         {
-          "name": "_name",
+          "name": "name",
           "type": "string"
         },
         {
-          "name": "_symbol",
+          "name": "symbol",
           "type": "string"
         },
         {
-          "name": "_uri",
+          "name": "uri",
           "type": "string"
         }
       ]
@@ -225,6 +231,22 @@
           {
             "name": "mint",
             "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
           },
           {
             "name": "is_paused",
