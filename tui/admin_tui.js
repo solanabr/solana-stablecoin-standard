@@ -284,49 +284,60 @@ async function fetchMinters(configPda) {
 async function fetchBlacklist(configPda) {
   try {
     const programId = new PublicKey(PROGRAM_ID);
+    // Filter by BlacklistEntry discriminator from IDL + config PDA
+    const disc = Buffer.from(idl.accounts.find(a => a.name === 'BlacklistEntry').discriminator);
+    const bs58 = require('bs58');
     const accounts = await connection.getProgramAccounts(programId, {
       filters: [
+        { memcmp: { offset: 0, bytes: bs58.encode(disc) } },
         { memcmp: { offset: 9, bytes: configPda.toBase58() } }
       ]
     });
-    const results = [];
-    for (const { account } of accounts) {
+    return accounts.map(({ account }) => {
       try {
         const decoded = coder.decode('BlacklistEntry', account.data);
-        results.push({
+        return {
           address: decoded.blocked_address.toBase58(),
           reason: decoded.reason,
           blacklistedBy: decoded.blacklisted_by.toBase58(),
           timestamp: Number(decoded.blacklisted_at),
-        });
-      } catch { /* not a blacklist entry */ }
-    }
-    return results;
+        };
+      } catch { return null; }
+    }).filter(Boolean);
   } catch (e) {
     return [];
   }
 }
 
 async function fetchAttestations(configPda, count) {
-  const results = [];
-  for (let i = 0; i < Math.min(count, 50); i++) {
-    try {
-      const [pda] = getReserveAttestationPda(configPda, i);
-      const info = await connection.getAccountInfo(pda);
-      if (!info) continue;
-      const decoded = coder.decode('ReserveAttestation', info.data);
-      results.push({
-        index: Number(decoded.index),
-        reserveHash: '0x' + Buffer.from(decoded.reserve_hash).toString('hex').slice(0, 8) + '...',
-        totalReservesUsd: Number(decoded.total_reserves_usd),
-        totalOutstanding: Number(decoded.total_outstanding),
-        attestedBy: decoded.attested_by.toBase58(),
-        uri: decoded.attestation_uri,
-        timestamp: Number(decoded.timestamp),
-      });
-    } catch { /* skip */ }
+  const cap = Math.min(count, 50);
+  if (cap === 0) return [];
+  // Batch-fetch all attestation PDAs in one RPC call
+  const pdas = [];
+  for (let i = 0; i < cap; i++) {
+    const [pda] = getReserveAttestationPda(configPda, i);
+    pdas.push(pda);
   }
-  return results;
+  try {
+    const infos = await connection.getMultipleAccountsInfo(pdas);
+    const results = [];
+    for (let i = 0; i < infos.length; i++) {
+      if (!infos[i]) continue;
+      try {
+        const decoded = coder.decode('ReserveAttestation', infos[i].data);
+        results.push({
+          index: Number(decoded.index),
+          reserveHash: '0x' + Buffer.from(decoded.reserve_hash).toString('hex').slice(0, 8) + '...',
+          totalReservesUsd: Number(decoded.total_reserves_usd),
+          totalOutstanding: Number(decoded.total_outstanding),
+          attestedBy: decoded.attested_by.toBase58(),
+          uri: decoded.attestation_uri,
+          timestamp: Number(decoded.timestamp),
+        });
+      } catch { /* decode error, skip */ }
+    }
+    return results;
+  } catch { return []; }
 }
 
 async function fetchHolders(mint) {
@@ -384,29 +395,35 @@ let consecutiveErrors = 0;
 let refreshInProgress = false;
 
 async function fetchAuditLogs(configPda, count) {
-  const results = [];
-  const actionNames = ['Mint', 'Burn', 'Freeze', 'Thaw', 'Pause', 'Unpause',
-    'BlacklistAdd', 'BlacklistRemove', 'Seize', 'RoleUpdate', 'MinterUpdate',
-    'AuthorityTransfer', 'ReserveAttestation'];
-  for (let i = 0; i < Math.min(count, 50); i++) {
-    try {
-      const [pda] = getAuditLogPda(configPda, i);
-      const info = await connection.getAccountInfo(pda);
-      if (!info) continue;
-      const decoded = coder.decode('AuditLogEntry', info.data);
-      const actionIdx = decoded.action ? Object.keys(decoded.action)[0] : 'unknown';
-      results.push({
-        index: Number(decoded.index),
-        action: actionIdx.charAt(0).toUpperCase() + actionIdx.slice(1),
-        actor: decoded.actor.toBase58(),
-        target: decoded.target ? decoded.target.toBase58() : null,
-        amount: decoded.amount ? Number(decoded.amount) : null,
-        details: decoded.details || '',
-        timestamp: Number(decoded.timestamp),
-      });
-    } catch { /* skip */ }
+  const cap = Math.min(count, 50);
+  if (cap === 0) return [];
+  // Batch-fetch all audit log PDAs in one RPC call
+  const pdas = [];
+  for (let i = 0; i < cap; i++) {
+    const [pda] = getAuditLogPda(configPda, i);
+    pdas.push(pda);
   }
-  return results;
+  try {
+    const infos = await connection.getMultipleAccountsInfo(pdas);
+    const results = [];
+    for (let i = 0; i < infos.length; i++) {
+      if (!infos[i]) continue;
+      try {
+        const decoded = coder.decode('AuditLogEntry', infos[i].data);
+        const actionIdx = decoded.action ? Object.keys(decoded.action)[0] : 'unknown';
+        results.push({
+          index: Number(decoded.index),
+          action: actionIdx.charAt(0).toUpperCase() + actionIdx.slice(1),
+          actor: decoded.actor.toBase58(),
+          target: decoded.target ? decoded.target.toBase58() : null,
+          amount: decoded.amount ? Number(decoded.amount) : null,
+          details: decoded.details || '',
+          timestamp: Number(decoded.timestamp),
+        });
+      } catch { /* decode error, skip */ }
+    }
+    return results;
+  } catch { return []; }
 }
 
 async function refreshData() {
