@@ -8,7 +8,7 @@ on:
 
 jobs:
   publish:
-    name: Publish @stbr/sss-token
+    name: Publish solana-stablecoin-standard
     runs-on: ubuntu-latest
     permissions:
       contents: read
