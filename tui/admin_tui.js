@@ -2838,7 +2838,8 @@ function renderMintersTab() {
   screenContribWidgets.push(table);
 
   const minters = liveData.minters;
-  const dec = liveData.config ? liveData.config.decimals : 6;
+  const dec = cfg ? cfg.decimals : 6;
+  const symbol = (cfg && cfg.symbol) || state.config.symbol || 'tokens';
   const data = minters.length > 0
     ? minters.map(m => {
         const util = m.mintQuota > 0 ? ((m.totalMinted / m.mintQuota) * 100).toFixed(1) + '%' : '0%';
@@ -2870,29 +2871,23 @@ function renderMintersTab() {
     parent: mainContent, top: formTop - 3, left: 2, width: '95%', height: 11,
     border: { type: 'line', fg: colors.border }, label: ' Add / Update Minter '
   });
-  blessed.text({ parent: formBox, top: 1, left: 2, content: 'Address:' });
-  const minterAddrInput = blessed.textbox({
-    parent: formBox, name: 'minterAddress', top: 1, left: 12, width: '40%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  blessed.text({ parent: formBox, top: 3, left: 2, content: 'Quota:' });
-  const minterQuotaInput = blessed.textbox({
-    parent: formBox, name: 'minterQuota', top: 3, left: 12, width: '20%', height: 1,
-    style: { bg: colors.border, fg: colors.text, focus: { bg: '#333333' } }, inputOnFocus: true, mouse: true
-  });
-  wireFormInputs([minterAddrInput, minterQuotaInput]);
   const minterSubmit = blessed.button({
     parent: formBox, top: 5, left: 2, width: 22, height: 1,
     content: ' [ UPDATE MINTER ] ', style: { bg: colors.secondary, fg: 'black', focus: { bg: colors.accent } },
     mouse: true, keys: true
   });
-  minterSubmit.on('press', () => {
-    const address = minterAddrInput.getValue().trim();
-    const quotaStr = minterQuotaInput.getValue().trim();
+  const minterInputs = createFormInputs([
+    { parent: formBox, label: 'Address', top: 1 },
+    { parent: formBox, label: 'Quota', top: 3 },
+  ], minterSubmit);
+  bindSafePress(minterSubmit, 'Update Minter', () => {
+    const address = minterInputs.inputs[0].getValue().trim();
+    const quotaStr = minterInputs.inputs[1].getValue().trim();
     if (!address || !quotaStr) { showMessage('Error', 'Fill in all fields.', 2000); return; }
     if (!isValidPubkey(address)) { showMessage('Error', 'Invalid minter address.', 2000); return; }
     const quota = parseTokenAmount(quotaStr, dec);
     if (!quota) { showMessage('Error', 'Invalid quota format.', 2000); return; }
+    confirmAction('Update Minter', 'Address: ' + shortAddr(address) + '\nQuota: ' + formatUsd(quota.toNumber(), 0) + ' ' + symbol, 'normal', () => {
     executeTx('Updating Minter', async () => {
       const [configPda] = getConfigPda(MINT);
       const [rolesPda] = getRoleRegistryPda(configPda);
@@ -2911,6 +2906,7 @@ function renderMintersTab() {
         })
         .signers([wallet])
         .rpc();
+    });
     });
   });
 
