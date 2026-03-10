@@ -417,16 +417,15 @@ async function refreshData() {
   screen.render();
   try {
     const [configPda] = getConfigPda(MINT);
+    const mintPk = new PublicKey(MINT);
 
-    // Stagger fetches in two batches to avoid rate limits on public RPCs
-    const [config, roles] = await Promise.all([
+    // Batch 1: core data — all in parallel
+    const [config, roles, minters, transactions, holdersResult] = await Promise.all([
       fetchConfig(MINT),
       fetchRoles(configPda),
-    ]);
-
-    const [minters, transactions] = await Promise.all([
       fetchMinters(configPda),
-      fetchTransactions(new PublicKey(MINT), 20),
+      fetchTransactions(mintPk, 20),
+      connection.getTokenLargestAccounts(mintPk).catch(() => null),
     ]);
 
     liveData.config = config;
@@ -434,23 +433,38 @@ async function refreshData() {
     liveData.minters = minters;
     liveData.transactions = transactions;
 
-    // Holders fetch separately
-    try {
-      const mintPk = new PublicKey(MINT);
-      const result = await connection.getTokenLargestAccounts(mintPk);
-      const total = result.value.reduce((sum, a) => sum + (a.uiAmount || 0), 0);
-      liveData.holders = result.value.map((acct, i) => ({
+    if (holdersResult) {
+      const total = holdersResult.value.reduce((sum, a) => sum + (a.uiAmount || 0), 0);
+      liveData.holders = holdersResult.value.map((acct, i) => ({
         rank: i + 1,
         address: acct.address.toBase58(),
         balance: acct.uiAmount || 0,
         pct: total > 0 ? ((acct.uiAmount || 0) / total * 100).toFixed(1) : '0.0',
       }));
-    } catch { liveData.holders = []; }
+    } else { liveData.holders = []; }
+
+    // Batch 2: config-dependent data + extras — all in parallel
+    const batch2 = [];
+    if (config) {
+      batch2.push(fetchAttestations(configPda, config.attestationIndex));
+      batch2.push(fetchBlacklist(configPda));
+      batch2.push(fetchAuditLogs(configPda, config.auditLogIndex));
+    } else {
+      batch2.push(Promise.resolve([]), Promise.resolve([]), Promise.resolve([]));
+    }
+    if (walletMode) {
+      batch2.push(connection.getBalance(wallet.publicKey).catch(() => null));
+    } else {
+      batch2.push(Promise.resolve(null));
+    }
+    batch2.push(connection.getSlot().catch(() => null));
+
+    const [attestations, blacklist, auditLogs, solBalance, slotHeight] = await Promise.all(batch2);
 
     if (config) {
-      liveData.attestations = await fetchAttestations(configPda, config.attestationIndex);
-      liveData.blacklist = await fetchBlacklist(configPda);
-      liveData.auditLogs = await fetchAuditLogs(configPda, config.auditLogIndex);
+      liveData.attestations = attestations;
+      liveData.blacklist = blacklist;
+      liveData.auditLogs = auditLogs;
 
       state.config.name = config.name;
       state.config.symbol = config.symbol;
@@ -465,10 +479,8 @@ async function refreshData() {
       state.mintAddress = config.mint;
     }
 
-    if (walletMode) {
-      try { liveData.solBalance = await connection.getBalance(wallet.publicKey); } catch { liveData.solBalance = null; }
-    }
-    try { liveData.slotHeight = await connection.getSlot(); } catch { liveData.slotHeight = null; }
+    liveData.solBalance = solBalance;
+    liveData.slotHeight = slotHeight;
 
     liveData.lastRefresh = new Date();
     liveData.error = null;
@@ -3446,8 +3458,12 @@ function renderPlaceholderTab() {
 }
 
 // --- 13. GLOBAL KEYBINDS ---
-screen.key(['q', 'C-c'], () => {
+screen.key(['q'], () => {
   if (isModalOrInputFocused()) return;
+  if (refreshTimer) clearTimeout(refreshTimer);
+  process.exit(0);
+});
+screen.key(['C-c'], () => {
   if (refreshTimer) clearTimeout(refreshTimer);
   process.exit(0);
 });
