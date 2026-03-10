@@ -1,6 +1,6 @@
 # API Reference
 
-REST API reference for the SSS backend service. The backend provides token operations, compliance management, audit trail access, and webhook-based event delivery.
+REST API reference for the SSS backend reference implementation. This backend demonstrates how to integrate the on-chain programs into a server-side application, providing token operations, compliance management, audit trail access, and webhook-based event delivery. It is intended as a starting point for production deployments — operators should add authentication, rate limiting, and monitoring appropriate for their environment.
 
 Source code: `backend/src/`
 
@@ -415,6 +415,7 @@ GET /api/config/So11111111111111111111111111111111111111112
   "paused": false,
   "totalMinted": "5000000000000",
   "totalBurned": "1000000000000",
+  "totalSeized": "0",
   "bump": 255,
   "mintAuthorityBump": 254
 }

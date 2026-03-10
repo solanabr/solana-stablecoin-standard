@@ -49,7 +49,7 @@ cd sdk && yarn install && cd ..
 # Build on-chain programs
 anchor build
 
-# Run the full test suite (52 tests)
+# Run the full test suite (58 tests)
 anchor test
 
 # Build the SDK and CLI
@@ -255,6 +255,9 @@ solana-stablecoin-standard/
 │   ├── sss-2.ts           # SSS-2 integration tests
 │   ├── access-control.ts  # Role-based access control tests
 │   └── helpers.ts         # Shared test utilities
+├── backend/               # Reference implementation (REST API, indexer, webhooks)
+│   └── src/
+├── docs/                  # Architecture, SDK, operations, compliance docs
 ├── Anchor.toml
 ├── Cargo.toml
 └── package.json
@@ -262,7 +265,7 @@ solana-stablecoin-standard/
 
 ## Testing
 
-The test suite contains 52 integration tests covering both presets, all instructions, access control, and edge cases. Tests run against a local validator using Anchor's test harness.
+The test suite contains 58 integration tests covering both presets, all instructions, access control, transfer hook enforcement, and edge cases. Tests run against a local validator using Anchor's test harness.
 
 ```bash
 # Run all tests
@@ -312,4 +315,4 @@ Detailed documentation is available in the [docs/](docs/) directory:
 - [docs/SSS-1.md](docs/SSS-1.md) — SSS-1 Minimal preset specification
 - [docs/SSS-2.md](docs/SSS-2.md) — SSS-2 Compliant preset specification
 - [docs/COMPLIANCE.md](docs/COMPLIANCE.md) — Regulatory considerations, audit trail format, compliance procedures
-- [docs/API.md](docs/API.md) — Backend REST API reference, webhook payloads, Docker deployment
+- [docs/API.md](docs/API.md) — Backend reference implementation: REST API, webhook payloads, Docker deployment
