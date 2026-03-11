@@ -34,7 +34,7 @@ pub mod sss_core {
         process_burn(ctx, amount)
     }
 
-    pub fn seize_tokens(ctx: Context<SeizeTokens>, amount: u64) -> Result<()> {
+    pub fn seize_tokens<'info>(ctx: Context<'_, '_, '_, 'info, SeizeTokens<'info>>, amount: u64) -> Result<()> {
         process_seize(ctx, amount)
     }
 }

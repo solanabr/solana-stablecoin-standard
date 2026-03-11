@@ -1,40 +1,45 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::TokenAccount;
-use crate::state::BlacklistRecord;
 use crate::error::TransferHookError;
 
 #[derive(Accounts)]
+#[instruction(amount: u64)]
 pub struct Execute<'info> {
+    // Делаем все 4 аккаунта Unchecked, чтобы они никогда не вызывали InvalidAccountData.
+    // Валидацией этих аккаунтов занимается сам Token-2022, нам это дублировать не нужно.
+    
+    /// CHECK: Аккаунт отправителя
     #[account()]
-    pub source_account: InterfaceAccount<'info, TokenAccount>,
+    pub source_account: UncheckedAccount<'info>,
+
+    /// CHECK: Минт токена
     #[account()]
-    pub destination_account: InterfaceAccount<'info, TokenAccount>,
+    pub mint: UncheckedAccount<'info>,
+
+    /// CHECK: Аккаунт получателя
+    #[account()]
+    pub destination_account: UncheckedAccount<'info>,
+
+    /// CHECK: Авторитет отправителя
+    #[account()]
+    pub owner_delegate: UncheckedAccount<'info>,
+
+    /// CHECK: Программа дополнительной мета-информации
+    pub extra_account_meta_list: UncheckedAccount<'info>,
 }
 
 pub fn process_execute(ctx: Context<Execute>, _amount: u64) -> Result<()> {
-    let source_owner = ctx.accounts.source_account.owner;
-    let dest_owner = ctx.accounts.destination_account.owner;
-
-    // Проверяем отправителя
-    let (source_pda, _) = Pubkey::find_program_address(
-        &[BlacklistRecord::SEED, source_owner.as_ref()],
-        ctx.program_id,
-    );
+    // В remaining_accounts у нас лежат PDA блэклистов, которые мы передали из SDK
     
-    // Если аккаунт существует, значит он в блэклисте
-    if ctx.remaining_accounts.iter().any(|acc| acc.key() == source_pda) {
-        return err!(TransferHookError::WalletBlacklisted);
+    for account in ctx.remaining_accounts {
+        // Если аккаунт не пустой (data_is_empty == false) и принадлежит нашему Хуку,
+        // значит это инициализированная запись BlacklistRecord!
+        if !account.data_is_empty() && account.owner == ctx.program_id {
+            // Если мы нашли инициализированный блэклист — блокируем перевод!
+            msg!("🚨 TRANSFER BLOCKED: Wallet is in Blacklist!");
+            return err!(TransferHookError::WalletBlacklisted);
+        }
     }
-
-    // Проверяем получателя
-    let (dest_pda, _) = Pubkey::find_program_address(
-        &[BlacklistRecord::SEED, dest_owner.as_ref()],
-        ctx.program_id,
-    );
     
-    if ctx.remaining_accounts.iter().any(|acc| acc.key() == dest_pda) {
-        return err!(TransferHookError::WalletBlacklisted);
-    }
-
+    // Если дошли сюда, значит ни один из переданных кошельков не в блэклисте
     Ok(())
 }
