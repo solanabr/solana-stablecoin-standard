@@ -17,6 +17,7 @@ import {
   createInitializeDefaultAccountStateInstruction,
   AccountState,
   createInitializeMintCloseAuthorityInstruction,
+  tokenMetadataInitializeWithRentTransfer,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
@@ -102,6 +103,12 @@ export interface CreateMintParams {
   transferHookProgramId?: PublicKey;
   defaultAccountFrozen: boolean;
   metadataPointerAuthority: PublicKey;
+  /** On-chain token name (required) */
+  name: string;
+  /** On-chain token symbol (required) */
+  symbol: string;
+  /** Optional URI pointing to off-chain metadata JSON */
+  uri?: string;
 }
 
 /**
@@ -124,6 +131,9 @@ export async function createMintWithExtensions(
     transferHookProgramId,
     defaultAccountFrozen,
     metadataPointerAuthority,
+    name,
+    symbol,
+    uri,
   } = params;
 
   const extensions: ExtensionType[] = [ExtensionType.MetadataPointer];
@@ -139,6 +149,10 @@ export async function createMintWithExtensions(
   }
   extensions.push(ExtensionType.MintCloseAuthority);
 
+  // Allocate only the fixed-extension size. Token-2022 will reject InitializeMint
+  // if the account has extra trailing bytes it doesn't recognise as extension data.
+  // The variable-length TokenMetadata extension is added in a second transaction
+  // via tokenMetadataInitializeWithRentTransfer, which calls reallocate internally.
   const mintLen = getMintLen(extensions);
   const lamports = await connection.getMinimumBalanceForRentExemption(mintLen);
 
@@ -195,16 +209,38 @@ export async function createMintWithExtensions(
       mintAuthority,
       TOKEN_2022_PROGRAM_ID
     ),
+    // Use payer as the temporary mint authority so it can sign the metadata init
+    // in the second transaction. The SSS-token program's `initialize` will
+    // transfer mint authority to the PDA via set_authority CPI.
     createInitializeMintInstruction(
       mintKeypair.publicKey,
       decimals,
-      mintAuthority,
+      payer.publicKey,
       freezeAuthority,
       TOKEN_2022_PROGRAM_ID
     )
   );
 
-  return sendAndConfirmTransaction(connection, tx, [payer, mintKeypair]);
+  await sendAndConfirmTransaction(connection, tx, [payer, mintKeypair]);
+
+  // Second transaction: reallocate the account to fit the metadata, transfer the
+  // extra rent lamports, and write the TokenMetadata extension in one call.
+  // - mintAuthority (payer) must sign because the mint's current authority is payer.
+  // - updateAuthority is set to the PDA so future metadata updates must go through
+  //   the SSS-token program, which can sign for the PDA via CPI.
+  return tokenMetadataInitializeWithRentTransfer(
+    connection,
+    payer,            // payer of extra rent
+    mintKeypair.publicKey,
+    mintAuthority,    // updateAuthority = PDA
+    payer,            // mintAuthority signer (currently payer.publicKey)
+    name,
+    symbol,
+    uri ?? "",
+    undefined,        // multiSigners
+    undefined,        // confirmOptions
+    TOKEN_2022_PROGRAM_ID
+  );
 }
 
 // ─── Token account helpers ────────────────────────────────────────────────────

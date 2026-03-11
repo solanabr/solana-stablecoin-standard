@@ -206,7 +206,7 @@ export class SolanaStablecoin {
       preset,
       name,
       symbol,
-      uri = "",
+      uri,
       decimals = 6,
       authority,
       extensions = {},
@@ -259,6 +259,9 @@ export class SolanaStablecoin {
       transferHookProgramId: config.transferHookProgramId,
       defaultAccountFrozen: config.defaultAccountFrozen,
       metadataPointerAuthority: authority.publicKey,
+      name,
+      symbol,
+      uri,
     });
 
     // Step 2: Load the Anchor program

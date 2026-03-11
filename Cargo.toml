@@ -14,6 +14,7 @@ spl-type-length-value       = "0.8"
 spl-pod                     = "0.5"
 spl-token-2022 = "8"
 solana-program = "2.3.0"
+blake3 = "=1.5.5"
 
 [profile.release]
 overflow-checks = true
