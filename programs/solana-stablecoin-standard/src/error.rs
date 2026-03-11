@@ -28,4 +28,14 @@ pub enum SssError {
     ZeroAmount,
     #[msg("Decimals must be between 0 and 9")]
     InvalidDecimals,
+    #[msg("Oracle price data is stale")]
+    OracleStale,
+    #[msg("Oracle price feed account is invalid")]
+    InvalidOracleFeed,
+    #[msg("Oracle is not configured for this stablecoin")]
+    OracleNotConfigured,
+    #[msg("SSS-3 feature not enabled for this token")]
+    Sss3NotEnabled,
+    #[msg("Invalid peg currency code")]
+    InvalidPegCurrency,
 }

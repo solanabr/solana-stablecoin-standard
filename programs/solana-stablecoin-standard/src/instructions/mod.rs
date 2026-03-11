@@ -3,6 +3,7 @@ pub mod burn_tokens;
 pub mod freeze_thaw;
 pub mod initialize;
 pub mod mint_tokens;
+pub mod oracle;
 pub mod pause;
 pub mod seize;
 pub mod update_roles;
@@ -17,6 +18,8 @@ pub use freeze_thaw::*;
 pub use initialize::*;
 #[allow(ambiguous_glob_reexports)]
 pub use mint_tokens::*;
+#[allow(ambiguous_glob_reexports)]
+pub use oracle::*;
 #[allow(ambiguous_glob_reexports)]
 pub use pause::*;
 #[allow(ambiguous_glob_reexports)]

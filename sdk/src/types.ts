@@ -7,8 +7,10 @@ export enum StablecoinPreset {
   SSS1 = 0,
   /** SSS-2: Compliant — SSS-1 + permanent delegate + transfer hook + blacklist */
   SSS2 = 1,
+  /** SSS-3: Private — SSS-2 + confidential transfers */
+  SSS3 = 2,
   /** Custom configuration */
-  Custom = 2,
+  Custom = 3,
 }
 
 /** On-chain StablecoinConfig account */
@@ -20,6 +22,8 @@ export interface StablecoinConfig {
   decimals: number;
   permanentDelegateEnabled: boolean;
   transferHookEnabled: boolean;
+  confidentialTransfersEnabled: boolean;
+  oracleEnabled: boolean;
   bump: number;
 }
 
@@ -91,4 +95,29 @@ export interface InitializeResult {
   stablecoinConfig: PublicKey;
   rolesConfig: PublicKey;
   signature: string;
+}
+
+/** On-chain OracleConfig account */
+export interface OracleConfig {
+  mint: PublicKey;
+  priceFeed: PublicKey;
+  pegCurrency: number[];
+  maxStalenessSecs: BN;
+  priceExponent: number;
+  enabled: boolean;
+  configuredBy: PublicKey;
+  configuredAt: BN;
+  bump: number;
+}
+
+/** Parameters for configuring an oracle price feed */
+export interface ConfigureOracleParams {
+  /** The oracle price feed account (e.g. Pyth price account) */
+  priceFeed: PublicKey;
+  /** Peg currency code (e.g. "EUR", "XAU", "BRL") — max 8 chars */
+  pegCurrency: string;
+  /** Maximum staleness in seconds before price data is rejected */
+  maxStalenessSecs: number;
+  /** Price exponent (e.g. -8 for Pyth) */
+  priceExponent: number;
 }

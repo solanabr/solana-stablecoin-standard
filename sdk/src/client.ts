@@ -34,7 +34,7 @@
 import { AnchorProvider, BN } from '@coral-xyz/anchor';
 import { PublicKey } from '@solana/web3.js';
 import { SssClient } from './sss-client';
-import { StablecoinPreset, InitializeParams, InitializeResult, UpdateRolesParams } from './types';
+import { StablecoinPreset, InitializeParams, InitializeResult, UpdateRolesParams, ConfigureOracleParams, OracleConfig } from './types';
 
 export { StablecoinPreset };
 
@@ -134,6 +134,26 @@ export class SolanaStablecoin {
   /** Transfer master authority */
   async transferAuthority(newAuthority: PublicKey): Promise<string> {
     return this.client.transferAuthority(this.mintAddress, newAuthority);
+  }
+
+  // ─── Oracle Integration ─────────────────────────────────────────────────
+
+  get oracle() {
+    const client = this.client;
+    const mintAddress = this.mintAddress;
+    return {
+      /** Configure an oracle price feed (e.g. Pyth EUR/USD) */
+      configure: (params: ConfigureOracleParams) =>
+        client.configureOracle(mintAddress, params),
+
+      /** Disable oracle checking */
+      disable: () =>
+        client.disableOracle(mintAddress),
+
+      /** Get current oracle configuration */
+      getConfig: () =>
+        client.getOracleConfig(mintAddress),
+    };
   }
 
   // ─── SSS-2 Compliance (fluent namespace) ─────────────────────────────────

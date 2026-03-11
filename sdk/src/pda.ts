@@ -4,6 +4,7 @@ import {
   STABLECOIN_CONFIG_SEED,
   ROLES_CONFIG_SEED,
   BLACKLIST_SEED,
+  ORACLE_CONFIG_SEED,
 } from './constants';
 
 /** Derive the StablecoinConfig PDA for a given mint */
@@ -30,6 +31,14 @@ export function findBlacklistEntryPda(
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [BLACKLIST_SEED, mint.toBuffer(), target.toBuffer()],
+    programId,
+  );
+}
+
+/** Derive the OracleConfig PDA for a given mint */
+export function findOracleConfigPda(mint: PublicKey, programId = SSS_PROGRAM_ID): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [ORACLE_CONFIG_SEED, mint.toBuffer()],
     programId,
   );
 }

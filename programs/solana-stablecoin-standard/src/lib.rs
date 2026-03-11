@@ -9,7 +9,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("GMqW1Zi5DExSZT6CJEYHjhjmP6hUmu2tv9vrYaCgTPrE");
+declare_id!("HcMZDUcHHayD4Nhrk2YEfFhBDbBjENzcWDo6TTfj2wFR");
 
 #[program]
 pub mod solana_stablecoin_standard {
@@ -79,6 +79,21 @@ pub mod solana_stablecoin_standard {
     /// Seize tokens from a holder using permanent delegate (SSS-2 only, requires seizer role)
     pub fn seize(ctx: Context<SeizeTokens>, amount: u64) -> Result<()> {
         seize::handler(ctx, amount)
+    }
+
+    // ─── Oracle Integration (Non-USD Pegs) ────────────────────────────────
+
+    /// Configure an oracle price feed for non-USD pegged stablecoins
+    pub fn configure_oracle(
+        ctx: Context<ConfigureOracle>,
+        params: ConfigureOracleParams,
+    ) -> Result<()> {
+        oracle::configure_handler(ctx, params)
+    }
+
+    /// Disable oracle price feed checking
+    pub fn disable_oracle(ctx: Context<DisableOracle>) -> Result<()> {
+        oracle::disable_handler(ctx)
     }
 
     // ─── Administration ────────────────────────────────────────────────────

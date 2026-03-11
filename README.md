@@ -1,6 +1,6 @@
 # Solana Stablecoin Standard (SSS)
 
-A production-ready, open stablecoin standard built on [Token-2022](https://spl.solana.com/token-2022) and [Anchor](https://www.anchor-lang.com/). SSS provides two compliance presets for issuing regulated stablecoins on Solana — from minimal CBDCs to fully-compliant permissioned assets with on-chain blacklist enforcement.
+A production-ready, open stablecoin standard built on [Token-2022](https://spl.solana.com/token-2022) and [Anchor](https://www.anchor-lang.com/). SSS provides three compliance presets for issuing regulated stablecoins on Solana — from minimal CBDCs to privacy-preserving regulated assets with oracle price feeds and on-chain blacklist enforcement.
 
 ## Overview
 
@@ -8,21 +8,28 @@ A production-ready, open stablecoin standard built on [Token-2022](https://spl.s
 |--------|-----------|----------|
 | **SSS-1** | MintCloseAuthority, MetadataPointer, FreezeAuthority | Minimal CBDC, DeFi stablecoin |
 | **SSS-2** | SSS-1 + PermanentDelegate + TransferHook | Regulated stablecoin with compliance |
+| **SSS-3** | SSS-2 + ConfidentialTransferMint | Privacy-preserving regulated stablecoin |
 
-SSS-2 enforces blacklist restrictions on **every token transfer** via a dedicated Transfer Hook program — no cooperation from wallets or apps required.
+**Bonus Features:**
+- **Oracle Integration** — Non-USD peg support via Pyth/Switchboard price feeds (EUR, GBP, XAU, BRL, etc.)
+- **Interactive Terminal UI** — Real-time dashboard for monitoring and managing SSS tokens
+- **SSS-3 Confidential Transfers** — Encrypted balances and transfer amounts with regulatory auditor key
+
+SSS-2/SSS-3 enforce blacklist restrictions on **every token transfer** via a dedicated Transfer Hook program — no cooperation from wallets or apps required.
 
 ## Repository Structure
 
 ```
 solana-stablecoin-standard/
 ├── programs/
-│   ├── solana-stablecoin-standard/   # Main Anchor program (11 instructions)
-│   └── sss-transfer-hook/            # Token-2022 transfer hook (SSS-2 blacklist)
+│   ├── solana-stablecoin-standard/   # Main Anchor program (13 instructions)
+│   └── sss-transfer-hook/            # Token-2022 transfer hook (SSS-2/3 blacklist)
 ├── sdk/                              # @stbr/sss-sdk TypeScript SDK
-├── cli/                              # sss-token CLI tool
+├── cli/                              # sss-token CLI tool (20+ commands)
+├── tui/                              # Interactive terminal dashboard
 ├── backend/                          # REST API service
 ├── tests/                            # Integration tests (Anchor + TypeScript)
-└── docs/                             # Full documentation
+└── docs/                             # Full documentation (10 docs)
 ```
 
 ## Program IDs (Devnet)
@@ -77,6 +84,27 @@ sss-token init \
   --max-supply 1000000000000
 ```
 
+### Configure Oracle (Non-USD Peg)
+
+```bash
+# Set up EUR peg with Pyth oracle
+sss-token oracle set \
+  --mint <your-mint> \
+  --feed <pyth-eur-usd-feed> \
+  --currency EUR \
+  --staleness 60
+
+# Check oracle status
+sss-token oracle status --mint <your-mint>
+```
+
+### Launch Dashboard
+
+```bash
+# Interactive terminal UI
+sss-token dashboard --mint <your-mint>
+```
+
 ### Run Tests
 
 ```bash
@@ -102,17 +130,23 @@ npm start
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    sss-token CLI                     │
-│                  @stbr/sss-sdk                       │
-│                  REST Backend                        │
+│   sss-token CLI  ·  Terminal Dashboard (TUI)        │
+│   @stbr/sss-sdk  ·  REST Backend                    │
 ├─────────────────────────────────────────────────────┤
 │          solana-stablecoin-standard program          │
-│   (initialize · mint · burn · freeze · blacklist)   │
+│  (init · mint · burn · freeze · blacklist · oracle) │
 ├──────────────────────┬──────────────────────────────┤
 │  sss-transfer-hook   │      Token-2022 Program       │
-│  (SSS-2 blacklist    │  (MintAuthority · Freeze ·   │
-│   on every transfer) │   PermanentDelegate · Hook)   │
+│  (SSS-2/3 blacklist  │  (MintAuthority · Freeze ·   │
+│   on every transfer) │   PermanentDelegate · Hook ·  │
+│                      │   ConfidentialTransfer)        │
 └──────────────────────┴──────────────────────────────┘
+         │
+  ┌──────▼──────────────────┐
+  │  Oracle Price Feed       │
+  │  (Pyth / Switchboard)    │
+  │  Non-USD peg validation  │
+  └─────────────────────────┘
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
@@ -121,19 +155,20 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
 
 | Operation | master_authority | minter | burner | pauser | blacklister | seizer |
 |-----------|:---:|:---:|:---:|:---:|:---:|:---:|
-| initialize | ✅ owner | — | — | — | — | — |
-| mint | ✅ | ✅ | — | — | — | — |
-| burn | ✅ | — | ✅ | — | — | — |
-| freeze/thaw | ✅ | — | — | ✅ | — | — |
-| pause/unpause | ✅ | — | — | ✅ | — | — |
-| blacklist add/remove | ✅ | — | — | — | ✅ | — |
-| seize | ✅ | — | — | — | — | ✅ |
-| update_roles | ✅ | — | — | — | — | — |
+| initialize | owner | — | — | — | — | — |
+| mint | ✓ | ✓ | — | — | — | — |
+| burn | ✓ | — | ✓ | — | — | — |
+| freeze/thaw | ✓ | — | — | ✓ | — | — |
+| pause/unpause | ✓ | — | — | ✓ | — | — |
+| blacklist add/remove | ✓ | — | — | — | ✓ | — |
+| seize | ✓ | — | — | — | — | ✓ |
+| configure_oracle | ✓ | — | — | — | — | — |
+| update_roles | ✓ | — | — | — | — | — |
 
 ## SDK Usage
 
 ```typescript
-import { SolanaStablecoin } from '@stbr/sss-sdk';
+import { SolanaStablecoin, StablecoinPreset } from '@stbr/sss-sdk';
 
 // Create a new SSS-2 stablecoin
 const stablecoin = await SolanaStablecoin.create(provider, {
@@ -141,19 +176,22 @@ const stablecoin = await SolanaStablecoin.create(provider, {
   symbol: 'USDC',
   uri: 'https://example.com/usdc.json',
   decimals: 6,
-  maxSupply: 1_000_000_000_000n,
   preset: StablecoinPreset.SSS2,
-  blacklister: complianceOfficerKeypair.publicKey,
-  seizer: treasuryKeypair.publicKey,
 });
 
 // Mint tokens
-await stablecoin.mint(recipientPublicKey, 1_000_000n); // 1 USDC
+await stablecoin.mint(recipientAta, new BN(1_000_000)); // 1 USDC
 
-// Add address to blacklist (SSS-2 only)
-await stablecoin.compliance.blacklistAdd(suspiciousAddress, BlacklistReason.Sanctions);
+// Configure EUR oracle
+await stablecoin.oracle.configure({
+  priceFeed: pythEurUsdFeed,
+  pegCurrency: 'EUR',
+  maxStalenessSecs: 60,
+  priceExponent: -8,
+});
 
-// After blacklisting, ALL transfers involving that address are blocked on-chain
+// Add address to blacklist (SSS-2/3 only)
+await stablecoin.compliance.blacklistAdd(suspiciousAddress, 1);
 ```
 
 ## Documentation
@@ -163,6 +201,8 @@ await stablecoin.compliance.blacklistAdd(suspiciousAddress, BlacklistReason.Sanc
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, PDA layout, component diagram |
 | [SSS-1.md](docs/SSS-1.md) | SSS-1 preset guide with examples |
 | [SSS-2.md](docs/SSS-2.md) | SSS-2 compliance features |
+| [SSS-3.md](docs/SSS-3.md) | SSS-3 confidential transfers |
+| [ORACLE.md](docs/ORACLE.md) | Oracle integration for non-USD pegs |
 | [SDK.md](docs/SDK.md) | TypeScript SDK reference |
 | [CLI.md](docs/CLI.md) | sss-token CLI reference |
 | [API.md](docs/API.md) | REST backend API reference |

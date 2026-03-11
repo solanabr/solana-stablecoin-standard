@@ -15,3 +15,9 @@ pub const MAX_SYMBOL_LEN: usize = 10;
 
 /// Maximum URI length
 pub const MAX_URI_LEN: usize = 200;
+
+/// Oracle config PDA seed
+pub const ORACLE_CONFIG_SEED: &[u8] = b"oracle-config";
+
+/// Maximum peg currency code length (e.g. "EUR", "XAU", "BRL")
+pub const MAX_PEG_CURRENCY_LEN: usize = 8;

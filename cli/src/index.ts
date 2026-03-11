@@ -80,8 +80,8 @@ program
 
 program
   .command('init')
-  .description('Initialize a new SSS-1 or SSS-2 stablecoin')
-  .requiredOption('--preset <preset>', 'Preset: sss-1 or sss-2')
+  .description('Initialize a new SSS-1, SSS-2, or SSS-3 stablecoin')
+  .requiredOption('--preset <preset>', 'Preset: sss-1, sss-2, or sss-3')
   .requiredOption('--name <name>', 'Token name')
   .requiredOption('--symbol <symbol>', 'Token symbol (max 10 chars)')
   .requiredOption('--uri <uri>', 'Metadata URI')
@@ -94,15 +94,17 @@ program
     const provider = loadProvider(parentOpts);
 
     const presetStr = opts.preset.toLowerCase();
-    if (presetStr !== 'sss-1' && presetStr !== 'sss-2' && presetStr !== 'custom') {
-      console.error('--preset must be sss-1, sss-2, or custom');
+    const presetMap: Record<string, StablecoinPreset> = {
+      'sss-1': StablecoinPreset.SSS1,
+      'sss-2': StablecoinPreset.SSS2,
+      'sss-3': StablecoinPreset.SSS3,
+      'custom': StablecoinPreset.Custom,
+    };
+    if (!(presetStr in presetMap)) {
+      console.error('--preset must be sss-1, sss-2, sss-3, or custom');
       process.exit(1);
     }
-    const preset = presetStr === 'sss-1'
-      ? StablecoinPreset.SSS1
-      : presetStr === 'sss-2'
-        ? StablecoinPreset.SSS2
-        : StablecoinPreset.Custom;
+    const preset = presetMap[presetStr];
 
     console.log(`Initializing ${opts.preset.toUpperCase()} stablecoin...`);
     console.log(`  Name: ${opts.name}`);
@@ -266,7 +268,7 @@ program
 
       console.log('\n─── Stablecoin Status ───────────────────────────────');
       console.log('Mint:             ', opts.mint);
-      console.log('Preset:           ', ['SSS-1', 'SSS-2', 'Custom'][config.preset]);
+      console.log('Preset:           ', ['SSS-1', 'SSS-2', 'SSS-3', 'Custom'][config.preset] ?? 'Unknown');
       console.log('Paused:           ', config.paused);
       console.log('Decimals:         ', config.decimals);
       console.log('Max Supply:       ', config.maxSupply.toString() || 'Unlimited');
@@ -426,6 +428,105 @@ mintersCmd
     } catch (err) {
       console.error('Failed:', err instanceof Error ? err.message : err);
       process.exit(1);
+    }
+  });
+
+// ─── oracle ───────────────────────────────────────────────────────────────
+
+const oracleCmd = program.command('oracle').description('Manage oracle price feed for non-USD pegs');
+
+oracleCmd
+  .command('set')
+  .description('Configure an oracle price feed (e.g. Pyth EUR/USD)')
+  .requiredOption('--mint <address>', 'Mint address')
+  .requiredOption('--feed <address>', 'Oracle price feed account (Pyth/Switchboard)')
+  .requiredOption('--currency <code>', 'Peg currency code (e.g. EUR, XAU, BRL)')
+  .option('--staleness <seconds>', 'Max staleness in seconds (default: 60)', '60')
+  .option('--exponent <n>', 'Price exponent (default: -8)', '-8')
+  .action(async (opts) => {
+    const provider = loadProvider(program.opts());
+    const token = SolanaStablecoin.load(provider, parseMint(opts.mint));
+    try {
+      const sig = await token.oracle.configure({
+        priceFeed: parseMint(opts.feed),
+        pegCurrency: opts.currency.toUpperCase(),
+        maxStalenessSecs: parseIntSafe(opts.staleness, 'staleness'),
+        priceExponent: parseIntSafe(opts.exponent, 'exponent'),
+      });
+      console.log(`Oracle configured for ${opts.currency.toUpperCase()}!`);
+      console.log('  Feed:', opts.feed);
+      console.log('  Max staleness:', opts.staleness, 'seconds');
+      console.log('  Signature:', sig);
+    } catch (err) {
+      console.error('Oracle configure failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+oracleCmd
+  .command('status')
+  .description('Show current oracle configuration')
+  .requiredOption('--mint <address>', 'Mint address')
+  .action(async (opts) => {
+    const provider = loadProvider(program.opts());
+    const token = SolanaStablecoin.load(provider, parseMint(opts.mint));
+    try {
+      const oracle = await token.oracle.getConfig();
+      if (!oracle) {
+        console.log('No oracle configured for this stablecoin.');
+        return;
+      }
+      const currency = String.fromCharCode(...oracle.pegCurrency.filter((b: number) => b !== 0));
+      console.log('\n─── Oracle Configuration ────────────────────────────');
+      console.log('Enabled:      ', oracle.enabled);
+      console.log('Currency:     ', currency);
+      console.log('Price Feed:   ', oracle.priceFeed.toBase58());
+      console.log('Exponent:     ', oracle.priceExponent);
+      console.log('Max Staleness:', oracle.maxStalenessSecs.toString(), 'seconds');
+      console.log('Configured by:', oracle.configuredBy.toBase58());
+      console.log('Configured at:', new Date(oracle.configuredAt.toNumber() * 1000).toISOString());
+      console.log('────────────────────────────────────────────────────\n');
+    } catch (err) {
+      console.error('Oracle status failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+oracleCmd
+  .command('disable')
+  .description('Disable oracle price feed checking')
+  .requiredOption('--mint <address>', 'Mint address')
+  .action(async (opts) => {
+    const provider = loadProvider(program.opts());
+    const token = SolanaStablecoin.load(provider, parseMint(opts.mint));
+    try {
+      const sig = await token.oracle.disable();
+      console.log('Oracle disabled! Signature:', sig);
+    } catch (err) {
+      console.error('Oracle disable failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+
+// ─── tui ──────────────────────────────────────────────────────────────────
+
+program
+  .command('dashboard')
+  .description('Launch interactive terminal UI dashboard')
+  .requiredOption('--mint <address>', 'Mint address')
+  .action(async (opts) => {
+    const parentOpts = program.opts();
+    const { execSync } = require('child_process');
+    const tuiArgs = ['--mint', opts.mint];
+    if (parentOpts.rpc) tuiArgs.push('--rpc', parentOpts.rpc);
+    if (parentOpts.keypair) tuiArgs.push('--keypair', parentOpts.keypair);
+    console.log('Launching SSS Token Dashboard...');
+    try {
+      execSync(`npx tsx ${path.join(__dirname, '..', '..', 'tui', 'src', 'index.ts')} ${tuiArgs.join(' ')}`, {
+        stdio: 'inherit',
+      });
+    } catch {
+      console.error('Dashboard exited.');
     }
   });
 

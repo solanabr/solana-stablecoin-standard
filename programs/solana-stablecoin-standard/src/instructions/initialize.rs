@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use anchor_spl::token_2022;
 use anchor_spl::token_interface::{Mint, TokenInterface};
 
 use crate::constants::*;
@@ -80,10 +81,12 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     let preset = match params.preset {
         0 => Preset::Sss1,
         1 => Preset::Sss2,
+        2 => Preset::Sss3,
         _ => Preset::Custom,
     };
 
-    let sss2_enabled = preset == Preset::Sss2;
+    let sss2_enabled = preset == Preset::Sss2 || preset == Preset::Sss3;
+    let sss3_enabled = preset == Preset::Sss3;
 
     // Initialize stablecoin config
     let config = &mut ctx.accounts.stablecoin_config;
@@ -94,6 +97,8 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     config.decimals = params.decimals;
     config.permanent_delegate_enabled = sss2_enabled;
     config.transfer_hook_enabled = sss2_enabled;
+    config.confidential_transfers_enabled = sss3_enabled;
+    config.oracle_enabled = false;
     config.bump = ctx.bumps.stablecoin_config;
 
     // Initialize roles config
@@ -117,6 +122,33 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         Pubkey::default()
     };
     roles.bump = ctx.bumps.roles_config;
+
+    // Transfer mint authority to stablecoin_config PDA so the program controls minting
+    let config_pda = ctx.accounts.stablecoin_config.key();
+    token_2022::set_authority(
+        CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            token_2022::SetAuthority {
+                current_authority: ctx.accounts.authority.to_account_info(),
+                account_or_mint: ctx.accounts.mint.to_account_info(),
+            },
+        ),
+        anchor_spl::token_2022::spl_token_2022::instruction::AuthorityType::MintTokens,
+        Some(config_pda),
+    )?;
+
+    // Transfer freeze authority to stablecoin_config PDA
+    token_2022::set_authority(
+        CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            token_2022::SetAuthority {
+                current_authority: ctx.accounts.authority.to_account_info(),
+                account_or_mint: ctx.accounts.mint.to_account_info(),
+            },
+        ),
+        anchor_spl::token_2022::spl_token_2022::instruction::AuthorityType::FreezeAccount,
+        Some(config_pda),
+    )?;
 
     msg!(
         "SSS initialized: preset={}, mint={}, authority={}",

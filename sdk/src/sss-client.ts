@@ -27,14 +27,17 @@ import {
   findStablecoinConfigPda,
   findRolesConfigPda,
   findBlacklistEntryPda,
+  findOracleConfigPda,
 } from './pda';
 import {
   StablecoinPreset,
   InitializeParams,
   UpdateRolesParams,
+  ConfigureOracleParams,
   StablecoinConfig,
   RolesConfig,
   BlacklistEntry,
+  OracleConfig,
   InitializeResult,
 } from './types';
 
@@ -88,9 +91,12 @@ export class SssClient {
       ExtensionType.MintCloseAuthority,
       ExtensionType.MetadataPointer,
     ];
-    if (params.preset === StablecoinPreset.SSS2) {
+    if (params.preset === StablecoinPreset.SSS2 || params.preset === StablecoinPreset.SSS3) {
       extensions.push(ExtensionType.PermanentDelegate);
       extensions.push(ExtensionType.TransferHook);
+    }
+    if (params.preset === StablecoinPreset.SSS3) {
+      extensions.push(ExtensionType.ConfidentialTransferMint);
     }
 
     const mintLen = getMintLen(extensions);
@@ -116,7 +122,7 @@ export class SssClient {
       createInitializeMintCloseAuthorityInstruction(mint, authority, SPL_TOKEN_2022_PROGRAM_ID),
     );
 
-    if (params.preset === StablecoinPreset.SSS2) {
+    if (params.preset === StablecoinPreset.SSS2 || params.preset === StablecoinPreset.SSS3) {
       // Permanent delegate = seizer (or authority by default)
       const seizer = params.seizer ?? authority;
       createMintTx.add(
@@ -430,6 +436,70 @@ export class SssClient {
         rolesConfig,
       })
       .rpc();
+  }
+
+  // ─── Oracle Integration ─────────────────────────────────────────────────
+
+  /**
+   * Configure an oracle price feed for non-USD pegged stablecoins.
+   * Supports Pyth, Switchboard, or any compatible price feed.
+   * Caller must be master_authority.
+   */
+  async configureOracle(mint: PublicKey, params: ConfigureOracleParams): Promise<string> {
+    const authority = this.provider.wallet.publicKey;
+    const [stablecoinConfig] = findStablecoinConfigPda(mint);
+    const [rolesConfig] = findRolesConfigPda(mint);
+    const [oracleConfig] = findOracleConfigPda(mint);
+
+    return this.program.methods
+      .configureOracle({
+        priceFeed: params.priceFeed,
+        pegCurrency: params.pegCurrency,
+        maxStalenessSecs: new BN(params.maxStalenessSecs),
+        priceExponent: params.priceExponent,
+      })
+      .accounts({
+        authority,
+        mint,
+        stablecoinConfig,
+        rolesConfig,
+        oracleConfig,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+  }
+
+  /**
+   * Disable oracle price feed checking.
+   * Caller must be master_authority.
+   */
+  async disableOracle(mint: PublicKey): Promise<string> {
+    const authority = this.provider.wallet.publicKey;
+    const [stablecoinConfig] = findStablecoinConfigPda(mint);
+    const [rolesConfig] = findRolesConfigPda(mint);
+    const [oracleConfig] = findOracleConfigPda(mint);
+
+    return this.program.methods
+      .disableOracle()
+      .accounts({
+        authority,
+        mint,
+        stablecoinConfig,
+        rolesConfig,
+        oracleConfig,
+      })
+      .rpc();
+  }
+
+  /** Fetch the OracleConfig account for a given mint */
+  async getOracleConfig(mint: PublicKey): Promise<OracleConfig | null> {
+    const [pda] = findOracleConfigPda(mint);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (this.program.account as any).oracleConfig.fetch(pda) as OracleConfig;
+    } catch {
+      return null;
+    }
   }
 
   // ─── Read Methods ────────────────────────────────────────────────────────
