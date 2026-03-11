@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Rust/Anchor build artifacts
+target/
+.anchor/
+test-ledger/
+**/*.rs.bk
+
+# Fuzz test artifacts
+trident-tests/**/target/
+trident-tests/**/hfuzz_workspace/
+
+# TypeScript build output
+dist/
+
+# Next.js
+app/.next/
+app/out/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+deploy-keypair*.json
+
+# Claude / AI
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Yarn
+.yarn/
+
+# Misc
+*.log
+.vercel/

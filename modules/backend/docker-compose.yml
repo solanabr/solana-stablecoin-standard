@@ -1,0 +1,43 @@
+services:
+  indexer:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://sss:sss@postgres:5432/sss
+      - REDIS_URL=redis://redis:6379
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID:-SSSW3EixhrbB6yYpTdKmH2nCReqsA1VJqJkhwvcdzLA}
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      retries: 3
+
+  worker:
+    build: .
+    command: node dist/worker.js
+    environment:
+      - DATABASE_URL=postgres://sss:sss@postgres:5432/sss
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_USER: sss
+      POSTGRES_PASSWORD: sss
+      POSTGRES_DB: sss
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  pgdata:

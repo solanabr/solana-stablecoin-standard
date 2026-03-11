@@ -1,0 +1,22 @@
+{
+  "name": "@sss/oracle",
+  "version": "0.1.0",
+  "description": "Switchboard oracle integration for SSS price feeds",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/monitor.ts"
+  },
+  "dependencies": {
+    "@switchboard-xyz/on-demand": "^1.2.0",
+    "@solana/web3.js": "^1.95.0",
+    "@coral-xyz/anchor": "^0.31.1",
+    "bn.js": "^5.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "@types/bn.js": "^5.1.5"
+  }
+}

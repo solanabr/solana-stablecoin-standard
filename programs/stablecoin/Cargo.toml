@@ -1,0 +1,28 @@
+[package]
+name = "stablecoin"
+version = "0.1.0"
+description = "Solana Stablecoin Standard (SSS) - Main Program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "stablecoin"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token_2022", "associated_token", "metadata"] }
+spl-token-2022 = { version = "7", features = ["no-entrypoint"] }
+spl-token-metadata-interface = "0.5"
+spl-associated-token-account = { version = "6", features = ["no-entrypoint"] }
+spl-transfer-hook-interface = "0.8"
+spl-tlv-account-resolution = "0.8"
+solana-zk-sdk = "2.2"
+bytemuck = "1.25"

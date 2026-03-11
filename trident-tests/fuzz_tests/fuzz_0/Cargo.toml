@@ -1,0 +1,16 @@
+[package]
+name = "fuzz_0"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+trident-fuzz = "0.12"
+stablecoin = { path = "../../../programs/stablecoin", features = ["no-entrypoint"] }
+anchor-lang = "0.31.1"
+solana-sdk = "2.2"
+arbitrary = { version = "1", features = ["derive"] }
+honggfuzz = "0.5"
+
+[[bin]]
+name = "fuzz_0"
+path = "src/main.rs"

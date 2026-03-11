@@ -1,0 +1,25 @@
+{
+  "name": "sss-token",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard CLI",
+  "main": "dist/index.js",
+  "bin": {
+    "sss-token": "dist/index.js"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.12",
+    "commander": "^12.0.0",
+    "chalk": "4.1.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/node": "^20.0.0"
+  }
+}

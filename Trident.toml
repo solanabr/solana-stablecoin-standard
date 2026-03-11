@@ -1,0 +1,17 @@
+[fuzz]
+# Number of fuzzing iterations
+iterations = 1000
+# Time limit for fuzzing in seconds
+timeout = 60
+# Number of threads
+threads = 4
+# Keep output of fuzzing
+keep_output = true
+
+[test]
+# Programs to test
+validator_startup_timeout = 15000
+
+[[fuzz.programs]]
+address = "SSSW3EixhrbB6yYpTdKmH2nCReqsA1VJqJkhwvcdzLA"
+program = "stablecoin"
