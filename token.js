@@ -14,18 +14,104 @@ function loadMyKeypair() {
 const wallet = loadMyKeypair();
 
 async function main() {
-    const mint = await createToken();
-    const tokenAccount = await createTokenAccount(mint);
-    await mintTokens(mint, tokenAccount.address);
-    await getSupply(mint);
-    await burnTokens(tokenAccount.address, mint);
-    await getSupply(mint);
+  const mint = await createToken();
+  const tokenAccount = await createTokenAccount(mint);
+  await mintTokens(mint, tokenAccount.address);
+
+  let supply = await getSupply(mint);
+  console.log("Total Supply:", supply);
+
+  await burnTokens(tokenAccount.address, mint);
+
+  supply = await getSupply(mint);
+  console.log("Total Supply:", supply);
+
+  const accounts = await getTokenAccounts(mint.toString());
+  console.log("Token Accounts:", accounts);
+
+  const holders = await getHolders(mint.toString());
+  console.log("Token Holders:", holders);
+
+    
 
 }
 
 main().catch((err) => {
     console.error("Error:", err);
 });
+
+const { TOKEN_PROGRAM_ID } = require("@solana/spl-token");
+
+async function getTokenAccounts(mint) {
+
+  const accounts =
+    await connection.getProgramAccounts(
+      TOKEN_PROGRAM_ID,
+      {
+        filters: [
+          { dataSize: 165 },
+          {
+            memcmp: {
+              offset: 0,
+              bytes: mint
+            }
+          }
+        ]
+      }
+    );
+
+  return accounts;
+}
+
+async function getHolders(mint) {
+
+  const accounts =
+    await connection.getParsedProgramAccounts(
+      TOKEN_PROGRAM_ID,
+      {
+        filters: [
+          {
+            memcmp: {
+              offset: 0,
+              bytes: mint
+            }
+          }
+        ]
+      }
+    );
+
+  const holders = accounts.map(acc => {
+
+    const data = acc.account.data.parsed.info;
+
+    return {
+      owner: data.owner,
+      balance: data.tokenAmount.uiAmount
+    };
+
+  });
+
+  return holders;
+}
+
+async function getSupply(mint) {
+
+  const pubkey = (mint instanceof solanaWeb3.PublicKey) ? mint : new solanaWeb3.PublicKey(mint);
+
+  const supply = await connection.getTokenSupply(pubkey);
+
+  return supply.value.uiAmount;
+}
+
+async function getTransactions(address) {
+
+  const signatures =
+    await connection.getSignaturesForAddress(
+      new solanaWeb3.PublicKey(address)
+    );
+
+  return signatures;
+}
 
 async function createToken(){
 
@@ -94,10 +180,4 @@ async function burnTokens(tokenAccount, mint){
     );
 
     console.log("Burned 200 tokens from", tokenAccount.toString());
-}
-
-async function getSupply(mint){
-
-    const supply = await connection.getTokenSupply(mint);
-    console.log("Total Supply:", supply.value.uiAmount);
 }
