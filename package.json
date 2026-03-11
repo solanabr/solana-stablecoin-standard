@@ -20,6 +20,7 @@
   "homepage": "https://github.com/Rahul-Prasad-07/solana-stablecoin-standard#readme",
   "dependencies": {
     "@solana/spl-token": "^0.4.14",
-    "@solana/web3.js": "^1.98.4"
+    "@solana/web3.js": "^1.98.4",
+    "@metaplex-foundation/mpl-token-metadata": "^2.2.0"
   }
 }

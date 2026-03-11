@@ -1,9 +1,17 @@
 const solanaWeb3 = require("@solana/web3.js");
 const { createMint, transfer, mintTo, getOrCreateAssociatedTokenAccount, burn } = require("@solana/spl-token");
+const {
+  createCreateMetadataAccountV2Instruction,
+  DataV2
+} = require("@metaplex-foundation/mpl-token-metadata");
 const fs = require("fs");
 const path = require("path");
 
 const connection = new solanaWeb3.Connection("http://127.0.0.1:8899", "confirmed");
+
+const TOKEN_METADATA_PROGRAM_ID = new solanaWeb3.PublicKey(
+  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+);
 
 function loadMyKeypair() {
     const configPath = path.join(process.env.HOME, ".config", "solana", "id.json");
@@ -125,6 +133,55 @@ async function createToken(){
     );
 
     console.log("Token Mint Address:", mint.toString());
+
+    // Create on-chain metadata (name, symbol, uri)
+    // You can change these values or accept them as params
+    const name = "Example Stablecoin";
+    const symbol = "EXS";
+    const uri = "https://example.com/example-stablecoin-metadata.json"; // should point to valid JSON
+
+    // Build DataV2
+    const data = {
+      name,
+      symbol,
+      uri,
+      sellerFeeBasisPoints: 0,
+      creators: null,
+      collection: null,
+      uses: null
+    };
+
+    // Derive metadata PDA
+    const [metadataPDA] = await solanaWeb3.PublicKey.findProgramAddress(
+      [
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        mint.toBuffer()
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    const createMetadataIx = createCreateMetadataAccountV2Instruction(
+      {
+        metadata: metadataPDA,
+        mint: mint,
+        mintAuthority: wallet.publicKey,
+        payer: wallet.publicKey,
+        updateAuthority: wallet.publicKey
+      },
+      {
+        createMetadataAccountArgsV2: {
+          data: data,
+          isMutable: true
+        }
+      }
+    );
+
+    const tx = new solanaWeb3.Transaction().add(createMetadataIx);
+    await solanaWeb3.sendAndConfirmTransaction(connection, tx, [wallet]);
+
+    console.log("Created metadata (name, symbol, uri) for mint.");
+
     return mint;
 }
 
