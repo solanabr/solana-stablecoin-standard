@@ -1,0 +1,2587 @@
+{
+    "address": "7qYYBZqC88Vt61pon3cJnbTpukCsgCETypo13cttMVMG",
+    "metadata": {
+        "name": "sss",
+        "version": "0.1.0",
+        "spec": "0.1.0",
+        "description": "Created with Anchor"
+    },
+    "instructions": [
+        {
+            "name": "add_to_blacklist",
+            "discriminator": [
+                90,
+                115,
+                98,
+                231,
+                173,
+                119,
+                117,
+                176
+            ],
+            "accounts": [
+                {
+                    "name": "blacklister",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "mint"
+                },
+                {
+                    "name": "config",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "blacklisted_entry",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    98,
+                                    108,
+                                    97,
+                                    99,
+                                    107,
+                                    108,
+                                    105,
+                                    115,
+                                    116
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "arg",
+                                "path": "_wallet"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "wallet",
+                    "type": "pubkey"
+                },
+                {
+                    "name": "reason",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "burn_tokens",
+            "discriminator": [
+                76,
+                15,
+                51,
+                254,
+                229,
+                215,
+                121,
+                66
+            ],
+            "accounts": [
+                {
+                    "name": "burner",
+                    "docs": [
+                        "The burner; must have a burner RoleAccount for this mint."
+                    ],
+                    "signer": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "from",
+                    "docs": [
+                        "Source token account to burn from."
+                    ],
+                    "writable": true
+                },
+                {
+                    "name": "burner_role",
+                    "docs": [
+                        "Burner role PDA. Existence confirms the role is granted."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    98,
+                                    117,
+                                    114,
+                                    110,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "burner"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "freeze_account",
+            "discriminator": [
+                253,
+                75,
+                82,
+                133,
+                167,
+                238,
+                43,
+                130
+            ],
+            "accounts": [
+                {
+                    "name": "master",
+                    "docs": [
+                        "Must hold the master role for this mint."
+                    ],
+                    "signer": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "ata_to_freeze",
+                    "docs": [
+                        "The token account to freeze."
+                    ],
+                    "writable": true
+                },
+                {
+                    "name": "master_role",
+                    "docs": [
+                        "Master role PDA for the signer. Existence confirms the master role."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    97,
+                                    115,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "master"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "freeze_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    102,
+                                    114,
+                                    101,
+                                    101,
+                                    122,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": []
+        },
+        {
+            "name": "initialize",
+            "discriminator": [
+                175,
+                175,
+                109,
+                31,
+                13,
+                152,
+                155,
+                237
+            ],
+            "accounts": [
+                {
+                    "name": "admin",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "config",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "mint_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    105,
+                                    110,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "freeze_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    102,
+                                    114,
+                                    101,
+                                    101,
+                                    122,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "seizer_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    115,
+                                    101,
+                                    105,
+                                    122,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "pause_authority",
+                    "docs": [
+                        "Required for SSS2 mints with Pausable extension; pass any account for SSS1."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    112,
+                                    97,
+                                    117,
+                                    115,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "master_role",
+                    "docs": [
+                        "Master role account for the initial master pubkey."
+                    ],
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    97,
+                                    115,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "arg",
+                                "path": "_master"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "minter_account",
+                    "docs": [
+                        "First minter account for the passed minter pubkey."
+                    ],
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    105,
+                                    110,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "arg",
+                                "path": "_minter"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program"
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "rent",
+                    "address": "SysvarRent111111111111111111111111111111111"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "standard",
+                    "type": {
+                        "defined": {
+                            "name": "Standard"
+                        }
+                    }
+                },
+                {
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "name": "symbol",
+                    "type": "string"
+                },
+                {
+                    "name": "uri",
+                    "type": "string"
+                },
+                {
+                    "name": "decimals",
+                    "type": "u8"
+                },
+                {
+                    "name": "master",
+                    "type": "pubkey"
+                },
+                {
+                    "name": "minter",
+                    "type": "pubkey"
+                },
+                {
+                    "name": "initial_allowance",
+                    "type": "u64"
+                },
+                {
+                    "name": "enable_permanent_delegate",
+                    "type": {
+                        "option": "bool"
+                    }
+                },
+                {
+                    "name": "enable_transfer_hook",
+                    "type": {
+                        "option": "bool"
+                    }
+                },
+                {
+                    "name": "default_account_frozen",
+                    "type": {
+                        "option": "bool"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "mint_tokens",
+            "discriminator": [
+                59,
+                132,
+                24,
+                246,
+                122,
+                39,
+                8,
+                243
+            ],
+            "accounts": [
+                {
+                    "name": "minter",
+                    "docs": [
+                        "The minter; must have a MinterAccount PDA for this mint."
+                    ],
+                    "signer": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "to",
+                    "docs": [
+                        "Destination token account."
+                    ],
+                    "writable": true
+                },
+                {
+                    "name": "minter_account",
+                    "docs": [
+                        "Minter quota account. Seeds verify that `minter` holds this role for `mint`."
+                    ],
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    105,
+                                    110,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "minter"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "mint_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    105,
+                                    110,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "pause",
+            "discriminator": [
+                211,
+                22,
+                221,
+                251,
+                74,
+                121,
+                193,
+                47
+            ],
+            "accounts": [
+                {
+                    "name": "pauser",
+                    "docs": [
+                        "Must hold the pauser role for this mint."
+                    ],
+                    "signer": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "pauser_role",
+                    "docs": [
+                        "Pauser role PDA. Existence confirms the pauser role."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    112,
+                                    97,
+                                    117,
+                                    115,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "pauser"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "pause_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    112,
+                                    97,
+                                    117,
+                                    115,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": []
+        },
+        {
+            "name": "remove_from_blacklist",
+            "discriminator": [
+                47,
+                105,
+                20,
+                10,
+                165,
+                168,
+                203,
+                219
+            ],
+            "accounts": [
+                {
+                    "name": "blacklister",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "mint"
+                },
+                {
+                    "name": "config",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "blacklisted_entry",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    98,
+                                    108,
+                                    97,
+                                    99,
+                                    107,
+                                    108,
+                                    105,
+                                    115,
+                                    116
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "arg",
+                                "path": "_wallet"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "wallet",
+                    "type": "pubkey"
+                }
+            ]
+        },
+        {
+            "name": "seize",
+            "discriminator": [
+                129,
+                159,
+                143,
+                31,
+                161,
+                224,
+                241,
+                84
+            ],
+            "accounts": [
+                {
+                    "name": "seizer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "seizer_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    115,
+                                    101,
+                                    105,
+                                    122,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "seizer_role",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    115,
+                                    101,
+                                    105,
+                                    122,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "seizer"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "stablecoin_config",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "from",
+                    "docs": [
+                        "Source token account to seize from (owner need not sign; permanent delegate authorizes)."
+                    ],
+                    "writable": true
+                },
+                {
+                    "name": "to",
+                    "docs": [
+                        "Destination token account to send seized tokens to."
+                    ],
+                    "writable": true
+                },
+                {
+                    "name": "mint"
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "thaw_account",
+            "discriminator": [
+                115,
+                152,
+                79,
+                213,
+                213,
+                169,
+                184,
+                35
+            ],
+            "accounts": [
+                {
+                    "name": "master",
+                    "docs": [
+                        "Must hold the master role for this mint."
+                    ],
+                    "signer": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "ata_to_thaw",
+                    "docs": [
+                        "The token account to thaw."
+                    ],
+                    "writable": true
+                },
+                {
+                    "name": "master_role",
+                    "docs": [
+                        "Master role PDA for the signer. Existence confirms the master role."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    97,
+                                    115,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "master"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "freeze_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    102,
+                                    114,
+                                    101,
+                                    101,
+                                    122,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": []
+        },
+        {
+            "name": "transfer_authority",
+            "discriminator": [
+                48,
+                169,
+                76,
+                72,
+                229,
+                180,
+                55,
+                161
+            ],
+            "accounts": [
+                {
+                    "name": "master",
+                    "docs": [
+                        "Current master; their RoleAccount will be closed."
+                    ],
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "mint"
+                },
+                {
+                    "name": "master_role",
+                    "docs": [
+                        "Current master's role PDA — will be closed, lamports returned to master."
+                    ],
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    97,
+                                    115,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "master"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "new_master_role",
+                    "docs": [
+                        "New master's role PDA — will be created."
+                    ],
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    97,
+                                    115,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "arg",
+                                "path": "new_master"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "new_master",
+                    "type": "pubkey"
+                }
+            ]
+        },
+        {
+            "name": "unpause",
+            "discriminator": [
+                169,
+                144,
+                4,
+                38,
+                10,
+                141,
+                188,
+                255
+            ],
+            "accounts": [
+                {
+                    "name": "pauser",
+                    "docs": [
+                        "Must hold the pauser role for this mint."
+                    ],
+                    "signer": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "pauser_role",
+                    "docs": [
+                        "Pauser role PDA. Existence confirms the pauser role."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    112,
+                                    97,
+                                    117,
+                                    115,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "pauser"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "pause_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    112,
+                                    97,
+                                    117,
+                                    115,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": []
+        },
+        {
+            "name": "update_minter",
+            "discriminator": [
+                164,
+                129,
+                164,
+                88,
+                75,
+                29,
+                91,
+                38
+            ],
+            "accounts": [
+                {
+                    "name": "master",
+                    "docs": [
+                        "Must hold the master role for this mint."
+                    ],
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "mint"
+                },
+                {
+                    "name": "master_role",
+                    "docs": [
+                        "Master role PDA for the signer. Existence confirms the master role."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    97,
+                                    115,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "master"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "update_minter",
+                    "docs": [
+                        "The handler validates that this account's key equals the PDA derived from [ROLE_SEED, mint, MINTER_ROLE, minter]."
+                    ],
+                    "writable": true
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "operation",
+                    "type": "string"
+                },
+                {
+                    "name": "minter",
+                    "type": "pubkey"
+                },
+                {
+                    "name": "allowance",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "update_roles",
+            "discriminator": [
+                220,
+                152,
+                205,
+                233,
+                177,
+                123,
+                219,
+                125
+            ],
+            "accounts": [
+                {
+                    "name": "master",
+                    "docs": [
+                        "Must hold the master role for this mint."
+                    ],
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "mint"
+                },
+                {
+                    "name": "master_role",
+                    "docs": [
+                        "Master role PDA. Existence confirms the master role."
+                    ],
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    114,
+                                    111,
+                                    108,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "mint"
+                            },
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    97,
+                                    115,
+                                    116,
+                                    101,
+                                    114
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "master"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "rent",
+                    "address": "SysvarRent111111111111111111111111111111111"
+                },
+                {
+                    "name": "event_authority",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    95,
+                                    95,
+                                    101,
+                                    118,
+                                    101,
+                                    110,
+                                    116,
+                                    95,
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "roles",
+                    "type": {
+                        "vec": {
+                            "defined": {
+                                "name": "UpdateRole"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "accounts": [
+        {
+            "name": "BlacklistedEntry",
+            "discriminator": [
+                117,
+                218,
+                39,
+                201,
+                216,
+                26,
+                241,
+                79
+            ]
+        },
+        {
+            "name": "MinterAccount",
+            "discriminator": [
+                96,
+                76,
+                128,
+                125,
+                228,
+                218,
+                240,
+                23
+            ]
+        },
+        {
+            "name": "RoleAccount",
+            "discriminator": [
+                142,
+                236,
+                135,
+                197,
+                214,
+                3,
+                244,
+                226
+            ]
+        },
+        {
+            "name": "StablecoinConfig",
+            "discriminator": [
+                127,
+                25,
+                244,
+                213,
+                1,
+                192,
+                101,
+                6
+            ]
+        }
+    ],
+    "events": [
+        {
+            "name": "AddToBlacklistEvent",
+            "discriminator": [
+                126,
+                75,
+                127,
+                121,
+                216,
+                97,
+                130,
+                179
+            ]
+        },
+        {
+            "name": "BurnTokensEvent",
+            "discriminator": [
+                109,
+                11,
+                212,
+                62,
+                99,
+                137,
+                69,
+                115
+            ]
+        },
+        {
+            "name": "FreezeAccountEvent",
+            "discriminator": [
+                118,
+                116,
+                133,
+                50,
+                191,
+                195,
+                162,
+                69
+            ]
+        },
+        {
+            "name": "InitializeEvent",
+            "discriminator": [
+                206,
+                175,
+                169,
+                208,
+                241,
+                210,
+                35,
+                221
+            ]
+        },
+        {
+            "name": "MintTokensEvent",
+            "discriminator": [
+                100,
+                103,
+                14,
+                237,
+                95,
+                8,
+                40,
+                143
+            ]
+        },
+        {
+            "name": "PauseEvent",
+            "discriminator": [
+                32,
+                51,
+                61,
+                169,
+                156,
+                104,
+                130,
+                43
+            ]
+        },
+        {
+            "name": "RemoveFromBlacklistEvent",
+            "discriminator": [
+                182,
+                20,
+                77,
+                41,
+                28,
+                71,
+                201,
+                194
+            ]
+        },
+        {
+            "name": "SeizeEvent",
+            "discriminator": [
+                100,
+                186,
+                127,
+                43,
+                145,
+                98,
+                208,
+                78
+            ]
+        },
+        {
+            "name": "ThawAccountEvent",
+            "discriminator": [
+                152,
+                0,
+                235,
+                25,
+                1,
+                179,
+                142,
+                24
+            ]
+        },
+        {
+            "name": "TransferAuthorityEvent",
+            "discriminator": [
+                63,
+                113,
+                189,
+                184,
+                188,
+                94,
+                39,
+                142
+            ]
+        },
+        {
+            "name": "UnpauseEvent",
+            "discriminator": [
+                134,
+                156,
+                8,
+                215,
+                185,
+                128,
+                192,
+                217
+            ]
+        },
+        {
+            "name": "UpdateMinterEvent",
+            "discriminator": [
+                133,
+                193,
+                12,
+                214,
+                192,
+                134,
+                139,
+                2
+            ]
+        },
+        {
+            "name": "UpdateRolesEvent",
+            "discriminator": [
+                141,
+                149,
+                247,
+                86,
+                249,
+                9,
+                127,
+                222
+            ]
+        }
+    ],
+    "errors": [
+        {
+            "code": 6000,
+            "name": "ComplianceNotEnabled",
+            "msg": "Compliance is not enabled"
+        },
+        {
+            "code": 6001,
+            "name": "Token2022Required",
+            "msg": "Token-2022 program required for SSS1 and SSS2"
+        },
+        {
+            "code": 6002,
+            "name": "Unauthorized",
+            "msg": "Unauthorized"
+        },
+        {
+            "code": 6003,
+            "name": "QuotaExceeded",
+            "msg": "Minter quota exceeded"
+        },
+        {
+            "code": 6004,
+            "name": "InvalidRole",
+            "msg": "Invalid role name"
+        },
+        {
+            "code": 6005,
+            "name": "MintNotPausable",
+            "msg": "Mint does not have the Pausable extension"
+        },
+        {
+            "code": 6006,
+            "name": "TransferHookNotEnabled",
+            "msg": "Transfer hook is not enabled"
+        },
+        {
+            "code": 6007,
+            "name": "PermanentDelegateNotEnabled",
+            "msg": "Permanent delegate is not enabled"
+        },
+        {
+            "code": 6008,
+            "name": "InvalidAmount",
+            "msg": "Amount must be greater than zero"
+        },
+        {
+            "code": 6009,
+            "name": "OperationNotAllowed",
+            "msg": "Operation not allowed"
+        },
+        {
+            "code": 6010,
+            "name": "InvalidReasonLength",
+            "msg": "Blacklist reason must be at most 100 characters"
+        }
+    ],
+    "types": [
+        {
+            "name": "AddToBlacklistEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "blacklisted",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "reason",
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "BlacklistedEntry",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "is_blacklisted",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "reason",
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "BurnTokensEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "burner",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "from",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "FreezeAccountEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "ata_to_freeze",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "InitializeEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "standard",
+                        "type": "string"
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "symbol",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "decimals",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "enable_permanent_delegate",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "enable_transfer_hook",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "default_account_frozen",
+                        "type": "bool"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MintTokensEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "minter",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "to",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MinterAccount",
+            "docs": [
+                "Per-user minter state with quota. Program checks minted + amount <= allowance on mint.",
+                "Seeds: [MINT_MINTER_SEED, mint, user]"
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "allowance",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "minted",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PauseEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pauser",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RemoveFromBlacklistEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "wallet",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RoleAccount",
+            "docs": [
+                "OpenZeppelin-style role PDA. If account exists → role granted; if closed → revoked.",
+                "Seeds: [ROLE_SEED, mint, ROLE_NAME, user]"
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "SeizeEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "seizer",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "from",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "to",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "StablecoinConfig",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "standard",
+                        "type": {
+                            "defined": {
+                                "name": "Standard"
+                            }
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "symbol",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "decimals",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "enable_permanent_delegate",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "enable_transfer_hook",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "default_account_frozen",
+                        "type": "bool"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Standard",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "SSS1"
+                    },
+                    {
+                        "name": "SSS2"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ThawAccountEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "master",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "ata_to_thaw",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "TransferAuthorityEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "master",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "new_master",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UnpauseEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pauser",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdateMinterEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "operation",
+                        "type": "string"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "minter",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "allowance",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdateRole",
+            "docs": [
+                "A single role update entry supplied as instruction data."
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "role",
+                        "docs": [
+                            "Role name: \"master\" | \"minter\" | \"burner\" | \"pauser\" | \"blacklister\" | \"seizer\""
+                        ],
+                        "type": "string"
+                    },
+                    {
+                        "name": "old_key",
+                        "docs": [
+                            "If Some, the old holder's PDA will be closed. Must match remaining_accounts order."
+                        ],
+                        "type": {
+                            "option": "pubkey"
+                        }
+                    },
+                    {
+                        "name": "new_key",
+                        "docs": [
+                            "The new holder to grant the role to."
+                        ],
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "allowance",
+                        "docs": [
+                            "Only used when role == \"minter\"."
+                        ],
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdateRolesEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "role",
+                        "type": "string"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "master",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        }
+    ]
+}

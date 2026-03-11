@@ -1,11 +1,22 @@
 {
+  "private": true,
   "license": "ISC",
-  "workspaces": ["sdk"],
+  "workspaces": [
+    "sdk",
+    "services/shared",
+    "services/indexer",
+    "services/mint-burn",
+    "services/webhook",
+    "services/compliance"
+  ],
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
     "sdk:build": "yarn workspace @stbr/sss-token build",
-    "sdk:clean": "yarn workspace @stbr/sss-token clean"
+    "sdk:clean": "yarn workspace @stbr/sss-token clean",
+    "services:build": "yarn workspaces foreach --topological-dev --include '@sss/*' run build",
+    "services:up": "docker compose -f services/docker-compose.yml up --build",
+    "services:down": "docker compose -f services/docker-compose.yml down"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

@@ -1,0 +1,125 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sss
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./shared/src/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sss"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  indexer:
+    build:
+      context: ..
+      dockerfile: services/indexer/Dockerfile
+    ports:
+      - "3001:3001"
+    env_file: ./indexer/.env
+    environment:
+      PORT: "3001"
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/sss
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mint-burn:
+    build:
+      context: ..
+      dockerfile: services/mint-burn/Dockerfile
+    ports:
+      - "3002:3002"
+    env_file: ./mint-burn/.env
+    environment:
+      PORT: "3002"
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/sss
+      COMPLIANCE_SERVICE_URL: http://compliance:3004
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3002/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  webhook:
+    build:
+      context: ..
+      dockerfile: services/webhook/Dockerfile
+    ports:
+      - "3003:3003"
+    env_file: ./webhook/.env
+    environment:
+      PORT: "3003"
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/sss
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3003/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  compliance:
+    build:
+      context: ..
+      dockerfile: services/compliance/Dockerfile
+    ports:
+      - "3004:3004"
+    env_file: ./compliance/.env
+    environment:
+      PORT: "3004"
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/sss
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3004/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

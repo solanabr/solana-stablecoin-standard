@@ -6,4 +6,6 @@ node_modules
 test-ledger
 .yarn
 .surfpool/logs
-sdk/dist
+dist
+.env
+.cursor
