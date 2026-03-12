@@ -26,6 +26,7 @@ import sssHookIdl from "./idl/sss_hook";
  */
 export class ComplianceClient extends StablecoinClient {
   protected readonly hookProgramId: PublicKey;
+  private _hookProgram?: Program<SssHook>;
 
   constructor(
     connection: Connection,
@@ -38,13 +39,13 @@ export class ComplianceClient extends StablecoinClient {
   }
 
   /**
-   * Returns an Anchor Program instance for the sss-hook program.
+   * Returns a cached Anchor Program instance for the sss-hook program.
    */
   private getHookProgram(): Program<SssHook> {
-    return new Program<SssHook>(
-      sssHookIdl as SssHook,
-      this.provider
-    );
+    if (!this._hookProgram) {
+      this._hookProgram = new Program<SssHook>(sssHookIdl as SssHook, this.provider);
+    }
+    return this._hookProgram;
   }
 
   /**

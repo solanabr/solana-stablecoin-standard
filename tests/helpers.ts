@@ -147,7 +147,7 @@ export async function initializeStablecoin(
       uri: "https://example.com/metadata.json",
       decimals: 6,
     })
-    .accounts(accounts)
+    .accountsPartial(accounts)
     .signers([mint])
     .rpc();
 
@@ -215,7 +215,7 @@ export async function configureMinter(
 
   await program.methods
     .configureMinter(minterWallet, quota)
-    .accounts({
+    .accountsPartial({
       masterMinter: masterMinterPubkey,
       config: stablecoin.configPda,
       minterState: minterStatePda,
@@ -237,7 +237,7 @@ export async function mintTokens(
 ) {
   await program.methods
     .mintTokens(amount)
-    .accounts({
+    .accountsPartial({
       minter: minter.publicKey,
       config: stablecoin.configPda,
       minterState: minterStatePda,

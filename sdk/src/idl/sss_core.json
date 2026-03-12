@@ -1,20 +1,14 @@
-/**
- * Program IDL in camelCase format in order to be used in JS/TS.
- *
- * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/sss_core.json`.
- */
-export type SssCore = {
+{
   "address": "CZzvCtyZC8KR37DNDeGYpwN46YEc7WEh6RyeSRdhjY4Y",
   "metadata": {
-    "name": "sssCore",
+    "name": "sss_core",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Core stablecoin program for the Solana Stablecoin Standard"
   },
   "instructions": [
     {
-      "name": "acceptAuthority",
+      "name": "accept_authority",
       "docs": [
         "Accept a pending authority transfer. Must be called by the pending authority."
       ],
@@ -30,7 +24,7 @@ export type SssCore = {
       ],
       "accounts": [
         {
-          "name": "newAuthority",
+          "name": "new_authority",
           "docs": [
             "The pending authority accepting the transfer."
           ],
@@ -55,7 +49,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -64,26 +58,149 @@ export type SssCore = {
       "args": []
     },
     {
-      "name": "approveConfidential",
+      "name": "approve_confidential",
       "docs": [
         "Approve a wallet's token account for confidential transfers (SSS-3 only).",
         "Creates an AllowlistEntry PDA and CPIs to Token-2022 to approve the account."
       ],
-      "discriminator": [123, 103, 193, 97, 43, 23, 188, 58],
-      "accounts": [
-        { "name": "authority", "writable": true, "signer": true },
-        { "name": "config", "writable": true, "pda": { "seeds": [{ "kind": "const", "value": [99, 111, 110, 102, 105, 103] }, { "kind": "account", "path": "config.mint", "account": "stablecoinConfig" }] } },
-        { "name": "mint" },
-        { "name": "tokenAccount", "writable": true },
-        { "name": "allowlistEntry", "writable": true, "pda": { "seeds": [{ "kind": "const", "value": [97, 108, 108, 111, 119, 108, 105, 115, 116] }, { "kind": "account", "path": "mint" }, { "kind": "arg", "path": "wallet" }] } },
-        { "name": "mintAuthority", "pda": { "seeds": [{ "kind": "const", "value": [109, 105, 110, 116, 45, 97, 117, 116, 104, 111, 114, 105, 116, 121] }, { "kind": "account", "path": "mint" }] } },
-        { "name": "tokenProgram", "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb" },
-        { "name": "systemProgram", "address": "11111111111111111111111111111111" }
+      "discriminator": [
+        123,
+        103,
+        193,
+        97,
+        43,
+        23,
+        188,
+        58
       ],
-      "args": [{ "name": "wallet", "type": "pubkey" }]
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Authority who approves confidential transfer accounts."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "token_account",
+          "docs": [
+            "The Token-2022 token account to approve for confidential transfers.",
+            "Must be owned by `wallet` and associated with the stablecoin mint."
+          ],
+          "writable": true
+        },
+        {
+          "name": "allowlist_entry",
+          "docs": [
+            "AllowlistEntry PDA — tracks approval state for this wallet."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  108,
+                  108,
+                  111,
+                  119,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "path": "wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_authority",
+          "docs": [
+            "Mint authority PDA — acts as confidential transfer authority."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "wallet",
+          "type": "pubkey"
+        }
+      ]
     },
     {
-      "name": "burnTokens",
+      "name": "burn_tokens",
       "docs": [
         "Burn tokens from the signer's token account."
       ],
@@ -124,7 +241,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -134,14 +251,14 @@ export type SssCore = {
           "writable": true
         },
         {
-          "name": "tokenAccount",
+          "name": "token_account",
           "docs": [
             "Token account to burn from. Must be owned by the burner."
           ],
           "writable": true
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         }
       ],
       "args": [
@@ -152,7 +269,7 @@ export type SssCore = {
       ]
     },
     {
-      "name": "configureMinter",
+      "name": "configure_minter",
       "docs": [
         "Configure a new minter or update an existing minter's quota."
       ],
@@ -168,7 +285,7 @@ export type SssCore = {
       ],
       "accounts": [
         {
-          "name": "masterMinter",
+          "name": "master_minter",
           "docs": [
             "The master minter who is configuring this minter."
           ],
@@ -196,13 +313,13 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "minterState",
+          "name": "minter_state",
           "docs": [
             "Per-minter state. Created if it doesn't exist, updated if it does."
           ],
@@ -226,19 +343,19 @@ export type SssCore = {
               },
               {
                 "kind": "arg",
-                "path": "minterWallet"
+                "path": "minter_wallet"
               }
             ]
           }
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "minterWallet",
+          "name": "minter_wallet",
           "type": "pubkey"
         },
         {
@@ -248,7 +365,7 @@ export type SssCore = {
       ]
     },
     {
-      "name": "freezeAccount",
+      "name": "freeze_account",
       "docs": [
         "Freeze a token account. Available to authority and blacklister.",
         "Works even when paused (emergency power)."
@@ -289,7 +406,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -298,11 +415,11 @@ export type SssCore = {
           "name": "mint"
         },
         {
-          "name": "targetTokenAccount",
+          "name": "target_token_account",
           "writable": true
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -332,7 +449,7 @@ export type SssCore = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
@@ -397,7 +514,7 @@ export type SssCore = {
           }
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "docs": [
             "Mint authority PDA — holds mint, freeze, and permanent delegate authority."
           ],
@@ -430,18 +547,18 @@ export type SssCore = {
           }
         },
         {
-          "name": "hookProgram",
+          "name": "hook_program",
           "docs": [
             "The hook program ID for SSS-2. Required if preset == 2."
           ],
           "optional": true
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -450,14 +567,14 @@ export type SssCore = {
           "name": "params",
           "type": {
             "defined": {
-              "name": "initializeParams"
+              "name": "InitializeParams"
             }
           }
         }
       ]
     },
     {
-      "name": "mintTokens",
+      "name": "mint_tokens",
       "docs": [
         "Mint tokens to a destination account. Enforces minter quota."
       ],
@@ -501,13 +618,13 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "minterState",
+          "name": "minter_state",
           "docs": [
             "Minter's state. Must be enabled and match signer."
           ],
@@ -551,7 +668,7 @@ export type SssCore = {
           "writable": true
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "docs": [
             "Mint authority PDA."
           ],
@@ -584,7 +701,7 @@ export type SssCore = {
           }
         },
         {
-          "name": "tokenProgram"
+          "name": "token_program"
         }
       ],
       "args": [
@@ -633,7 +750,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -642,7 +759,7 @@ export type SssCore = {
       "args": []
     },
     {
-      "name": "removeMinter",
+      "name": "remove_minter",
       "docs": [
         "Disable a minter. Account is preserved for audit trail."
       ],
@@ -658,7 +775,7 @@ export type SssCore = {
       ],
       "accounts": [
         {
-          "name": "masterMinter",
+          "name": "master_minter",
           "signer": true
         },
         {
@@ -679,13 +796,13 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
         },
         {
-          "name": "minterState",
+          "name": "minter_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -707,7 +824,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "minter_state.minter",
-                "account": "minterState"
+                "account": "MinterState"
               }
             ]
           }
@@ -716,17 +833,89 @@ export type SssCore = {
       "args": []
     },
     {
-      "name": "revokeConfidential",
+      "name": "revoke_confidential",
       "docs": [
         "Revoke a wallet's confidential transfer approval (SSS-3 only).",
         "Marks the AllowlistEntry as revoked."
       ],
-      "discriminator": [78, 161, 105, 180, 178, 57, 86, 51],
+      "discriminator": [
+        78,
+        161,
+        105,
+        180,
+        178,
+        57,
+        86,
+        51
+      ],
       "accounts": [
-        { "name": "authority", "signer": true },
-        { "name": "config", "pda": { "seeds": [{ "kind": "const", "value": [99, 111, 110, 102, 105, 103] }, { "kind": "account", "path": "config.mint", "account": "stablecoinConfig" }] } },
-        { "name": "mint" },
-        { "name": "allowlistEntry", "writable": true, "pda": { "seeds": [{ "kind": "const", "value": [97, 108, 108, 111, 119, 108, 105, 115, 116] }, { "kind": "account", "path": "mint" }, { "kind": "account", "path": "allowlist_entry.wallet", "account": "AllowlistEntry" }] } }
+        {
+          "name": "authority",
+          "docs": [
+            "Authority who revokes confidential transfer approval."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config.mint",
+                "account": "StablecoinConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "allowlist_entry",
+          "docs": [
+            "AllowlistEntry PDA — must be currently approved."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  108,
+                  108,
+                  111,
+                  119,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "account",
+                "path": "allowlist_entry.wallet",
+                "account": "AllowlistEntry"
+              }
+            ]
+          }
+        }
       ],
       "args": []
     },
@@ -755,6 +944,7 @@ export type SssCore = {
         },
         {
           "name": "config",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -771,7 +961,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -780,21 +970,21 @@ export type SssCore = {
           "name": "mint"
         },
         {
-          "name": "sourceTokenAccount",
+          "name": "source_token_account",
           "docs": [
             "The target account to seize tokens from."
           ],
           "writable": true
         },
         {
-          "name": "destinationTokenAccount",
+          "name": "destination_token_account",
           "docs": [
             "Treasury or authority's token account to receive seized tokens."
           ],
           "writable": true
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "docs": [
             "Mint authority PDA acting as permanent delegate."
           ],
@@ -827,7 +1017,7 @@ export type SssCore = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
@@ -839,7 +1029,7 @@ export type SssCore = {
       ]
     },
     {
-      "name": "thawAccount",
+      "name": "thaw_account",
       "docs": [
         "Thaw a frozen token account. Available to authority and blacklister.",
         "Works even when paused (emergency power)."
@@ -880,7 +1070,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -889,11 +1079,11 @@ export type SssCore = {
           "name": "mint"
         },
         {
-          "name": "targetTokenAccount",
+          "name": "target_token_account",
           "writable": true
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -923,14 +1113,14 @@ export type SssCore = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
       "args": []
     },
     {
-      "name": "transferAuthority",
+      "name": "transfer_authority",
       "docs": [
         "Initiate a two-step authority transfer."
       ],
@@ -968,7 +1158,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -976,7 +1166,7 @@ export type SssCore = {
       ],
       "args": [
         {
-          "name": "newAuthority",
+          "name": "new_authority",
           "type": "pubkey"
         }
       ]
@@ -1020,7 +1210,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -1029,7 +1219,7 @@ export type SssCore = {
       "args": []
     },
     {
-      "name": "updateRole",
+      "name": "update_role",
       "docs": [
         "Update a role assignment. Only the authority can call this."
       ],
@@ -1070,7 +1260,7 @@ export type SssCore = {
               {
                 "kind": "account",
                 "path": "config.mint",
-                "account": "stablecoinConfig"
+                "account": "StablecoinConfig"
               }
             ]
           }
@@ -1081,12 +1271,12 @@ export type SssCore = {
           "name": "role",
           "type": {
             "defined": {
-              "name": "roleType"
+              "name": "RoleType"
             }
           }
         },
         {
-          "name": "newAddress",
+          "name": "new_address",
           "type": "pubkey"
         }
       ]
@@ -1094,11 +1284,20 @@ export type SssCore = {
   ],
   "accounts": [
     {
-      "name": "allowlistEntry",
-      "discriminator": [42, 59, 88, 1, 124, 138, 92, 236]
+      "name": "AllowlistEntry",
+      "discriminator": [
+        42,
+        59,
+        88,
+        1,
+        124,
+        138,
+        92,
+        236
+      ]
     },
     {
-      "name": "minterState",
+      "name": "MinterState",
       "discriminator": [
         251,
         69,
@@ -1111,7 +1310,7 @@ export type SssCore = {
       ]
     },
     {
-      "name": "stablecoinConfig",
+      "name": "StablecoinConfig",
       "discriminator": [
         127,
         25,
@@ -1127,132 +1326,179 @@ export type SssCore = {
   "errors": [
     {
       "code": 6000,
-      "name": "invalidPreset",
-      "msg": "Invalid preset: must be 1 (Minimal) or 2 (Compliant)"
+      "name": "InvalidPreset",
+      "msg": "Invalid preset: must be 1 (Minimal), 2 (Compliant), or 3 (Confidential)"
     },
     {
       "code": 6001,
-      "name": "invalidDecimals",
+      "name": "InvalidDecimals",
       "msg": "Invalid decimals: must be between 0 and 9"
     },
     {
       "code": 6002,
-      "name": "paused",
+      "name": "Paused",
       "msg": "Operations are paused"
     },
     {
       "code": 6003,
-      "name": "notPaused",
+      "name": "NotPaused",
       "msg": "Operations are not paused"
     },
     {
       "code": 6004,
-      "name": "notAuthority",
+      "name": "NotAuthority",
       "msg": "Unauthorized: caller is not the authority"
     },
     {
       "code": 6005,
-      "name": "notMasterMinter",
+      "name": "NotMasterMinter",
       "msg": "Unauthorized: caller is not the master minter"
     },
     {
       "code": 6006,
-      "name": "notPauser",
+      "name": "NotPauser",
       "msg": "Unauthorized: caller is not the pauser"
     },
     {
       "code": 6007,
-      "name": "notBlacklister",
+      "name": "NotBlacklister",
       "msg": "Unauthorized: caller is not the blacklister"
     },
     {
       "code": 6008,
-      "name": "unauthorized",
+      "name": "Unauthorized",
       "msg": "Unauthorized: caller does not have the required role"
     },
     {
       "code": 6009,
-      "name": "minterDisabled",
+      "name": "MinterDisabled",
       "msg": "Minter is not enabled"
     },
     {
       "code": 6010,
-      "name": "quotaExceeded",
+      "name": "QuotaExceeded",
       "msg": "Minting quota exceeded"
     },
     {
       "code": 6011,
-      "name": "zeroAmount",
+      "name": "ZeroAmount",
       "msg": "Amount must be greater than zero"
     },
     {
       "code": 6012,
-      "name": "noPendingAuthority",
+      "name": "NoPendingAuthority",
       "msg": "No pending authority transfer"
     },
     {
       "code": 6013,
-      "name": "notPendingAuthority",
+      "name": "NotPendingAuthority",
       "msg": "Caller is not the pending authority"
     },
     {
       "code": 6014,
-      "name": "presetFeatureUnavailable",
+      "name": "PresetFeatureUnavailable",
       "msg": "Feature not available for this preset"
     },
     {
       "code": 6015,
-      "name": "arithmeticOverflow",
+      "name": "ArithmeticOverflow",
       "msg": "Arithmetic overflow"
     },
     {
       "code": 6016,
-      "name": "hookProgramRequired",
+      "name": "HookProgramRequired",
       "msg": "Hook program is required for SSS-2 preset"
     },
     {
       "code": 6017,
-      "name": "nameTooLong",
-      "msg": "Name exceeds maximum length"
+      "name": "InvalidAuthority",
+      "msg": "Invalid authority: cannot transfer to the zero address"
     },
     {
       "code": 6018,
-      "name": "symbolTooLong",
-      "msg": "Symbol exceeds maximum length"
+      "name": "NameTooLong",
+      "msg": "Name exceeds maximum length"
     },
     {
       "code": 6019,
-      "name": "uriTooLong",
-      "msg": "URI exceeds maximum length"
+      "name": "SymbolTooLong",
+      "msg": "Symbol exceeds maximum length"
     },
     {
       "code": 6020,
-      "name": "alreadyApproved",
-      "msg": "Account is already approved for confidential transfers"
+      "name": "UriTooLong",
+      "msg": "URI exceeds maximum length"
     },
     {
       "code": 6021,
-      "name": "notApproved",
+      "name": "AlreadyApproved",
+      "msg": "Account is already approved for confidential transfers"
+    },
+    {
+      "code": 6022,
+      "name": "NotApproved",
       "msg": "Account is not approved for confidential transfers"
     }
   ],
   "types": [
     {
-      "name": "allowlistEntry",
+      "name": "AllowlistEntry",
+      "docs": [
+        "Per-wallet allowlist entry for SSS-3 confidential transfer approval.",
+        "Tracks which accounts the confidential transfer authority has approved.",
+        "",
+        "PDA: `[b\"allowlist\", mint.key().as_ref(), wallet.key().as_ref()]`"
+      ],
       "type": {
         "kind": "struct",
         "fields": [
-          { "name": "mint", "type": "pubkey" },
-          { "name": "wallet", "type": "pubkey" },
-          { "name": "approved", "type": "bool" },
-          { "name": "approvedBy", "type": "pubkey" },
-          { "name": "approvedAt", "type": "i64" },
-          { "name": "bump", "type": "u8" }
+          {
+            "name": "mint",
+            "docs": [
+              "The stablecoin mint this entry belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "docs": [
+              "The wallet address being approved/revoked."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "approved",
+            "docs": [
+              "Whether this wallet is currently approved for confidential transfers."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "approved_by",
+            "docs": [
+              "Who initiated the approval."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "approved_at",
+            "docs": [
+              "Unix timestamp when approved."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for this PDA."
+            ],
+            "type": "u8"
+          }
         ]
       }
     },
     {
-      "name": "initializeParams",
+      "name": "InitializeParams",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1280,7 +1526,7 @@ export type SssCore = {
       }
     },
     {
-      "name": "minterState",
+      "name": "MinterState",
       "docs": [
         "Per-minter state tracking quotas and usage.",
         "",
@@ -1311,7 +1557,7 @@ export type SssCore = {
             "type": "u64"
           },
           {
-            "name": "mintedAmount",
+            "name": "minted_amount",
             "docs": [
               "Tokens minted so far (consumed quota). Burning does NOT reduce this."
             ],
@@ -1335,7 +1581,7 @@ export type SssCore = {
       }
     },
     {
-      "name": "roleType",
+      "name": "RoleType",
       "docs": [
         "Role type enum for the update_role instruction."
       ],
@@ -1343,19 +1589,19 @@ export type SssCore = {
         "kind": "enum",
         "variants": [
           {
-            "name": "masterMinter"
+            "name": "MasterMinter"
           },
           {
-            "name": "pauser"
+            "name": "Pauser"
           },
           {
-            "name": "blacklister"
+            "name": "Blacklister"
           }
         ]
       }
     },
     {
-      "name": "stablecoinConfig",
+      "name": "StablecoinConfig",
       "docs": [
         "Global configuration for a stablecoin deployment.",
         "One per stablecoin mint. Stores role assignments, pause state, and audit counters.",
@@ -1387,14 +1633,14 @@ export type SssCore = {
             "type": "pubkey"
           },
           {
-            "name": "pendingAuthority",
+            "name": "pending_authority",
             "docs": [
               "Pending authority for two-step ownership transfer. Default = Pubkey::default()."
             ],
             "type": "pubkey"
           },
           {
-            "name": "masterMinter",
+            "name": "master_minter",
             "docs": [
               "Master minter. Can configure/remove minters and set quotas."
             ],
@@ -1422,21 +1668,21 @@ export type SssCore = {
             "type": "bool"
           },
           {
-            "name": "totalMinted",
+            "name": "total_minted",
             "docs": [
               "Lifetime total tokens minted (for audit trail)."
             ],
             "type": "u64"
           },
           {
-            "name": "totalBurned",
+            "name": "total_burned",
             "docs": [
               "Lifetime total tokens burned (for audit trail)."
             ],
             "type": "u64"
           },
           {
-            "name": "totalSeized",
+            "name": "total_seized",
             "docs": [
               "Lifetime total tokens seized via permanent delegate (SSS-2 audit trail)."
             ],
@@ -1450,7 +1696,7 @@ export type SssCore = {
             "type": "u8"
           },
           {
-            "name": "mintAuthorityBump",
+            "name": "mint_authority_bump",
             "docs": [
               "Bump for the mint authority PDA."
             ],
@@ -1460,4 +1706,4 @@ export type SssCore = {
       }
     }
   ]
-};
+}

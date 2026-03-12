@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum SSSError {
-    #[msg("Invalid preset: must be 1 (Minimal) or 2 (Compliant)")]
+    #[msg("Invalid preset: must be 1 (Minimal), 2 (Compliant), or 3 (Confidential)")]
     InvalidPreset,
 
     #[msg("Invalid decimals: must be between 0 and 9")]
@@ -64,4 +64,10 @@ pub enum SSSError {
 
     #[msg("URI exceeds maximum length")]
     UriTooLong,
+
+    #[msg("Account is already approved for confidential transfers")]
+    AlreadyApproved,
+
+    #[msg("Account is not approved for confidential transfers")]
+    NotApproved,
 }

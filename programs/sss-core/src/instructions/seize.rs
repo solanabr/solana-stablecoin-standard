@@ -13,6 +13,11 @@ pub struct Seize<'info> {
     /// Only the authority can seize tokens.
     pub authority: Signer<'info>,
 
+    // Note: No explicit pause check here — the transfer hook enforces it.
+    // If the contract is paused, the authority should: (1) freeze the target
+    // account (freeze bypasses pause), (2) unpause, (3) seize, (4) re-pause.
+    // This is safe because the frozen account prevents the target from moving
+    // tokens during the brief unpause window.
     #[account(
         mut,
         seeds = [CONFIG_SEED, config.mint.as_ref()],

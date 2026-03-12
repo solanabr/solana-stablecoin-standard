@@ -25,6 +25,11 @@ import { registerMinterCommands }    from "./commands/minter";
 import { registerBlacklistCommands } from "./commands/blacklist";
 import { registerRolesCommands }     from "./commands/roles";
 import { registerInfoCommands }      from "./commands/info";
+import { registerStatusCommands }    from "./commands/status";
+import { registerSeizeCommand }      from "./commands/seize";
+import { registerAuditLogCommand }   from "./commands/audit-log";
+import { registerHoldersCommand }    from "./commands/holders";
+import { registerHookCommands }      from "./commands/hook";
 
 // ---------------------------------------------------------------------------
 // Program root
@@ -34,7 +39,7 @@ const program = new Command();
 
 program
   .name("sss-token")
-  .description("CLI for the Solana Stablecoin Standard (SSS-1 & SSS-2)")
+  .description("CLI for the Solana Stablecoin Standard (SSS-1, SSS-2 & SSS-3)")
   .version("0.1.0");
 
 // ---------------------------------------------------------------------------
@@ -85,6 +90,11 @@ registerMinterCommands(program);
 registerBlacklistCommands(program);
 registerRolesCommands(program);
 registerInfoCommands(program);
+registerStatusCommands(program);
+registerSeizeCommand(program);
+registerAuditLogCommand(program);
+registerHoldersCommand(program);
+registerHookCommands(program);
 
 // ---------------------------------------------------------------------------
 // Error handling and parse

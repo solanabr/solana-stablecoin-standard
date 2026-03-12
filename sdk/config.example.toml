@@ -1,0 +1,15 @@
+# Solana Stablecoin Standard — Custom Configuration
+#
+# Usage:
+#   sss-token init --custom config.toml
+#
+# Supported presets: "sss-1", "sss-2", 1, 2
+
+preset = "sss-2"
+name = "My Stablecoin"
+symbol = "MYUSD"
+uri = "https://example.com/metadata.json"
+decimals = 6
+
+# Required for SSS-2. Defaults to deployed hook program if omitted.
+# hook_program = "9aw7Ac4aGMMfND3BvYgGEcASuvyJiBXnQizbhNBphcNM"

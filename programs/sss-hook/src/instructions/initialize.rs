@@ -7,6 +7,7 @@ use spl_tlv_account_resolution::{
 };
 use spl_transfer_hook_interface::instruction::ExecuteInstruction;
 
+use crate::error::HookError;
 use crate::state::*;
 use sss_events::HookInitialized;
 
@@ -53,6 +54,21 @@ pub struct InitializeHook<'info> {
 pub fn handle_initialize_hook(ctx: Context<InitializeHook>) -> Result<()> {
     let mint_key = ctx.accounts.mint.key();
     let core_program_key = ctx.accounts.core_program.key();
+
+    // ── 0. VALIDATE: Ensure stablecoin_config is owned by the core program ──
+    // Without this check, an attacker could pass a fake config account that
+    // is never paused, bypassing pause enforcement in the transfer hook.
+    require!(
+        ctx.accounts.stablecoin_config.owner == &core_program_key,
+        HookError::InvalidConfig
+    );
+
+    // Also validate the config is a properly initialized StablecoinConfig
+    // by checking it has data and the correct Anchor discriminator.
+    let config_data = ctx.accounts.stablecoin_config.try_borrow_data()?;
+    require!(config_data.len() >= 8, HookError::InvalidConfig);
+    let expected_disc = sss_core::state::StablecoinConfig::DISCRIMINATOR;
+    require!(config_data[..8] == *expected_disc, HookError::InvalidConfig);
 
     // ── 1. Populate HookConfig ──────────────────────────────────────────────
     let hook_config = &mut ctx.accounts.hook_config;

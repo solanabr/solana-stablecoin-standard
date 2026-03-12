@@ -6,6 +6,7 @@ import {
   HOOK_CONFIG_SEED,
   BLACKLIST_SEED,
   EXTRA_ACCOUNT_METAS_SEED,
+  ALLOWLIST_SEED,
   SSS_CORE_PROGRAM_ID,
   SSS_HOOK_PROGRAM_ID,
 } from "./constants";
@@ -92,6 +93,21 @@ export function findExtraAccountMetaListPda(
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [Buffer.from(EXTRA_ACCOUNT_METAS_SEED), mint.toBuffer()],
+    programId
+  );
+}
+
+/**
+ * Derive the allowlist entry PDA for SSS-3 confidential transfer approval.
+ * Seeds: ["allowlist", mint, wallet]
+ */
+export function findAllowlistEntryPda(
+  mint: PublicKey,
+  wallet: PublicKey,
+  programId: PublicKey = SSS_CORE_PROGRAM_ID
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from(ALLOWLIST_SEED), mint.toBuffer(), wallet.toBuffer()],
     programId
   );
 }

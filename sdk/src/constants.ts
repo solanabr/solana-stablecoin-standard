@@ -20,6 +20,10 @@ export const SSS_HOOK_PROGRAM_ID = new PublicKey(
 // Presets
 export const PRESET_MINIMAL = 1;
 export const PRESET_COMPLIANT = 2;
+export const PRESET_CONFIDENTIAL = 3;
+
+// PDA seed for allowlist (SSS-3)
+export const ALLOWLIST_SEED = "allowlist";
 
 // Re-export TOKEN_2022_PROGRAM_ID for convenience
 export { TOKEN_2022_PROGRAM_ID };

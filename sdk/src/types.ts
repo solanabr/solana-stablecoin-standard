@@ -115,6 +115,25 @@ export enum RoleType {
 }
 
 /**
+ * Allowlist entry for a single wallet address (SSS-3 only).
+ * Controls which accounts may participate in confidential transfers.
+ */
+export interface AllowlistEntry {
+  /** The stablecoin mint this entry belongs to. */
+  mint: PublicKey;
+  /** The wallet address being approved. */
+  wallet: PublicKey;
+  /** Whether this wallet is currently approved for confidential transfers. */
+  approved: boolean;
+  /** Who initiated the approval. */
+  approvedBy: PublicKey;
+  /** Unix timestamp when approved. */
+  approvedAt: BN;
+  /** Bump for this PDA. */
+  bump: number;
+}
+
+/**
  * Result returned by initialize().
  */
 export interface InitializeResult {

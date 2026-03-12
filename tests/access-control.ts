@@ -49,7 +49,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .configureMinter(attacker.publicKey, new anchor.BN(1_000))
-          .accounts({
+          .accountsPartial({
             masterMinter: attacker.publicKey,
             config: stablecoin.configPda,
             minterState: minterStatePda,
@@ -67,7 +67,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .pause()
-          .accounts({
+          .accountsPartial({
             pauser: attacker.publicKey,
             config: stablecoin.configPda,
           })
@@ -83,7 +83,7 @@ describe("Access Control", () => {
       // First pause
       await program.methods
         .pause()
-        .accounts({
+        .accountsPartial({
           pauser: authority.publicKey,
           config: stablecoin.configPda,
         })
@@ -92,7 +92,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .unpause()
-          .accounts({
+          .accountsPartial({
             pauser: attacker.publicKey,
             config: stablecoin.configPda,
           })
@@ -106,7 +106,7 @@ describe("Access Control", () => {
       // Unpause for other tests
       await program.methods
         .unpause()
-        .accounts({
+        .accountsPartial({
           pauser: authority.publicKey,
           config: stablecoin.configPda,
         })
@@ -117,7 +117,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .updateRole({ pauser: {} }, attacker.publicKey)
-          .accounts({
+          .accountsPartial({
             authority: attacker.publicKey,
             config: stablecoin.configPda,
           })
@@ -133,7 +133,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .transferAuthority(attacker.publicKey)
-          .accounts({
+          .accountsPartial({
             authority: attacker.publicKey,
             config: stablecoin.configPda,
           })
@@ -155,7 +155,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .freezeAccount()
-          .accounts({
+          .accountsPartial({
             signer: attacker.publicKey,
             config: stablecoin.configPda,
             mint: stablecoin.mint.publicKey,
@@ -185,7 +185,7 @@ describe("Access Control", () => {
       // Remove (disable) the minter
       await program.methods
         .removeMinter()
-        .accounts({
+        .accountsPartial({
           masterMinter: authority.publicKey,
           config: stablecoin.configPda,
           minterState: minterStatePda,
@@ -252,7 +252,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .seize(new anchor.BN(1_000))
-          .accounts({
+          .accountsPartial({
             authority: authority.publicKey,
             config: stablecoin.configPda,
             mint: stablecoin.mint.publicKey,
@@ -292,7 +292,7 @@ describe("Access Control", () => {
       // Assign blacklister role
       await program.methods
         .updateRole({ blacklister: {} }, blacklisterKeypair.publicKey)
-        .accounts({
+        .accountsPartial({
           authority: authority.publicKey,
           config: sss2Stablecoin.configPda,
         })
@@ -309,7 +309,7 @@ describe("Access Control", () => {
     it("blacklister can thaw an account on SSS-2", async () => {
       await program.methods
         .thawAccount()
-        .accounts({
+        .accountsPartial({
           signer: blacklisterKeypair.publicKey,
           config: sss2Stablecoin.configPda,
           mint: sss2Stablecoin.mint.publicKey,
@@ -324,7 +324,7 @@ describe("Access Control", () => {
     it("blacklister can freeze an account on SSS-2", async () => {
       await program.methods
         .freezeAccount()
-        .accounts({
+        .accountsPartial({
           signer: blacklisterKeypair.publicKey,
           config: sss2Stablecoin.configPda,
           mint: sss2Stablecoin.mint.publicKey,
@@ -344,7 +344,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .updateRole({ blacklister: {} }, sss1Blacklister.publicKey)
-          .accounts({
+          .accountsPartial({
             authority: authority.publicKey,
             config: stablecoin.configPda,
           })
@@ -362,7 +362,7 @@ describe("Access Control", () => {
     it("cannot pause when already paused", async () => {
       await program.methods
         .pause()
-        .accounts({
+        .accountsPartial({
           pauser: authority.publicKey,
           config: stablecoin.configPda,
         })
@@ -371,7 +371,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .pause()
-          .accounts({
+          .accountsPartial({
             pauser: authority.publicKey,
             config: stablecoin.configPda,
           })
@@ -383,7 +383,7 @@ describe("Access Control", () => {
 
       await program.methods
         .unpause()
-        .accounts({
+        .accountsPartial({
           pauser: authority.publicKey,
           config: stablecoin.configPda,
         })
@@ -394,7 +394,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .unpause()
-          .accounts({
+          .accountsPartial({
             pauser: authority.publicKey,
             config: stablecoin.configPda,
           })
@@ -409,7 +409,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .transferAuthority(PublicKey.default)
-          .accounts({
+          .accountsPartial({
             authority: authority.publicKey,
             config: stablecoin.configPda,
           })
@@ -424,7 +424,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .updateRole({ pauser: {} }, PublicKey.default)
-          .accounts({
+          .accountsPartial({
             authority: authority.publicKey,
             config: stablecoin.configPda,
           })
@@ -439,7 +439,7 @@ describe("Access Control", () => {
       try {
         await program.methods
           .acceptAuthority()
-          .accounts({
+          .accountsPartial({
             newAuthority: authority.publicKey,
             config: stablecoin.configPda,
           })

@@ -134,3 +134,20 @@ pub struct RemovedFromBlacklist {
     pub wallet: Pubkey,
     pub removed_by: Pubkey,
 }
+
+// ── Confidential transfer events (SSS-3) ────────────────────────────────────
+
+#[event]
+pub struct ConfidentialAccountApproved {
+    pub mint: Pubkey,
+    pub wallet: Pubkey,
+    pub token_account: Pubkey,
+    pub approved_by: Pubkey,
+}
+
+#[event]
+pub struct ConfidentialAccountRevoked {
+    pub mint: Pubkey,
+    pub wallet: Pubkey,
+    pub revoked_by: Pubkey,
+}

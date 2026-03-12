@@ -1,6 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
-import { BN, Program, AnchorProvider, Idl, Wallet } from "@coral-xyz/anchor";
-import { Connection, PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
+import { BN, Program, AnchorProvider, Idl, Wallet, EventParser } from "@coral-xyz/anchor";
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  SystemProgram,
+  ConfirmedSignatureInfo,
+} from "@solana/web3.js";
 import {
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
@@ -19,6 +25,7 @@ import {
   InitializeResult,
   RoleType,
 } from "./types";
+import { validateInitializeParams } from "./validation";
 
 import { SssCore } from "./idl/sss_core";
 import sssCoreIdl from "./idl/sss_core";
@@ -55,6 +62,7 @@ export class StablecoinClient {
   protected readonly wallet: Wallet;
   protected readonly programId: PublicKey;
   protected readonly provider: AnchorProvider;
+  private _program?: Program<SssCore>;
 
   constructor(
     connection: Connection,
@@ -71,13 +79,13 @@ export class StablecoinClient {
   }
 
   /**
-   * Returns an Anchor Program instance for the sss-core program.
+   * Returns a cached Anchor Program instance for the sss-core program.
    */
   protected getProgram(): Program<SssCore> {
-    return new Program<SssCore>(
-      sssCoreIdl as SssCore,
-      this.provider
-    );
+    if (!this._program) {
+      this._program = new Program<SssCore>(sssCoreIdl as SssCore, this.provider);
+    }
+    return this._program;
   }
 
   /**
@@ -95,6 +103,9 @@ export class StablecoinClient {
     params: InitializeParams,
     hookProgram?: PublicKey
   ): Promise<InitializeResult> {
+    // Validate params at the SDK boundary
+    validateInitializeParams(params as unknown as Record<string, unknown>);
+
     try {
       const program = this.getProgram();
       const mintKeypair = Keypair.generate();
@@ -587,5 +598,86 @@ export class StablecoinClient {
         }`
       );
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Event parsing
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Parse sss-core events from a transaction's log messages.
+   *
+   * @param txSignature  The transaction signature to parse events from.
+   * @returns            Array of parsed events with name and data.
+   */
+  async parseTransactionEvents(
+    txSignature: string
+  ): Promise<{ name: string; data: Record<string, unknown> }[]> {
+    const tx = await this.connection.getTransaction(txSignature, {
+      commitment: "confirmed",
+      maxSupportedTransactionVersion: 0,
+    });
+
+    if (!tx?.meta?.logMessages) {
+      return [];
+    }
+
+    const program = this.getProgram();
+    const parser = new EventParser(program.programId, program.coder);
+    const events: { name: string; data: Record<string, unknown> }[] = [];
+
+    for (const event of parser.parseLogs(tx.meta.logMessages)) {
+      events.push({ name: event.name, data: event.data as Record<string, unknown> });
+    }
+
+    return events;
+  }
+
+  /**
+   * Fetch recent transaction signatures for a mint's config PDA.
+   *
+   * @param mint   The stablecoin mint address.
+   * @param limit  Maximum number of signatures to fetch (default: 25).
+   * @returns      Array of confirmed signature info.
+   */
+  async getRecentTransactions(
+    mint: PublicKey,
+    limit: number = 25
+  ): Promise<ConfirmedSignatureInfo[]> {
+    const [config] = findConfigPda(mint, this.programId);
+    return this.connection.getSignaturesForAddress(config, { limit });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Transaction confirmation helper
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Send a transaction and wait for confirmation with retries.
+   *
+   * This is a utility for users who build transactions manually (e.g., via
+   * TransactionBuilder.build()) and want reliable confirmation.
+   *
+   * @param txSignature  The transaction signature from sendRawTransaction.
+   * @param commitment   Desired commitment level (default: "confirmed").
+   * @returns            The confirmed transaction signature.
+   */
+  async confirmTransaction(
+    txSignature: string,
+    commitment: "processed" | "confirmed" | "finalized" = "confirmed"
+  ): Promise<string> {
+    const { blockhash, lastValidBlockHeight } =
+      await this.connection.getLatestBlockhash(commitment);
+
+    await this.connection.confirmTransaction(
+      {
+        signature: txSignature,
+        blockhash,
+        lastValidBlockHeight,
+      },
+      commitment
+    );
+
+    return txSignature;
   }
 }

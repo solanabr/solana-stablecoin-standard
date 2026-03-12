@@ -11,7 +11,7 @@ pub struct StablecoinConfig {
     /// The Token-2022 mint address for this stablecoin.
     pub mint: Pubkey,
 
-    /// Preset type: 1 = SSS-1 (Minimal), 2 = SSS-2 (Compliant).
+    /// Preset type: 1 = SSS-1 (Minimal), 2 = SSS-2 (Compliant), 3 = SSS-3 (Confidential).
     pub preset: u8,
 
     // ── Roles (Circle EVM model) ────────────────────────────────────────────
@@ -73,6 +73,32 @@ pub struct MinterState {
     pub enabled: bool,
 
     /// Bump for this minter PDA.
+    pub bump: u8,
+}
+
+/// Per-wallet allowlist entry for SSS-3 confidential transfer approval.
+/// Tracks which accounts the confidential transfer authority has approved.
+///
+/// PDA: `[b"allowlist", mint.key().as_ref(), wallet.key().as_ref()]`
+#[account]
+#[derive(InitSpace)]
+pub struct AllowlistEntry {
+    /// The stablecoin mint this entry belongs to.
+    pub mint: Pubkey,
+
+    /// The wallet address being approved/revoked.
+    pub wallet: Pubkey,
+
+    /// Whether this wallet is currently approved for confidential transfers.
+    pub approved: bool,
+
+    /// Who initiated the approval.
+    pub approved_by: Pubkey,
+
+    /// Unix timestamp when approved.
+    pub approved_at: i64,
+
+    /// Bump for this PDA.
     pub bump: u8,
 }
 

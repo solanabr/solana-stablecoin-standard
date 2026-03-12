@@ -10,7 +10,8 @@
 │  - Handles initialize, configure_minter, remove_minter,          │
 │    mint_tokens, burn_tokens, freeze_account, thaw_account,       │
 │    pause, unpause, update_role, transfer_authority,              │
-│    accept_authority, seize                                        │
+│    accept_authority, seize,                                       │
+│    approve_confidential, revoke_confidential (SSS-3)             │
 │                                                                  │
 │  sss-hook (9aw7Ac4aGMMfND3BvYgGEcASuvyJiBXnQizbhNBphcNM)        │
 │  - Handles initialize_hook, add_to_blacklist,                    │
@@ -51,9 +52,9 @@
 
 ### sss-core
 
-A single Anchor program that implements both presets. Preset selection happens at initialization time (`params.preset`); the preset value is stored in `StablecoinConfig.preset` and checked by instructions that are SSS-2-only (e.g., `seize`).
+A single Anchor program that implements all three presets. Preset selection happens at initialization time (`params.preset`); the preset value is stored in `StablecoinConfig.preset` and checked by instructions that are preset-gated (e.g., `seize` requires preset >= 2, `approve_confidential` requires preset >= 3).
 
-The program does not fork into separate binaries per preset. This approach keeps deployment simple and allows a single IDL to cover both presets.
+The program does not fork into separate binaries per preset. This approach keeps deployment simple and allows a single IDL to cover all presets.
 
 **Instruction pattern (all instructions):**
 
@@ -88,6 +89,7 @@ All PDAs are derived with `PublicKey::findProgramAddressSync` using the seeds be
 | `MinterState` | `["minter", config, minter_wallet]` | sss-core |
 | `HookConfig` | `["hook-config", mint]` | sss-hook |
 | `BlacklistEntry` | `["blacklist", mint, wallet]` | sss-hook |
+| `AllowlistEntry` | `["allowlist", mint, wallet]` | sss-core |
 | `ExtraAccountMetaList` | `["extra-account-metas", mint]` | sss-hook |
 
 The `MintAuthority` PDA serves triple duty: it is set as the Token-2022 mint authority, freeze authority, and (for SSS-2) permanent delegate. No private key holder controls token supply directly.
@@ -102,7 +104,7 @@ Stored at PDA `["config", mint]`, owned by sss-core.
 Field               Type      Description
 ────────────────────────────────────────────────────────────────────
 mint                Pubkey    Token-2022 mint address
-preset              u8        1 = SSS-1, 2 = SSS-2
+preset              u8        1 = SSS-1, 2 = SSS-2, 3 = SSS-3
 authority           Pubkey    Master admin; can update all roles
 pending_authority   Pubkey    Pending authority for two-step transfer
 master_minter       Pubkey    Can configure/remove minters
@@ -111,6 +113,7 @@ blacklister         Pubkey    Can blacklist wallets (SSS-2) and freeze/thaw
 paused              bool      Whether operations are currently paused
 total_minted        u64       Lifetime minted amount (audit)
 total_burned        u64       Lifetime burned amount (audit)
+total_seized        u64       Lifetime seized amount (SSS-2+ audit)
 bump                u8        Config PDA bump
 mint_authority_bump u8        MintAuthority PDA bump
 ```
@@ -159,13 +162,28 @@ blacklisted_by  Pubkey  Blacklister address at time of action
 bump            u8      PDA bump
 ```
 
+### AllowlistEntry (SSS-3)
+
+Stored at PDA `["allowlist", mint, wallet]`, owned by sss-core. Tracks per-wallet approval for confidential transfers.
+
+```
+Field           Type    Description
+────────────────────────────────────────────────────────────────────
+mint            Pubkey  Stablecoin mint
+wallet          Pubkey  Approved wallet address
+approved        bool    Current approval status
+approved_by     Pubkey  Authority who approved
+approved_at     i64     Unix timestamp of approval
+bump            u8      PDA bump
+```
+
 ## Instruction Flows
 
 ### initialize
 
-1. Validate preset (1 or 2), decimals (0–9), name/symbol/uri lengths.
-2. For preset 2, require `hook_program` account.
-3. Compute extension list: SSS-1 uses `[MetadataPointer, MintCloseAuthority]`; SSS-2 adds `[PermanentDelegate, TransferHook, DefaultAccountState]`.
+1. Validate preset (1, 2, or 3), decimals (0–9), name/symbol/uri lengths.
+2. For preset >= 2, require `hook_program` account.
+3. Compute extension list: SSS-1 uses `[MetadataPointer, MintCloseAuthority]`; SSS-2 adds `[PermanentDelegate, TransferHook, DefaultAccountState]`; SSS-3 adds `[ConfidentialTransferMint]`.
 4. Calculate total account size including variable-length token metadata.
 5. Create mint account via system program CPI.
 6. Initialize each extension via Token-2022 CPIs (must precede `initialize_mint2`).
@@ -207,13 +225,35 @@ Callable by `authority` or `blacklister`. These instructions intentionally **byp
 
 Callable by `pauser`. Sets `config.paused = true/false`. Subsequent calls to `mint_tokens`, `burn_tokens`, and (for SSS-2) transfers via the hook all check this flag.
 
-### seize (SSS-2 only)
+### seize (SSS-2+)
 
 1. Verify `config.preset >= 2`; reject with `PresetFeatureUnavailable` otherwise.
 2. Verify caller is `authority`.
 3. CPI `transfer_checked` using `mint_authority` PDA as the permanent delegate signer.
 4. Pass remaining accounts so Token-2022 can invoke the transfer hook.
 5. Emit `TokensSeized`.
+
+**Seize and pause interaction:** Seize uses `transfer_checked`, which triggers the transfer hook, which checks the pause flag. This means seize is **implicitly blocked during a pause**. This is by design — the correct operational flow for seizing during an incident is: (1) freeze the target account (freeze bypasses pause), (2) unpause briefly, (3) seize, (4) re-pause. The frozen account prevents the target from moving tokens during the brief unpause window.
+
+### approve_confidential (SSS-3 only)
+
+1. Verify `config.preset >= 3`.
+2. Verify caller is `authority` and contract is not paused.
+3. Create or load the `AllowlistEntry` PDA via `init_if_needed`.
+4. Reject if entry is already approved (`AlreadyApproved`).
+5. CPI to Token-2022 `ConfidentialTransferExtension::ApproveAccount` signed by `mint_authority` PDA.
+6. Populate the `AllowlistEntry` with mint, wallet, approval state, and timestamp.
+7. Emit `ConfidentialAccountApproved`.
+
+### revoke_confidential (SSS-3 only)
+
+1. Verify `config.preset >= 3`.
+2. Verify caller is `authority`.
+3. Verify the `AllowlistEntry` is currently approved (`NotApproved` otherwise).
+4. Set `allowlist_entry.approved = false`. Account is preserved for audit trail.
+5. Emit `ConfidentialAccountRevoked`.
+
+Note: Revocation intentionally bypasses the pause check (like freeze/thaw) since it is an authority-level compliance action that should succeed even during a global pause.
 
 ### transfer_authority / accept_authority
 
@@ -264,6 +304,19 @@ DefaultAccountState
   └── state = Frozen
   └── all new token accounts start frozen (KYC gate)
   └── must be thawed by authority or blacklister before use
+```
+
+### SSS-3 Extension Set (all SSS-2 extensions plus)
+
+```
+ConfidentialTransferMint
+  └── authority = mint_authority PDA
+  └── auto_approve_new_accounts = false
+  └── auditor_elgamal_pubkey = None
+  └── compliance via allowlist: authority must call approve_confidential
+      per wallet before they can use confidential transfers
+  └── confidential transfers bypass the transfer hook, so blacklist
+      enforcement uses the AllowlistEntry allowlist instead
 ```
 
 ## Transfer Hook Flow
@@ -322,6 +375,7 @@ Each instruction checks the caller against the appropriate role field in `Stable
 - `pause`, `unpause`: `signer == config.pauser`
 - `freeze_account`, `thaw_account`: `signer == config.authority || signer == config.blacklister`
 - `update_role`, `transfer_authority`, `seize`: `signer == config.authority`
+- `approve_confidential`, `revoke_confidential`: `signer == config.authority`
 - `add_to_blacklist`, `remove_from_blacklist`: `signer == config.blacklister` (verified by reading `stablecoin_config` in sss-hook)
 - `accept_authority`: `signer == config.pending_authority`
 
@@ -353,6 +407,10 @@ sss-core::mint_tokens
 
 sss-core::freeze_account
   └── CPI → Token-2022::freeze_account (with mint_authority PDA signer)
+
+sss-core::approve_confidential (SSS-3)
+  └── CPI → Token-2022::ConfidentialTransferExtension::ApproveAccount
+              (with mint_authority PDA signer)
 
 sss-hook::initialize_hook
   └── reads sss-core StablecoinConfig (validates mint has config)

@@ -74,7 +74,7 @@ describe("SSS-2 (Compliant Preset)", () => {
             uri: "",
             decimals: 6,
           })
-          .accounts({
+          .accountsPartial({
             authority: authority.publicKey,
             mint: mint.publicKey,
             config: configPda,
@@ -110,7 +110,7 @@ describe("SSS-2 (Compliant Preset)", () => {
 
       await hookProgram.methods
         .initializeHook()
-        .accounts({
+        .accountsPartial({
           authority: authority.publicKey,
           mint: stablecoin.mint.publicKey,
           stablecoinConfig: stablecoin.configPda,
@@ -165,7 +165,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       // Thaw the account so it can receive tokens
       await coreProgram.methods
         .thawAccount()
-        .accounts({
+        .accountsPartial({
           signer: authority.publicKey,
           config: stablecoin.configPda,
           mint: stablecoin.mint.publicKey,
@@ -203,7 +203,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       // Thaw authority's ATA too
       await coreProgram.methods
         .thawAccount()
-        .accounts({
+        .accountsPartial({
           signer: authority.publicKey,
           config: stablecoin.configPda,
           mint: stablecoin.mint.publicKey,
@@ -255,7 +255,7 @@ describe("SSS-2 (Compliant Preset)", () => {
 
       await coreProgram.methods
         .seize(new anchor.BN(100_000_000)) // seize 100 tokens
-        .accounts({
+        .accountsPartial({
           authority: authority.publicKey,
           config: stablecoin.configPda,
           mint: stablecoin.mint.publicKey,
@@ -310,7 +310,7 @@ describe("SSS-2 (Compliant Preset)", () => {
     it("adds a wallet to the blacklist", async () => {
       await hookProgram.methods
         .addToBlacklist(targetWallet.publicKey, "Suspicious activity")
-        .accounts({
+        .accountsPartial({
           blacklister: authority.publicKey,
           mint: stablecoin.mint.publicKey,
           stablecoinConfig: stablecoin.configPda,
@@ -332,7 +332,7 @@ describe("SSS-2 (Compliant Preset)", () => {
     it("removes a wallet from the blacklist", async () => {
       await hookProgram.methods
         .removeFromBlacklist()
-        .accounts({
+        .accountsPartial({
           blacklister: authority.publicKey,
           mint: stablecoin.mint.publicKey,
           stablecoinConfig: stablecoin.configPda,
@@ -361,7 +361,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       try {
         await hookProgram.methods
           .addToBlacklist(otherWallet.publicKey, "Hacked")
-          .accounts({
+          .accountsPartial({
             blacklister: attacker.publicKey,
             mint: stablecoin.mint.publicKey,
             stablecoinConfig: stablecoin.configPda,
@@ -390,7 +390,7 @@ describe("SSS-2 (Compliant Preset)", () => {
             otherWallet.publicKey,
             "A".repeat(65) // 65 chars, max is 64
           )
-          .accounts({
+          .accountsPartial({
             blacklister: authority.publicKey,
             mint: stablecoin.mint.publicKey,
             stablecoinConfig: stablecoin.configPda,
@@ -435,7 +435,7 @@ describe("SSS-2 (Compliant Preset)", () => {
 
       await hookProgram.methods
         .initializeHook()
-        .accounts({
+        .accountsPartial({
           authority: authority.publicKey,
           mint: stablecoin.mint.publicKey,
           stablecoinConfig: stablecoin.configPda,
@@ -461,7 +461,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       for (const ata of [senderAta, receiverAta]) {
         await coreProgram.methods
           .thawAccount()
-          .accounts({
+          .accountsPartial({
             signer: authority.publicKey,
             config: stablecoin.configPda,
             mint: stablecoin.mint.publicKey,
@@ -501,7 +501,7 @@ describe("SSS-2 (Compliant Preset)", () => {
 
       await hookProgram.methods
         .addToBlacklist(receiver.publicKey, "Compliance block")
-        .accounts({
+        .accountsPartial({
           blacklister: authority.publicKey,
           mint: stablecoin.mint.publicKey,
           stablecoinConfig: stablecoin.configPda,
@@ -564,7 +564,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       // Remove from blacklist
       await hookProgram.methods
         .removeFromBlacklist()
-        .accounts({
+        .accountsPartial({
           blacklister: authority.publicKey,
           mint: stablecoin.mint.publicKey,
           stablecoinConfig: stablecoin.configPda,
@@ -620,7 +620,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       // Pause the contract
       await coreProgram.methods
         .pause()
-        .accounts({
+        .accountsPartial({
           pauser: authority.publicKey,
           config: stablecoin.configPda,
         })
@@ -671,7 +671,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       // Unpause for remaining tests
       await coreProgram.methods
         .unpause()
-        .accounts({
+        .accountsPartial({
           pauser: authority.publicKey,
           config: stablecoin.configPda,
         })
@@ -725,7 +725,7 @@ describe("SSS-2 (Compliant Preset)", () => {
       // Thaw for SSS-2
       await coreProgram.methods
         .thawAccount()
-        .accounts({
+        .accountsPartial({
           signer: authority.publicKey,
           config: stablecoin.configPda,
           mint: stablecoin.mint.publicKey,

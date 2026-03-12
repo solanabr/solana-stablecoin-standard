@@ -1,6 +1,13 @@
+// High-level facade (bounty-specified API)
+export { SolanaStablecoin, Presets, ComplianceModule } from "./stablecoin";
+export type { CreateStablecoinOptions } from "./stablecoin";
+
 // Clients
 export { StablecoinClient } from "./client";
 export { ComplianceClient } from "./compliance";
+
+// Transaction builder
+export { TransactionBuilder } from "./builder";
 
 // Constants
 export {
@@ -14,6 +21,8 @@ export {
   SSS_HOOK_PROGRAM_ID,
   PRESET_MINIMAL,
   PRESET_COMPLIANT,
+  PRESET_CONFIDENTIAL,
+  ALLOWLIST_SEED,
   TOKEN_2022_PROGRAM_ID,
 } from "./constants";
 
@@ -25,6 +34,7 @@ export {
   findHookConfigPda,
   findBlacklistEntryPda,
   findExtraAccountMetaListPda,
+  findAllowlistEntryPda,
 } from "./pda";
 
 // Types and interfaces
@@ -33,8 +43,17 @@ export type {
   MinterState,
   HookConfig,
   BlacklistEntry,
+  AllowlistEntry,
   InitializeParams,
   InitializeResult,
 } from "./types";
 
 export { RoleType } from "./types";
+
+// Validation (Zod schemas + helpers)
+export {
+  CreateStablecoinOptionsSchema,
+  InitializeParamsSchema,
+  validateCreateOptions,
+  validateInitializeParams,
+} from "./validation";

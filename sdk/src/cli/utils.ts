@@ -250,6 +250,45 @@ export function logWarning(msg: string): void {
 }
 
 // ---------------------------------------------------------------------------
+// Command context helper — extracts repeated global option parsing
+// ---------------------------------------------------------------------------
+
+/**
+ * Parsed global options shared by all CLI commands.
+ */
+export interface CommandContext {
+  keypairPath: string;
+  url: string;
+  outputFormat: string;
+  skipConfirm: boolean;
+  dryRun: boolean;
+}
+
+/**
+ * Extract global options from a commander Command.
+ * Walks up the parent chain to find the root program's options.
+ *
+ * @param cmd  The commander Command (from the action handler's second arg).
+ * @param depth  How many parent levels to traverse (1 for top-level, 2 for nested).
+ */
+export function resolveGlobalOpts(cmd: { parent?: { opts(): Record<string, unknown>; parent?: { opts(): Record<string, unknown> } } }, depth: number = 1): CommandContext {
+  let target = cmd;
+  for (let i = 0; i < depth; i++) {
+    if (target.parent) {
+      target = target.parent as typeof target;
+    }
+  }
+  const globalOpts = (target as { opts?: () => Record<string, unknown> }).opts?.() ?? {};
+  return {
+    keypairPath: (globalOpts.keypair as string) ?? "~/.config/solana/id.json",
+    url: (globalOpts.url as string) ?? "http://localhost:8899",
+    outputFormat: (globalOpts.output as string) ?? "table",
+    skipConfirm: (globalOpts.yes as boolean) ?? false,
+    dryRun: (globalOpts.dryRun as boolean) ?? false,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // PublicKey parsing helper
 // ---------------------------------------------------------------------------
 

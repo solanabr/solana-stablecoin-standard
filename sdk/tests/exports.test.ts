@@ -3,6 +3,26 @@ import { PublicKey } from "@solana/web3.js";
 import * as SDK from "../src/index";
 
 describe("SDK exports (index.ts)", () => {
+  // ---------- High-level facade exports ----------
+
+  describe("facade exports", () => {
+    it("should export SolanaStablecoin", () => {
+      expect(SDK.SolanaStablecoin).to.exist;
+      expect(SDK.SolanaStablecoin).to.be.a("function");
+    });
+
+    it("should export Presets enum", () => {
+      expect(SDK.Presets).to.exist;
+      expect(SDK.Presets.SSS_1).to.equal(1);
+      expect(SDK.Presets.SSS_2).to.equal(2);
+    });
+
+    it("should export ComplianceModule", () => {
+      expect(SDK.ComplianceModule).to.exist;
+      expect(SDK.ComplianceModule).to.be.a("function");
+    });
+  });
+
   // ---------- Client exports ----------
 
   describe("client exports", () => {
@@ -70,6 +90,16 @@ describe("SDK exports (index.ts)", () => {
       expect(SDK.PRESET_COMPLIANT).to.equal(2);
     });
 
+    it("should export PRESET_CONFIDENTIAL", () => {
+      expect(SDK.PRESET_CONFIDENTIAL).to.exist;
+      expect(SDK.PRESET_CONFIDENTIAL).to.equal(3);
+    });
+
+    it("should export ALLOWLIST_SEED", () => {
+      expect(SDK.ALLOWLIST_SEED).to.exist;
+      expect(SDK.ALLOWLIST_SEED).to.be.a("string");
+    });
+
     it("should export TOKEN_2022_PROGRAM_ID", () => {
       expect(SDK.TOKEN_2022_PROGRAM_ID).to.exist;
       expect(SDK.TOKEN_2022_PROGRAM_ID).to.be.instanceOf(PublicKey);
@@ -124,16 +154,14 @@ describe("SDK exports (index.ts)", () => {
     // compile-time only and cannot be tested at runtime. However, we verify
     // that they are importable without error via the type-only import below.
     // If any type export were missing, this file would fail to compile.
-    it("should compile with type imports (StablecoinConfig, MinterState, HookConfig, BlacklistEntry, InitializeParams, InitializeResult)", () => {
-      // This test validates that the following type imports resolve at compile time.
-      // The actual import is at the top of the file via the wildcard,
-      // but we also verify with a direct import to be thorough.
+    it("should compile with type imports (StablecoinConfig, MinterState, HookConfig, BlacklistEntry, InitializeParams, InitializeResult, CreateStablecoinOptions)", () => {
       type _Config = SDK.StablecoinConfig;
       type _Minter = SDK.MinterState;
       type _Hook = SDK.HookConfig;
       type _Blacklist = SDK.BlacklistEntry;
       type _InitParams = SDK.InitializeParams;
       type _InitResult = SDK.InitializeResult;
+      type _CreateOpts = SDK.CreateStablecoinOptions;
 
       // If we got here, compilation succeeded
       expect(true).to.be.true;
@@ -143,22 +171,29 @@ describe("SDK exports (index.ts)", () => {
   // ---------- Completeness check ----------
 
   describe("export completeness", () => {
-    it("should export at least 20 named members", () => {
-      // 2 clients + 6 PDA fns + 8 constants/presets + RoleType + TOKEN_2022 = 18+
+    it("should export at least 26 named members", () => {
+      // 3 facade + 3 clients (+ builder) + 6 PDA fns + 10 constants/presets + RoleType + TOKEN_2022 = 26+
       const exportedKeys = Object.keys(SDK);
-      expect(exportedKeys.length).to.be.at.least(18);
+      expect(exportedKeys.length).to.be.at.least(26);
     });
 
     it("should include all expected export names", () => {
       const expectedNames = [
+        // Facade
+        "SolanaStablecoin",
+        "Presets",
+        "ComplianceModule",
+        // Clients
         "StablecoinClient",
         "ComplianceClient",
+        // PDA helpers
         "findConfigPda",
         "findMintAuthorityPda",
         "findMinterStatePda",
         "findHookConfigPda",
         "findBlacklistEntryPda",
         "findExtraAccountMetaListPda",
+        // Constants
         "CONFIG_SEED",
         "MINT_AUTHORITY_SEED",
         "MINTER_SEED",
@@ -169,7 +204,12 @@ describe("SDK exports (index.ts)", () => {
         "SSS_HOOK_PROGRAM_ID",
         "PRESET_MINIMAL",
         "PRESET_COMPLIANT",
+        "PRESET_CONFIDENTIAL",
+        "ALLOWLIST_SEED",
         "TOKEN_2022_PROGRAM_ID",
+        // Transaction builder
+        "TransactionBuilder",
+        // Enums
         "RoleType",
       ];
 

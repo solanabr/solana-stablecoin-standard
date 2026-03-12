@@ -8,6 +8,7 @@
 //! ## Presets
 //! - **SSS-1**: MetadataPointer, TokenMetadata, MintCloseAuthority
 //! - **SSS-2**: All of SSS-1 + PermanentDelegate, TransferHook, DefaultAccountState(Frozen)
+//! - **SSS-3**: All of SSS-2 + ConfidentialTransferMint (allowlist-based approval)
 
 use anchor_lang::prelude::*;
 
@@ -102,5 +103,20 @@ pub mod sss_core {
     /// Seize tokens from a target account using the permanent delegate (SSS-2 only).
     pub fn seize<'a>(ctx: Context<'_, '_, 'a, 'a, Seize<'a>>, amount: u64) -> Result<()> {
         instructions::seize::handle_seize(ctx, amount)
+    }
+
+    /// Approve a wallet's token account for confidential transfers (SSS-3 only).
+    /// Creates an AllowlistEntry PDA and CPIs to Token-2022 to approve the account.
+    pub fn approve_confidential(
+        ctx: Context<ApproveConfidential>,
+        wallet: Pubkey,
+    ) -> Result<()> {
+        instructions::approve_confidential::handle_approve_confidential(ctx, wallet)
+    }
+
+    /// Revoke a wallet's confidential transfer approval (SSS-3 only).
+    /// Marks the AllowlistEntry as revoked.
+    pub fn revoke_confidential(ctx: Context<RevokeConfidential>) -> Result<()> {
+        instructions::revoke_confidential::handle_revoke_confidential(ctx)
     }
 }

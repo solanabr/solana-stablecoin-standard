@@ -3,6 +3,8 @@ use crate::error::SSSError;
 use crate::events::StablecoinInitialized;
 use crate::state::StablecoinConfig;
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
+use anchor_lang::solana_program::program::invoke;
 use anchor_lang::system_program::{create_account, CreateAccount};
 use anchor_spl::token_2022::{
     initialize_mint2, spl_token_2022::extension::ExtensionType, spl_token_2022::pod::PodMint,
@@ -64,7 +66,9 @@ pub struct Initialize<'info> {
 pub fn handle_initialize(ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
     // ── 1. VALIDATE ─────────────────────────────────────────────────────────
     require!(
-        params.preset == PRESET_MINIMAL || params.preset == PRESET_COMPLIANT,
+        params.preset == PRESET_MINIMAL
+            || params.preset == PRESET_COMPLIANT
+            || params.preset == PRESET_CONFIDENTIAL,
         SSSError::InvalidPreset
     );
     require!(params.decimals <= MAX_DECIMALS, SSSError::InvalidDecimals);
@@ -75,7 +79,8 @@ pub fn handle_initialize(ctx: Context<Initialize>, params: InitializeParams) -> 
     );
     require!(params.uri.len() <= MAX_URI_LEN, SSSError::UriTooLong);
 
-    if params.preset == PRESET_COMPLIANT {
+    // SSS-2 and SSS-3 both require the hook program for public transfer compliance
+    if params.preset >= PRESET_COMPLIANT {
         require!(
             ctx.accounts.hook_program.is_some(),
             SSSError::HookProgramRequired
@@ -91,10 +96,14 @@ pub fn handle_initialize(ctx: Context<Initialize>, params: InitializeParams) -> 
         ExtensionType::MintCloseAuthority,
     ];
 
-    if params.preset == PRESET_COMPLIANT {
+    if params.preset >= PRESET_COMPLIANT {
         extensions.push(ExtensionType::PermanentDelegate);
         extensions.push(ExtensionType::TransferHook);
         extensions.push(ExtensionType::DefaultAccountState);
+    }
+
+    if params.preset >= PRESET_CONFIDENTIAL {
+        extensions.push(ExtensionType::ConfidentialTransferMint);
     }
 
     let base_size = ExtensionType::try_calculate_account_len::<PodMint>(&extensions)
@@ -158,8 +167,8 @@ pub fn handle_initialize(ctx: Context<Initialize>, params: InitializeParams) -> 
         Some(&mint_authority_key),
     )?;
 
-    // SSS-2 specific extensions
-    if params.preset == PRESET_COMPLIANT {
+    // SSS-2+ specific extensions (SSS-2 and SSS-3 both use these)
+    if params.preset >= PRESET_COMPLIANT {
         // Safety: hook_program presence validated by require! above.
         // The authority chooses the hook program for their stablecoin — this is
         // a trust assumption: the deployer is responsible for providing the correct
@@ -206,6 +215,34 @@ pub fn handle_initialize(ctx: Context<Initialize>, params: InitializeParams) -> 
                 },
             ),
             &anchor_spl::token_2022::spl_token_2022::state::AccountState::Frozen,
+        )?;
+    }
+
+    // SSS-3: Initialize ConfidentialTransferMint extension
+    // Sets mint_authority PDA as the confidential transfer authority, with
+    // auto_approve_new_accounts = false (allowlist-based approval via approve_confidential).
+    // Confidential transfers bypass the transfer hook, so compliance uses the
+    // allowlist mechanism instead of on-transfer blacklist checks.
+    if params.preset >= PRESET_CONFIDENTIAL {
+        // Build raw CPI: ConfidentialTransferExtension (27) → InitializeMint (0)
+        // Data layout: [authority: 32 bytes, auto_approve: 1 byte, auditor: 32 bytes]
+        // OptionalNonZeroPubkey: all-zeros = None, non-zero = Some(pubkey)
+        let mut ct_data = Vec::with_capacity(67);
+        ct_data.push(27); // TokenInstruction::ConfidentialTransferExtension
+        ct_data.push(0);  // ConfidentialTransferInstruction::InitializeMint
+        ct_data.extend_from_slice(mint_authority_key.as_ref()); // authority = Some(mint_authority)
+        ct_data.push(0);  // auto_approve_new_accounts = false
+        ct_data.extend_from_slice(&[0u8; 32]); // auditor_elgamal_pubkey = None
+
+        let ct_init_ix = Instruction {
+            program_id: ctx.accounts.token_program.key(),
+            accounts: vec![AccountMeta::new(mint_key, false)],
+            data: ct_data,
+        };
+
+        invoke(
+            &ct_init_ix,
+            &[ctx.accounts.mint.to_account_info()],
         )?;
     }
 

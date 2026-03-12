@@ -29,6 +29,7 @@ describe("Type definitions", () => {
         paused: false,
         totalMinted: new BN(0),
         totalBurned: new BN(0),
+        totalSeized: new BN(0),
         bump: 255,
         mintAuthorityBump: 254,
       };
@@ -59,6 +60,7 @@ describe("Type definitions", () => {
         paused: false,
         totalMinted: new BN(0),
         totalBurned: new BN(0),
+        totalSeized: new BN(0),
         bump: 255,
         mintAuthorityBump: 254,
       };
@@ -77,6 +79,7 @@ describe("Type definitions", () => {
         paused: false,
         totalMinted: new BN(1_000_000),
         totalBurned: new BN(500_000),
+        totalSeized: new BN(0),
         bump: 253,
         mintAuthorityBump: 252,
       };
