@@ -13,11 +13,12 @@ pub struct StablecoinConfig {
     pub bump: u8,
     pub mint: Pubkey,
     pub master_authority: Pubkey,
+    pub pending_authority: Pubkey, // Pubkey::default() if none nominated
 
     // Token metadata
-    pub name: String,    // max 32
-    pub symbol: String,  // max 10
-    pub uri: String,     // max 200
+    pub name: String,   // max 32
+    pub symbol: String, // max 10
+    pub uri: String,    // max 200
     pub decimals: u8,
 
     // Feature flags (set at init, immutable)
@@ -29,6 +30,7 @@ pub struct StablecoinConfig {
 
     // Operational state
     pub is_paused: bool,
+    pub supply_cap: u64, // 0 = unlimited
     pub total_minted: u64,
     pub total_burned: u64,
     pub total_seized: u64,
@@ -47,10 +49,31 @@ impl StablecoinConfig {
 
     pub const SEED_PREFIX: &'static [u8] = b"config";
 
-    // 8 (discriminator) + 1 + 32 + 32 + (4+32) + (4+10) + (4+200) + 1
-    // + 1 + 1 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 8 + 8 + 8 + 8
-    pub const SPACE: usize = 8 + 1 + 32 + 32 + (4 + 32) + (4 + 10) + (4 + 200)
-        + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 8 + 8 + 8 + 8;
+    // 8 (discriminator) + 1 + 32 + 32 + 32 + (4 + 32) + (4 + 10) + (4 + 200)
+    // + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8
+    pub const SPACE: usize = 8
+        + 1
+        + 32
+        + 32
+        + 32
+        + (4 + 32)
+        + (4 + 10)
+        + (4 + 200)
+        + 1
+        + 1
+        + 1
+        + 1
+        + 1
+        + 1
+        + 1
+        + 8
+        + 8
+        + 8
+        + 8
+        + 8
+        + 8
+        + 8
+        + 8;
 
     pub fn current_supply(&self) -> u64 {
         self.total_minted.saturating_sub(self.total_burned)

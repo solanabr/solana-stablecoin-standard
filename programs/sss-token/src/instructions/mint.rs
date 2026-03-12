@@ -79,6 +79,14 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     require!(minter_info.is_active, SssError::MinterNotActive);
     require!(minter_info.can_mint(amount), SssError::MintQuotaExceeded);
 
+    if config.supply_cap > 0 {
+        let new_supply = config
+            .current_supply()
+            .checked_add(amount)
+            .ok_or(SssError::Overflow)?;
+        require!(new_supply <= config.supply_cap, SssError::SupplyCapExceeded);
+    }
+
     let clock = Clock::get()?;
 
     // Mint tokens via CPI (config PDA is mint authority)

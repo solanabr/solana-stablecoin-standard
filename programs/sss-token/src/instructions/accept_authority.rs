@@ -3,10 +3,9 @@ use anchor_lang::prelude::*;
 use crate::errors::SssError;
 use crate::events::AuthorityTransferred;
 use crate::state::*;
-use crate::utils::require_master_authority;
 
 #[derive(Accounts)]
-pub struct TransferAuthority<'info> {
+pub struct AcceptAuthority<'info> {
     pub authority: Signer<'info>,
 
     #[account(
@@ -20,53 +19,48 @@ pub struct TransferAuthority<'info> {
         mut,
         seeds = [RoleRegistry::SEED_PREFIX, config.key().as_ref()],
         bump = role_registry.bump,
+        constraint = role_registry.config == config.key() @ SssError::InvalidAuthority,
     )]
     pub role_registry: Account<'info, RoleRegistry>,
-
-    pub new_authority: Signer<'info>,
 }
 
-pub fn handler(ctx: Context<TransferAuthority>) -> Result<()> {
-    let new_authority_key = ctx.accounts.new_authority.key();
-
-    require_master_authority(&ctx.accounts.role_registry, &ctx.accounts.authority.key())?;
+pub fn handler(ctx: Context<AcceptAuthority>) -> Result<()> {
+    let pending_authority = ctx.accounts.config.pending_authority;
     require!(
-        new_authority_key != ctx.accounts.authority.key(),
-        SssError::SameAuthority
+        pending_authority != Pubkey::default(),
+        SssError::NoPendingAuthority
     );
     require!(
-        new_authority_key != Pubkey::default(),
-        SssError::ZeroAuthority
+        ctx.accounts.authority.key() == pending_authority,
+        SssError::NotPendingAuthority
     );
 
     let clock = Clock::get()?;
     let old_authority = ctx.accounts.config.master_authority;
+    let new_authority = ctx.accounts.authority.key();
 
-    // Update config
     let config = &mut ctx.accounts.config;
-    config.master_authority = new_authority_key;
+    config.master_authority = new_authority;
     config.pending_authority = Pubkey::default();
     config.updated_at = clock.unix_timestamp;
 
-    // Update role registry
     let role_registry = &mut ctx.accounts.role_registry;
-    role_registry.master_authority = new_authority_key;
+    role_registry.master_authority = new_authority;
 
-    // Cascade role updates: any role pointing to the old authority moves to the new one
     if role_registry.pauser == old_authority {
-        role_registry.pauser = new_authority_key;
+        role_registry.pauser = new_authority;
     }
     if role_registry.blacklister == old_authority {
-        role_registry.blacklister = new_authority_key;
+        role_registry.blacklister = new_authority;
     }
     if role_registry.seizer == old_authority {
-        role_registry.seizer = new_authority_key;
+        role_registry.seizer = new_authority;
     }
 
     emit!(AuthorityTransferred {
         config: config.key(),
         old_authority,
-        new_authority: new_authority_key,
+        new_authority,
         timestamp: clock.unix_timestamp,
     });
 

@@ -55,6 +55,8 @@ pub enum SssError {
     UriTooLong,
     #[msg("Reason exceeds maximum length of 128 characters")]
     ReasonTooLong,
+    #[msg("Allowlist reason exceeds maximum length of 64 characters")]
+    AllowlistReasonTooLong,
     #[msg("Details exceeds maximum length of 256 characters")]
     DetailsTooLong,
     #[msg("Invalid decimals value")]
@@ -65,6 +67,10 @@ pub enum SssError {
     SameAuthority,
     #[msg("New authority cannot be the zero address")]
     ZeroAuthority,
+    #[msg("No pending authority nomination exists")]
+    NoPendingAuthority,
+    #[msg("Signer is not the pending authority")]
+    NotPendingAuthority,
 
     // Seize
     #[msg("Seize amount must be greater than zero")]
@@ -79,6 +85,16 @@ pub enum SssError {
     // Transfer hook
     #[msg("Invalid transfer hook program ID")]
     InvalidHookProgram,
+
+    // Allowlist
+    #[msg("Allowlist entry already exists")]
+    AllowlistEntryExists,
+    #[msg("Allowlist entry not found")]
+    AllowlistEntryNotFound,
+
+    // Supply cap
+    #[msg("Mint would exceed the configured supply cap")]
+    SupplyCapExceeded,
 
     // Arithmetic
     #[msg("Arithmetic overflow")]

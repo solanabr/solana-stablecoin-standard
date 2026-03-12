@@ -90,6 +90,14 @@ pub struct AuthorityTransferred {
 }
 
 #[event]
+pub struct AuthorityNominated {
+    pub config: Pubkey,
+    pub old_authority: Pubkey,
+    pub nominated_authority: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
 pub struct BlacklistAdded {
     pub config: Pubkey,
     pub blocked_address: Pubkey,
@@ -102,6 +110,23 @@ pub struct BlacklistAdded {
 pub struct BlacklistRemoved {
     pub config: Pubkey,
     pub unblocked_address: Pubkey,
+    pub removed_by: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AllowlistAdded {
+    pub config: Pubkey,
+    pub address: Pubkey,
+    pub added_by: Pubkey,
+    pub reason: String,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct AllowlistRemoved {
+    pub config: Pubkey,
+    pub address: Pubkey,
     pub removed_by: Pubkey,
     pub timestamp: i64,
 }
@@ -121,5 +146,19 @@ pub struct AuditLogRecorded {
     pub index: u64,
     pub action: u8,
     pub actor: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct SupplyCapUpdated {
+    pub config: Pubkey,
+    pub old_cap: u64,
+    pub new_cap: u64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct MetadataUpdated {
+    pub config: Pubkey,
     pub timestamp: i64,
 }

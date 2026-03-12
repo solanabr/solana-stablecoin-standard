@@ -6286,6 +6286,7 @@ dependencies = [
  "solana-client",
  "solana-sdk",
  "sss-token",
+ "sss-transfer-hook",
  "tokio",
  "toml 0.8.23",
 ]
@@ -6296,6 +6297,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "solana-security-txt",
 ]
 
 [[package]]
@@ -6304,6 +6306,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "solana-security-txt",
  "spl-tlv-account-resolution 0.9.0",
  "spl-token-2022 6.0.0",
  "spl-transfer-hook-interface 0.9.0",

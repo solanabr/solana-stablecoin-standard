@@ -1,12 +1,22 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use anchor_spl::token_interface::Mint;
+use solana_security_txt::security_txt;
 use spl_tlv_account_resolution::{
     account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList,
 };
 use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
 
 declare_id!("FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy");
+
+security_txt! {
+    name: "SSS Transfer Hook",
+    project_url: "https://github.com/solanabr/solana-stablecoin-standard",
+    contacts: "link:https://github.com/solanabr/solana-stablecoin-standard/issues",
+    policy: "https://github.com/solanabr/solana-stablecoin-standard/blob/main/SECURITY.md",
+    source_code: "https://github.com/solanabr/solana-stablecoin-standard",
+    auditors: "N/A"
+}
 
 /// The SSS Token program ID — the program that owns BlacklistEntry PDAs.
 ///
@@ -84,7 +94,9 @@ pub mod sss_transfer_hook {
 
         let account_size =
             ExtraAccountMetaList::size_of(extra_account_metas.len()).map_err(|_| {
-                anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize)
+                anchor_lang::error::Error::from(
+                    anchor_lang::error::ErrorCode::AccountDidNotSerialize,
+                )
             })?;
 
         // Allocate the ExtraAccountMetaList account
@@ -134,10 +146,8 @@ pub mod sss_transfer_hook {
         let authority = &ctx.accounts.authority;
 
         // Defense-in-depth: verify config PDA matches expected derivation
-        let (expected_config, _) = Pubkey::find_program_address(
-            &[b"config", mint_key.as_ref()],
-            &SSS_TOKEN_PROGRAM_ID,
-        );
+        let (expected_config, _) =
+            Pubkey::find_program_address(&[b"config", mint_key.as_ref()], &SSS_TOKEN_PROGRAM_ID);
 
         // If config doesn't match or isn't owned by sss-token, allow transfer
         // (this mint may not be an SSS stablecoin, or config doesn't exist)
@@ -155,17 +165,13 @@ pub mod sss_transfer_hook {
 
         // Check source blacklist — verify owner is sss-token (defense-in-depth)
         let source_blacklist = &ctx.accounts.source_blacklist;
-        if source_blacklist.owner == &SSS_TOKEN_PROGRAM_ID
-            && !source_blacklist.data_is_empty()
-        {
+        if source_blacklist.owner == &SSS_TOKEN_PROGRAM_ID && !source_blacklist.data_is_empty() {
             return Err(HookError::SourceBlacklisted.into());
         }
 
         // Check destination blacklist — verify owner is sss-token (defense-in-depth)
         let dest_blacklist = &ctx.accounts.dest_blacklist;
-        if dest_blacklist.owner == &SSS_TOKEN_PROGRAM_ID
-            && !dest_blacklist.data_is_empty()
-        {
+        if dest_blacklist.owner == &SSS_TOKEN_PROGRAM_ID && !dest_blacklist.data_is_empty() {
             return Err(HookError::DestinationBlacklisted.into());
         }
 
@@ -192,7 +198,6 @@ pub mod sss_transfer_hook {
     }
 }
 
-
 /// Builds the list of extra account metas needed for the transfer hook.
 ///
 /// Transfer hook standard accounts (indices 0-4):
@@ -210,8 +215,9 @@ pub mod sss_transfer_hook {
 fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
     Ok(vec![
         // Account 5: sss-token program (literal pubkey)
-        ExtraAccountMeta::new_with_pubkey(&SSS_TOKEN_PROGRAM_ID, false, false)
-            .map_err(|_| anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize))?,
+        ExtraAccountMeta::new_with_pubkey(&SSS_TOKEN_PROGRAM_ID, false, false).map_err(|_| {
+            anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize)
+        })?,
         // Account 6: StablecoinConfig PDA (external PDA from sss-token)
         // Seeds: ["config", mint_key]
         ExtraAccountMeta::new_external_pda_with_seeds(
@@ -225,7 +231,9 @@ fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
             false, // is_signer
             false, // is_writable
         )
-        .map_err(|_| anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize))?,
+        .map_err(|_| {
+            anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize)
+        })?,
         // Account 7: Source BlacklistEntry PDA
         // Seeds: ["blacklist", config_key, source_token_account_owner]
         // SECURITY: derive from the source token account's owner field (offset 32),
@@ -246,7 +254,9 @@ fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
             false,
             false,
         )
-        .map_err(|_| anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize))?,
+        .map_err(|_| {
+            anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize)
+        })?,
         // Account 8: Destination BlacklistEntry PDA
         // Seeds: ["blacklist", config_key, dest_token_account_owner]
         // The owner is stored at offset 32 in the token account (after the 32-byte mint field)
@@ -266,7 +276,9 @@ fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
             false,
             false,
         )
-        .map_err(|_| anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize))?,
+        .map_err(|_| {
+            anchor_lang::error::Error::from(anchor_lang::error::ErrorCode::AccountDidNotSerialize)
+        })?,
     ])
 }
 

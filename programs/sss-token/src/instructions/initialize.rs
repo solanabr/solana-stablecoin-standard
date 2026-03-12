@@ -4,8 +4,7 @@ use anchor_spl::token_2022::{self, spl_token_2022};
 use spl_token_2022::{
     extension::{
         confidential_transfer::instruction::initialize_mint as init_ct_mint,
-        metadata_pointer::instruction::initialize as init_metadata_pointer,
-        ExtensionType,
+        metadata_pointer::instruction::initialize as init_metadata_pointer, ExtensionType,
     },
     instruction::initialize_mint2,
 };
@@ -91,10 +90,18 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
             StablecoinPreset::SSS2 => (true, true, false, false),
             StablecoinPreset::SSS3 => (true, false, false, true),
             StablecoinPreset::Custom => {
-                let pd = params.enable_permanent_delegate.ok_or(SssError::CustomFlagsMissing)?;
-                let th = params.enable_transfer_hook.ok_or(SssError::CustomFlagsMissing)?;
-                let df = params.enable_default_state_frozen.ok_or(SssError::CustomFlagsMissing)?;
-                let ct = params.enable_confidential_transfers.ok_or(SssError::CustomFlagsMissing)?;
+                let pd = params
+                    .enable_permanent_delegate
+                    .ok_or(SssError::CustomFlagsMissing)?;
+                let th = params
+                    .enable_transfer_hook
+                    .ok_or(SssError::CustomFlagsMissing)?;
+                let df = params
+                    .enable_default_state_frozen
+                    .ok_or(SssError::CustomFlagsMissing)?;
+                let ct = params
+                    .enable_confidential_transfers
+                    .ok_or(SssError::CustomFlagsMissing)?;
                 (pd, th, df, ct)
             }
         };
@@ -114,10 +121,9 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         extensions.push(ExtensionType::ConfidentialTransferMint);
     }
 
-    let mint_space = ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(
-        &extensions,
-    )
-    .map_err(|_| SssError::Overflow)?;
+    let mint_space =
+        ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
+            .map_err(|_| SssError::Overflow)?;
 
     let rent = &ctx.accounts.rent;
     let lamports = rent.minimum_balance(mint_space);
@@ -217,7 +223,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         &initialize_mint2(
             &token_2022::Token2022::id(),
             ctx.accounts.mint.key,
-            &config_key,      // mint authority = config PDA
+            &config_key,       // mint authority = config PDA
             Some(&config_key), // freeze authority = config PDA
             params.decimals,
         )?,
@@ -229,6 +235,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     config.bump = ctx.bumps.config;
     config.mint = ctx.accounts.mint.key();
     config.master_authority = ctx.accounts.authority.key();
+    config.pending_authority = Pubkey::default();
     config.name = params.name.clone();
     config.symbol = params.symbol.clone();
     config.uri = params.uri.clone();
@@ -239,6 +246,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     config.default_account_frozen = default_account_frozen;
     config.enable_confidential_transfers = enable_ct;
     config.is_paused = false;
+    config.supply_cap = 0;
     config.total_minted = 0;
     config.total_burned = 0;
     config.total_seized = 0;
