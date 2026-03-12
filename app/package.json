@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "ts-mocha -p ../tsconfig.json --timeout 1200000 tests/e2e-console-pages.test.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

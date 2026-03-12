@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { PublicKey } from "@solana/web3.js";
 import { ShieldCheck, ShieldMinus, ShieldPlus } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import ConsoleShell from "@/components/dashboard/ConsoleShell";
@@ -17,122 +18,191 @@ import {
   normalizeAddress,
   shortAddress,
 } from "@/components/dashboard/consoleUtils";
+import { getRpcErrorMessage } from "@/components/dashboard/rpcUtils";
 import { useSSS } from "@/hooks/useSSS";
-
-type AllowlistEntry = {
-  address: string;
-  reason: string;
-  addedAt: string;
-  addedBy: string;
-};
 
 type FormStatus = {
   tone: "success" | "error";
   message: string;
+  signature?: string;
 };
 
 function AllowlistPageContent() {
   const sss = useSSS();
   const { publicKey } = useWallet();
-  const [entries, setEntries] = useState<AllowlistEntry[]>([]);
   const [address, setAddress] = useState("");
   const [reason, setReason] = useState("");
   const [removeAddress, setRemoveAddress] = useState("");
   const [status, setStatus] = useState<FormStatus | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [submitting, setSubmitting] = useState<"add" | "remove" | null>(null);
 
-  const storageKey = useMemo(
-    () => `sss-console-allowlist:${sss.mint.toBase58()}`,
-    [sss.mint]
+  const entries = useMemo(
+    () =>
+      [...sss.allowlistEntries].sort(
+        (left, right) =>
+          right.account.addedAt.toNumber() - left.account.addedAt.toNumber()
+      ),
+    [sss.allowlistEntries]
   );
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) {
-        setEntries(JSON.parse(stored) as AllowlistEntry[]);
-      }
-    } catch {
-      // ignore malformed local state
-    } finally {
-      setHydrated(true);
-    }
-  }, [storageKey]);
+  const handleAdd = async () => {
+    if (!sss.client) return;
 
-  useEffect(() => {
-    if (!hydrated) return;
-    window.localStorage.setItem(storageKey, JSON.stringify(entries));
-  }, [entries, hydrated, storageKey]);
-
-  const handleAdd = () => {
     const nextAddress = address.trim();
     if (!isValidPublicKey(nextAddress)) {
-      setStatus({ tone: "error", message: "Enter a valid Solana address before adding it." });
+      setStatus({
+        tone: "error",
+        message: "Enter a valid Solana address before adding it.",
+      });
       return;
     }
 
     const normalized = normalizeAddress(nextAddress);
     if (!reason.trim()) {
-      setStatus({ tone: "error", message: "Add a short reason for the allowlist entry." });
+      setStatus({
+        tone: "error",
+        message: "Add a short reason for the allowlist entry.",
+      });
       return;
     }
 
-    if (entries.some((entry) => entry.address === normalized)) {
-      setStatus({ tone: "error", message: "That address is already in the allowlist registry." });
+    if (
+      entries.some(
+        (entry) => entry.account.address.toBase58() === normalized
+      )
+    ) {
+      setStatus({
+        tone: "error",
+        message: "That address is already allowlisted on-chain.",
+      });
       return;
     }
 
-    setEntries((current) => [
-      {
-        address: normalized,
-        reason: reason.trim(),
-        addedAt: new Date().toISOString(),
-        addedBy: publicKey?.toBase58() ?? "operator",
-      },
-      ...current,
-    ]);
-    setAddress("");
-    setReason("");
-    setStatus({ tone: "success", message: "Allowlist entry added to the console registry." });
+    setSubmitting("add");
+    setStatus(null);
+
+    try {
+      const owner = new PublicKey(normalized);
+      const targetTokenAccount = sss.client.getAssociatedTokenAddress(
+        sss.mint,
+        owner
+      );
+      const { signature } = await sss.client.allowlistAdd(
+        sss.mint,
+        owner,
+        targetTokenAccount,
+        { reason: reason.trim() }
+      );
+
+      await sss.refresh();
+      setAddress("");
+      setReason("");
+      setStatus({
+        tone: "success",
+        message: "Allowlist entry recorded on-chain.",
+        signature,
+      });
+    } catch (error) {
+      setStatus({
+        tone: "error",
+        message: getRpcErrorMessage(error, "Failed to update the allowlist."),
+      });
+    } finally {
+      setSubmitting(null);
+    }
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    if (!sss.client) return;
+
     const nextAddress = removeAddress.trim();
     if (!isValidPublicKey(nextAddress)) {
-      setStatus({ tone: "error", message: "Enter a valid Solana address to remove." });
+      setStatus({
+        tone: "error",
+        message: "Enter a valid Solana address to remove.",
+      });
       return;
     }
 
     const normalized = normalizeAddress(nextAddress);
-    const hasEntry = entries.some((entry) => entry.address === normalized);
+    const hasEntry = entries.some(
+      (entry) => entry.account.address.toBase58() === normalized
+    );
     if (!hasEntry) {
-      setStatus({ tone: "error", message: "That address is not in the current allowlist table." });
+      setStatus({
+        tone: "error",
+        message: "That address is not in the on-chain allowlist.",
+      });
       return;
     }
 
-    setEntries((current) => current.filter((entry) => entry.address !== normalized));
-    setRemoveAddress("");
-    setStatus({ tone: "success", message: "Allowlist entry removed from the console registry." });
+    setSubmitting("remove");
+    setStatus(null);
+
+    try {
+      const owner = new PublicKey(normalized);
+      const targetTokenAccount = sss.client.getAssociatedTokenAddress(
+        sss.mint,
+        owner
+      );
+      const { signature } = await sss.client.allowlistRemove(
+        sss.mint,
+        owner,
+        targetTokenAccount
+      );
+
+      await sss.refresh();
+      setRemoveAddress("");
+      setStatus({
+        tone: "success",
+        message: "Allowlist entry removed on-chain.",
+        signature,
+      });
+    } catch (error) {
+      setStatus({
+        tone: "error",
+        message: getRpcErrorMessage(error, "Failed to remove the allowlist entry."),
+      });
+    } finally {
+      setSubmitting(null);
+    }
   };
 
   return (
     <>
       {sss.error ? <StatusBanner tone="error" message={sss.error} /> : null}
-      {status ? <StatusBanner tone={status.tone} message={status.message} /> : null}
+      {status ? (
+        <StatusBanner tone={status.tone} message={status.message}>
+          {status.signature ? (
+            <a
+              href={`https://explorer.solana.com/tx/${status.signature}?cluster=devnet`}
+              target="_blank"
+              rel="noreferrer"
+              className="tx-link hover-trigger"
+            >
+              View Transaction
+            </a>
+          ) : null}
+        </StatusBanner>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
           label="Allowlisted Wallets"
           value={entries.length.toString().padStart(2, "0")}
-          hint="Operational registry tracked in this console."
+          hint={
+            entries.length > 0
+              ? "Live entries loaded from the stablecoin config PDA."
+              : "No on-chain allowlist entries exist for this mint."
+          }
         />
         <MetricCard
           label="Transfer Hook"
           value={sss.config?.enableTransferHook ? "Enabled" : "Disabled"}
           hint={
             sss.config?.enableTransferHook
-              ? "Blacklist checks will still run for live transfers."
-              : "Transfers bypass hook-based blacklist checks."
+              ? "Token-2022 transfer-hook enforcement is active."
+              : "Transfers are not using hook-based compliance checks."
           }
         />
         <MetricCard
@@ -155,7 +225,7 @@ function AllowlistPageContent() {
                   type="text"
                   value={address}
                   onChange={(event) => setAddress(event.target.value)}
-                  placeholder="9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv"
+                  placeholder="Wallet to allowlist"
                   className="dark-input"
                 />
               </div>
@@ -165,13 +235,17 @@ function AllowlistPageContent() {
                   id="allowlist-reason"
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
-                  placeholder="Approved market maker / treasury route / regulated venue"
+                  placeholder="Compliance rationale"
                   className="dark-input min-h-[120px] resize-y"
                 />
               </div>
-              <PrimaryButton onClick={handleAdd} className="w-full">
+              <PrimaryButton
+                onClick={handleAdd}
+                className="w-full"
+                disabled={submitting !== null}
+              >
                 <ShieldPlus size={16} />
-                Add To Allowlist
+                {submitting === "add" ? "Submitting..." : "Add To Allowlist"}
               </PrimaryButton>
             </div>
           </div>
@@ -186,13 +260,20 @@ function AllowlistPageContent() {
                   type="text"
                   value={removeAddress}
                   onChange={(event) => setRemoveAddress(event.target.value)}
-                  placeholder="Wallet to remove from registry"
+                  placeholder="Wallet to remove"
                   className="dark-input"
                 />
               </div>
-              <PrimaryButton onClick={handleRemove} className="w-full" danger>
+              <PrimaryButton
+                onClick={handleRemove}
+                className="w-full"
+                danger
+                disabled={submitting !== null}
+              >
                 <ShieldMinus size={16} />
-                Remove From Allowlist
+                {submitting === "remove"
+                  ? "Submitting..."
+                  : "Remove From Allowlist"}
               </PrimaryButton>
             </div>
           </div>
@@ -204,11 +285,17 @@ function AllowlistPageContent() {
             {entries.length === 0 ? (
               <div className="py-14 text-center">
                 <ShieldCheck size={30} className="mx-auto text-[#333]" />
-                <div className="mt-4 text-sm uppercase tracking-[0.25em] text-[#444]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
+                <div
+                  className="mt-4 text-sm uppercase tracking-[0.25em] text-[#444]"
+                  style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                >
                   No allowlisted addresses
                 </div>
-                <div className="mt-2 text-[11px] text-[#555]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
-                  Add a wallet to start building the approved counterparty set.
+                <div
+                  className="mt-2 text-[11px] text-[#555]"
+                  style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                >
+                  Add a wallet to write the first allowlist entry on-chain.
                 </div>
               </div>
             ) : (
@@ -216,33 +303,57 @@ function AllowlistPageContent() {
                 <table className="min-w-full text-left">
                   <thead className="border-b border-[#1e1e1e] bg-[#0d0d0d]">
                     <tr>
-                      <th className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-[#666]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
+                      <th
+                        className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-[#666]"
+                        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                      >
                         Address
                       </th>
-                      <th className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-[#666]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
+                      <th
+                        className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-[#666]"
+                        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                      >
                         Reason
                       </th>
-                      <th className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-[#666]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
+                      <th
+                        className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-[#666]"
+                        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                      >
                         Added
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {entries.map((entry) => (
-                      <tr key={entry.address} className="border-b border-[#141414] last:border-b-0">
+                      <tr
+                        key={entry.pubkey.toBase58()}
+                        className="border-b border-[#141414] last:border-b-0"
+                      >
                         <td className="px-4 py-4 align-top">
-                          <div className="text-sm text-white" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
-                            {shortAddress(entry.address)}
+                          <div
+                            className="text-sm text-white"
+                            style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                          >
+                            {shortAddress(entry.account.address)}
                           </div>
-                          <div className="mt-1 text-[11px] text-[#555]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
-                            Added by {shortAddress(entry.addedBy)}
+                          <div
+                            className="mt-1 text-[11px] text-[#555]"
+                            style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                          >
+                            Added by {shortAddress(entry.account.addedBy)}
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-sm leading-relaxed text-[#999]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
-                          {entry.reason}
+                        <td
+                          className="px-4 py-4 text-sm leading-relaxed text-[#999]"
+                          style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                        >
+                          {entry.account.reason}
                         </td>
-                        <td className="px-4 py-4 text-sm text-[#777]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
-                          {formatTimestamp(entry.addedAt)}
+                        <td
+                          className="px-4 py-4 text-sm text-[#777]"
+                          style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                        >
+                          {formatTimestamp(entry.account.addedAt.toNumber())}
                         </td>
                       </tr>
                     ))}
@@ -260,9 +371,9 @@ function AllowlistPageContent() {
 export default function AllowlistPage() {
   return (
     <ConsoleShell
-      eyebrow="Compliance Operations"
-      title="Allowlist Registry"
-      description="Manage the approved wallet registry used by operations teams to track counterparties alongside the on-chain compliance controls."
+      eyebrow="Allowlist Console"
+      title="Approved Counterparties"
+      description="Read the live allowlist, add newly approved wallets, and remove obsolete entries without leaving the console."
     >
       <AllowlistPageContent />
     </ConsoleShell>

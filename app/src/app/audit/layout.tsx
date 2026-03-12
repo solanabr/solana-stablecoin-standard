@@ -20,7 +20,7 @@ export default function AllowlistLayout({
 }) {
   return (
     <div
-      className={`dashboard-wrapper ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-[#030303] min-h-screen`}
+      className={`dashboard-wrapper dashboard-cursor-scope ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-[#030303] min-h-screen`}
       style={{ fontFamily: "var(--font-space-grotesk), sans-serif" }}
     >
       {children}

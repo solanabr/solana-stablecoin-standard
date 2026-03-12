@@ -107,11 +107,11 @@
 }
 
 /* ── Dashboard cursor override ───────────────────────────── */
-@media (pointer: fine) {
-  .dashboard-wrapper,
-  .dashboard-wrapper * {
-    cursor: none !important;
-  }
+.dashboard-wrapper,
+.dashboard-wrapper *,
+.dashboard-cursor-scope,
+.dashboard-cursor-scope * {
+  cursor: none !important;
 }
 
 /* ── Input Styles ────────────────────────────────────────── */

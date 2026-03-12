@@ -15,6 +15,11 @@ import {
   formatTimestamp,
   shortAddress,
 } from "@/components/dashboard/consoleUtils";
+import {
+  buildRetryMessage,
+  getRpcErrorMessage,
+  withRpcRetry,
+} from "@/components/dashboard/rpcUtils";
 import { useSSS } from "@/hooks/useSSS";
 
 type TransactionRow = {
@@ -92,7 +97,12 @@ function AuditPageContent() {
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!sss.client || !sss.config) return;
+    if (!sss.client || !sss.config) {
+      setTransactions([]);
+      setAttestations([]);
+      setStatus(null);
+      return;
+    }
 
     let active = true;
 
@@ -101,69 +111,96 @@ function AuditPageContent() {
       setStatus(null);
 
       try {
-        const [configPda] = sss.client!.getConfigPda(sss.mint);
-        const signatures = await connection.getSignaturesForAddress(configPda, {
-          limit: 20,
-        });
+        const result = await withRpcRetry(
+          async () => {
+            const [configPda] = sss.client!.getConfigPda(sss.mint);
+            const signatures = await connection.getSignaturesForAddress(configPda, {
+              limit: 20,
+            });
 
-        const fetchedTransactions = signatures.length
-          ? await connection.getTransactions(
-              signatures.map((entry) => entry.signature),
-              {
-                commitment: "confirmed",
-                maxSupportedTransactionVersion: 0,
-              }
-            )
-          : [];
+            const fetchedTransactions = signatures.length
+              ? await connection.getTransactions(
+                  signatures.map((entry) => entry.signature),
+                  {
+                    commitment: "confirmed",
+                    maxSupportedTransactionVersion: 0,
+                  }
+                )
+              : [];
 
-        const txRows = signatures.map((entry, index) => ({
-          signature: entry.signature,
-          actionType: inferActionType(fetchedTransactions[index]?.meta?.logMessages),
-          timestamp: entry.blockTime ?? fetchedTransactions[index]?.blockTime ?? null,
-          slot: entry.slot,
-        }));
+            const txRows = signatures.map((entry, index) => ({
+              signature: entry.signature,
+              actionType: inferActionType(
+                fetchedTransactions[index]?.meta?.logMessages
+              ),
+              timestamp:
+                entry.blockTime ?? fetchedTransactions[index]?.blockTime ?? null,
+              slot: entry.slot,
+            }));
 
-        const reserveCount = Math.min(
-          sss.config!.reserveAttestationIndex.toNumber(),
-          6
-        );
+            const reserveCount = Math.min(
+              sss.config!.reserveAttestationIndex.toNumber(),
+              6
+            );
 
-        const reserveRows =
-          reserveCount > 0
-            ? await Promise.all(
-                Array.from({ length: reserveCount }, (_, offset) => {
-                  const index = sss.config!.reserveAttestationIndex.toNumber() - offset - 1;
-                  return sss.client!.fetchReserveAttestation(configPda, index);
-                })
-              )
-            : [];
-
-        if (!active) return;
-
-        setTransactions(txRows);
-        setAttestations(
-          reserveRows.map((attestation) => {
-            const reserves = attestation.totalReservesUsd.toNumber();
-            const outstanding = attestation.totalOutstanding.toNumber();
-            const collateralization =
-              outstanding > 0
-                ? `${((reserves / outstanding) * 100).toFixed(2)}%`
-                : "--";
+            const reserveRows =
+              reserveCount > 0
+                ? await Promise.all(
+                    Array.from({ length: reserveCount }, (_, offset) => {
+                      const index =
+                        sss.config!.reserveAttestationIndex.toNumber() -
+                        offset -
+                        1;
+                      return sss.client!.fetchReserveAttestation(configPda, index);
+                    })
+                  )
+                : [];
 
             return {
-              index: attestation.index.toNumber(),
-              timestamp: attestation.timestamp.toNumber(),
-              attestationUri: attestation.attestationUri,
-              totalReservesUsd: formatUsdMinorUnits(attestation.totalReservesUsd),
-              totalOutstanding: formatUsdMinorUnits(attestation.totalOutstanding),
-              collateralization,
-              attestedBy: attestation.attestedBy.toBase58(),
+              transactions: txRows,
+              attestations: reserveRows.map((attestation) => {
+                const reserves = attestation.totalReservesUsd.toNumber();
+                const outstanding = attestation.totalOutstanding.toNumber();
+                const collateralization =
+                  outstanding > 0
+                    ? `${((reserves / outstanding) * 100).toFixed(2)}%`
+                    : "--";
+
+                return {
+                  index: attestation.index.toNumber(),
+                  timestamp: attestation.timestamp.toNumber(),
+                  attestationUri: attestation.attestationUri,
+                  totalReservesUsd: formatUsdMinorUnits(
+                    attestation.totalReservesUsd
+                  ),
+                  totalOutstanding: formatUsdMinorUnits(
+                    attestation.totalOutstanding
+                  ),
+                  collateralization,
+                  attestedBy: attestation.attestedBy.toBase58(),
+                };
+              }),
             };
-          })
+          },
+          {
+            fallbackMessage: "Failed to load audit history.",
+            onRetry: (error, delayMs) => {
+              if (!active) return;
+              setStatus(buildRetryMessage(error, delayMs));
+            },
+          }
         );
+
+        if (!active) return;
+
+        setTransactions(result.transactions);
+        setAttestations(result.attestations);
+        setStatus(null);
       } catch (error) {
         if (!active) return;
-        setStatus(error instanceof Error ? error.message : "Failed to load audit history.");
+        setTransactions([]);
+        setAttestations([]);
+        setStatus(getRpcErrorMessage(error, "Failed to load audit history."));
       } finally {
         if (active) {
           setLoading(false);
@@ -171,7 +208,7 @@ function AuditPageContent() {
       }
     };
 
-    loadAuditData();
+    void loadAuditData();
 
     return () => {
       active = false;

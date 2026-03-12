@@ -21,7 +21,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-[#030303] min-h-screen`}
+      className={`dashboard-wrapper dashboard-cursor-scope ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-[#030303] min-h-screen`}
       style={{
         fontFamily: "var(--font-space-grotesk), sans-serif",
       }}

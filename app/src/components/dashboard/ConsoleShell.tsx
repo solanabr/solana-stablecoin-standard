@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Hexagon, Power } from "lucide-react";
@@ -9,6 +9,7 @@ import WalletProvider from "@/providers/WalletProvider";
 import LoginScreen from "@/components/dashboard/LoginScreen";
 import { PageIntro } from "@/components/dashboard/ConsolePrimitives";
 import { shortAddress } from "@/components/dashboard/consoleUtils";
+import { useDashboardCursor } from "@/hooks/useDashboardCursor";
 // dashboard.css is loaded by the dashboard layout — do not re-import here
 // to avoid leaking :root overrides into the landing page.
 
@@ -38,64 +39,17 @@ function ConsoleShellBody({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const { connected, disconnect, publicKey } = useWallet();
-  const cursorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const cursor = cursorRef.current;
-    if (!cursor) return;
-
-    const onMouseMove = (event: MouseEvent) => {
-      cursor.style.left = `${event.clientX}px`;
-      cursor.style.top = `${event.clientY}px`;
-    };
-
-    const onMouseEnter = () => cursor.classList.add("active");
-    const onMouseLeave = () => cursor.classList.remove("active");
-
-    document.addEventListener("mousemove", onMouseMove);
-
-    const attachHoverListeners = () => {
-      const targets = document.querySelectorAll(".hover-trigger, button, a");
-      targets.forEach((target) => {
-        target.addEventListener("mouseenter", onMouseEnter);
-        target.addEventListener("mouseleave", onMouseLeave);
-      });
-      return targets;
-    };
-
-    let targets = attachHoverListeners();
-
-    const observer = new MutationObserver(() => {
-      targets.forEach((target) => {
-        target.removeEventListener("mouseenter", onMouseEnter);
-        target.removeEventListener("mouseleave", onMouseLeave);
-      });
-      targets = attachHoverListeners();
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      targets.forEach((target) => {
-        target.removeEventListener("mouseenter", onMouseEnter);
-        target.removeEventListener("mouseleave", onMouseLeave);
-      });
-      observer.disconnect();
-    };
-  }, []);
 
   if (!connected) {
     return (
-      <div className="dashboard-wrapper">
+      <div className="dashboard-wrapper dashboard-cursor-scope">
         <LoginScreen />
-        <div ref={cursorRef} className="award-cursor" />
       </div>
     );
   }
 
   return (
-    <div className="dashboard-wrapper min-h-screen bg-[#030303] text-white relative">
+    <div className="dashboard-wrapper dashboard-cursor-scope min-h-screen bg-[#030303] text-white relative">
       <div className="bg-noise">
         <svg>
           <filter id="consoleNoise">
@@ -180,20 +134,22 @@ function ConsoleShellBody({
         <div className="mt-8 space-y-8">{children}</div>
       </main>
 
-      <div ref={cursorRef} className="award-cursor" />
     </div>
   );
 }
 
 export default function ConsoleShell(props: ConsoleShellProps) {
+  const cursorRef = useDashboardCursor();
+
   return (
     <div
-      className="dashboard-wrapper min-h-screen bg-[#030303]"
+      className="dashboard-wrapper dashboard-cursor-scope min-h-screen bg-[#030303]"
       style={{ fontFamily: "var(--font-space-grotesk), sans-serif" }}
     >
       <WalletProvider>
         <ConsoleShellBody {...props} />
       </WalletProvider>
+      <div ref={cursorRef} className="award-cursor" />
     </div>
   );
 }
