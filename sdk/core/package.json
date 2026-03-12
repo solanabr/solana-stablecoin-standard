@@ -1,0 +1,23 @@
+{
+  "name": "@stbr/sss-token",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard TypeScript SDK — SSS-1 (minimal) and SSS-2 (compliant) presets",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "mocha --require ts-node/register 'tests/**/*.ts' --timeout 60000",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["solana", "stablecoin", "token-2022", "sss"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.10",
+    "@solana/web3.js": "^1.98.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.3"
+  }
+}

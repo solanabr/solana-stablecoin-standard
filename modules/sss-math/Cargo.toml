@@ -1,0 +1,16 @@
+[package]
+name = "sss-math"
+version = "0.1.0"
+description = "Shared math utilities for the Solana Stablecoin Standard"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_math"
+
+[features]
+no-entrypoint = []
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true }

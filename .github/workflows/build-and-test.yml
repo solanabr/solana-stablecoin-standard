@@ -1,0 +1,264 @@
+name: Build, Test & Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  SOLANA_VERSION: "1.18.26"
+  ANCHOR_VERSION: "0.31.1"
+  NODE_VERSION: "20"
+  RUST_TOOLCHAIN: "stable"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 1: Rust code quality checks
+  # ─────────────────────────────────────────────────────────────────────
+  rust-checks:
+    name: Rust Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (programs)
+        run: cargo clippy --all -- -D warnings
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 2: Build on-chain programs
+  # ─────────────────────────────────────────────────────────────────────
+  build-programs:
+    name: Build Anchor Programs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Solana CLI ${{ env.SOLANA_VERSION }}
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor AVM
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+          avm install ${{ env.ANCHOR_VERSION }}
+          avm use ${{ env.ANCHOR_VERSION }}
+          echo "$HOME/.avm/bin" >> $GITHUB_PATH
+
+      - name: Cache platform-tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/solana
+          key: solana-platform-tools-v1.41-${{ runner.os }}
+
+      - name: Build programs
+        run: anchor build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: program-binaries
+          path: |
+            target/deploy/*.so
+            target/idl/*.json
+            target/types/*.ts
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 3: TypeScript SDK & CLI
+  # ─────────────────────────────────────────────────────────────────────
+  typescript:
+    name: TypeScript Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build SDK
+        run: yarn workspace @stbr/sss-token build
+
+      - name: Build CLI
+        run: yarn workspace sss-token-cli build
+
+      - name: Type-check services
+        run: |
+          cd services/mint-service && npx tsc --noEmit
+          cd ../indexer && npx tsc --noEmit
+          cd ../compliance && npx tsc --noEmit
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 4: Integration tests (localnet)
+  # ─────────────────────────────────────────────────────────────────────
+  integration-tests:
+    name: Integration Tests (Localnet)
+    runs-on: ubuntu-latest
+    needs: [build-programs]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+          avm install ${{ env.ANCHOR_VERSION }}
+          avm use ${{ env.ANCHOR_VERSION }}
+          echo "$HOME/.avm/bin" >> $GITHUB_PATH
+
+      - name: Download program binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: program-binaries
+          path: target/
+
+      - name: Install Node.js dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Generate keypair for testing
+        run: solana-keygen new --no-bip39-passphrase --outfile /tmp/test-keypair.json
+
+      - name: Configure Solana for localnet
+        run: |
+          solana config set --url localhost
+          solana config set --keypair /tmp/test-keypair.json
+
+      - name: Run tests
+        run: anchor test --skip-build
+        env:
+          ANCHOR_WALLET: /tmp/test-keypair.json
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 5: Devnet deployment (only on main branch push)
+  # ─────────────────────────────────────────────────────────────────────
+  deploy-devnet:
+    name: Deploy to Devnet
+    runs-on: ubuntu-latest
+    needs: [build-programs, integration-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: devnet
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+          avm install ${{ env.ANCHOR_VERSION }}
+          avm use ${{ env.ANCHOR_VERSION }}
+          echo "$HOME/.avm/bin" >> $GITHUB_PATH
+
+      - name: Setup deploy keypair
+        run: |
+          echo "${{ secrets.DEPLOY_KEYPAIR }}" > /tmp/deploy-keypair.json
+          chmod 600 /tmp/deploy-keypair.json
+
+      - name: Configure Solana for devnet
+        run: |
+          solana config set --url devnet
+          solana config set --keypair /tmp/deploy-keypair.json
+
+      - name: Download program binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: program-binaries
+          path: target/
+
+      - name: Airdrop SOL for deployment fees
+        run: |
+          solana airdrop 2 --url devnet || true
+          sleep 5
+          solana balance
+
+      - name: Deploy sss-core
+        run: |
+          solana program deploy \
+            --program-id SSSXsBqANHdRRPBEiNUjGjgARJmQR1tQHNBqJBMvFUw \
+            target/deploy/sss_core.so \
+            --url devnet \
+            --keypair /tmp/deploy-keypair.json 2>&1 | tee /tmp/sss-core-deploy.log
+          echo "SSS-CORE deployed: $(grep 'Program Id' /tmp/sss-core-deploy.log)"
+
+      - name: Deploy sss-transfer-hook
+        run: |
+          solana program deploy \
+            --program-id SSSHooKvTgEyqsX1mEBHXrLHyWzGGY9V8tECJpJPZyp \
+            target/deploy/sss_transfer_hook.so \
+            --url devnet \
+            --keypair /tmp/deploy-keypair.json 2>&1 | tee /tmp/hook-deploy.log
+          echo "HOOK deployed: $(grep 'Program Id' /tmp/hook-deploy.log)"
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying deployments on devnet..."
+          solana program show SSSXsBqANHdRRPBEiNUjGjgARJmQR1tQHNBqJBMvFUw --url devnet
+          solana program show SSSHooKvTgEyqsX1mEBHXrLHyWzGGY9V8tECJpJPZyp --url devnet
+
+      - name: Save deployment proof
+        run: |
+          cat > deployment-proof.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "network": "devnet",
+            "programs": {
+              "sss_core": {
+                "programId": "SSSXsBqANHdRRPBEiNUjGjgARJmQR1tQHNBqJBMvFUw",
+                "explorer": "https://explorer.solana.com/address/SSSXsBqANHdRRPBEiNUjGjgARJmQR1tQHNBqJBMvFUw?cluster=devnet"
+              },
+              "sss_transfer_hook": {
+                "programId": "SSSHooKvTgEyqsX1mEBHXrLHyWzGGY9V8tECJpJPZyp",
+                "explorer": "https://explorer.solana.com/address/SSSHooKvTgEyqsX1mEBHXrLHyWzGGY9V8tECJpJPZyp?cluster=devnet"
+              }
+            }
+          }
+          EOF
+          cat deployment-proof.json
+
+      - name: Upload deployment proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-proof
+          path: deployment-proof.json

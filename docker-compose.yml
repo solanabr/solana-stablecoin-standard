@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  mint-service:
+    build:
+      context: ./services/mint-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MINT_AUTHORITY_KEYPAIR=${MINT_AUTHORITY_KEYPAIR:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  indexer:
+    build:
+      context: ./services/indexer
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - WEBHOOK_URL=${WEBHOOK_URL:-}
+      - WEBHOOK_RETRIES=${WEBHOOK_RETRIES:-3}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  compliance:
+    build:
+      context: ./services/compliance
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - SCREENING_API_KEY=${SCREENING_API_KEY:-}
+      - SCREENING_PROVIDER=${SCREENING_PROVIDER:-mock}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,0 +1,24 @@
+[package]
+name = "sss-transfer-hook"
+version = "0.1.0"
+description = "SSS-2 transfer hook — enforces blacklist on every token transfer"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_transfer_hook"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true }
+anchor-spl = { workspace = true }
+spl-token-2022 = { workspace = true }
+spl-transfer-hook-interface = { workspace = true }
+spl-tlv-account-resolution = { workspace = true }
+spl-pod = { workspace = true }

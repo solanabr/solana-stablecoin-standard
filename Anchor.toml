@@ -1,0 +1,24 @@
+[toolchain]
+anchor_version = "0.31.1"
+
+[features]
+resolution = true
+skip-lint = true
+
+[programs.devnet]
+sss_core = "SSSXsBqANHdRRPBEiNUjGjgARJmQR1tQHNBqJBMvFUw"
+sss_transfer_hook = "SSSHooKvTgEyqsX1mEBHXrLHyWzGGY9V8tECJpJPZyp"
+
+[programs.localnet]
+sss_core = "SSSXsBqANHdRRPBEiNUjGjgARJmQR1tQHNBqJBMvFUw"
+sss_transfer_hook = "SSSHooKvTgEyqsX1mEBHXrLHyWzGGY9V8tECJpJPZyp"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.tests.json -t 1000000 'tests/**/*.ts'"

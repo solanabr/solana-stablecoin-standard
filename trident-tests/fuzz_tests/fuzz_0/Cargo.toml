@@ -1,0 +1,13 @@
+[package]
+name = "fuzz_0"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fuzz_0"
+path = "src/lib.rs"
+
+[dependencies]
+trident-client = "0.9.0"
+anchor-lang = { workspace = true }
+sss-core = { path = "../../../programs/sss-core", features = ["no-entrypoint"] }
