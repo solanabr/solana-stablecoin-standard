@@ -188,7 +188,7 @@ function ConsoleShellBody({
 export default function ConsoleShell(props: ConsoleShellProps) {
   return (
     <div
-      className="min-h-screen bg-[#030303]"
+      className="dashboard-wrapper min-h-screen bg-[#030303]"
       style={{ fontFamily: "var(--font-space-grotesk), sans-serif" }}
     >
       <WalletProvider>
