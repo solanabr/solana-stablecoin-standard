@@ -158,8 +158,46 @@ The SDK includes an `OracleModule` for fetching real-time price data from Pyth p
 The project includes an interactive Node.js terminal dashboard (powered by blessed/blessed-contrib) that displays live stablecoin configuration, supply metrics, role assignments, minter status, and lets operators execute all program operations directly from the terminal.
 
 ```bash
-cd tui && npm install && node admin_tui.js --rpc https://api.devnet.solana.com --mint <MINT_ADDRESS> --keypair <PATH>
+cd tui && npm install
+node admin_tui.js --rpc https://api.devnet.solana.com --mint <MINT_ADDRESS> --keypair ~/.config/solana/id.json
 ```
+
+#### Wallet Setup
+
+The TUI starts in **read-only mode** by default (safe for auditors). To execute transactions, pass a Solana keypair via `--keypair`:
+
+**Option 1 — Use the default Solana CLI keypair:**
+
+```bash
+# If you already have the Solana CLI installed:
+node admin_tui.js --keypair ~/.config/solana/id.json --mint <MINT>
+```
+
+**Option 2 — Generate a new keypair:**
+
+```bash
+solana-keygen new -o ~/my-sss-wallet.json
+solana airdrop 2 ~/my-sss-wallet.json   # devnet only
+node admin_tui.js --keypair ~/my-sss-wallet.json --mint <MINT>
+```
+
+**Option 3 — Export from Phantom / Backpack:**
+
+Export your private key as a byte array JSON file and pass the path:
+
+```bash
+node admin_tui.js --keypair /path/to/exported-wallet.json --mint <MINT>
+```
+
+You can also set these as environment variables in `tui/.env`:
+
+```
+RPC_URL=https://api.devnet.solana.com
+MINT=<YOUR_MINT_ADDRESS>
+KEYPAIR_PATH=~/.config/solana/id.json
+```
+
+The TUI auto-detects the wallet on startup — the status bar shows **OPERATOR** when connected or **READ-ONLY** when no keypair is provided.
 
 ## SDK
 
