@@ -184,6 +184,8 @@ See [cli/README.md](cli/README.md) for the complete command reference.
 
 ## Documentation
 
+**Live docs: [docs.stablecoinstandard.dev](https://docs.stablecoinstandard.dev)**
+
 - [Architecture](docs/architecture.md) -- PDA schema, Token-2022 extensions, transfer hook flow, role model
 - [Presets](docs/presets.md) -- Feature comparison matrix and use cases
 - [SSS-1 Specification](docs/SSS-1.md) -- Minimal stablecoin preset details
