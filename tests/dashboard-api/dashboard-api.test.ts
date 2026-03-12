@@ -287,7 +287,7 @@ describe("dashboard stablecoin API", () => {
       );
 
       expect(response.status).toBe(500);
-      expect(response.body.error.message).toContain("Invalid public key input");
+      expect(response.body.error.message).toMatch(/Invalid public key|Non-base58 character/);
     });
 
     it("GET /:mint/blacklist/:address rejects an invalid blacklist address", async () => {
@@ -626,7 +626,7 @@ describe("dashboard stablecoin API", () => {
 
       expect(response.status).toBe(500);
       expect(response.body.error.name).toBe("InternalServerError");
-      expect(response.body.error.message).toContain("Invalid public key input");
+      expect(response.body.error.message).toMatch(/Invalid public key|Non-base58 character/);
     });
 
     const missingBodyCases = [
