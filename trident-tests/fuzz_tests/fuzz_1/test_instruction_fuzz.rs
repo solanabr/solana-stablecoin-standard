@@ -639,7 +639,7 @@ mod tests {
         let mut state = SimulatedState::default();
         let authority = random_pubkey(1);
         let minter = random_pubkey(2);
-        let victim = random_pubkey(3);
+        let target_user = random_pubkey(3);
         let dest = random_pubkey(4);
 
         simulate_instruction(
@@ -678,7 +678,7 @@ mod tests {
         simulate_instruction(
             &mut state,
             &FuzzInstruction::Seize {
-                from: victim,
+                from: target_user,
                 to: dest,
                 amount: 500,
             },

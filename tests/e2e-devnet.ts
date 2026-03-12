@@ -124,8 +124,8 @@ async function main(): Promise<void> {
   console.log(`Roles PDA:      ${roleRegistryPda.toBase58()}`);
 
   // Second keypair for blacklist / seize testing
-  const victim = Keypair.generate();
-  console.log(`Victim keypair: ${victim.publicKey.toBase58()}`);
+  const targetUser = Keypair.generate();
+  console.log(`Target user keypair: ${targetUser.publicKey.toBase58()}`);
 
   // ATAs (computed, not yet created)
   const authorityAta = getAssociatedTokenAddressSync(
@@ -134,14 +134,14 @@ async function main(): Promise<void> {
     true,
     TOKEN_2022_PROGRAM_ID
   );
-  const victimAta = getAssociatedTokenAddressSync(
+  const targetUserAta = getAssociatedTokenAddressSync(
     mint.publicKey,
-    victim.publicKey,
+    targetUser.publicKey,
     true,
     TOKEN_2022_PROGRAM_ID
   );
   console.log(`Authority ATA:  ${authorityAta.toBase58()}`);
-  console.log(`Victim ATA:     ${victimAta.toBase58()}`);
+  console.log(`Target ATA:     ${targetUserAta.toBase58()}`);
 
   // Check authority balance
   const balance = await connection.getBalance(authority.publicKey);
@@ -458,14 +458,14 @@ async function main(): Promise<void> {
   });
 
   // -------------------------------------------------------------------------
-  // Test 12: Blacklist add (victim)
-  // First, create victim ATA and mint tokens to them so we have something to seize
+  // Test 12: Blacklist add (targetUser)
+  // First, create targetUser ATA and mint tokens to them so we have something to seize
   // -------------------------------------------------------------------------
-  await step("12a. Create victim ATA", async () => {
+  await step("12a. Create targetUser ATA", async () => {
     const ix = createAssociatedTokenAccountInstruction(
       authority.publicKey,
-      victimAta,
-      victim.publicKey,
+      targetUserAta,
+      targetUser.publicKey,
       mint.publicKey,
       TOKEN_2022_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
@@ -477,43 +477,43 @@ async function main(): Promise<void> {
     console.log(`         tx: ${signature}`);
   });
 
-  await step("12b. Mint tokens to victim (500 eTUSD)", async () => {
+  await step("12b. Mint tokens to targetUser (500 eTUSD)", async () => {
     const amount = new BN(500_000_000); // 500 tokens
     const { signature } = await client.mintTokens(
       mint.publicKey,
       amount,
-      victimAta
+      targetUserAta
     );
     await confirmTx(connection, signature);
     console.log(`         tx: ${signature}`);
 
     const account = await getAccount(
       connection,
-      victimAta,
+      targetUserAta,
       CONFIRM_COMMITMENT,
       TOKEN_2022_PROGRAM_ID
     );
     assert(
       Number(account.amount) === 500_000_000,
-      `Expected victim balance 500_000_000, got ${account.amount}`
+      `Expected targetUser balance 500_000_000, got ${account.amount}`
     );
   });
 
-  await step("12c. Blacklist add (victim)", async () => {
+  await step("12c. Blacklist add (targetUser)", async () => {
     const { signature } = await client.blacklistAdd(
       mint.publicKey,
-      victim.publicKey,
-      victimAta,
+      targetUser.publicKey,
+      targetUserAta,
       { reason: "E2E test: sanctions compliance" }
     );
     await confirmTx(connection, signature);
     console.log(`         tx: ${signature}`);
 
     // Verify blacklist entry exists
-    const entry = await client.fetchBlacklistEntry(configPda, victim.publicKey);
+    const entry = await client.fetchBlacklistEntry(configPda, targetUser.publicKey);
     assert(entry !== null, "Blacklist entry should exist");
     assert(
-      entry!.blockedAddress.toBase58() === victim.publicKey.toBase58(),
+      entry!.blockedAddress.toBase58() === targetUser.publicKey.toBase58(),
       "Blocked address mismatch"
     );
     assert(
@@ -521,10 +521,10 @@ async function main(): Promise<void> {
       `Reason mismatch: '${entry!.reason}'`
     );
 
-    // Verify victim account is frozen
+    // Verify targetUser account is frozen
     const account = await getAccount(
       connection,
-      victimAta,
+      targetUserAta,
       CONFIRM_COMMITMENT,
       TOKEN_2022_PROGRAM_ID
     );
@@ -534,13 +534,13 @@ async function main(): Promise<void> {
   // -------------------------------------------------------------------------
   // Test 13: Seize tokens from blacklisted address
   // -------------------------------------------------------------------------
-  await step("13. Seize tokens from blacklisted victim (200 eTUSD)", async () => {
+  await step("13. Seize tokens from blacklisted targetUser (200 eTUSD)", async () => {
     const seizeAmount = new BN(200_000_000); // 200 tokens
 
     // Get balances before seize
-    const victimBefore = await getAccount(
+    const targetUserBefore = await getAccount(
       connection,
-      victimAta,
+      targetUserAta,
       CONFIRM_COMMITMENT,
       TOKEN_2022_PROGRAM_ID
     );
@@ -553,25 +553,25 @@ async function main(): Promise<void> {
 
     const { signature } = await client.seize(
       mint.publicKey,
-      victim.publicKey,
-      victimAta,
+      targetUser.publicKey,
+      targetUserAta,
       authorityAta,
       seizeAmount
     );
     await confirmTx(connection, signature);
     console.log(`         tx: ${signature}`);
 
-    // Verify victim balance decreased
-    const victimAfter = await getAccount(
+    // Verify targetUser balance decreased
+    const targetUserAfter = await getAccount(
       connection,
-      victimAta,
+      targetUserAta,
       CONFIRM_COMMITMENT,
       TOKEN_2022_PROGRAM_ID
     );
-    const expectedVictim = Number(victimBefore.amount) - 200_000_000;
+    const expectedTargetUser = Number(targetUserBefore.amount) - 200_000_000;
     assert(
-      Number(victimAfter.amount) === expectedVictim,
-      `Expected victim ${expectedVictim}, got ${victimAfter.amount}`
+      Number(targetUserAfter.amount) === expectedTargetUser,
+      `Expected target user ${expectedTargetUser}, got ${targetUserAfter.amount}`
     );
 
     // Verify authority balance increased
@@ -591,23 +591,23 @@ async function main(): Promise<void> {
   // -------------------------------------------------------------------------
   // Test 14: Blacklist remove
   // -------------------------------------------------------------------------
-  await step("14. Blacklist remove (victim)", async () => {
+  await step("14. Blacklist remove (targetUser)", async () => {
     const { signature } = await client.blacklistRemove(
       mint.publicKey,
-      victim.publicKey,
-      victimAta
+      targetUser.publicKey,
+      targetUserAta
     );
     await confirmTx(connection, signature);
     console.log(`         tx: ${signature}`);
 
     // Verify blacklist entry is gone
-    const entry = await client.fetchBlacklistEntry(configPda, victim.publicKey);
+    const entry = await client.fetchBlacklistEntry(configPda, targetUser.publicKey);
     assert(entry === null, "Blacklist entry should be removed");
 
-    // Verify victim account is thawed
+    // Verify targetUser account is thawed
     const account = await getAccount(
       connection,
-      victimAta,
+      targetUserAta,
       CONFIRM_COMMITMENT,
       TOKEN_2022_PROGRAM_ID
     );
