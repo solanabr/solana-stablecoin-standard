@@ -1,5 +1,3 @@
-version: "3.9"
-
 # =============================================================================
 # Solana Stablecoin Standard -- Docker Compose
 # =============================================================================
@@ -9,6 +7,8 @@ version: "3.9"
 #   event-listener     - Subscribes to on-chain sss-token program logs
 #   webhook-service    - Receives events and dispatches to registered webhooks
 #   compliance-service - Sanctions / risk screening stub
+#   frontend           - Next.js dashboard app (port 3003)
+#   docs               - Docusaurus documentation site (port 3004)
 #
 # Usage:
 #   docker compose up --build
@@ -128,6 +128,52 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Frontend -- Next.js dashboard app
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: sss-frontend
+    ports:
+      - "3003:3003"
+    environment:
+      NEXT_PUBLIC_RPC_URL: "${RPC_URL:-http://host.docker.internal:8899}"
+      NEXT_PUBLIC_API_URL: "http://api:3000"
+    networks:
+      - sss-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3003"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Docs -- Docusaurus documentation site
+  # ---------------------------------------------------------------------------
+  docs:
+    build:
+      context: ./docs-site
+      dockerfile: Dockerfile
+    container_name: sss-docs
+    ports:
+      - "3004:80"
+    networks:
+      - sss-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
 # =============================================================================
