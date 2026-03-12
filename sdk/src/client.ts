@@ -218,8 +218,8 @@ export class SSSClient {
     );
 
     // Resolve the blacklist PDA for the recipient owner.
-    // If recipientOwner is provided, derive the PDA so the program can check
-    // the blacklist. If not provided, fetch the token account to get the owner.
+    // Only pass the PDA if it exists on-chain (i.e. the address is blacklisted).
+    // For Option<Account>, Anchor requires null if the account doesn't exist.
     let recipientBlacklist: PublicKey | null = null;
     try {
       let owner = recipientOwner;
@@ -232,7 +232,11 @@ export class SSSClient {
       }
       if (owner) {
         const [blacklistPda] = this.getBlacklistPda(configPda, owner);
-        recipientBlacklist = blacklistPda;
+        // Only pass the PDA if the blacklist entry actually exists on-chain
+        const blAccount = await this.connection.getAccountInfo(blacklistPda);
+        if (blAccount && blAccount.data.length > 0) {
+          recipientBlacklist = blacklistPda;
+        }
       }
     } catch {
       // If we can't resolve, pass null and let the program skip the check
