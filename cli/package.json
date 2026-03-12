@@ -1,0 +1,29 @@
+{
+  "name": "@stbr/sss-cli",
+  "version": "0.1.0",
+  "description": "CLI for the Solana Stablecoin Standard",
+  "license": "MIT",
+  "bin": {
+    "sss-token": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@stbr/sss-token": "workspace:*",
+    "commander": "^13.0.0",
+    "@iarna/toml": "^2.2.5",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "@solana/web3.js": "^1.98.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.0"
+  }
+}

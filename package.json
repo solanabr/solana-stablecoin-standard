@@ -1,0 +1,19 @@
+{
+  "name": "solana-stablecoin-standard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Solana Stablecoin Standard — Modular SDK with standardized presets for Solana stablecoins",
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm --filter tests test",
+    "test:unit": "pnpm --filter tests test:unit",
+    "test:integration": "pnpm --filter tests test:integration",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

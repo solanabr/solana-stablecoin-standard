@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sss-backend
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - SSS_PROGRAM_ID=${SSS_PROGRAM_ID}
+      - TRANSFER_HOOK_PROGRAM_ID=${TRANSFER_HOOK_PROGRAM_ID}
+      - ORACLE_PROGRAM_ID=${ORACLE_PROGRAM_ID}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DATABASE_URL=postgresql://sss:sss_password@postgres:5432/sss_events
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sss-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: sss-postgres
+    environment:
+      - POSTGRES_USER=sss
+      - POSTGRES_PASSWORD=sss_password
+      - POSTGRES_DB=sss_events
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sss -d sss_events"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - sss-network
+
+volumes:
+  postgres_data:
+
+networks:
+  sss-network:
+    driver: bridge

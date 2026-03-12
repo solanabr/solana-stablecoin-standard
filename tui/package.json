@@ -1,0 +1,27 @@
+{
+  "name": "@stbr/sss-tui",
+  "version": "0.1.0",
+  "description": "Interactive Admin TUI for the Solana Stablecoin Standard",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "bin": {
+    "sss-tui": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stbr/sss-token": "workspace:*",
+    "ink": "^5.1.0",
+    "react": "^18.3.0",
+    "@solana/web3.js": "^1.98.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "ts-node": "^10.9.0"
+  }
+}

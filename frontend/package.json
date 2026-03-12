@@ -1,0 +1,11 @@
+{
+  "name": "@stbr/sss-frontend",
+  "version": "0.1.0",
+  "description": "Example React frontend for the Solana Stablecoin Standard",
+  "license": "MIT",
+  "scripts": {
+    "dev": "echo 'Frontend will be scaffolded with Vite in Phase 7'",
+    "build": "echo 'Frontend will be scaffolded with Vite in Phase 7'",
+    "clean": "rm -rf dist"
+  }
+}

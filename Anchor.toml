@@ -1,0 +1,26 @@
+[toolchain]
+anchor_version = "0.31.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+sss_token = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+transfer_hook = "HmbTLCmaGtYhSJaoxkmcJA2MkRYEbn7gxjoYDMgbGnHb"
+oracle_module = "J4ywvRqWbRSuijhFkvSfMbjXZvzR2eJYyGBJASarBPJc"
+
+[programs.devnet]
+sss_token = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+transfer_hook = "HmbTLCmaGtYhSJaoxkmcJA2MkRYEbn7gxjoYDMgbGnHb"
+oracle_module = "J4ywvRqWbRSuijhFkvSfMbjXZvzR2eJYyGBJASarBPJc"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "pnpm run test"

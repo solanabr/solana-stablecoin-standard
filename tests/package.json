@@ -1,0 +1,28 @@
+{
+  "name": "@stbr/sss-tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tests for the Solana Stablecoin Standard",
+  "license": "MIT",
+  "scripts": {
+    "test": "anchor test",
+    "test:unit": "anchor test -- --grep 'unit'",
+    "test:integration": "anchor test -- --grep 'integration'",
+    "build": "echo 'Tests do not need a separate build step'"
+  },
+  "dependencies": {
+    "@stbr/sss-token": "workspace:*",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.98.0",
+    "@solana/spl-token": "^0.4.12"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/chai": "^4.3.0",
+    "chai": "^4.4.0",
+    "mocha": "^10.0.0",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.0"
+  }
+}
