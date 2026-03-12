@@ -45,6 +45,42 @@ jobs:
       - name: Cargo check
         run: cargo check -p sss-token -p sss-transfer-hook
 
+  test-programs:
+    name: Test Solana Programs
+    runs-on: ubuntu-latest
+    needs: build-programs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          solana --version
+          solana-keygen new --no-bip39-passphrase
+
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install 0.31.1
+          avm use 0.31.1
+
+      - name: Run Anchor tests
+        run: anchor test
+
   build-sdk:
     name: Build SDK
     runs-on: ubuntu-latest
@@ -62,6 +98,33 @@ jobs:
           npm install
           npm run build
           npx tsc --noEmit
+
+  test-sdk:
+    name: Test SDK
+    runs-on: ubuntu-latest
+    needs: build-sdk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install & build SDK
+        working-directory: sdk
+        run: |
+          npm install
+          npm run build
+
+      - name: Run SDK tests
+        working-directory: sdk
+        run: |
+          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+            npm test
+          else
+            npx jest
+          fi
 
   build-backend:
     name: Build Backend
@@ -84,3 +147,84 @@ jobs:
         run: |
           npm install
           npx tsc --noEmit
+
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    needs: build-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install SDK deps
+        working-directory: sdk
+        run: npm install
+
+      - name: Install backend deps
+        working-directory: backend
+        run: npm install
+
+      - name: Run backend tests
+        working-directory: backend
+        run: |
+          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+            npm test
+          else
+            npx jest
+          fi
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install & build frontend
+        working-directory: app
+        run: |
+          npm install
+          npm run build
+
+  build-cli:
+    name: Build CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          solana --version
+          solana-keygen new --no-bip39-passphrase
+
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install 0.31.1
+          avm use 0.31.1
+
+      - name: Check CLI
+        run: cargo check -p sss-cli
