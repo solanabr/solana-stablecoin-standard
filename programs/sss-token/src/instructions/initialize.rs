@@ -1,29 +1,53 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program::invoke;
+use anchor_spl::token_interface::TokenInterface;
+use spl_token_2022::{
+    extension::ExtensionType,
+    instruction as token_instruction,
+    state::Mint,
+};
 
-use crate::state::{StablecoinConfig, RoleManager, MinterEntry};
+use crate::state::{StablecoinConfig, RoleManager};
 
 /// Parameters for initializing a new stablecoin.
+///
+/// These determine which Token-2022 extensions get enabled on the mint.
+/// Feature flags are **immutable** after initialization — choose carefully.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct InitializeParams {
+    /// Human-readable name (max 32 chars)
     pub name: String,
+    /// Ticker symbol (max 10 chars)
     pub symbol: String,
+    /// Metadata URI (max 200 chars)
     pub uri: String,
+    /// Token decimals (typically 6 for stablecoins)
     pub decimals: u8,
-    /// SSS-2: Enable permanent delegate
+    /// SSS-2: Enable permanent delegate (allows seize)
     pub enable_permanent_delegate: bool,
-    /// SSS-2: Enable transfer hook
+    /// SSS-2: Enable transfer hook (for blacklist enforcement)
     pub enable_transfer_hook: bool,
-    /// SSS-3: Enable confidential transfers
+    /// SSS-3: Enable confidential transfers (experimental)
     pub enable_confidential_transfers: bool,
-    /// SSS-2: Default account state is frozen
+    /// SSS-2: New token accounts start frozen by default
     pub default_account_frozen: bool,
-    // Initial role assignments
+    /// Address that can pause/unpause operations
     pub pauser: Pubkey,
+    /// SSS-2: Address that manages the blacklist
     pub blacklister: Option<Pubkey>,
+    /// SSS-2: Address that can seize tokens
     pub seizer: Option<Pubkey>,
 }
 
 /// Accounts for the initialize instruction.
+///
+/// ## How it works:
+/// 1. Creates the Token-2022 mint with the right extensions
+/// 2. Initializes StablecoinConfig PDA (stores feature flags + metadata)
+/// 3. Initializes RoleManager PDA (stores role assignments)
+///
+/// The config PDA becomes the mint authority AND freeze authority,
+/// so only the program can mint/freeze — enforcing role-based access.
 #[derive(Accounts)]
 #[instruction(params: InitializeParams)]
 pub struct Initialize<'info> {
@@ -32,6 +56,7 @@ pub struct Initialize<'info> {
     pub authority: Signer<'info>,
 
     /// The stablecoin configuration PDA.
+    /// Seeds: ["config", mint.key()] — one config per mint.
     #[account(
         init,
         payer = authority,
@@ -42,6 +67,7 @@ pub struct Initialize<'info> {
     pub config: Account<'info, StablecoinConfig>,
 
     /// The role manager PDA.
+    /// Seeds: ["roles", config.key()] — linked to the config.
     #[account(
         init,
         payer = authority,
@@ -51,14 +77,14 @@ pub struct Initialize<'info> {
     )]
     pub role_manager: Account<'info, RoleManager>,
 
-    /// The Token-2022 mint account (created by this instruction).
-    /// CHECK: Validated in handler — we create the mint with extensions.
+    /// The Token-2022 mint account.
+    /// Must be a fresh keypair — we create the mint in this instruction.
+    /// CHECK: We validate and initialize this as a Token-2022 mint via CPI.
     #[account(mut)]
     pub mint: Signer<'info>,
 
-    /// Token-2022 program.
-    /// CHECK: Validated by address.
-    pub token_program: AccountInfo<'info>,
+    /// Token-2022 program (NOT the legacy token program).
+    pub token_program: Interface<'info, TokenInterface>,
 
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -73,6 +99,7 @@ pub struct StablecoinInitialized {
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
+    pub preset: String,
     pub enable_permanent_delegate: bool,
     pub enable_transfer_hook: bool,
     pub enable_confidential_transfers: bool,
@@ -80,15 +107,164 @@ pub struct StablecoinInitialized {
 }
 
 pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
-    let config = &mut ctx.accounts.config;
-    let role_manager = &mut ctx.accounts.role_manager;
-
-    // Validate input
+    // ── Step 1: Validate input ──────────────────────────────────────
     require!(params.name.len() <= 32, crate::errors::SssError::NameTooLong);
     require!(params.symbol.len() <= 10, crate::errors::SssError::SymbolTooLong);
     require!(params.uri.len() <= 200, crate::errors::SssError::UriTooLong);
 
-    // Set config
+    // ── Step 2: Determine which extensions to enable ────────────────
+    //
+    // Token-2022 extensions must be declared at mint creation time.
+    // They can't be added later. This is why feature flags are immutable.
+    //
+    // SSS-1: MetadataPointer + TokenMetadata + MintCloseAuthority
+    // SSS-2: + PermanentDelegate + TransferHook + DefaultAccountState
+    // SSS-3: + ConfidentialTransferMint (experimental)
+
+    let mut extension_types: Vec<ExtensionType> = vec![
+        ExtensionType::MetadataPointer,  // Points to on-chain metadata
+        ExtensionType::MintCloseAuthority, // Allows closing the mint to reclaim rent
+    ];
+
+    if params.enable_permanent_delegate {
+        extension_types.push(ExtensionType::PermanentDelegate);
+    }
+
+    if params.default_account_frozen {
+        extension_types.push(ExtensionType::DefaultAccountState);
+    }
+
+    // Note: TransferHook and ConfidentialTransferMint extensions
+    // require additional setup that we'll wire in Phase 3 and Phase 7.
+
+    // ── Step 3: Calculate mint account size with extensions ──────────
+    //
+    // Token-2022 mints have variable size depending on enabled extensions.
+    // We need to allocate the right amount of space upfront.
+    let space = ExtensionType::try_calculate_account_len::<Mint>(&extension_types)
+        .map_err(|_| crate::errors::SssError::InvalidDecimals)?;
+
+    let rent = &ctx.accounts.rent;
+    let lamports = rent.minimum_balance(space);
+
+    // ── Step 4: Create the mint account ─────────────────────────────
+    //
+    // We use invoke (not CPI) to create the account owned by Token-2022.
+    // This is a low-level SystemProgram::CreateAccount call.
+    invoke(
+        &anchor_lang::solana_program::system_instruction::create_account(
+            ctx.accounts.authority.key,
+            ctx.accounts.mint.key,
+            lamports,
+            space as u64,
+            ctx.accounts.token_program.key,
+        ),
+        &[
+            ctx.accounts.authority.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+    )?;
+
+    // ── Step 5: Initialize extensions BEFORE InitializeMint ─────────
+    //
+    // CRITICAL: Token-2022 requires extensions to be initialized
+    // BEFORE the mint itself. Order matters!
+
+    // 5a. MetadataPointer — points to the mint itself (self-referential)
+    //     This tells clients "the metadata is on THIS account"
+    invoke(
+        &spl_token_2022::extension::metadata_pointer::instruction::initialize(
+            ctx.accounts.token_program.key,
+            ctx.accounts.mint.key,
+            Some(ctx.accounts.config.key()),  // authority over metadata pointer
+            Some(*ctx.accounts.mint.key),      // metadata address = the mint itself
+        )?,
+        &[ctx.accounts.mint.to_account_info()],
+    )?;
+
+    // 5b. MintCloseAuthority — allows the config PDA to close the mint
+    invoke(
+        &token_instruction::initialize_mint_close_authority(
+            ctx.accounts.token_program.key,
+            ctx.accounts.mint.key,
+            Some(&ctx.accounts.config.key()),
+        )?,
+        &[ctx.accounts.mint.to_account_info()],
+    )?;
+
+    // 5c. PermanentDelegate (SSS-2) — the config PDA becomes the
+    //     permanent delegate, allowing it to transfer/burn from ANY
+    //     token account. This is what enables the seize instruction.
+    if params.enable_permanent_delegate {
+        invoke(
+            &token_instruction::initialize_permanent_delegate(
+                ctx.accounts.token_program.key,
+                ctx.accounts.mint.key,
+                &ctx.accounts.config.key(),
+            )?,
+            &[ctx.accounts.mint.to_account_info()],
+        )?;
+    }
+
+    // 5d. DefaultAccountState (SSS-2) — new accounts start frozen.
+    //     The issuer must explicitly thaw each account before it can
+    //     receive transfers. Standard for compliant stablecoins.
+    if params.default_account_frozen {
+        invoke(
+            &spl_token_2022::extension::default_account_state::instruction::initialize_default_account_state(
+                ctx.accounts.token_program.key,
+                ctx.accounts.mint.key,
+                &spl_token_2022::state::AccountState::Frozen,
+            )?,
+            &[ctx.accounts.mint.to_account_info()],
+        )?;
+    }
+
+    // ── Step 6: Initialize the mint itself ───────────────────────────
+    //
+    // The config PDA is both the mint authority and freeze authority.
+    // This means ONLY the program can mint tokens or freeze accounts,
+    // and it will check roles before allowing either operation.
+    invoke(
+        &token_instruction::initialize_mint2(
+            ctx.accounts.token_program.key,
+            ctx.accounts.mint.key,
+            &ctx.accounts.config.key(),       // mint authority = config PDA
+            Some(&ctx.accounts.config.key()), // freeze authority = config PDA
+            params.decimals,
+        )?,
+        &[ctx.accounts.mint.to_account_info()],
+    )?;
+
+    // ── Step 7: Initialize token metadata on the mint ───────────────
+    //
+    // Since we use MetadataPointer pointing to the mint itself,
+    // we store the metadata directly on the mint account using
+    // the TokenMetadata extension. No separate Metaplex account needed!
+    //
+    // We use `spl_token_metadata_interface` — a separate crate from
+    // spl-token-2022 that provides the metadata instruction builders.
+    invoke(
+        &spl_token_metadata_interface::instruction::initialize(
+            ctx.accounts.token_program.key,
+            ctx.accounts.mint.key,
+            &ctx.accounts.config.key(),         // update authority
+            ctx.accounts.mint.key,              // metadata account = mint
+            &ctx.accounts.config.key(),         // mint authority (required signer)
+            params.name.clone(),
+            params.symbol.clone(),
+            params.uri.clone(),
+        ),
+        &[
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.config.to_account_info(),
+        ],
+    )?;
+
+    // ── Step 8: Populate config account ─────────────────────────────
+
+    let config = &mut ctx.accounts.config;
     config.authority = ctx.accounts.authority.key();
     config.mint = ctx.accounts.mint.key();
     config.name = params.name.clone();
@@ -104,7 +280,9 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     config.default_account_frozen = params.default_account_frozen;
     config.bump = ctx.bumps.config;
 
-    // Set role manager
+    // ── Step 9: Populate role manager ───────────────────────────────
+
+    let role_manager = &mut ctx.accounts.role_manager;
     role_manager.config = config.key();
     role_manager.master_authority = ctx.accounts.authority.key();
     role_manager.pauser = params.pauser;
@@ -114,11 +292,15 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     role_manager.seizer = params.seizer.unwrap_or(ctx.accounts.authority.key());
     role_manager.bump = ctx.bumps.role_manager;
 
-    // TODO: Phase 2 — Create Token-2022 mint with extensions via CPI
-    // For now, the mint is created externally. Full implementation will
-    // create the mint inline with MetadataPointer, TokenMetadata,
-    // MintCloseAuthority, and optionally PermanentDelegate, TransferHook,
-    // DefaultAccountState, ConfidentialTransferMint extensions.
+    // ── Step 10: Determine preset name for the event ────────────────
+
+    let preset = if params.enable_confidential_transfers {
+        "SSS-3"
+    } else if params.enable_permanent_delegate && params.enable_transfer_hook {
+        "SSS-2"
+    } else {
+        "SSS-1"
+    };
 
     emit!(StablecoinInitialized {
         config: config.key(),
@@ -127,11 +309,14 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         name: config.name.clone(),
         symbol: config.symbol.clone(),
         decimals: config.decimals,
+        preset: preset.to_string(),
         enable_permanent_delegate: config.enable_permanent_delegate,
         enable_transfer_hook: config.enable_transfer_hook,
         enable_confidential_transfers: config.enable_confidential_transfers,
         default_account_frozen: config.default_account_frozen,
     });
+
+    msg!("Initialized {} stablecoin: {} ({})", preset, config.name, config.symbol);
 
     Ok(())
 }

@@ -20,4 +20,5 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-lang = { workspace = true }
 anchor-spl = { workspace = true, features = ["token_2022"] }
 spl-token-2022 = { workspace = true }
+spl-token-metadata-interface = { workspace = true }
 spl-transfer-hook-interface = { workspace = true }

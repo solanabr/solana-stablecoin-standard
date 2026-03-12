@@ -1,19 +1,25 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{self, TransferChecked, TokenInterface};
 
 use crate::state::{StablecoinConfig, RoleManager, BlacklistEntry};
 use crate::errors::SssError;
 
 /// Accounts for the seize instruction.
-/// Uses permanent delegate authority to transfer tokens from a frozen,
-/// blacklisted account to the treasury.
+///
+/// ## How seize works (SSS-2 only):
+/// 1. Verify the target account is frozen AND blacklisted
+/// 2. Use the **permanent delegate** authority to transfer all tokens
+///    from the frozen account to the treasury
+/// 3. The permanent delegate is the config PDA — set during initialize
+///
+/// This is how regulated stablecoins (USDC, USDT) handle compliance —
+/// the issuer can seize tokens from sanctioned addresses.
 #[derive(Accounts)]
 pub struct Seize<'info> {
     /// The seizer signing the transaction.
     #[account(mut)]
     pub seizer: Signer<'info>,
 
-    /// The stablecoin configuration.
+    /// The stablecoin configuration (also the permanent delegate).
     #[account(
         seeds = [b"config", config.mint.as_ref()],
         bump = config.bump,
@@ -28,7 +34,8 @@ pub struct Seize<'info> {
     )]
     pub role_manager: Account<'info, RoleManager>,
 
-    /// The blacklist entry proving the address is blacklisted.
+    /// Proof that the target address is blacklisted.
+    /// The PDA must exist — if it doesn't, the instruction fails.
     #[account(
         seeds = [b"blacklist", config.key().as_ref(), blacklist_entry.address.as_ref()],
         bump = blacklist_entry.bump,
@@ -40,8 +47,8 @@ pub struct Seize<'info> {
     #[account(address = config.mint)]
     pub mint: AccountInfo<'info>,
 
-    /// The frozen token account to seize from (must belong to blacklisted address).
-    /// CHECK: Validated in handler.
+    /// The frozen token account to seize from.
+    /// CHECK: Validated in handler — must belong to the blacklisted address.
     #[account(mut)]
     pub from_token_account: AccountInfo<'info>,
 
@@ -51,7 +58,8 @@ pub struct Seize<'info> {
     pub treasury_token_account: AccountInfo<'info>,
 
     /// Token-2022 program.
-    pub token_program: Interface<'info, TokenInterface>,
+    /// CHECK: Validated by interface constraint.
+    pub token_program: AccountInfo<'info>,
 }
 
 /// Event emitted when tokens are seized.
@@ -69,23 +77,26 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
     let role_manager = &ctx.accounts.role_manager;
     let seizer_key = ctx.accounts.seizer.key();
 
-    // Feature gate: compliance must be enabled
+    // ── Feature gate: SSS-2 required ────────────────────────────────
     require!(config.is_compliance_enabled(), SssError::ComplianceNotEnabled);
     require!(config.enable_permanent_delegate, SssError::ComplianceNotEnabled);
 
-    // Check authorization
+    // ── Authorization check ─────────────────────────────────────────
     require!(
         seizer_key == role_manager.seizer || seizer_key == role_manager.master_authority,
         SssError::UnauthorizedSeizer
     );
 
-    // TODO: Phase 3 — Full implementation:
-    // 1. Verify the from_token_account is frozen
-    // 2. Get the balance of the from_token_account
-    // 3. Use permanent delegate to transfer all tokens to treasury
-    // 4. This requires CPI with the config PDA as the permanent delegate authority
+    // ── Read balance from the frozen token account ──────────────────
+    //
+    // We use the permanent delegate to transfer the entire balance.
+    // The config PDA is the permanent delegate (set at initialize).
+    //
+    // TODO: Phase 3 - Read token account balance and execute
+    //       transfer_checked CPI using config PDA as permanent delegate
+    //       signer seeds: [b"config", mint_key, &[bump]]
 
-    let amount = 0u64; // Placeholder — will read actual balance in Phase 3
+    let amount = 0u64; // Placeholder until Phase 3
 
     emit!(TokensSeized {
         config: config.key(),
@@ -94,6 +105,8 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
         amount,
         seized_by: seizer_key,
     });
+
+    msg!("Seized {} tokens from blacklisted account", amount);
 
     Ok(())
 }

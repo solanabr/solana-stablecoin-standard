@@ -20,7 +20,7 @@ pub mod transfer_hook {
     /// This sets up which additional accounts must be provided
     /// on every transfer (the blacklist PDAs for sender and recipient).
     pub fn initialize_extra_account_meta_list(
-        ctx: Context<InitializeExtraAccountMetaList>,
+        _ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
         // TODO: Phase 3 — Implementation
         // 1. Create the ExtraAccountMetaList account
@@ -35,7 +35,7 @@ pub mod transfer_hook {
     /// Transfer hook execute — called on every token transfer.
     /// Checks both sender and recipient against the blacklist.
     pub fn transfer_hook(
-        ctx: Context<TransferHookCtx>,
+        _ctx: Context<TransferHookCtx>,
         _amount: u64,
     ) -> Result<()> {
         // TODO: Phase 3 — Implementation
