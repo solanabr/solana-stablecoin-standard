@@ -35,9 +35,17 @@ export default function Navigation() {
     { label: "Dashboard", id: "__dashboard__" },
   ];
 
+  const consoleLinks = [
+    { label: "Allowlist", href: "/allowlist" },
+    { label: "Authority", href: "/authority" },
+    { label: "Metadata", href: "/metadata" },
+    { label: "Transfer", href: "/transfer" },
+    { label: "Audit", href: "/audit" },
+  ];
+
   const externalLinks = [
     { label: "Github", href: "https://github.com/amanhij/solana-stablecoin-standard-pre" },
-    { label: "Documentation", href: "https://docs-site-three-theta.vercel.app" },
+    { label: "Documentation", href: "https://docs.stablecoinstandard.dev" },
   ];
 
   return (
@@ -86,22 +94,42 @@ export default function Navigation() {
             </ul>
           </div>
 
-          <div className="md:w-72">
-            <div className="font-mono text-sm uppercase tracking-widest text-accent mb-8">
-              Links
+          <div className="md:w-72 space-y-10">
+            <div>
+              <div className="font-mono text-sm uppercase tracking-widest text-accent mb-6">
+                Console
+              </div>
+              <ul className="space-y-3">
+                {consoleLinks.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      onClick={(e) => { e.preventDefault(); setOpen(false); window.location.href = link.href; }}
+                      className="font-mono text-lg uppercase tracking-wide hover:text-accent transition-colors hover-target border-b border-paper/20 pb-2 block"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-4">
-              {externalLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="font-mono text-lg uppercase tracking-wide hover:text-accent transition-colors hover-target border-b border-paper/20 pb-2 block"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <div>
+              <div className="font-mono text-sm uppercase tracking-widest text-accent mb-6">
+                Links
+              </div>
+              <ul className="space-y-3">
+                {externalLinks.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="font-mono text-lg uppercase tracking-wide hover:text-accent transition-colors hover-target border-b border-paper/20 pb-2 block"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
