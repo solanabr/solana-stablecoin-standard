@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Solana Stablecoin Standard - Token Program with blacklist, seize, freeze, and GENIUS Act compliance",
-    "repository": "https://github.com/amanhij/solana-stablecoin-standard-pre"
+    "repository": "https://github.com/solanabr/solana-stablecoin-standard"
   },
   "instructions": [
     {

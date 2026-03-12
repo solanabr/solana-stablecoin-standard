@@ -12,11 +12,11 @@ const config: Config = {
     ? (process.env.VERCEL_PROJECT_PRODUCTION_URL
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : "https://solana-stablecoin-standard.vercel.app")
-    : "https://amanhij.github.io",
-  baseUrl: isVercel ? "/" : "/solana-stablecoin-standard-pre/",
+    : "https://solanabr.github.io",
+  baseUrl: isVercel ? "/" : "/solana-stablecoin-standard/",
 
-  organizationName: "amanhij",
-  projectName: "solana-stablecoin-standard-pre",
+  organizationName: "solanabr",
+  projectName: "solana-stablecoin-standard",
   deploymentBranch: "gh-pages",
   trailingSlash: false,
 
@@ -46,7 +46,7 @@ const config: Config = {
           routeBasePath: "/",
           sidebarPath: "./sidebars.ts",
           editUrl:
-            "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/",
+            "https://github.com/solanabr/solana-stablecoin-standard/tree/main/docs-site/",
         },
         blog: false,
         pages: false,
@@ -78,7 +78,7 @@ const config: Config = {
           position: "right",
         },
         {
-          href: "https://github.com/amanhij/solana-stablecoin-standard-pre",
+          href: "https://github.com/solanabr/solana-stablecoin-standard",
           label: "GitHub",
           position: "right",
         },
@@ -109,7 +109,7 @@ const config: Config = {
           items: [
             {
               label: "Repository",
-              href: "https://github.com/amanhij/solana-stablecoin-standard-pre",
+              href: "https://github.com/solanabr/solana-stablecoin-standard",
             },
             {
               label: "SDK Package",
