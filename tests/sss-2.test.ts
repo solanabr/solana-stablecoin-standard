@@ -199,6 +199,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: userAAta,
+        recipientBlacklist: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -376,49 +377,34 @@ describe("SSS-2: Compliant Stablecoin", () => {
     const config = await tokenProgram.account.stablecoinConfig.fetch(configPda);
     expect(config.isPaused).to.equal(true);
 
-    // Try to blacklist while paused — should fail
-    const someAddress = Keypair.generate();
-    const [blacklistPda] = PublicKey.findProgramAddressSync(
+    // Try to mint while paused — should fail with ProgramPaused
+    const [minterInfoPda] = PublicKey.findProgramAddressSync(
       [
-        Buffer.from("blacklist"),
+        Buffer.from("minter"),
         configPda.toBuffer(),
-        someAddress.publicKey.toBuffer(),
+        authority.publicKey.toBuffer(),
       ],
       tokenProgram.programId
     );
 
-    // Create ATA for someAddress
-    const someAta = getAssociatedTokenAddressSync(
+    const userAAta = getAssociatedTokenAddressSync(
       mint.publicKey,
-      someAddress.publicKey,
+      userA.publicKey,
       false,
       TOKEN_2022_PROGRAM_ID
     );
 
-    const createAtaIx = createAssociatedTokenAccountInstruction(
-      authority.publicKey,
-      someAta,
-      someAddress.publicKey,
-      mint.publicKey,
-      TOKEN_2022_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    );
-    const tx = new Transaction().add(createAtaIx);
-    await provider.sendAndConfirm(tx);
-
     try {
       await tokenProgram.methods
-        .blacklistAdd({ reason: "test" })
+        .mintTokens(new BN(100_000_000))
         .accounts({
-          authority: authority.publicKey,
+          minterAuthority: authority.publicKey,
           config: configPda,
-          roleRegistry: roleRegistryPda,
-          blacklistEntry: blacklistPda,
-          addressToBlacklist: someAddress.publicKey,
+          minterInfo: minterInfoPda,
           mint: mint.publicKey,
-          targetTokenAccount: someAta,
+          recipientTokenAccount: userAAta,
+          recipientBlacklist: null,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
         })
         .rpc();
 
@@ -454,7 +440,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     await tokenProgram.methods
       .attestReserve({
         reserveHash: Array.from(reserveHash),
-        totalReservesUsd: new BN(1_000_000_00), // $1,000,000.00
+        totalReservesUsd: new BN(2_000_000_000), // Reserves >= outstanding
         totalOutstanding: new BN(1_000_000_000), // 1000 tokens
         attestationUri: "https://example.com/reserves/2024-01.json",
       })
@@ -471,7 +457,7 @@ describe("SSS-2: Compliant Stablecoin", () => {
     const attestation =
       await tokenProgram.account.reserveAttestation.fetch(attestationPda);
     expect(attestation.index.toNumber()).to.equal(0);
-    expect(attestation.totalReservesUsd.toNumber()).to.equal(1_000_000_00);
+    expect(attestation.totalReservesUsd.toNumber()).to.equal(2_000_000_000);
     expect(attestation.attestedBy.toBase58()).to.equal(
       authority.publicKey.toBase58()
     );

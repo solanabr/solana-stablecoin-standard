@@ -168,6 +168,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: recipientAta,
+        recipientBlacklist: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -220,6 +221,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: authorityAta,
+        recipientBlacklist: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -231,7 +233,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
         burner: authority.publicKey,
         config: configPda,
         mint: mint.publicKey,
-        burnerTokenAccount: authorityAta,
+        burnTokenAccount: authorityAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -322,6 +324,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
           minterInfo: minterInfoPda,
           mint: mint.publicKey,
           recipientTokenAccount: authorityAta,
+          recipientBlacklist: null,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
@@ -428,6 +431,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
           minterInfo: minterInfoPda,
           mint: mint.publicKey,
           recipientTokenAccount: authorityAta,
+          recipientBlacklist: null,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
@@ -556,7 +560,7 @@ describe("SSS-1: Minimal Stablecoin", () => {
           roleRegistry: roleRegistryPda,
           newAuthority: newAuth.publicKey,
         })
-        .signers([impostor])
+        .signers([impostor, newAuth])
         .rpc();
 
       expect.fail("Non-master should not be able to transfer authority");

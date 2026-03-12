@@ -208,13 +208,35 @@ export class SSSClient {
   async mintTokens(
     mint: PublicKey,
     amount: BN,
-    recipientTokenAccount: PublicKey
+    recipientTokenAccount: PublicKey,
+    recipientOwner?: PublicKey
   ): Promise<{ signature: string }> {
     const [configPda] = this.getConfigPda(mint);
     const [minterInfoPda] = this.getMinterInfoPda(
       configPda,
       this.provider.wallet.publicKey
     );
+
+    // Resolve the blacklist PDA for the recipient owner.
+    // If recipientOwner is provided, derive the PDA so the program can check
+    // the blacklist. If not provided, fetch the token account to get the owner.
+    let recipientBlacklist: PublicKey | null = null;
+    try {
+      let owner = recipientOwner;
+      if (!owner) {
+        const accountInfo = await this.connection.getAccountInfo(recipientTokenAccount);
+        if (accountInfo && accountInfo.data.length >= 64) {
+          // Token-2022 account layout: first 32 bytes = mint, next 32 = owner
+          owner = new PublicKey(accountInfo.data.subarray(32, 64));
+        }
+      }
+      if (owner) {
+        const [blacklistPda] = this.getBlacklistPda(configPda, owner);
+        recipientBlacklist = blacklistPda;
+      }
+    } catch {
+      // If we can't resolve, pass null and let the program skip the check
+    }
 
     try {
       const signature = await this.tokenProgram.methods
@@ -225,6 +247,7 @@ export class SSSClient {
           minterInfo: minterInfoPda,
           mint,
           recipientTokenAccount,
+          recipientBlacklist: recipientBlacklist as any,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
@@ -249,7 +272,7 @@ export class SSSClient {
           burner: this.provider.wallet.publicKey,
           config: configPda,
           mint,
-          burnerTokenAccount,
+          burnTokenAccount: burnerTokenAccount,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
@@ -405,21 +428,27 @@ export class SSSClient {
 
   async transferAuthority(
     mint: PublicKey,
-    newAuthority: PublicKey
+    newAuthority: PublicKey,
+    newAuthorityKeypair?: Keypair
   ): Promise<{ signature: string }> {
     const [configPda] = this.getConfigPda(mint);
     const [roleRegistryPda] = this.getRoleRegistryPda(configPda);
 
     try {
-      const signature = await this.tokenProgram.methods
+      let builder = this.tokenProgram.methods
         .transferAuthority()
         .accounts({
           authority: this.provider.wallet.publicKey,
           config: configPda,
           roleRegistry: roleRegistryPda,
           newAuthority,
-        })
-        .rpc();
+        });
+
+      if (newAuthorityKeypair) {
+        builder = builder.signers([newAuthorityKeypair]);
+      }
+
+      const signature = await builder.rpc();
 
       return { signature };
     } catch (err) {

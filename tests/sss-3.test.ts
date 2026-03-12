@@ -174,6 +174,7 @@ describe("SSS-3: Private Stablecoin (Confidential Transfers)", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: recipientAta,
+        recipientBlacklist: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -226,6 +227,7 @@ describe("SSS-3: Private Stablecoin (Confidential Transfers)", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: authorityAta,
+        recipientBlacklist: null,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -237,7 +239,7 @@ describe("SSS-3: Private Stablecoin (Confidential Transfers)", () => {
         burner: authority.publicKey,
         config: configPda,
         mint: mint.publicKey,
-        burnerTokenAccount: authorityAta,
+        burnTokenAccount: authorityAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -328,6 +330,7 @@ describe("SSS-3: Private Stablecoin (Confidential Transfers)", () => {
           minterInfo: minterInfoPda,
           mint: mint.publicKey,
           recipientTokenAccount: authorityAta,
+          recipientBlacklist: null,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
