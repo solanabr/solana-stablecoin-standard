@@ -444,18 +444,18 @@ describe("Build Tests", () => {
     expect(content).toContain('ENTRYPOINT ["/sbin/tini", "--"]');
   });
 
-  test("all 4 service images are built successfully", () => {
+  test("all 6 service images are built successfully", () => {
     const images = run(`docker images --filter "reference=*${COMPOSE_PROJECT}*" --format "{{.Repository}}"`);
     // Also check by inspecting the compose services directly
     const psOutput = run(
       `docker compose -p ${COMPOSE_PROJECT} ps --format "{{.Service}}"`
     );
     const services = psOutput.split("\n").filter(Boolean);
-    expect(services.length).toBeGreaterThanOrEqual(3); // api, webhook-service, compliance-service (event-listener may or may not be up)
+    expect(services.length).toBeGreaterThanOrEqual(5); // at least 5 of 6 services should be running
   });
 
   test("built images are reasonably sized (< 500MB each)", () => {
-    // All 4 services use the same Dockerfile/image; check via any container
+    // All 6 services use the same Dockerfile/image; check via any container
     for (const container of Object.values(CONTAINERS)) {
       try {
         const imageId = run(
@@ -619,7 +619,7 @@ describe("Network Tests", () => {
     expect(driver).toBe("bridge");
   });
 
-  test("all 4 services are attached to sss-network", () => {
+  test("all 6 services are attached to sss-network", () => {
     const networkInfo = run(`docker network inspect sss-network --format "{{json .Containers}}"`);
     const containers = parseJson(networkInfo);
     expect(containers).not.toBeNull();
@@ -1546,9 +1546,9 @@ describe("Container Lifecycle Tests", () => {
       );
       imageIds.add(imageId);
     }
-    // All 4 services use the same Dockerfile — they may share a base image
+    // All 6 services use the same Dockerfile — they may share a base image
     // but Docker Compose builds separate images when command overrides differ
     expect(imageIds.size).toBeGreaterThanOrEqual(1);
-    expect(imageIds.size).toBeLessThanOrEqual(4);
+    expect(imageIds.size).toBeLessThanOrEqual(6);
   });
 });

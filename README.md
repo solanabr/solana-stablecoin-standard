@@ -1,5 +1,12 @@
 # Solana Stablecoin Standard (SSS)
 
+<p align="center">
+  <a href="https://stablecoinstandard.dev"><strong>stablecoinstandard.dev</strong></a> &nbsp;|&nbsp;
+  <a href="https://docs.stablecoinstandard.dev"><strong>Documentation</strong></a> &nbsp;|&nbsp;
+  <a href="https://www.npmjs.com/package/solana-stablecoin-standard"><strong>npm</strong></a> &nbsp;|&nbsp;
+  <a href="https://crates.io/crates/sss-token"><strong>crates.io</strong></a>
+</p>
+
 A modular, compliance-ready stablecoin framework for Solana using Token-2022.
 
 SSS provides a complete on-chain toolkit for issuing and managing stablecoins, from minimal single-authority tokens to fully compliant assets with transfer restrictions, blacklists, asset seizure, and GENIUS Act reserve attestations. The framework ships as two Anchor programs, a TypeScript SDK, a Rust CLI, and a Node.js interactive TUI dashboard.
@@ -78,7 +85,7 @@ The test suite runs 60 integration tests across all presets plus SDK integration
 # Set your API key for authenticated endpoints
 export API_KEY=your-secret-key
 
-# Build and start all 4 services
+# Build and start all 6 services
 docker compose up --build
 ```
 
@@ -90,6 +97,8 @@ This spins up:
 | `sss-webhook-service` | 3001 | Event dispatch with retry |
 | `sss-compliance-service` | 3002 | Sanctions screening |
 | `sss-event-listener` | -- | On-chain log subscriber |
+| `sss-frontend` | 3003 | Next.js management dashboard |
+| `sss-docs` | 3004 | Docusaurus documentation site |
 
 All POST endpoints require `Authorization: Bearer <API_KEY>` header. GET endpoints are public.
 
@@ -304,6 +313,10 @@ sss --url https://api.devnet.solana.com supply --mint 9MmnDN61FaYd7SRzsnHmwEMj1j
 # Launch TUI dashboard
 sss --url https://api.devnet.solana.com dashboard --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
 ```
+
+## Production Authority Governance (Roadmap)
+
+The current implementation uses a single keypair as `master_authority` for streamlined devnet testing. In production deployments, this authority should be replaced with a Squads v4 multisig (program `SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf`). The stablecoin program itself requires no modification. The `master_authority` field in `StablecoinConfig` accepts any valid public key, including a multisig PDA. The recommended quorum for regulated issuers is 2-of-3: an operations key, a legal/compliance key, and a cold storage recovery key. High-impact operations such as `seize` and `update_roles` should additionally be governed by a 24-hour timelock at the Squads proposal level, providing a detection window before irreversible actions execute. This separation of concerns, where the stablecoin program trusts whoever holds authority and the multisig layer governs how that authority is exercised, mirrors the operational model used by Circle for USDC and aligns with the auditability requirements implicit in the GENIUS Act.
 
 ## Build Notes
 
