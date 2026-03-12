@@ -95,7 +95,7 @@ pub mod sss_token {
     }
 
     /// Seize tokens from a blacklisted account to treasury via permanent delegate.
-    pub fn seize(ctx: Context<Seize>) -> Result<()> {
+    pub fn seize<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Result<()> {
         instructions::compliance::seize_handler(ctx)
     }
 }

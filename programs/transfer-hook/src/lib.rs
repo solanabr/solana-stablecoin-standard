@@ -25,56 +25,23 @@ pub mod transfer_hook {
     ///
     /// Called **once** per SSS-2 mint, right after mint creation.
     ///
-    /// Extra accounts registered:
-    ///   [5] sender blacklist PDA   (derived from sss-token program)
-    ///   [6] receiver blacklist PDA (derived from sss-token program)
-    ///   [7] hook state PDA         (stores paused flag & admin)
+    /// Extra accounts registered (resolution order matters — each PDA can only
+    /// reference accounts that appear earlier in the list or the five base
+    /// Execute accounts 0-4):
+    ///   [5] SSS-Token program ID      (static; used as the external-PDA program)
+    ///   [6] stablecoin state PDA      (derived: ["stablecoin", mint] via accounts[5])
+    ///   [7] sender blacklist PDA      (derived: ["blacklist", accounts[6], source_wallet])
+    ///   [8] receiver blacklist PDA    (derived: ["blacklist", accounts[6], dest_owner])
+    ///   [9] hook state PDA            (stores paused flag, admin, transfer count)
+    ///
+    /// The hook checks both sender and receiver blacklist on every transfer.
+    /// Seizure (permanent-delegate) transfers bypass blacklist checks so that
+    /// tokens can be seized from blacklisted accounts.
     pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
         stablecoin_state: Pubkey,
     ) -> Result<()> {
-        let account_metas = vec![
-            // index 5: sender blacklist PDA
-            //   seeds = ["blacklist", stablecoin_state, source_wallet]
-            //   program = SSS_TOKEN_PROGRAM_ID
-            ExtraAccountMeta::new_external_pda_with_seeds(
-                7, // external program index (SSS_TOKEN_PROGRAM_ID, injected at idx 7)
-                &[
-                    Seed::Literal { bytes: b"blacklist".to_vec() },
-                    Seed::Literal { bytes: stablecoin_state.to_bytes().to_vec() },
-                    Seed::AccountKey { index: 3 }, // owner / source wallet
-                ],
-                false, // is_signer
-                false, // is_writable
-            )?,
-            // index 6: receiver blacklist PDA
-            //   seeds = ["blacklist", stablecoin_state, destination_owner]
-            //   We use the destination token account (index 2) owner.
-            //   Since we can't resolve token-account owner at meta-list time,
-            //   we pass the destination token account key as seed and resolve
-            //   in the execute handler.
-            ExtraAccountMeta::new_external_pda_with_seeds(
-                7,
-                &[
-                    Seed::Literal { bytes: b"blacklist".to_vec() },
-                    Seed::Literal { bytes: stablecoin_state.to_bytes().to_vec() },
-                    Seed::AccountKey { index: 2 }, // destination token account (best available)
-                ],
-                false,
-                false,
-            )?,
-            // index 7: SSS-Token program (needed for external PDA derivation above)
-            ExtraAccountMeta::new_with_pubkey(&SSS_TOKEN_PROGRAM_ID, false, false)?,
-            // index 8: hook state PDA (stores admin, paused, and transfer count)
-            ExtraAccountMeta::new_with_seeds(
-                &[
-                    Seed::Literal { bytes: b"hook-state".to_vec() },
-                    Seed::AccountKey { index: 1 }, // mint
-                ],
-                false,
-                true, // writable — we increment the transfer counter
-            )?,
-        ];
+        let account_metas = build_extra_account_metas()?;
 
         // Allocate and write the extra-account-metas list
         let account_size = ExtraAccountMetaList::size_of(account_metas.len())?;
@@ -123,6 +90,57 @@ pub mod transfer_hook {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // update_extra_account_meta_list
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// Overwrites the extra-account-metas PDA with the current layout.
+    ///
+    /// Use this after a program upgrade that changes the set of extra accounts
+    /// the hook needs (e.g. removing the receiver blacklist PDA). The on-chain
+    /// PDA data is read by wallet resolvers, so it must match the deployed code.
+    ///
+    /// Only the hook admin can call this. The PDA is resized (realloc) and the
+    /// data is overwritten in-place.
+    pub fn update_extra_account_meta_list(
+        ctx: Context<UpdateExtraAccountMetaList>,
+    ) -> Result<()> {
+        let account_metas = build_extra_account_metas()?;
+
+        // Realloc the PDA to the new size (may shrink or grow)
+        let new_size = ExtraAccountMetaList::size_of(account_metas.len())?;
+        let meta_account = &ctx.accounts.extra_account_meta_list;
+
+        meta_account.realloc(new_size, false)?;
+
+        // Top up rent if needed
+        let rent = Rent::get()?;
+        let required_lamports = rent.minimum_balance(new_size);
+        let current_lamports = meta_account.lamports();
+        if current_lamports < required_lamports {
+            let diff = required_lamports - current_lamports;
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: meta_account.to_account_info(),
+                    },
+                ),
+                diff,
+            )?;
+        }
+
+        // Overwrite the data — zero first because ExtraAccountMetaList::init
+        // expects a freshly zeroed buffer (it validates the existing data is empty).
+        let mut data = meta_account.try_borrow_mut_data()?;
+        data.fill(0);
+        ExtraAccountMetaList::init::<ExecuteInstruction>(&mut data, &account_metas)?;
+
+        msg!("Extra account metas updated ({} accounts)", account_metas.len());
+        Ok(())
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // execute — THE HOOK ENTRYPOINT
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -130,21 +148,24 @@ pub mod transfer_hook {
     ///
     /// Checks:
     /// 1. Hook is not paused
-    /// 2. Sender is not blacklisted
-    /// 3. Receiver is not blacklisted
+    /// 2. If authority is the permanent delegate (seizure), skip blacklist checks
+    /// 3. Otherwise, sender AND receiver must not be blacklisted
     /// 4. Increments transfer counter
     pub fn execute(ctx: Context<Execute>, amount: u64) -> Result<()> {
         let remaining = &ctx.remaining_accounts;
-        // remaining[0] = sender blacklist PDA
-        // remaining[1] = receiver blacklist PDA
-        // remaining[2] = SSS_TOKEN_PROGRAM_ID
-        // remaining[3] = hook state PDA
+        // After account resolution by Token-2022, remaining contains:
+        // remaining[0] = SSS_TOKEN_PROGRAM_ID   (static, index 5)
+        // remaining[1] = stablecoin state PDA   (index 6)
+        // remaining[2] = sender blacklist PDA   (index 7)
+        // remaining[3] = receiver blacklist PDA (index 8)
+        // remaining[4] = hook state PDA         (index 9, writable)
 
-        require!(remaining.len() >= 4, HookError::MissingAccounts);
+        require!(remaining.len() >= 5, HookError::MissingAccounts);
 
-        let sender_blacklist = &remaining[0];
-        let receiver_blacklist = &remaining[1];
-        let hook_state_info = &remaining[3];
+        let stablecoin_state = &remaining[1];
+        let sender_blacklist = &remaining[2];
+        let receiver_blacklist = &remaining[3];
+        let hook_state_info = &remaining[4];
 
         // Parse hook state to check paused and increment counter
         let mut hook_data = hook_state_info.try_borrow_mut_data()?;
@@ -163,9 +184,22 @@ pub mod transfer_hook {
         }
         drop(hook_data);
 
-        // Check blacklists
-        check_not_blacklisted(sender_blacklist, true)?;
-        check_not_blacklisted(receiver_blacklist, false)?;
+        // Derive the permanent delegate PDA to detect seizure transfers.
+        // seeds = ["permanent_delegate", stablecoin_state_key], program = SSS_TOKEN_PROGRAM_ID
+        let (permanent_delegate, _) = Pubkey::find_program_address(
+            &[b"permanent_delegate", stablecoin_state.key.as_ref()],
+            &SSS_TOKEN_PROGRAM_ID,
+        );
+
+        let authority = ctx.accounts.owner.key();
+        let is_seizure = authority == permanent_delegate;
+
+        if !is_seizure {
+            // Normal transfer — check both sender and receiver blacklist
+            check_not_blacklisted(sender_blacklist, true)?;
+            check_not_blacklisted(receiver_blacklist, false)?;
+        }
+        // Seizure (permanent delegate) bypasses blacklist checks
 
         emit!(TransferChecked {
             mint: ctx.accounts.mint.key(),
@@ -248,6 +282,31 @@ pub mod transfer_hook {
 
         Ok(())
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // fallback — route Token-2022 Execute CPI to our handler
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// Anchor fallback entrypoint — called for any unrecognized instruction.
+    ///
+    /// Token-2022 invokes the transfer hook via the spl-transfer-hook-interface
+    /// `Execute` instruction, whose 8-byte discriminator differs from Anchor's
+    /// method discriminator for `execute`. Without a fallback, Anchor returns
+    /// InstructionFallbackNotFound (0x65).
+    pub fn fallback<'info>(
+        program_id: &Pubkey,
+        accounts: &'info [AccountInfo<'info>],
+        data: &[u8],
+    ) -> Result<()> {
+        // SPL transfer-hook Execute discriminator: hash("spl-transfer-hook-interface:execute")[:8]
+        let spl_execute_disc: [u8; 8] = [105, 37, 101, 197, 75, 251, 102, 26];
+
+        if data.len() >= 8 && data[..8] == spl_execute_disc {
+            return __private::__global::execute(program_id, accounts, &data[8..]);
+        }
+
+        Err(ProgramError::InvalidInstructionData.into())
+    }
 }
 
 // ─── Blacklist check helper ──────────────────────────────────────────────────
@@ -259,26 +318,11 @@ fn check_not_blacklisted(account: &AccountInfo, is_sender: bool) -> Result<()> {
     }
 
     // Account exists → this means a BlacklistEntry PDA was initialized by sss-token.
-    // The sss-token program only creates these PDAs during `add_to_blacklist` and
-    // only closes them during `remove_from_blacklist`.
-    // Therefore, existence = blacklisted.
-    //
-    // Additional safety: we verify the data has the expected minimum size.
-    // BlacklistEntry: 8 (disc) + 32 (stablecoin) + 32 (address) + 4 (reason_len)
-    //                 + reason_bytes + 8 (added_at) + 32 (added_by) + 1 (active) + 1 (bump)
     let data = account.try_borrow_data()?;
     if data.len() < 9 {
-        // Too small to be a valid BlacklistEntry — allow the transfer
         return Ok(());
     }
 
-    // Verify the `active` field is true.
-    // If the PDA exists but active == false, the sss-token program has soft-deactivated it.
-    // Layout: disc(8) + stablecoin(32) + address(32) + reason_string(4+len) ...
-    // Since reason is a variable-length String, we read `active` from the correct offset.
-    //
-    // For robustness: We read the 4-byte reason length, skip that many bytes, then read
-    // added_at(8) + added_by(32) + active(1).
     let min_fixed = 8 + 32 + 32 + 4; // = 76
     if data.len() < min_fixed {
         return Ok(());
@@ -300,6 +344,72 @@ fn check_not_blacklisted(account: &AccountInfo, is_sender: bool) -> Result<()> {
     } else {
         err!(HookError::RecipientBlacklisted)
     }
+}
+
+// ─── Shared extra-account-meta layout ────────────────────────────────────────
+
+/// Builds the canonical list of extra account metas for the transfer hook.
+/// Used by both `initialize_extra_account_meta_list` and `update_extra_account_meta_list`
+/// to ensure they always produce the same layout.
+///
+/// Layout (appended after the 5 base Execute accounts 0-4):
+///   [5] SSS-Token program ID      (static)
+///   [6] stablecoin state PDA      (["stablecoin", mint] via [5])
+///   [7] sender blacklist PDA      (["blacklist", [6], source_owner=[3]] via [5])
+///   [8] receiver blacklist PDA    (["blacklist", [6], dest_owner] via [5])
+///       dest_owner is extracted from dest token account data (offset 32, 32 bytes)
+///   [9] hook state PDA            (["hook-state", mint])
+fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
+    Ok(vec![
+        // [5] SSS-Token program — static pubkey
+        ExtraAccountMeta::new_with_pubkey(&SSS_TOKEN_PROGRAM_ID, false, false)?,
+
+        // [6] stablecoin state PDA
+        ExtraAccountMeta::new_external_pda_with_seeds(
+            5,
+            &[
+                Seed::Literal { bytes: b"stablecoin".to_vec() },
+                Seed::AccountKey { index: 1 }, // mint
+            ],
+            false,
+            false,
+        )?,
+
+        // [7] sender blacklist PDA
+        ExtraAccountMeta::new_external_pda_with_seeds(
+            5,
+            &[
+                Seed::Literal { bytes: b"blacklist".to_vec() },
+                Seed::AccountKey { index: 6 }, // stablecoin state
+                Seed::AccountKey { index: 3 }, // source wallet / owner
+            ],
+            false,
+            false,
+        )?,
+
+        // [8] receiver blacklist PDA
+        //   dest_owner = AccountData from dest token account (index 2), offset 32, len 32
+        ExtraAccountMeta::new_external_pda_with_seeds(
+            5,
+            &[
+                Seed::Literal { bytes: b"blacklist".to_vec() },
+                Seed::AccountKey { index: 6 }, // stablecoin state
+                Seed::AccountData { account_index: 2, data_index: 32, length: 32 }, // dest owner
+            ],
+            false,
+            false,
+        )?,
+
+        // [9] hook state PDA (writable — we increment the transfer counter)
+        ExtraAccountMeta::new_with_seeds(
+            &[
+                Seed::Literal { bytes: b"hook-state".to_vec() },
+                Seed::AccountKey { index: 1 }, // mint
+            ],
+            false,
+            true,
+        )?,
+    ])
 }
 
 // ─── Account structs ─────────────────────────────────────────────────────────
@@ -325,6 +435,34 @@ pub struct InitializeExtraAccountMetaList<'info> {
         space = HookState::LEN,
         seeds = [b"hook-state", mint.key().as_ref()],
         bump,
+    )]
+    pub hook_state: Account<'info, HookState>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateExtraAccountMetaList<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    /// The hook admin must authorize the update.
+    pub admin: Signer<'info>,
+
+    /// CHECK: The existing extra-account-metas PDA — will be overwritten.
+    #[account(
+        mut,
+        seeds = [b"extra-account-metas", mint.key().as_ref()],
+        bump,
+    )]
+    pub extra_account_meta_list: UncheckedAccount<'info>,
+
+    pub mint: InterfaceAccount<'info, anchor_spl::token_interface::Mint>,
+
+    #[account(
+        has_one = admin @ HookError::Unauthorized,
+        seeds = [b"hook-state", mint.key().as_ref()],
+        bump = hook_state.bump,
     )]
     pub hook_state: Account<'info, HookState>,
 

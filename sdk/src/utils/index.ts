@@ -18,6 +18,8 @@ import {
   AccountState,
   createInitializeMintCloseAuthorityInstruction,
   tokenMetadataInitializeWithRentTransfer,
+  setAuthority,
+  AuthorityType,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
@@ -88,6 +90,13 @@ export function findExtraAccountMetaListPDA(mintPubkey: PublicKey): [PublicKey, 
   );
 }
 
+export function findHookStatePDA(mintPubkey: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("hook-state"), mintPubkey.toBuffer()],
+    TRANSFER_HOOK_PROGRAM_ID
+  );
+}
+
 // ─── Mint pre-creation ────────────────────────────────────────────────────────
 
 export interface CreateMintParams {
@@ -112,7 +121,12 @@ export interface CreateMintParams {
 }
 
 /**
- * Creates a Token-2022 mint with all required extensions pre-allocated.
+ * Creates a Token-2022 mint with all required extensions and on-chain metadata.
+ * Sends three transactions:
+ *   1. Create account + fixed extension inits + InitializeMint (payer as temp authority)
+ *   2. TokenMetadata init via reallocate + metadata write
+ *   3. SetAuthority — transfers MintTokens authority from payer to mint_authority PDA
+ *
  * Must be called before `initialize` on the SSS-token program.
  */
 export async function createMintWithExtensions(
@@ -228,7 +242,7 @@ export async function createMintWithExtensions(
   // - mintAuthority (payer) must sign because the mint's current authority is payer.
   // - updateAuthority is set to the PDA so future metadata updates must go through
   //   the SSS-token program, which can sign for the PDA via CPI.
-  return tokenMetadataInitializeWithRentTransfer(
+  await tokenMetadataInitializeWithRentTransfer(
     connection,
     payer,            // payer of extra rent
     mintKeypair.publicKey,
@@ -239,6 +253,22 @@ export async function createMintWithExtensions(
     uri ?? "",
     undefined,        // multiSigners
     undefined,        // confirmOptions
+    TOKEN_2022_PROGRAM_ID
+  );
+
+  // Third transaction: transfer MintTokens authority from payer back to the
+  // mint_authority PDA. Payer was used as a temporary signer so it could
+  // satisfy the metadata init requirement; the PDA is the intended long-term
+  // authority that the SSS-token program uses via CPI with seeds.
+  return setAuthority(
+    connection,
+    payer,                    // fee payer
+    mintKeypair.publicKey,    // the mint
+    payer,                    // current authority (payer.publicKey)
+    AuthorityType.MintTokens,
+    mintAuthority,            // new authority = mint_authority PDA
+    [],
+    undefined,
     TOKEN_2022_PROGRAM_ID
   );
 }

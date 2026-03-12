@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/idl dist/idl",
     "test": "ts-mocha -p tsconfig.json -t 1000000 src/**/*.test.ts",
     "lint": "eslint src --ext .ts",
     "prepublishOnly": "npm run build"

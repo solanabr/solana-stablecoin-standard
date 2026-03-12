@@ -3,10 +3,17 @@ import {
   Keypair,
   PublicKey,
   Signer,
+  Transaction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, BN, Idl } from "@coral-xyz/anchor";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import {
+  TOKEN_2022_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+  createTransferCheckedInstruction,
+  createTransferCheckedWithTransferHookInstruction,
+} from "@solana/spl-token";
 
 import { Preset, StablecoinConfig, resolvePreset } from "./presets";
 import {
@@ -16,11 +23,15 @@ import {
   findPermanentDelegatePDA,
   findMinterInfoPDA,
   findBlacklistEntryPDA,
+  findExtraAccountMetaListPDA,
+  findHookStatePDA,
   SSS_TOKEN_PROGRAM_ID,
   TRANSFER_HOOK_PROGRAM_ID,
   createMintWithExtensions,
   getOrCreateTokenAccount,
 } from "./utils";
+import SSS_TOKEN_IDL from "./idl/sss_token.json";
+import TRANSFER_HOOK_IDL from "./idl/transfer_hook.json";
 
 export { Preset, Presets } from "./presets";
 export type { StablecoinConfig };
@@ -46,6 +57,8 @@ export interface CreateOptions {
   mintKeypair?: Keypair;
   /** Optional: provide the IDL directly (for local/test environments where IDL is not on-chain) */
   idl?: Idl;
+  /** Optional: provide the transfer-hook IDL directly (for local/test environments) */
+  transferHookIdl?: Idl;
 }
 
 // ─── Mint Options ─────────────────────────────────────────────────────────────
@@ -54,6 +67,19 @@ export interface MintOptions {
   recipient: PublicKey;
   amount: number | bigint;
   minter: Keypair;
+}
+
+// ─── Transfer Options ─────────────────────────────────────────────────────────
+
+export interface TransferOptions {
+  /** Wallet (owner) sending the tokens */
+  from: Keypair;
+  /** Wallet (owner) receiving the tokens */
+  to: PublicKey;
+  /** Amount in base units (e.g. lamport-scale for decimals=6: 1_000_000 = 1 token) */
+  amount: number | bigint;
+  /** Optional fee-payer — defaults to `from` */
+  payer?: Keypair;
 }
 
 // ─── Compliance Module ────────────────────────────────────────────────────────
@@ -76,7 +102,7 @@ export class ComplianceModule {
   async blacklistAdd(address: PublicKey, reason: string): Promise<string> {
     this.assertEnabled();
     const [blacklistEntry] = findBlacklistEntryPDA(this.sdk.statePDA, address);
-    return this.program.methods
+    const sig = await this.program.methods
       .addToBlacklist(reason)
       .accounts({
         authority: this.sdk.authority.publicKey,
@@ -87,12 +113,14 @@ export class ComplianceModule {
       })
       .signers([this.sdk.authority])
       .rpc();
+
+    return sig;
   }
 
   async blacklistRemove(address: PublicKey, reason: string): Promise<string> {
     this.assertEnabled();
     const [blacklistEntry] = findBlacklistEntryPDA(this.sdk.statePDA, address);
-    return this.program.methods
+    const sig = await this.program.methods
       .removeFromBlacklist(reason)
       .accounts({
         authority: this.sdk.authority.publicKey,
@@ -102,6 +130,8 @@ export class ComplianceModule {
       })
       .signers([this.sdk.authority])
       .rpc();
+
+    return sig;
   }
 
   async isBlacklisted(address: PublicKey): Promise<boolean> {
@@ -129,6 +159,35 @@ export class ComplianceModule {
       treasury
     );
 
+    // Use the SPL library's own transfer-hook resolver to discover
+    // the exact accounts Token-2022 will need when its transfer_checked
+    // CPI triggers the hook.  This reads the on-chain extra-account-metas
+    // PDA and resolves every PDA (including Seed::AccountData) the same
+    // way Token-2022 does — no manual derivation needed.
+    const resolvedIx = await createTransferCheckedWithTransferHookInstruction(
+      this.sdk.connection,
+      fromAta,
+      this.sdk.mint,
+      toAta,
+      permanentDelegate,     // authority = permanent delegate PDA
+      BigInt(1),             // amount doesn't affect resolution
+      this.sdk.config.decimals,
+      [],                    // multiSigners
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    // The resolved instruction's keys are:
+    //   [0] source  [1] mint  [2] dest  [3] authority
+    //   [4..] = extra-account-metas PDA, resolved extras, hook program (last)
+    // We forward [4..] as remainingAccounts so the on-chain CPI can pass
+    // them through to Token-2022.
+    const hookAccounts = resolvedIx.keys.slice(4).map((meta) => ({
+      pubkey: meta.pubkey,
+      isSigner: false,           // non-signers in the CPI context
+      isWritable: meta.isWritable,
+    }));
+
     return this.program.methods
       .seize()
       .accounts({
@@ -142,6 +201,7 @@ export class ComplianceModule {
         permanentDelegate,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
+      .remainingAccounts(hookAccounts)
       .signers([this.sdk.authority])
       .rpc();
   }
@@ -266,8 +326,7 @@ export class SolanaStablecoin {
 
     // Step 2: Load the Anchor program
     const provider = new AnchorProvider(connection, new anchor.Wallet(authority), {});
-    const idl = options.idl ?? await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
-    if (!idl) throw new Error("SSS-token IDL not found on-chain. Pass idl option for local/test environments.");
+    const idl = options.idl ?? await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider) ?? SSS_TOKEN_IDL as Idl;
     const program = new Program(idl, provider);
 
     // Step 3: Initialize state PDA
@@ -293,6 +352,35 @@ export class SolanaStablecoin {
       .signers([authority, mintKeypair])
       .rpc();
 
+    // Step 4: Initialize the transfer-hook extra-account-metas list (SSS-2 only).
+    // Token-2022 looks up the `extra-account-metas` PDA on every transfer_checked
+    // to resolve the additional accounts the hook needs (blacklist PDAs, hook state).
+    // If this PDA doesn't exist, Token-2022 throws AccountNotFound at transfer time.
+    if (config.enableTransferHook) {
+      const [extraAccountMetaList] = findExtraAccountMetaListPDA(mintKeypair.publicKey);
+
+      // Guard: skip if already initialized (idempotent create flow).
+      const existing = await connection.getAccountInfo(extraAccountMetaList);
+      if (!existing) {
+        const hookIdl = options.transferHookIdl ?? await Program.fetchIdl(TRANSFER_HOOK_PROGRAM_ID, provider) ?? TRANSFER_HOOK_IDL as Idl;
+        const hookProgram = new Program(hookIdl, provider);
+
+        const [hookState] = findHookStatePDA(mintKeypair.publicKey);
+
+        await hookProgram.methods
+          .initializeExtraAccountMetaList(statePDA)
+          .accounts({
+            payer: authority.publicKey,
+            extraAccountMetaList,
+            mint: mintKeypair.publicKey,
+            hookState,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          })
+          .signers([authority])
+          .rpc();
+      }
+    }
+
     return new SolanaStablecoin(
       connection,
       mintKeypair.publicKey,
@@ -314,8 +402,7 @@ export class SolanaStablecoin {
   ): Promise<SolanaStablecoin> {
     const [statePDA] = findStatePDA(mint);
     const provider = new AnchorProvider(connection, new anchor.Wallet(authority), {});
-    const resolvedIdl = idl ?? await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider);
-    if (!resolvedIdl) throw new Error("SSS-token IDL not found on-chain. Pass idl parameter for local/test environments.");
+    const resolvedIdl = idl ?? await Program.fetchIdl(SSS_TOKEN_PROGRAM_ID, provider) ?? SSS_TOKEN_IDL as Idl;
     const program = new Program(resolvedIdl, provider);
 
     const state = await (program.account as any).stablecoinState.fetch(statePDA);
@@ -335,6 +422,52 @@ export class SolanaStablecoin {
   }
 
   // ─── Core Operations ────────────────────────────────────────────────────────
+
+  /**
+   * Initialize the transfer-hook extra-account-metas list for this SSS-2 mint.
+   *
+   * Only needed for SSS-2 tokens. Token-2022 requires this PDA to exist before
+   * any `transfer_checked` can succeed — it uses it to resolve the blacklist
+   * and hook-state accounts that the hook needs at execution time.
+   *
+   * Called automatically by `SolanaStablecoin.create()`. Use this method to
+   * repair already-created SSS-2 mints that are missing the PDA.
+   */
+  async initializeTransferHook(transferHookIdl?: Idl): Promise<string> {
+    if (!this.config.enableTransferHook) {
+      throw new Error("Transfer hook is not enabled on this stablecoin.");
+    }
+
+    const [extraAccountMetaList] = findExtraAccountMetaListPDA(this.mint);
+
+    // If the extra-account-metas PDA already exists the hook is already
+    // initialized — calling again would produce TypeAlreadyExists (0xa261c2c7).
+    const existing = await this.connection.getAccountInfo(extraAccountMetaList);
+    if (existing !== null) {
+      throw new Error(
+        `Transfer-hook is already initialized for this mint. ` +
+        `extra-account-metas PDA: ${extraAccountMetaList.toBase58()}`
+      );
+    }
+
+    const provider = new AnchorProvider(this.connection, new anchor.Wallet(this.authority), {});
+    const hookIdl = transferHookIdl ?? await Program.fetchIdl(TRANSFER_HOOK_PROGRAM_ID, provider) ?? TRANSFER_HOOK_IDL as Idl;
+    const hookProgram = new Program(hookIdl, provider);
+
+    const [hookState] = findHookStatePDA(this.mint);
+
+    return hookProgram.methods
+      .initializeExtraAccountMetaList(this.statePDA)
+      .accounts({
+        payer: this.authority.publicKey,
+        extraAccountMetaList,
+        mint: this.mint,
+        hookState,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([this.authority])
+      .rpc();
+  }
 
   /**
    * Mint tokens to a recipient.
@@ -364,6 +497,78 @@ export class SolanaStablecoin {
       })
       .signers([minter])
       .rpc();
+  }
+
+  /**
+   * Transfer tokens between wallets.
+   *
+   * For SSS-2 tokens (transfer hook enabled), this method:
+   *  1. Creates the destination ATA if it doesn't exist (required for hook
+   *     account resolution — the off-chain resolver reads the destination
+   *     token-account data to derive the receiver blacklist PDA).
+   *  2. Builds the `transfer_checked` instruction with all extra hook accounts
+   *     resolved via `createTransferCheckedWithTransferHookInstruction`.
+   *
+   * This avoids the "AccountNotFound" error that occurs when using
+   * `spl-token transfer --fund-recipient` with transfer-hook mints, because
+   * that CLI command tries to resolve hook accounts before the ATA exists.
+   *
+   * For SSS-1 tokens this falls back to a plain `transfer_checked`.
+   */
+  async transfer(options: TransferOptions): Promise<string> {
+    const { from, to, amount, payer: payerOverride } = options;
+    const payer = payerOverride ?? from;
+
+    // 1. Ensure destination ATA exists — MUST happen before hook resolution
+    //    so that Seed::AccountData can read the dest-token-account owner.
+    const destinationAta = await getOrCreateTokenAccount(
+      this.connection,
+      payer,
+      this.mint,
+      to,
+    );
+
+    // 2. Source ATA
+    const sourceAta = getAssociatedTokenAddressSync(
+      this.mint,
+      from.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const amountBigInt = BigInt(amount.toString());
+
+    if (this.config.enableTransferHook) {
+      // SSS-2 path: resolve extra accounts then transfer_checked
+      const instruction = await createTransferCheckedWithTransferHookInstruction(
+        this.connection,
+        sourceAta,
+        this.mint,
+        destinationAta,
+        from.publicKey,
+        amountBigInt,
+        this.config.decimals,
+        [],         // multiSigners
+        undefined,  // commitment
+        TOKEN_2022_PROGRAM_ID,
+      );
+      const tx = new Transaction().add(instruction);
+      return sendAndConfirmTransaction(this.connection, tx, [payer, from]);
+    } else {
+      // SSS-1 path: plain transfer_checked
+      const instruction = createTransferCheckedInstruction(
+        sourceAta,
+        this.mint,
+        destinationAta,
+        from.publicKey,
+        amountBigInt,
+        this.config.decimals,
+        [],
+        TOKEN_2022_PROGRAM_ID,
+      );
+      const tx = new Transaction().add(instruction);
+      return sendAndConfirmTransaction(this.connection, tx, [payer, from]);
+    }
   }
 
   async burn(from: PublicKey, amount: number | bigint): Promise<string> {

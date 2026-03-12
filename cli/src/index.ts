@@ -95,6 +95,41 @@ initCmd
     }
   });
 
+// ─── init-hook ─────────────────────────────────────────────────────────────────
+
+program
+  .command("init-hook")
+  .description(
+    "Initialize the transfer-hook extra-account-metas PDA for an existing SSS-2 mint. " +
+    "Run this once per mint if transfers are failing with AccountNotFound."
+  )
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent?.opts() ?? {};
+    const config = loadConfig({
+      keypair: globalOpts.keypair,
+      url: globalOpts.url,
+      mint: globalOpts.mint,
+    });
+    const mint = requireMint(config);
+
+    const spinner = ora(`Initializing transfer-hook accounts for ${mint.toBase58().slice(0, 8)}...`).start();
+    try {
+      const stable = await SolanaStablecoin.load(
+        config.connection,
+        mint,
+        config.keypair
+      );
+      const sig = await stable.initializeTransferHook();
+      spinner.succeed(
+        chalk.green(`✓ Transfer-hook initialized\n`) +
+          `  Tx: ${chalk.cyan(sig)}`
+      );
+    } catch (e: any) {
+      spinner.fail(chalk.red(e.message));
+      process.exit(1);
+    }
+  });
+
 // ─── mint ──────────────────────────────────────────────────────────────────────
 
 program
@@ -173,6 +208,47 @@ program
       spinner.succeed(
         chalk.green(`✓ Burned ${amount} tokens from ${chalk.cyan(sourceAddress.toBase58())}\n`) +
         `  Tx: ${chalk.cyan(sig)}`
+      );
+    } catch (e: any) {
+      spinner.fail(chalk.red(e.message));
+      process.exit(1);
+    }
+  });
+
+// ─── transfer ──────────────────────────────────────────────────────────────────
+
+program
+  .command("transfer <recipient> <amount>")
+  .description(
+    "Transfer tokens to a recipient. Handles SSS-2 transfer-hook resolution " +
+    "correctly (creates ATA first, then transfers). Use this instead of " +
+    "'spl-token transfer --fund-recipient' for SSS-2 mints."
+  )
+  .action(async (recipient, amount, opts, cmd) => {
+    const globalOpts = cmd.parent?.opts() ?? {};
+    const config = loadConfig({
+      keypair: globalOpts.keypair,
+      url: globalOpts.url,
+      mint: globalOpts.mint,
+    });
+    const mint = requireMint(config);
+
+    const spinner = ora(`Transferring ${amount} tokens to ${recipient}...`).start();
+    try {
+      const stable = await SolanaStablecoin.load(
+        config.connection,
+        mint,
+        config.keypair
+      );
+      const sig = await stable.transfer({
+        from: config.keypair,
+        to: new PublicKey(recipient),
+        amount: BigInt(amount),
+      });
+      spinner.succeed(
+        chalk.green(`✓ Transferred ${amount} tokens\n`) +
+          `  To:  ${chalk.cyan(recipient)}\n` +
+          `  Tx:  ${chalk.cyan(sig)}`
       );
     } catch (e: any) {
       spinner.fail(chalk.red(e.message));

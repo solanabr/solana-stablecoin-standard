@@ -1,7 +1,11 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::{
+    program::invoke_signed,
+    instruction::{AccountMeta, Instruction},
+};
 use anchor_spl::{
     token_2022::Token2022,
-    token_interface::{transfer_checked, Mint, TokenAccount, TransferChecked},
+    token_interface::{Mint, TokenAccount},
 };
 
 use crate::{
@@ -29,7 +33,7 @@ pub struct AddToBlacklist<'info> {
     pub target: UncheckedAccount<'info>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = authority,
         space = BlacklistEntry::LEN,
         seeds = [
@@ -182,7 +186,7 @@ pub struct Seize<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-pub fn seize_handler(ctx: Context<Seize>) -> Result<()> {
+pub fn seize_handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) -> Result<()> {
     let authority_key = ctx.accounts.authority.key();
     let state = &ctx.accounts.state;
 
@@ -194,26 +198,63 @@ pub fn seize_handler(ctx: Context<Seize>) -> Result<()> {
     require!(amount > 0, SssError::ZeroAmount);
 
     let state_key = ctx.accounts.state.key();
-    let delegate_seeds = &[
+    let bump = ctx.bumps.permanent_delegate;
+    let delegate_seeds: &[&[u8]] = &[
         b"permanent_delegate",
         state_key.as_ref(),
-        &[ctx.bumps.permanent_delegate],
+        &[bump],
+    ];
+    let signer_seeds = &[delegate_seeds];
+
+    // Build TransferChecked instruction manually so that the hook's extra
+    // accounts are part of the instruction's account keys (not just
+    // account_infos).  Anchor's `transfer_checked` CPI wrapper only puts
+    // the 4 base keys in the instruction; `with_remaining_accounts` adds
+    // to account_infos but NOT to instruction keys, so Token-2022 never
+    // sees the hook accounts and the CPI fails with "account missing."
+    //
+    // TransferChecked instruction layout (spl-token-2022):
+    //   data:     [12u8, amount(8 LE), decimals(1)]
+    //   accounts: [source(w), mint, dest(w), authority(s), ...hook_extras]
+
+    let mut ix_data = Vec::with_capacity(10);
+    ix_data.push(12u8); // TokenInstruction::TransferChecked
+    ix_data.extend_from_slice(&amount.to_le_bytes());
+    ix_data.push(ctx.accounts.mint.decimals);
+
+    let mut ix_accounts = vec![
+        AccountMeta::new(ctx.accounts.from_token_account.key(), false),
+        AccountMeta::new_readonly(ctx.accounts.mint.key(), false),
+        AccountMeta::new(ctx.accounts.treasury_token_account.key(), false),
+        AccountMeta::new_readonly(ctx.accounts.permanent_delegate.key(), true),
     ];
 
-    transfer_checked(
-        CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            TransferChecked {
-                from: ctx.accounts.from_token_account.to_account_info(),
-                mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.treasury_token_account.to_account_info(),
-                authority: ctx.accounts.permanent_delegate.to_account_info(),
-            },
-            &[delegate_seeds],
-        ),
-        amount,
-        ctx.accounts.mint.decimals,
-    )?;
+    // Append the transfer-hook extra accounts from remaining_accounts
+    for acc in ctx.remaining_accounts.iter() {
+        if acc.is_writable {
+            ix_accounts.push(AccountMeta::new(*acc.key, false));
+        } else {
+            ix_accounts.push(AccountMeta::new_readonly(*acc.key, false));
+        }
+    }
+
+    let ix = Instruction {
+        program_id: ctx.accounts.token_program.key(),
+        accounts: ix_accounts,
+        data: ix_data,
+    };
+
+    // Collect all AccountInfo objects for invoke_signed
+    let mut infos = vec![
+        ctx.accounts.from_token_account.to_account_info(),
+        ctx.accounts.mint.to_account_info(),
+        ctx.accounts.treasury_token_account.to_account_info(),
+        ctx.accounts.permanent_delegate.to_account_info(),
+    ];
+    infos.extend(ctx.remaining_accounts.iter().cloned());
+    infos.push(ctx.accounts.token_program.to_account_info());
+
+    invoke_signed(&ix, &infos, signer_seeds)?;
 
     emit!(TokensSeized {
         mint: ctx.accounts.mint.key(),

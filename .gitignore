@@ -25,3 +25,5 @@ test-ledger/
 .vscode/
 .idea/
 *.swp
+
+scripts/
