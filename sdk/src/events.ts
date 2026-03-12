@@ -112,6 +112,16 @@ export interface AuthorityTransferredEvent {
   };
 }
 
+export interface AuthorityNominatedEvent {
+  name: "authorityNominated";
+  data: {
+    config: PublicKey;
+    oldAuthority: PublicKey;
+    nominatedAuthority: PublicKey;
+    timestamp: BN;
+  };
+}
+
 export interface BlacklistAddedEvent {
   name: "blacklistAdded";
   data: {
@@ -128,6 +138,27 @@ export interface BlacklistRemovedEvent {
   data: {
     config: PublicKey;
     unblockedAddress: PublicKey;
+    removedBy: PublicKey;
+    timestamp: BN;
+  };
+}
+
+export interface AllowlistAddedEvent {
+  name: "allowlistAdded";
+  data: {
+    config: PublicKey;
+    address: PublicKey;
+    addedBy: PublicKey;
+    reason: string;
+    timestamp: BN;
+  };
+}
+
+export interface AllowlistRemovedEvent {
+  name: "allowlistRemoved";
+  data: {
+    config: PublicKey;
+    address: PublicKey;
     removedBy: PublicKey;
     timestamp: BN;
   };
@@ -155,6 +186,24 @@ export interface AuditLogRecordedEvent {
   };
 }
 
+export interface SupplyCapUpdatedEvent {
+  name: "supplyCapUpdated";
+  data: {
+    config: PublicKey;
+    oldCap: BN;
+    newCap: BN;
+    timestamp: BN;
+  };
+}
+
+export interface MetadataUpdatedEvent {
+  name: "metadataUpdated";
+  data: {
+    config: PublicKey;
+    timestamp: BN;
+  };
+}
+
 export type SSSEvent =
   | StablecoinInitializedEvent
   | TokensMintedEvent
@@ -166,10 +215,15 @@ export type SSSEvent =
   | RoleUpdatedEvent
   | MinterUpdatedEvent
   | AuthorityTransferredEvent
+  | AuthorityNominatedEvent
   | BlacklistAddedEvent
   | BlacklistRemovedEvent
+  | AllowlistAddedEvent
+  | AllowlistRemovedEvent
   | TokensSeizedEvent
-  | AuditLogRecordedEvent;
+  | AuditLogRecordedEvent
+  | SupplyCapUpdatedEvent
+  | MetadataUpdatedEvent;
 
 export function createEventParser(program: Program): EventParser {
   return new EventParser(program.programId, new BorshCoder(program.idl));

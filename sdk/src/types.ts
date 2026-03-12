@@ -23,6 +23,7 @@ export interface StablecoinConfig {
   bump: number;
   mint: PublicKey;
   masterAuthority: PublicKey;
+  pendingAuthority: PublicKey;
   name: string;
   symbol: string;
   uri: string;
@@ -33,8 +34,10 @@ export interface StablecoinConfig {
   defaultAccountFrozen: boolean;
   enableConfidentialTransfers: boolean;
   isPaused: boolean;
+  supplyCap: BN;
   totalMinted: BN;
   totalBurned: BN;
+  totalSeized: BN;
   auditLogIndex: BN;
   reserveAttestationIndex: BN;
   createdAt: BN;
@@ -68,6 +71,15 @@ export interface BlacklistEntry {
   reason: string;
   blacklistedBy: PublicKey;
   blacklistedAt: BN;
+}
+
+export interface AllowlistEntry {
+  bump: number;
+  config: PublicKey;
+  address: PublicKey;
+  addedBy: PublicKey;
+  addedAt: BN;
+  reason: string;
 }
 
 export interface ReserveAttestation {
@@ -108,6 +120,16 @@ export interface UpdateMinterParams {
 
 export interface BlacklistAddParams {
   reason: string;
+}
+
+export interface AllowlistAddParams {
+  reason: string;
+}
+
+export interface UpdateMetadataParams {
+  name: string | null;
+  symbol: string | null;
+  uri: string | null;
 }
 
 export interface AttestReserveParams {

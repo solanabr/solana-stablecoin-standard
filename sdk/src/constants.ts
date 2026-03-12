@@ -21,6 +21,7 @@ export const SEEDS = {
   ROLES: Buffer.from("roles"),
   MINTER: Buffer.from("minter"),
   BLACKLIST: Buffer.from("blacklist"),
+  ALLOWLIST: Buffer.from("allowlist"),
   RESERVE: Buffer.from("reserve"),
   AUDIT: Buffer.from("audit"),
   EXTRA_ACCOUNT_METAS: Buffer.from("extra-account-metas"),

@@ -14,6 +14,7 @@ export {
   getRoleRegistryPda,
   getMinterInfoPda,
   getBlacklistPda,
+  getAllowlistPda,
   getReserveAttestationPda,
   getExtraAccountMetaListPda,
 } from "./pda";
@@ -27,11 +28,14 @@ export type {
   RoleRegistry,
   MinterInfo,
   BlacklistEntry,
+  AllowlistEntry,
   ReserveAttestation,
   InitializeParams,
   UpdateRoleParams,
   UpdateMinterParams,
   BlacklistAddParams,
+  AllowlistAddParams,
+  UpdateMetadataParams,
   AttestReserveParams,
 } from "./types";
 
@@ -54,10 +58,15 @@ export type {
   RoleUpdatedEvent,
   MinterUpdatedEvent,
   AuthorityTransferredEvent,
+  AuthorityNominatedEvent,
   BlacklistAddedEvent,
   BlacklistRemovedEvent,
+  AllowlistAddedEvent,
+  AllowlistRemovedEvent,
   TokensSeizedEvent,
   AuditLogRecordedEvent,
+  SupplyCapUpdatedEvent,
+  MetadataUpdatedEvent,
 } from "./events";
 
 export { PRESET_CONFIGS, getPresetAnchorEnum, buildInitializeParams } from "./presets";

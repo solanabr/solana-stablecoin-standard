@@ -44,6 +44,17 @@ export function getBlacklistPda(
   );
 }
 
+export function getAllowlistPda(
+  config: PublicKey,
+  address: PublicKey,
+  programId: PublicKey = SSS_TOKEN_PROGRAM_ID
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [SEEDS.ALLOWLIST, config.toBuffer(), address.toBuffer()],
+    programId
+  );
+}
+
 export function getReserveAttestationPda(
   config: PublicKey,
   index: BN | number,

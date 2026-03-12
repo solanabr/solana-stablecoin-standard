@@ -26,6 +26,7 @@ import {
   getRoleRegistryPda,
   getMinterInfoPda,
   getBlacklistPda,
+  getAllowlistPda,
   getReserveAttestationPda,
   getExtraAccountMetaListPda,
 } from "./pda";
@@ -34,11 +35,13 @@ import type {
   RoleRegistry,
   MinterInfo,
   BlacklistEntry,
+  AllowlistEntry,
   ReserveAttestation,
   InitializeParams,
   UpdateRoleParams,
   UpdateMinterParams,
   BlacklistAddParams,
+  AllowlistAddParams,
   AttestReserveParams,
 } from "./types";
 import { SSSError } from "./errors";
@@ -93,6 +96,10 @@ export class SSSClient {
     return getBlacklistPda(config, address, this.tokenProgramId);
   }
 
+  getAllowlistPda(config: PublicKey, address: PublicKey): [PublicKey, number] {
+    return getAllowlistPda(config, address, this.tokenProgramId);
+  }
+
   getReserveAttestationPda(
     config: PublicKey,
     index: BN | number
@@ -135,6 +142,19 @@ export class SSSClient {
     try {
       const accounts = this.tokenProgram.account as any;
       return (await accounts.blacklistEntry.fetch(blacklistPda)) as BlacklistEntry;
+    } catch {
+      return null;
+    }
+  }
+
+  async fetchAllowlistEntry(
+    config: PublicKey,
+    address: PublicKey
+  ): Promise<AllowlistEntry | null> {
+    const [allowlistPda] = this.getAllowlistPda(config, address);
+    try {
+      const accounts = this.tokenProgram.account as any;
+      return (await accounts.allowlistEntry.fetch(allowlistPda)) as AllowlistEntry;
     } catch {
       return null;
     }
@@ -468,6 +488,64 @@ export class SSSClient {
     }
   }
 
+  async allowlistAdd(
+    mint: PublicKey,
+    address: PublicKey,
+    targetTokenAccount: PublicKey,
+    params: AllowlistAddParams
+  ): Promise<{ signature: string }> {
+    void targetTokenAccount;
+    const [configPda] = this.getConfigPda(mint);
+    const [roleRegistryPda] = this.getRoleRegistryPda(configPda);
+    const [allowlistEntryPda] = this.getAllowlistPda(configPda, address);
+
+    try {
+      const signature = await this.tokenProgram.methods
+        .allowlistAdd(params)
+        .accounts({
+          authority: this.provider.wallet.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+          allowlistEntry: allowlistEntryPda,
+          addressToAllowlist: address,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      return { signature };
+    } catch (err) {
+      throw this.wrapError(err);
+    }
+  }
+
+  async allowlistRemove(
+    mint: PublicKey,
+    address: PublicKey,
+    targetTokenAccount: PublicKey
+  ): Promise<{ signature: string }> {
+    void targetTokenAccount;
+    const [configPda] = this.getConfigPda(mint);
+    const [roleRegistryPda] = this.getRoleRegistryPda(configPda);
+    const [allowlistEntryPda] = this.getAllowlistPda(configPda, address);
+
+    try {
+      const signature = await this.tokenProgram.methods
+        .allowlistRemove()
+        .accounts({
+          authority: this.provider.wallet.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+          addressToRemove: address,
+          allowlistEntry: allowlistEntryPda,
+        })
+        .rpc();
+
+      return { signature };
+    } catch (err) {
+      throw this.wrapError(err);
+    }
+  }
+
   async seize(
     mint: PublicKey,
     blacklistedAddress: PublicKey,
@@ -494,6 +572,99 @@ export class SSSClient {
           fromTokenAccount,
           toTokenAccount,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc();
+
+      return { signature };
+    } catch (err) {
+      throw this.wrapError(err);
+    }
+  }
+
+  async nominateAuthority(
+    mint: PublicKey,
+    nominatedAuthority: PublicKey
+  ): Promise<{ signature: string }> {
+    const [configPda] = this.getConfigPda(mint);
+    const [roleRegistryPda] = this.getRoleRegistryPda(configPda);
+
+    try {
+      const signature = await this.tokenProgram.methods
+        .nominateAuthority(nominatedAuthority)
+        .accounts({
+          authority: this.provider.wallet.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+        })
+        .rpc();
+
+      return { signature };
+    } catch (err) {
+      throw this.wrapError(err);
+    }
+  }
+
+  async acceptAuthority(mint: PublicKey): Promise<{ signature: string }> {
+    const [configPda] = this.getConfigPda(mint);
+    const [roleRegistryPda] = this.getRoleRegistryPda(configPda);
+
+    try {
+      const signature = await this.tokenProgram.methods
+        .acceptAuthority()
+        .accounts({
+          authority: this.provider.wallet.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+        })
+        .rpc();
+
+      return { signature };
+    } catch (err) {
+      throw this.wrapError(err);
+    }
+  }
+
+  async setSupplyCap(
+    mint: PublicKey,
+    newCap: number
+  ): Promise<{ signature: string }> {
+    const [configPda] = this.getConfigPda(mint);
+    const [roleRegistryPda] = this.getRoleRegistryPda(configPda);
+
+    try {
+      const signature = await this.tokenProgram.methods
+        .setSupplyCap(new BN(newCap))
+        .accounts({
+          authority: this.provider.wallet.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
+        })
+        .rpc();
+
+      return { signature };
+    } catch (err) {
+      throw this.wrapError(err);
+    }
+  }
+
+  async updateMetadata(
+    mint: PublicKey,
+    params: { name?: string; symbol?: string; uri?: string }
+  ): Promise<{ signature: string }> {
+    const [configPda] = this.getConfigPda(mint);
+    const [roleRegistryPda] = this.getRoleRegistryPda(configPda);
+
+    try {
+      const signature = await this.tokenProgram.methods
+        .updateMetadata({
+          name: params.name ?? null,
+          symbol: params.symbol ?? null,
+          uri: params.uri ?? null,
+        })
+        .accounts({
+          authority: this.provider.wallet.publicKey,
+          config: configPda,
+          roleRegistry: roleRegistryPda,
         })
         .rpc();
 
