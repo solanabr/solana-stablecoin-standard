@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-// ─── Core Events ─────────────────────────────────────────────────────────────
+// ─── Core Events ────────────────────────────────────────────────────────────
 
 #[event]
 pub struct StablecoinInitialized {
