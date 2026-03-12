@@ -1,0 +1,19 @@
+{
+  "name": "sss-cli-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test suite for the SSS Rust CLI (sss-token)",
+  "scripts": {
+    "test": "jest --verbose --forceExit",
+    "test:help": "jest --verbose --forceExit -t 'help'",
+    "test:devnet": "jest --verbose --forceExit -t 'devnet'"
+  },
+  "devDependencies": {
+    "@solana/web3.js": "^1.98.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.12.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.5"
+  }
+}
