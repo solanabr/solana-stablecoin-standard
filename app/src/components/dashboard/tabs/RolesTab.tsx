@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { Role } from "@stbr/sss-token";
+import { Role } from "solana-stablecoin-standard";
 import BrutalCard from "@/components/ui/BrutalCard";
 import BrutalButton from "@/components/ui/BrutalButton";
 import type { SSSState } from "@/hooks/useSSS";

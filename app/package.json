@@ -15,7 +15,7 @@
     "@solana/wallet-adapter-react-ui": "^0.9.39",
     "@solana/wallet-adapter-wallets": "^0.19.37",
     "@solana/web3.js": "^1.98.4",
-    "@stbr/sss-token": "file:../sdk",
+    "solana-stablecoin-standard": "file:../sdk",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "react": "19.2.3",

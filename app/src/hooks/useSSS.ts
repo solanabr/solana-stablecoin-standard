@@ -9,7 +9,7 @@ import {
   type StablecoinConfig,
   type RoleRegistry,
   type MinterInfo,
-} from "@stbr/sss-token";
+} from "solana-stablecoin-standard";
 
 const DEFAULT_MINT = new PublicKey("9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv");
 
