@@ -1,3 +1,4 @@
+use anchor_lang::prelude::Pubkey;
 /// Instruction-level fuzz test scaffolding for sss-token.
 ///
 /// This module defines `FuzzInstruction` variants for all 14 sss-token
@@ -11,9 +12,7 @@
 ///   4. Quota limits: minter cannot exceed assigned quota
 ///   5. Blacklist enforcement: blacklisted addresses cannot transact (SSS-2)
 ///   6. Attestation ordering: attestation index increments monotonically
-
 use sss_token::state::*;
-use anchor_lang::prelude::Pubkey;
 
 // ---------------------------------------------------------------------------
 // FuzzInstruction enum — one variant per program instruction
@@ -170,7 +169,9 @@ fn check_quota_invariant(state: &SimulatedState) {
             assert!(
                 minter.used <= minter.quota,
                 "INVARIANT VIOLATED: minter {} used ({}) > quota ({})",
-                minter.wallet, minter.used, minter.quota
+                minter.wallet,
+                minter.used,
+                minter.quota
             );
         }
     }
@@ -247,7 +248,11 @@ fn simulate_instruction(state: &mut SimulatedState, ix: &FuzzInstruction, caller
                 RoleType::Seizer => state.seizer = *new_holder,
             }
         }
-        FuzzInstruction::UpdateMinter { minter, is_active, mint_quota } => {
+        FuzzInstruction::UpdateMinter {
+            minter,
+            is_active,
+            mint_quota,
+        } => {
             if *caller != state.master_authority {
                 return;
             }
@@ -318,34 +323,48 @@ mod tests {
         let minter_wallet = random_pubkey(2);
 
         // Initialize
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "Test".into(),
-            symbol: "TST".into(),
-            uri: "".into(),
-            decimals: 6,
-            preset: StablecoinPreset::SSS1,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "Test".into(),
+                symbol: "TST".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS1,
+            },
+            &authority,
+        );
 
         // Add minter
-        simulate_instruction(&mut state, &FuzzInstruction::UpdateMinter {
-            minter: minter_wallet,
-            is_active: true,
-            mint_quota: 1_000_000,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::UpdateMinter {
+                minter: minter_wallet,
+                is_active: true,
+                mint_quota: 1_000_000,
+            },
+            &authority,
+        );
 
         // Mint
-        simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-            amount: 500_000,
-            minter: minter_wallet,
-        }, &minter_wallet);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::MintTokens {
+                amount: 500_000,
+                minter: minter_wallet,
+            },
+            &minter_wallet,
+        );
 
         assert_eq!(state.total_minted, 500_000);
         assert_eq!(state.current_supply(), 500_000);
 
         // Burn
-        simulate_instruction(&mut state, &FuzzInstruction::BurnTokens {
-            amount: 200_000,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::BurnTokens { amount: 200_000 },
+            &authority,
+        );
 
         assert_eq!(state.total_burned, 200_000);
         assert_eq!(state.current_supply(), 300_000);
@@ -357,25 +376,45 @@ mod tests {
         let authority = random_pubkey(1);
         let minter = random_pubkey(2);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "Q".into(), symbol: "Q".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS1,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "Q".into(),
+                symbol: "Q".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS1,
+            },
+            &authority,
+        );
 
-        simulate_instruction(&mut state, &FuzzInstruction::UpdateMinter {
-            minter, is_active: true, mint_quota: 100,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::UpdateMinter {
+                minter,
+                is_active: true,
+                mint_quota: 100,
+            },
+            &authority,
+        );
 
         // Mint up to quota
-        simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-            amount: 100, minter,
-        }, &minter);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::MintTokens {
+                amount: 100,
+                minter,
+            },
+            &minter,
+        );
         assert_eq!(state.total_minted, 100);
 
         // Over quota — should not increase supply
-        simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-            amount: 1, minter,
-        }, &minter);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::MintTokens { amount: 1, minter },
+            &minter,
+        );
         assert_eq!(state.total_minted, 100); // unchanged
     }
 
@@ -385,22 +424,40 @@ mod tests {
         let authority = random_pubkey(1);
         let minter = random_pubkey(2);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "P".into(), symbol: "P".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS1,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "P".into(),
+                symbol: "P".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS1,
+            },
+            &authority,
+        );
 
-        simulate_instruction(&mut state, &FuzzInstruction::UpdateMinter {
-            minter, is_active: true, mint_quota: 0,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::UpdateMinter {
+                minter,
+                is_active: true,
+                mint_quota: 0,
+            },
+            &authority,
+        );
 
         simulate_instruction(&mut state, &FuzzInstruction::Pause, &authority);
         assert!(state.is_paused);
 
         // Mint while paused — should not work
-        simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-            amount: 1000, minter,
-        }, &minter);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::MintTokens {
+                amount: 1000,
+                minter,
+            },
+            &minter,
+        );
         assert_eq!(state.total_minted, 0);
     }
 
@@ -410,10 +467,17 @@ mod tests {
         let authority = random_pubkey(1);
         let rando = random_pubkey(99);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "R".into(), symbol: "R".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS1,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "R".into(),
+                symbol: "R".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS1,
+            },
+            &authority,
+        );
 
         // Random user cannot pause
         simulate_instruction(&mut state, &FuzzInstruction::Pause, &rando);
@@ -426,23 +490,36 @@ mod tests {
         let authority = random_pubkey(1);
         let target = random_pubkey(10);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "B".into(), symbol: "B".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS2,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "B".into(),
+                symbol: "B".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS2,
+            },
+            &authority,
+        );
 
         // Blacklist
-        simulate_instruction(&mut state, &FuzzInstruction::BlacklistAdd {
-            address: target,
-            reason: "test".into(),
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::BlacklistAdd {
+                address: target,
+                reason: "test".into(),
+            },
+            &authority,
+        );
 
         assert!(state.is_blacklisted(&target));
 
         // Remove
-        simulate_instruction(&mut state, &FuzzInstruction::BlacklistRemove {
-            address: target,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::BlacklistRemove { address: target },
+            &authority,
+        );
 
         assert!(!state.is_blacklisted(&target));
     }
@@ -452,18 +529,29 @@ mod tests {
         let mut state = SimulatedState::default();
         let authority = random_pubkey(1);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "A".into(), symbol: "A".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS1,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "A".into(),
+                symbol: "A".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS1,
+            },
+            &authority,
+        );
 
         for i in 0..10 {
-            simulate_instruction(&mut state, &FuzzInstruction::AttestReserve {
-                reserve_hash: [i; 32],
-                total_reserves_usd: 100_00,
-                total_outstanding: 100,
-                attestation_uri: "".into(),
-            }, &authority);
+            simulate_instruction(
+                &mut state,
+                &FuzzInstruction::AttestReserve {
+                    reserve_hash: [i; 32],
+                    total_reserves_usd: 100_00,
+                    total_outstanding: 100,
+                    attestation_uri: "".into(),
+                },
+                &authority,
+            );
         }
 
         assert_eq!(state.attestation_index, 10);
@@ -475,14 +563,25 @@ mod tests {
         let authority = random_pubkey(1);
         let new_auth = random_pubkey(2);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "T".into(), symbol: "T".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS1,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "T".into(),
+                symbol: "T".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS1,
+            },
+            &authority,
+        );
 
-        simulate_instruction(&mut state, &FuzzInstruction::TransferAuthority {
-            new_authority: new_auth,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::TransferAuthority {
+                new_authority: new_auth,
+            },
+            &authority,
+        );
 
         assert_eq!(state.master_authority, new_auth);
 
@@ -501,18 +600,36 @@ mod tests {
         let authority = random_pubkey(1);
         let minter = random_pubkey(2);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "I".into(), symbol: "I".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS1,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "I".into(),
+                symbol: "I".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS1,
+            },
+            &authority,
+        );
 
-        simulate_instruction(&mut state, &FuzzInstruction::UpdateMinter {
-            minter, is_active: false, mint_quota: 0,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::UpdateMinter {
+                minter,
+                is_active: false,
+                mint_quota: 0,
+            },
+            &authority,
+        );
 
-        simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-            amount: 1000, minter,
-        }, &minter);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::MintTokens {
+                amount: 1000,
+                minter,
+            },
+            &minter,
+        );
 
         assert_eq!(state.total_minted, 0);
     }
@@ -525,24 +642,48 @@ mod tests {
         let victim = random_pubkey(3);
         let dest = random_pubkey(4);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "S".into(), symbol: "S".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS2,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "S".into(),
+                symbol: "S".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS2,
+            },
+            &authority,
+        );
 
-        simulate_instruction(&mut state, &FuzzInstruction::UpdateMinter {
-            minter, is_active: true, mint_quota: 0,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::UpdateMinter {
+                minter,
+                is_active: true,
+                mint_quota: 0,
+            },
+            &authority,
+        );
 
-        simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-            amount: 1000, minter,
-        }, &minter);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::MintTokens {
+                amount: 1000,
+                minter,
+            },
+            &minter,
+        );
 
         let supply_before = state.current_supply();
 
-        simulate_instruction(&mut state, &FuzzInstruction::Seize {
-            from: victim, to: dest, amount: 500,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Seize {
+                from: victim,
+                to: dest,
+                amount: 500,
+            },
+            &authority,
+        );
 
         assert_eq!(state.current_supply(), supply_before);
     }
@@ -554,27 +695,56 @@ mod tests {
         let minter1 = random_pubkey(2);
         let minter2 = random_pubkey(3);
 
-        simulate_instruction(&mut state, &FuzzInstruction::Initialize {
-            name: "Stress".into(), symbol: "STR".into(), uri: "".into(),
-            decimals: 6, preset: StablecoinPreset::SSS2,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::Initialize {
+                name: "Stress".into(),
+                symbol: "STR".into(),
+                uri: "".into(),
+                decimals: 6,
+                preset: StablecoinPreset::SSS2,
+            },
+            &authority,
+        );
 
         // Add two minters
-        simulate_instruction(&mut state, &FuzzInstruction::UpdateMinter {
-            minter: minter1, is_active: true, mint_quota: 1_000_000,
-        }, &authority);
-        simulate_instruction(&mut state, &FuzzInstruction::UpdateMinter {
-            minter: minter2, is_active: true, mint_quota: 500_000,
-        }, &authority);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::UpdateMinter {
+                minter: minter1,
+                is_active: true,
+                mint_quota: 1_000_000,
+            },
+            &authority,
+        );
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::UpdateMinter {
+                minter: minter2,
+                is_active: true,
+                mint_quota: 500_000,
+            },
+            &authority,
+        );
 
         // Interleaved minting
         for _ in 0..50 {
-            simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-                amount: 10_000, minter: minter1,
-            }, &minter1);
-            simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-                amount: 5_000, minter: minter2,
-            }, &minter2);
+            simulate_instruction(
+                &mut state,
+                &FuzzInstruction::MintTokens {
+                    amount: 10_000,
+                    minter: minter1,
+                },
+                &minter1,
+            );
+            simulate_instruction(
+                &mut state,
+                &FuzzInstruction::MintTokens {
+                    amount: 5_000,
+                    minter: minter2,
+                },
+                &minter2,
+            );
         }
 
         assert_eq!(state.total_minted, 750_000);
@@ -582,18 +752,25 @@ mod tests {
 
         // Burn some
         for _ in 0..10 {
-            simulate_instruction(&mut state, &FuzzInstruction::BurnTokens {
-                amount: 25_000,
-            }, &authority);
+            simulate_instruction(
+                &mut state,
+                &FuzzInstruction::BurnTokens { amount: 25_000 },
+                &authority,
+            );
         }
 
         assert_eq!(state.current_supply(), 500_000);
 
         // Pause/unpause cycle
         simulate_instruction(&mut state, &FuzzInstruction::Pause, &authority);
-        simulate_instruction(&mut state, &FuzzInstruction::MintTokens {
-            amount: 999, minter: minter1,
-        }, &minter1);
+        simulate_instruction(
+            &mut state,
+            &FuzzInstruction::MintTokens {
+                amount: 999,
+                minter: minter1,
+            },
+            &minter1,
+        );
         assert_eq!(state.current_supply(), 500_000); // no change
         simulate_instruction(&mut state, &FuzzInstruction::Unpause, &authority);
     }

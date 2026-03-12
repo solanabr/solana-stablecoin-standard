@@ -19,8 +19,8 @@
 mod tests {
     use anchor_lang::prelude::Pubkey;
     use sss_token::state::{
-        BlacklistEntry, MinterInfo, RoleRegistry, Role, StablecoinConfig,
-        AuditLogEntry, ReserveAttestation,
+        AuditLogEntry, BlacklistEntry, MinterInfo, ReserveAttestation, Role, RoleRegistry,
+        StablecoinConfig,
     };
 
     // -----------------------------------------------------------------------
@@ -356,7 +356,9 @@ mod tests {
                     assert!(
                         minter.can_mint(1),
                         "quota={}, minted={}, remaining={} should allow mint(1)",
-                        quota, minted, remaining
+                        quota,
+                        minted,
+                        remaining
                     );
                     assert!(minter.can_mint(remaining));
                     if remaining < u64::MAX {
@@ -610,7 +612,7 @@ mod tests {
             + 8               // audit_log_index
             + 8               // reserve_attestation_index
             + 8               // created_at
-            + 8;              // updated_at
+            + 8; // updated_at
 
         assert!(
             StablecoinConfig::SPACE >= min_expected,
@@ -630,7 +632,7 @@ mod tests {
             + 8               // mint_quota
             + 8               // total_minted
             + 8               // created_at
-            + 8;              // last_mint_at
+            + 8; // last_mint_at
 
         assert_eq!(MinterInfo::SPACE, min_expected);
     }
@@ -643,7 +645,7 @@ mod tests {
             + 32              // blocked_address
             + (4 + 128)       // reason (borsh string)
             + 32              // blacklisted_by
-            + 8;              // blacklisted_at
+            + 8; // blacklisted_at
 
         assert_eq!(BlacklistEntry::SPACE, min_expected);
     }
@@ -656,7 +658,7 @@ mod tests {
             + 32              // master_authority
             + 32              // pauser
             + 32              // blacklister
-            + 32;             // seizer
+            + 32; // seizer
 
         assert_eq!(RoleRegistry::SPACE, min_expected);
     }
@@ -672,7 +674,7 @@ mod tests {
             + (1 + 32)        // target (Option<Pubkey>)
             + (1 + 8)         // amount (Option<u64>)
             + (4 + 256)       // details (borsh string)
-            + 8;              // timestamp
+            + 8; // timestamp
 
         assert_eq!(AuditLogEntry::SPACE, min_expected);
     }
@@ -688,7 +690,7 @@ mod tests {
             + 8               // total_outstanding
             + 32              // attested_by
             + (4 + 200)       // attestation_uri (borsh string)
-            + 8;              // timestamp
+            + 8; // timestamp
 
         assert_eq!(ReserveAttestation::SPACE, min_expected);
     }
@@ -792,13 +794,13 @@ mod tests {
         let mut config = default_config();
 
         let operations: Vec<(bool, u64)> = vec![
-            (true, 1_000_000),    // mint 1M
-            (true, 500_000),      // mint 500K
-            (false, 200_000),     // burn 200K
-            (true, 300_000),      // mint 300K
-            (false, 1_000_000),   // burn 1M
-            (false, 100_000),     // burn 100K
-            (true, 50_000),       // mint 50K
+            (true, 1_000_000),  // mint 1M
+            (true, 500_000),    // mint 500K
+            (false, 200_000),   // burn 200K
+            (true, 300_000),    // mint 300K
+            (false, 1_000_000), // burn 1M
+            (false, 100_000),   // burn 100K
+            (true, 50_000),     // mint 50K
         ];
 
         for (is_mint, amount) in &operations {
@@ -837,10 +839,7 @@ mod tests {
         // Mint in 100K increments
         for _ in 0..10 {
             assert!(minter.can_mint(100_000));
-            minter.total_minted = minter
-                .total_minted
-                .checked_add(100_000)
-                .expect("overflow");
+            minter.total_minted = minter.total_minted.checked_add(100_000).expect("overflow");
         }
 
         // Quota fully exhausted

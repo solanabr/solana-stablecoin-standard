@@ -11,5 +11,4 @@
 ///   - Minter quota enforcement (can_mint, remaining_quota)
 ///   - Role-based access control (RoleRegistry.has_role)
 ///   - State invariants (current_supply, paused checks)
-
 pub mod test_fuzz;
