@@ -130,6 +130,10 @@
           "type": "bool"
         },
         {
+          "name": "enable_confidential_transfers",
+          "type": "bool"
+        },
+        {
           "name": "name",
           "type": "string"
         },
@@ -433,6 +437,14 @@
           {
             "name": "enable_transfer_hook",
             "type": "bool"
+          },
+          {
+            "name": "enable_confidential_transfers",
+            "type": "bool"
+          },
+          {
+            "name": "auditor",
+            "type": "pubkey"
           },
           {
             "name": "bump",

@@ -11,7 +11,7 @@ use crate::state::StablecoinConfig;
 use crate::events::StablecoinInitializedEvent;
 
 #[derive(Accounts)]
-#[instruction(decimals: u8, enable_permanent_delegate: bool, enable_transfer_hook: bool, name: String, symbol: String, uri: String)]
+#[instruction(decimals: u8, enable_permanent_delegate: bool, enable_transfer_hook: bool, enable_confidential_transfers: bool, name: String, symbol: String, uri: String)]
 pub struct Initialize<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -41,6 +41,7 @@ pub fn process_initialize(
     decimals: u8,
     enable_permanent_delegate: bool,
     enable_transfer_hook: bool,
+    enable_confidential_transfers: bool,
     name: String,
     symbol: String,
     _uri: String,
@@ -104,6 +105,9 @@ pub fn process_initialize(
     config.burner_authority = ctx.accounts.payer.key();
     config.freezer_authority = ctx.accounts.payer.key();
     config.seizer_authority = ctx.accounts.payer.key();
+    // --- SSS-3 ---
+    config.enable_confidential_transfers = enable_confidential_transfers;
+    config.auditor = ctx.accounts.payer.key(); // Аудитором по умолчанию делаем создателя (Admin)
     config.bump = ctx.bumps.config;
 
     emit!(StablecoinInitializedEvent {

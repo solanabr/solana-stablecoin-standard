@@ -19,11 +19,12 @@ pub mod sss_core {
         decimals: u8,
         enable_permanent_delegate: bool,
         enable_transfer_hook: bool,
+        enable_confidential_transfers: bool,
         name: String,
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        process_initialize(ctx, decimals, enable_permanent_delegate, enable_transfer_hook, name, symbol, uri)
+        process_initialize(ctx, decimals, enable_permanent_delegate, enable_transfer_hook, enable_confidential_transfers, name, symbol, uri)
     }
 
     pub fn mint_token(ctx: Context<MintToken>, amount: u64) -> Result<()> {

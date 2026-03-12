@@ -237,7 +237,7 @@ export class StablecoinSDK {
         // 4. ЗАПИСЬ КОНФИГА (Смарт-контракт сам сохранит name, symbol, uri в свой PDA)
         console.log("3/3 Saving Config to Smart Contract...");
         const tx = await this.program.methods
-            .initialize(decimals, preset.enablePermanentDelegate, preset.enableTransferHook, name, symbol, uri)
+            .initialize(decimals, preset.enablePermanentDelegate, preset.enableTransferHook, false, name, symbol, uri)
             .accounts({
                 payer: tempAuthority,
                 config: configPda,
