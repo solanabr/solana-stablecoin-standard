@@ -1,14 +1,12 @@
+use crate::config::CliConfig;
+use crate::pda::{
+    get_config_pda, get_reserve_attestation_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID,
+};
+use anchor_lang::{AccountDeserialize, InstructionData, ToAccountMetas};
 use anyhow::{Context, Result};
 use clap::Args;
-use solana_sdk::{
-    pubkey::Pubkey,
-    signer::Signer,
-    transaction::Transaction,
-};
-use anchor_lang::{InstructionData, ToAccountMetas, AccountDeserialize};
+use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
 use sss_token::state::StablecoinConfig;
-use crate::config::CliConfig;
-use crate::pda::{get_config_pda, get_role_registry_pda, get_reserve_attestation_pda, SSS_TOKEN_PROGRAM_ID};
 
 #[derive(Args)]
 pub struct AttestArgs {
@@ -29,15 +27,15 @@ pub fn execute(config: &CliConfig, args: &AttestArgs) -> Result<()> {
     let (role_registry_pda, _) = get_role_registry_pda(&config_pda);
 
     // Fetch current config to get reserve_attestation_index
-    let account_data = config.rpc_client.get_account_data(&config_pda)
+    let account_data = config
+        .rpc_client
+        .get_account_data(&config_pda)
         .context("Failed to fetch config account")?;
     let stablecoin_config = StablecoinConfig::try_deserialize(&mut &account_data[..])
         .context("Failed to deserialize config")?;
 
-    let (attestation_pda, _) = get_reserve_attestation_pda(
-        &config_pda,
-        stablecoin_config.reserve_attestation_index,
-    );
+    let (attestation_pda, _) =
+        get_reserve_attestation_pda(&config_pda, stablecoin_config.reserve_attestation_index);
 
     let hash_bytes = parse_hash(&args.hash)?;
 
@@ -74,8 +72,10 @@ pub fn execute(config: &CliConfig, args: &AttestArgs) -> Result<()> {
     );
 
     let sig = config.rpc_client.send_and_confirm_transaction(&tx)?;
-    println!("Reserve attestation recorded (index {}). Signature: {}",
-        stablecoin_config.reserve_attestation_index, sig);
+    println!(
+        "Reserve attestation recorded (index {}). Signature: {}",
+        stablecoin_config.reserve_attestation_index, sig
+    );
 
     Ok(())
 }

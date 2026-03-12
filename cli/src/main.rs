@@ -7,7 +7,7 @@ use clap::{Parser, Subcommand};
 use config::CliConfig;
 
 #[derive(Parser)]
-#[command(name = "sss", about = "Solana Stablecoin Standard CLI")]
+#[command(name = "sss-token", about = "Solana Stablecoin Standard CLI")]
 struct Cli {
     #[arg(long, default_value = "http://localhost:8899", global = true)]
     url: String,
@@ -40,12 +40,22 @@ enum Commands {
     Unpause(commands::unpause::UnpauseArgs),
     /// Manage blacklist
     Blacklist(commands::blacklist::BlacklistArgs),
+    /// Manage allowlist
+    Allowlist(commands::allowlist::AllowlistArgs),
     /// Seize tokens from a blacklisted address
     Seize(commands::seize::SeizeArgs),
     /// Update roles
     Roles(commands::roles::RolesArgs),
     /// Update minter configuration
     Minter(commands::minter::MinterArgs),
+    /// Nominate a pending authority
+    Nominate(commands::nominate::NominateArgs),
+    /// Accept a pending authority nomination
+    AcceptAuthority(commands::accept_authority::AcceptAuthorityArgs),
+    /// Update the configured supply cap
+    SetSupplyCap(commands::set_supply_cap::SetSupplyCapArgs),
+    /// Update token metadata fields
+    UpdateMetadata(commands::update_metadata::UpdateMetadataArgs),
     /// Record a reserve attestation
     Attest(commands::attest::AttestArgs),
     /// Display stablecoin info
@@ -75,9 +85,14 @@ fn main() -> Result<()> {
         Commands::Pause(args) => commands::pause::execute(&config, args),
         Commands::Unpause(args) => commands::unpause::execute(&config, args),
         Commands::Blacklist(args) => commands::blacklist::execute(&config, args),
+        Commands::Allowlist(args) => commands::allowlist::execute(&config, args),
         Commands::Seize(args) => commands::seize::execute(&config, args),
         Commands::Roles(args) => commands::roles::execute(&config, args),
         Commands::Minter(args) => commands::minter::execute(&config, args),
+        Commands::Nominate(args) => commands::nominate::execute(&config, args),
+        Commands::AcceptAuthority(args) => commands::accept_authority::execute(&config, args),
+        Commands::SetSupplyCap(args) => commands::set_supply_cap::execute(&config, args),
+        Commands::UpdateMetadata(args) => commands::update_metadata::execute(&config, args),
         Commands::Attest(args) => commands::attest::execute(&config, args),
         Commands::Info(args) => commands::info::execute(&config, args),
         Commands::Status(args) => commands::status::execute(&config, args),

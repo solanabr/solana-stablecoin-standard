@@ -28,6 +28,13 @@ pub fn get_blacklist_pda(config: &Pubkey, address: &Pubkey) -> (Pubkey, u8) {
     )
 }
 
+pub fn get_allowlist_pda(config: &Pubkey, address: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[b"allowlist", config.as_ref(), address.as_ref()],
+        &SSS_TOKEN_PROGRAM_ID,
+    )
+}
+
 pub fn get_reserve_attestation_pda(config: &Pubkey, index: u64) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[b"reserve", config.as_ref(), &index.to_le_bytes()],

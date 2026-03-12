@@ -5,11 +5,12 @@ description = "CLI for the Solana Stablecoin Standard (SSS)"
 edition = "2021"
 
 [[bin]]
-name = "sss"
+name = "sss-token"
 path = "src/main.rs"
 
 [dependencies]
 sss-token = { path = "../programs/sss-token", features = ["cpi"] }
+sss-transfer-hook = { path = "../programs/sss-transfer-hook", features = ["cpi"] }
 anchor-lang = "0.31.1"
 anchor-client = "0.31.1"
 solana-sdk = "2.1"

@@ -25,8 +25,13 @@ impl CliConfig {
         let rpc_client = RpcClient::new_with_commitment(url.to_string(), commitment);
 
         let keypair_path = resolve_keypair_path(keypair_path)?;
-        let payer = read_keypair_file(&keypair_path)
-            .map_err(|e| anyhow::anyhow!("Failed to read keypair from {}: {}", keypair_path.display(), e))?;
+        let payer = read_keypair_file(&keypair_path).map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to read keypair from {}: {}",
+                keypair_path.display(),
+                e
+            )
+        })?;
 
         Ok(Self {
             rpc_client,

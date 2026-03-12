@@ -6,28 +6,34 @@ use clap::Args;
 use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
 
 #[derive(Args)]
-pub struct ThawArgs {
+pub struct UpdateMetadataArgs {
     #[arg(long)]
     pub mint: Pubkey,
     #[arg(long)]
-    pub account: Pubkey,
+    pub name: Option<String>,
+    #[arg(long)]
+    pub symbol: Option<String>,
+    #[arg(long)]
+    pub uri: Option<String>,
 }
 
-pub fn execute(config: &CliConfig, args: &ThawArgs) -> Result<()> {
+pub fn execute(config: &CliConfig, args: &UpdateMetadataArgs) -> Result<()> {
     let (config_pda, _) = get_config_pda(&args.mint);
     let (role_registry_pda, _) = get_role_registry_pda(&config_pda);
 
-    let accounts = sss_token::accounts::ThawTokenAccount {
+    let accounts = sss_token::accounts::UpdateMetadata {
         authority: config.payer.pubkey(),
         config: config_pda,
         role_registry: role_registry_pda,
-        mint: args.mint,
-        target_token_account: args.account,
-        token_program: spl_token_2022_id(),
     }
     .to_account_metas(None);
 
-    let ix_data = sss_token::instruction::ThawAccount {}.data();
+    let params = sss_token::instructions::UpdateMetadataParams {
+        name: args.name.clone(),
+        symbol: args.symbol.clone(),
+        uri: args.uri.clone(),
+    };
+    let ix_data = sss_token::instruction::UpdateMetadata { params }.data();
 
     let ix = solana_sdk::instruction::Instruction {
         program_id: SSS_TOKEN_PROGRAM_ID,
@@ -44,11 +50,7 @@ pub fn execute(config: &CliConfig, args: &ThawArgs) -> Result<()> {
     );
 
     let sig = config.rpc_client.send_and_confirm_transaction(&tx)?;
-    println!("Account thawed. Signature: {}", sig);
+    println!("Metadata updated. Signature: {}", sig);
 
     Ok(())
-}
-
-fn spl_token_2022_id() -> Pubkey {
-    solana_sdk::pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
 }

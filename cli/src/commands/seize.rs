@@ -1,13 +1,9 @@
+use crate::config::CliConfig;
+use crate::pda::{get_blacklist_pda, get_config_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID};
+use anchor_lang::{InstructionData, ToAccountMetas};
 use anyhow::Result;
 use clap::Args;
-use solana_sdk::{
-    pubkey::Pubkey,
-    signer::Signer,
-    transaction::Transaction,
-};
-use anchor_lang::{InstructionData, ToAccountMetas};
-use crate::config::CliConfig;
-use crate::pda::{get_config_pda, get_role_registry_pda, get_blacklist_pda, SSS_TOKEN_PROGRAM_ID};
+use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
 
 #[derive(Args)]
 pub struct SeizeArgs {
@@ -40,7 +36,10 @@ pub fn execute(config: &CliConfig, args: &SeizeArgs) -> Result<()> {
     }
     .to_account_metas(None);
 
-    let ix_data = sss_token::instruction::Seize { amount: args.amount }.data();
+    let ix_data = sss_token::instruction::Seize {
+        amount: args.amount,
+    }
+    .data();
 
     let ix = solana_sdk::instruction::Instruction {
         program_id: SSS_TOKEN_PROGRAM_ID,

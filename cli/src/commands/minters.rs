@@ -1,13 +1,13 @@
+use crate::config::CliConfig;
+use crate::pda::get_config_pda;
+use anchor_lang::AccountDeserialize;
 use anyhow::{Context, Result};
 use clap::{Args, Subcommand};
 use colored::*;
-use solana_sdk::pubkey::Pubkey;
-use solana_client::rpc_filter::{RpcFilterType, Memcmp};
 use solana_client::rpc_config::RpcProgramAccountsConfig;
-use anchor_lang::AccountDeserialize;
+use solana_client::rpc_filter::{Memcmp, RpcFilterType};
+use solana_sdk::pubkey::Pubkey;
 use sss_token::state::MinterInfo;
-use crate::config::CliConfig;
-use crate::pda::get_config_pda;
 
 #[derive(Args)]
 pub struct MintersArgs {
@@ -46,7 +46,8 @@ fn list_minters(config: &CliConfig, mint: &Pubkey) -> Result<()> {
         ..Default::default()
     };
 
-    let accounts = config.rpc_client
+    let accounts = config
+        .rpc_client
         .get_program_accounts_with_config(&crate::pda::SSS_TOKEN_PROGRAM_ID, rpc_config)
         .context("Failed to fetch minter accounts")?;
 
@@ -57,8 +58,14 @@ fn list_minters(config: &CliConfig, mint: &Pubkey) -> Result<()> {
 
     println!();
     println!("{}", "Minters".bold().underline());
-    println!("  {:<46} {:<8} {:<14} {:<14} {:<14}",
-        "Wallet".bold(), "Active".bold(), "Quota".bold(), "Used".bold(), "Remaining".bold());
+    println!(
+        "  {:<46} {:<8} {:<14} {:<14} {:<14}",
+        "Wallet".bold(),
+        "Active".bold(),
+        "Quota".bold(),
+        "Used".bold(),
+        "Remaining".bold()
+    );
     println!("  {}", "-".repeat(96));
 
     for (_pubkey, account) in &accounts {
@@ -78,8 +85,10 @@ fn list_minters(config: &CliConfig, mint: &Pubkey) -> Result<()> {
                 None => "Unlimited".to_string(),
                 Some(r) => r.to_string(),
             };
-            println!("  {:<46} {:<8} {:<14} {:<14} {:<14}",
-                m.minter, active, quota, m.total_minted, remaining);
+            println!(
+                "  {:<46} {:<8} {:<14} {:<14} {:<14}",
+                m.minter, active, quota, m.total_minted, remaining
+            );
         }
     }
     println!();

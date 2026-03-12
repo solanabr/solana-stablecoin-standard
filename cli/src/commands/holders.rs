@@ -1,8 +1,8 @@
+use crate::config::CliConfig;
 use anyhow::{Context, Result};
 use clap::Args;
 use colored::*;
 use solana_sdk::pubkey::Pubkey;
-use crate::config::CliConfig;
 
 #[derive(Args)]
 pub struct HoldersArgs {
@@ -13,11 +13,13 @@ pub struct HoldersArgs {
 }
 
 pub fn execute(config: &CliConfig, args: &HoldersArgs) -> Result<()> {
-    let accounts = config.rpc_client
+    let accounts = config
+        .rpc_client
         .get_token_largest_accounts(&args.mint)
         .context("Failed to fetch token holders")?;
 
-    let filtered: Vec<_> = accounts.iter()
+    let filtered: Vec<_> = accounts
+        .iter()
         .filter(|a| {
             let amount: u64 = a.amount.amount.parse().unwrap_or(0);
             amount >= args.min_balance
@@ -35,7 +37,9 @@ pub fn execute(config: &CliConfig, args: &HoldersArgs) -> Result<()> {
     println!("  {}", "-".repeat(66));
 
     for account in &filtered {
-        let display_amount = account.amount.ui_amount
+        let display_amount = account
+            .amount
+            .ui_amount
             .map(|a| format!("{:.6}", a))
             .unwrap_or_else(|| account.amount.amount.clone());
         println!("  {:<46} {:<20}", account.address, display_amount);

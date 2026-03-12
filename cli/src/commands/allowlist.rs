@@ -1,24 +1,26 @@
 use crate::config::CliConfig;
-use crate::pda::{get_blacklist_pda, get_config_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID};
+use crate::pda::{
+    get_allowlist_pda, get_config_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID,
+};
 use anchor_lang::{InstructionData, ToAccountMetas};
 use anyhow::Result;
 use clap::{Args, Subcommand};
 use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
 
 #[derive(Args)]
-pub struct BlacklistArgs {
+pub struct AllowlistArgs {
     #[command(subcommand)]
-    pub action: BlacklistAction,
+    pub action: AllowlistAction,
 }
 
 #[derive(Subcommand)]
-pub enum BlacklistAction {
-    Add(BlacklistAddArgs),
-    Remove(BlacklistRemoveArgs),
+pub enum AllowlistAction {
+    Add(AllowlistAddArgs),
+    Remove(AllowlistRemoveArgs),
 }
 
 #[derive(Args)]
-pub struct BlacklistAddArgs {
+pub struct AllowlistAddArgs {
     #[arg(long)]
     pub mint: Pubkey,
     #[arg(long)]
@@ -30,7 +32,7 @@ pub struct BlacklistAddArgs {
 }
 
 #[derive(Args)]
-pub struct BlacklistRemoveArgs {
+pub struct AllowlistRemoveArgs {
     #[arg(long)]
     pub mint: Pubkey,
     #[arg(long)]
@@ -39,35 +41,34 @@ pub struct BlacklistRemoveArgs {
     pub token_account: Pubkey,
 }
 
-pub fn execute(config: &CliConfig, args: &BlacklistArgs) -> Result<()> {
+pub fn execute(config: &CliConfig, args: &AllowlistArgs) -> Result<()> {
     match &args.action {
-        BlacklistAction::Add(add_args) => execute_add(config, add_args),
-        BlacklistAction::Remove(remove_args) => execute_remove(config, remove_args),
+        AllowlistAction::Add(add_args) => execute_add(config, add_args),
+        AllowlistAction::Remove(remove_args) => execute_remove(config, remove_args),
     }
 }
 
-fn execute_add(config: &CliConfig, args: &BlacklistAddArgs) -> Result<()> {
+fn execute_add(config: &CliConfig, args: &AllowlistAddArgs) -> Result<()> {
+    let _ = args.token_account;
+
     let (config_pda, _) = get_config_pda(&args.mint);
     let (role_registry_pda, _) = get_role_registry_pda(&config_pda);
-    let (blacklist_entry_pda, _) = get_blacklist_pda(&config_pda, &args.address);
+    let (allowlist_entry_pda, _) = get_allowlist_pda(&config_pda, &args.address);
 
-    let accounts = sss_token::accounts::BlacklistAdd {
+    let accounts = sss_token::accounts::AllowlistAdd {
         authority: config.payer.pubkey(),
         config: config_pda,
         role_registry: role_registry_pda,
-        blacklist_entry: blacklist_entry_pda,
-        address_to_blacklist: args.address,
-        mint: args.mint,
-        target_token_account: args.token_account,
-        token_program: spl_token_2022_id(),
+        allowlist_entry: allowlist_entry_pda,
+        address_to_allowlist: args.address,
         system_program: solana_sdk::pubkey!("11111111111111111111111111111111"),
     }
     .to_account_metas(None);
 
-    let params = sss_token::instructions::BlacklistAddParams {
+    let params = sss_token::instructions::AllowlistAddParams {
         reason: args.reason.clone(),
     };
-    let ix_data = sss_token::instruction::BlacklistAdd { params }.data();
+    let ix_data = sss_token::instruction::AllowlistAdd { params }.data();
 
     let ix = solana_sdk::instruction::Instruction {
         program_id: SSS_TOKEN_PROGRAM_ID,
@@ -84,28 +85,28 @@ fn execute_add(config: &CliConfig, args: &BlacklistAddArgs) -> Result<()> {
     );
 
     let sig = config.rpc_client.send_and_confirm_transaction(&tx)?;
-    println!("Address {} blacklisted. Signature: {}", args.address, sig);
+    println!("Address {} allowlisted. Signature: {}", args.address, sig);
 
     Ok(())
 }
 
-fn execute_remove(config: &CliConfig, args: &BlacklistRemoveArgs) -> Result<()> {
+fn execute_remove(config: &CliConfig, args: &AllowlistRemoveArgs) -> Result<()> {
+    let _ = args.token_account;
+
     let (config_pda, _) = get_config_pda(&args.mint);
     let (role_registry_pda, _) = get_role_registry_pda(&config_pda);
-    let (blacklist_entry_pda, _) = get_blacklist_pda(&config_pda, &args.address);
+    let (allowlist_entry_pda, _) = get_allowlist_pda(&config_pda, &args.address);
 
-    let accounts = sss_token::accounts::BlacklistRemove {
+    let accounts = sss_token::accounts::AllowlistRemove {
         authority: config.payer.pubkey(),
         config: config_pda,
         role_registry: role_registry_pda,
-        blacklist_entry: blacklist_entry_pda,
-        mint: args.mint,
-        target_token_account: args.token_account,
-        token_program: spl_token_2022_id(),
+        address_to_remove: args.address,
+        allowlist_entry: allowlist_entry_pda,
     }
     .to_account_metas(None);
 
-    let ix_data = sss_token::instruction::BlacklistRemove {}.data();
+    let ix_data = sss_token::instruction::AllowlistRemove {}.data();
 
     let ix = solana_sdk::instruction::Instruction {
         program_id: SSS_TOKEN_PROGRAM_ID,
@@ -123,13 +124,9 @@ fn execute_remove(config: &CliConfig, args: &BlacklistRemoveArgs) -> Result<()> 
 
     let sig = config.rpc_client.send_and_confirm_transaction(&tx)?;
     println!(
-        "Address {} removed from blacklist. Signature: {}",
+        "Address {} removed from allowlist. Signature: {}",
         args.address, sig
     );
 
     Ok(())
-}
-
-fn spl_token_2022_id() -> Pubkey {
-    solana_sdk::pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
 }

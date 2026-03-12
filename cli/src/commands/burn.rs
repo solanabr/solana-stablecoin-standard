@@ -1,13 +1,9 @@
-use anyhow::Result;
-use clap::Args;
-use solana_sdk::{
-    pubkey::Pubkey,
-    signer::Signer,
-    transaction::Transaction,
-};
-use anchor_lang::{InstructionData, ToAccountMetas};
 use crate::config::CliConfig;
 use crate::pda::{get_config_pda, SSS_TOKEN_PROGRAM_ID};
+use anchor_lang::{InstructionData, ToAccountMetas};
+use anyhow::Result;
+use clap::Args;
+use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
 
 #[derive(Args)]
 pub struct BurnArgs {
@@ -26,12 +22,15 @@ pub fn execute(config: &CliConfig, args: &BurnArgs) -> Result<()> {
         burner: config.payer.pubkey(),
         config: config_pda,
         mint: args.mint,
-        burner_token_account: args.token_account,
+        burn_token_account: args.token_account,
         token_program: spl_token_2022_id(),
     }
     .to_account_metas(None);
 
-    let ix_data = sss_token::instruction::BurnTokens { amount: args.amount }.data();
+    let ix_data = sss_token::instruction::BurnTokens {
+        amount: args.amount,
+    }
+    .data();
 
     let ix = solana_sdk::instruction::Instruction {
         program_id: SSS_TOKEN_PROGRAM_ID,

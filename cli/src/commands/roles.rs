@@ -1,14 +1,10 @@
-use anyhow::Result;
-use clap::Args;
-use solana_sdk::{
-    pubkey::Pubkey,
-    signer::Signer,
-    transaction::Transaction,
-};
-use anchor_lang::{InstructionData, ToAccountMetas};
-use sss_token::state::Role;
 use crate::config::CliConfig;
 use crate::pda::{get_config_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID};
+use anchor_lang::{InstructionData, ToAccountMetas};
+use anyhow::Result;
+use clap::Args;
+use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
+use sss_token::state::Role;
 
 #[derive(Args)]
 pub struct RolesArgs {
@@ -25,7 +21,10 @@ fn parse_role(s: &str) -> Result<Role, String> {
         "pauser" => Ok(Role::Pauser),
         "blacklister" => Ok(Role::Blacklister),
         "seizer" => Ok(Role::Seizer),
-        _ => Err(format!("Invalid role: {}. Use pauser, blacklister, or seizer", s)),
+        _ => Err(format!(
+            "Invalid role: {}. Use pauser, blacklister, or seizer",
+            s
+        )),
     }
 }
 

@@ -1,11 +1,11 @@
+use crate::config::CliConfig;
+use crate::pda::{get_config_pda, get_role_registry_pda};
+use anchor_lang::AccountDeserialize;
 use anyhow::{Context, Result};
 use clap::Args;
 use colored::*;
 use solana_sdk::pubkey::Pubkey;
-use anchor_lang::AccountDeserialize;
-use sss_token::state::{StablecoinConfig, RoleRegistry};
-use crate::config::CliConfig;
-use crate::pda::{get_config_pda, get_role_registry_pda};
+use sss_token::state::{RoleRegistry, StablecoinConfig};
 
 #[derive(Args)]
 pub struct StatusArgs {
@@ -17,12 +17,16 @@ pub fn execute(config: &CliConfig, args: &StatusArgs) -> Result<()> {
     let (config_pda, _) = get_config_pda(&args.mint);
     let (role_registry_pda, _) = get_role_registry_pda(&config_pda);
 
-    let config_data = config.rpc_client.get_account_data(&config_pda)
+    let config_data = config
+        .rpc_client
+        .get_account_data(&config_pda)
         .context("Failed to fetch config account. Is this mint initialized?")?;
     let sc = StablecoinConfig::try_deserialize(&mut &config_data[..])
         .context("Failed to deserialize StablecoinConfig")?;
 
-    let roles_data = config.rpc_client.get_account_data(&role_registry_pda)
+    let roles_data = config
+        .rpc_client
+        .get_account_data(&role_registry_pda)
         .context("Failed to fetch role registry")?;
     let _roles = RoleRegistry::try_deserialize(&mut &roles_data[..])
         .context("Failed to deserialize RoleRegistry")?;
@@ -34,11 +38,17 @@ pub fn execute(config: &CliConfig, args: &StatusArgs) -> Result<()> {
     println!("{}", "Stablecoin Status".bold().underline());
     println!("  {} {} ({})", "Name:".bold(), sc.name, sc.symbol);
     println!("  {} {}", "Mint:".bold(), sc.mint);
-    println!("  {} {}",
+    println!(
+        "  {} {}",
         "Paused:".bold(),
-        if sc.is_paused { "YES".red().bold() } else { "NO".green().bold() }
+        if sc.is_paused {
+            "YES".red().bold()
+        } else {
+            "NO".green().bold()
+        }
     );
-    println!("  {} {}.{:0>width$}",
+    println!(
+        "  {} {}.{:0>width$}",
         "Current Supply:".bold(),
         supply / divisor,
         supply % divisor,
@@ -46,17 +56,33 @@ pub fn execute(config: &CliConfig, args: &StatusArgs) -> Result<()> {
     );
 
     let mut features = Vec::new();
-    if sc.enable_permanent_delegate { features.push("permanent_delegate".green()); }
-    if sc.enable_transfer_hook { features.push("transfer_hook".green()); }
-    if sc.default_account_frozen { features.push("default_frozen".green()); }
-    if sc.enable_confidential_transfers { features.push("confidential_transfers".green()); }
+    if sc.enable_permanent_delegate {
+        features.push("permanent_delegate".green());
+    }
+    if sc.enable_transfer_hook {
+        features.push("transfer_hook".green());
+    }
+    if sc.default_account_frozen {
+        features.push("default_frozen".green());
+    }
+    if sc.enable_confidential_transfers {
+        features.push("confidential_transfers".green());
+    }
     let features_str = if features.is_empty() {
         "none".dimmed().to_string()
     } else {
-        features.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(", ")
+        features
+            .iter()
+            .map(|f| f.to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
     };
     println!("  {} {}", "Features:".bold(), features_str);
-    println!("  {} {}", "Attestations:".bold(), sc.reserve_attestation_index);
+    println!(
+        "  {} {}",
+        "Attestations:".bold(),
+        sc.reserve_attestation_index
+    );
     println!("  {} {}", "Last Updated:".bold(), sc.updated_at);
     println!();
 

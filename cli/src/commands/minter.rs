@@ -1,13 +1,11 @@
-use anyhow::Result;
-use clap::Args;
-use solana_sdk::{
-    pubkey::Pubkey,
-    signer::Signer,
-    transaction::Transaction,
+use crate::config::CliConfig;
+use crate::pda::{
+    get_config_pda, get_minter_info_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID,
 };
 use anchor_lang::{InstructionData, ToAccountMetas};
-use crate::config::CliConfig;
-use crate::pda::{get_config_pda, get_role_registry_pda, get_minter_info_pda, SSS_TOKEN_PROGRAM_ID};
+use anyhow::Result;
+use clap::Args;
+use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
 
 #[derive(Args)]
 pub struct MinterArgs {

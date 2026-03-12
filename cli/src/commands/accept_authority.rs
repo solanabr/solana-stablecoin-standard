@@ -6,28 +6,23 @@ use clap::Args;
 use solana_sdk::{pubkey::Pubkey, signer::Signer, transaction::Transaction};
 
 #[derive(Args)]
-pub struct ThawArgs {
+pub struct AcceptAuthorityArgs {
     #[arg(long)]
     pub mint: Pubkey,
-    #[arg(long)]
-    pub account: Pubkey,
 }
 
-pub fn execute(config: &CliConfig, args: &ThawArgs) -> Result<()> {
+pub fn execute(config: &CliConfig, args: &AcceptAuthorityArgs) -> Result<()> {
     let (config_pda, _) = get_config_pda(&args.mint);
     let (role_registry_pda, _) = get_role_registry_pda(&config_pda);
 
-    let accounts = sss_token::accounts::ThawTokenAccount {
+    let accounts = sss_token::accounts::AcceptAuthority {
         authority: config.payer.pubkey(),
         config: config_pda,
         role_registry: role_registry_pda,
-        mint: args.mint,
-        target_token_account: args.account,
-        token_program: spl_token_2022_id(),
     }
     .to_account_metas(None);
 
-    let ix_data = sss_token::instruction::ThawAccount {}.data();
+    let ix_data = sss_token::instruction::AcceptAuthority {}.data();
 
     let ix = solana_sdk::instruction::Instruction {
         program_id: SSS_TOKEN_PROGRAM_ID,
@@ -44,11 +39,7 @@ pub fn execute(config: &CliConfig, args: &ThawArgs) -> Result<()> {
     );
 
     let sig = config.rpc_client.send_and_confirm_transaction(&tx)?;
-    println!("Account thawed. Signature: {}", sig);
+    println!("Authority accepted. Signature: {}", sig);
 
     Ok(())
-}
-
-fn spl_token_2022_id() -> Pubkey {
-    solana_sdk::pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
 }
