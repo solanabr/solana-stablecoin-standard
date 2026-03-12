@@ -1,9 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Hexagon, Power, Zap } from "lucide-react";
 import { useSSS } from "@/hooks/useSSS";
+
+const CONSOLE_LINKS = [
+  { label: "Allowlist", href: "/allowlist" },
+  { label: "Authority", href: "/authority" },
+  { label: "Metadata", href: "/metadata" },
+  { label: "Transfer", href: "/transfer" },
+  { label: "Audit", href: "/audit" },
+];
 import SupplyPillar from "./pillars/SupplyPillar";
 import CompliancePillar from "./pillars/CompliancePillar";
 import AccessPillar from "./pillars/AccessPillar";
@@ -83,6 +92,28 @@ export default function DashboardScreen() {
           </button>
         </div>
       </header>
+
+      {/* ── Console nav ─────────────────────────────────── */}
+      <nav className="relative z-20 overflow-x-auto border-b border-[#1e1e1e] hide-scrollbar">
+        <div className="flex min-w-max gap-2 px-5 py-3 md:px-10">
+          <span
+            className="rounded-full border border-[#D4FF00] bg-[#D4FF00] px-3 py-1.5 text-[11px] uppercase tracking-[0.25em] text-[#030303]"
+            style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+          >
+            Dashboard
+          </span>
+          {CONSOLE_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="hover-trigger rounded-full border border-[#2a2a2a] px-3 py-1.5 text-[11px] uppercase tracking-[0.25em] text-[#666] transition-colors hover:border-[#D4FF00] hover:text-[#D4FF00]"
+              style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
 
       {/* ── Mobile tab bar ────────────────────────────────── */}
       <nav className="md:hidden relative z-20 flex border-b border-[#1e1e1e] overflow-x-auto hide-scrollbar">

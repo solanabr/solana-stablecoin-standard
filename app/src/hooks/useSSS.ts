@@ -11,7 +11,9 @@ import {
   type MinterInfo,
 } from "solana-stablecoin-standard";
 
-const DEFAULT_MINT = new PublicKey("9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv");
+const DEFAULT_MINT = new PublicKey(
+  process.env.NEXT_PUBLIC_DEFAULT_MINT ?? "Dr9YFKuQqr8f8ZUFUc9HETmpm2BJpRSKFKGHGFJWxpFk"
+);
 
 export interface SSSState {
   client: SSSClient | null;
