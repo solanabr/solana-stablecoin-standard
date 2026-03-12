@@ -1,29 +1,41 @@
 /**
- * @stbr/sss-token — Solana Stablecoin Standard SDK
+ * @module @stbr/sss-token
  *
- * A modular SDK for creating and managing stablecoins on Solana
- * using the Token-2022 program with standardized presets.
+ * TypeScript SDK for the Solana Stablecoin Standard.
  *
  * @example
  * ```typescript
- * import { SolanaStablecoin, Presets } from "@stbr/sss-token";
+ * import {
+ *   SolanaStablecoin,
+ *   Presets,
+ *   deriveConfigPda,
+ *   SssError,
+ * } from "@stbr/sss-token";
  *
- * const stable = await SolanaStablecoin.create(connection, {
- *   preset: Presets.SSS_2,
- *   name: "My Stablecoin",
- *   symbol: "MYUSD",
+ * // Create a new SSS-2 compliant stablecoin
+ * const client = await SolanaStablecoin.create(connection, wallet, {
+ *   preset: "SSS_2",
+ *   name: "BRL Stable",
+ *   symbol: "BRLs",
  *   decimals: 6,
- *   authority: adminKeypair,
  * });
  *
- * await stable.mint({ recipient, amount: 1_000_000n, minter });
- * ```
+ * // Mint tokens
+ * await client.mint({
+ *   recipient: userPubkey,
+ *   amount: BigInt(1_000_000), // 1 BRLs
+ * });
  *
- * @packageDocumentation
+ * // Check config
+ * const config = await client.getConfig();
+ * console.log(config.enablePermanentDelegate); // true (SSS-2)
+ * ```
  */
 
+// Client
 export { SolanaStablecoin } from "./client";
-export { Presets, SSS_1_CONFIG, SSS_2_CONFIG, SSS_3_CONFIG } from "./presets";
+
+// Types (all interfaces and enums)
 export type {
   StablecoinConfig,
   RoleManager,
@@ -32,6 +44,33 @@ export type {
   CreateParams,
   MintParams,
   BurnParams,
+  FreezeParams,
+  ThawParams,
+  UpdateMinterParams,
+  UpdateRolesParams,
+  BlacklistAddParams,
+  ExtensionConfig,
+  InitialRoles,
   ComplianceModule,
 } from "./types";
-export { SssError } from "./utils";
+
+// Presets
+export { Presets, getPresetConfig } from "./presets";
+
+// Constants & PDA helpers
+export {
+  SSS_TOKEN_PROGRAM_ID,
+  TRANSFER_HOOK_PROGRAM_ID,
+  ORACLE_MODULE_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
+  CONFIG_SEED,
+  ROLES_SEED,
+  BLACKLIST_SEED,
+  deriveConfigPda,
+  deriveRolesPda,
+  deriveBlacklistPda,
+  deriveAllPdas,
+} from "./constants";
+
+// Error utilities
+export { SssError, SssErrorCode } from "./utils";

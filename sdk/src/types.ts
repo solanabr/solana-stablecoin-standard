@@ -1,6 +1,9 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Keypair } from "@solana/web3.js";
 
-// ── On-chain Account Types ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// On-chain Account Types
+// These mirror the Anchor account structs in the Rust program.
+// ═══════════════════════════════════════════════════════════════════════
 
 /** Mirrors the on-chain StablecoinConfig account */
 export interface StablecoinConfig {
@@ -49,11 +52,13 @@ export interface BlacklistEntry {
   bump: number;
 }
 
-// ── SDK Operation Types ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// SDK Operation Parameters
+// ═══════════════════════════════════════════════════════════════════════
 
 /** Parameters for creating a new stablecoin */
 export interface CreateParams {
-  /** Use a preset configuration (SSS-1, SSS-2, SSS-3) */
+  /** Use a preset configuration (SSS_1, SSS_2, SSS_3) */
   preset?: "SSS_1" | "SSS_2" | "SSS_3";
   /** Stablecoin name (max 32 chars) */
   name: string;
@@ -63,12 +68,12 @@ export interface CreateParams {
   decimals: number;
   /** Metadata URI */
   uri?: string;
-  /** Master authority keypair */
-  authority: import("@solana/web3.js").Keypair;
   /** Custom extension configuration (overrides preset) */
   extensions?: ExtensionConfig;
   /** Initial role assignments */
   roles?: InitialRoles;
+  /** Optional: provide your own mint keypair (for deterministic testing) */
+  mintKeypair?: Keypair;
 }
 
 /** Token-2022 extension configuration */
@@ -90,24 +95,65 @@ export interface InitialRoles {
 export interface MintParams {
   /** Recipient's public key */
   recipient: PublicKey;
-  /** Amount to mint (in base units) */
+  /** Amount to mint (in base units, e.g. 1_000_000 for 1 token at 6 decimals) */
   amount: bigint;
-  /** Minter keypair (must be authorized) */
-  minter: import("@solana/web3.js").Keypair;
+  /** Optional: minter keypair (defaults to wallet signer) */
+  minter?: Keypair;
 }
 
 /** Parameters for burning tokens */
 export interface BurnParams {
   /** Amount to burn (in base units) */
   amount: bigint;
-  /** Burner keypair (must be authorized) */
-  burner: import("@solana/web3.js").Keypair;
+  /** Optional: burner keypair (defaults to wallet signer) */
+  burner?: Keypair;
 }
+
+/** Parameters for freezing a token account */
+export interface FreezeParams {
+  /** The wallet address whose token account to freeze */
+  address: PublicKey;
+}
+
+/** Parameters for thawing a token account */
+export interface ThawParams {
+  /** The wallet address whose token account to thaw */
+  address: PublicKey;
+}
+
+/** Parameters for updating a minter */
+export interface UpdateMinterParams {
+  /** Minter's public key */
+  minter: PublicKey;
+  /** Maximum amount this minter can mint */
+  quota: bigint;
+}
+
+/** Parameters for updating roles */
+export interface UpdateRolesParams {
+  newPauser?: PublicKey;
+  newBlacklister?: PublicKey;
+  newSeizer?: PublicKey;
+  addBurner?: PublicKey;
+  removeBurner?: PublicKey;
+}
+
+/** Parameters for adding to blacklist */
+export interface BlacklistAddParams {
+  /** Address to blacklist */
+  address: PublicKey;
+  /** Reason for blacklisting (max 128 chars) */
+  reason: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Module Interfaces
+// ═══════════════════════════════════════════════════════════════════════
 
 /** Compliance module interface for SSS-2 operations */
 export interface ComplianceModule {
   /** Add an address to the blacklist */
-  blacklistAdd(address: PublicKey, reason: string): Promise<string>;
+  blacklistAdd(params: BlacklistAddParams): Promise<string>;
   /** Remove an address from the blacklist */
   blacklistRemove(address: PublicKey): Promise<string>;
   /** Seize tokens from a frozen, blacklisted account */

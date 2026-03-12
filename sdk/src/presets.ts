@@ -1,49 +1,66 @@
-import type { ExtensionConfig } from "./types";
-
-/** Available stablecoin preset configurations */
+/**
+ * Preset configurations for the Solana Stablecoin Standard.
+ *
+ * Each preset maps to a set of Token-2022 extensions that are
+ * enabled at initialization time. Feature flags are immutable
+ * after creation — you choose your preset once.
+ *
+ * ## Preset Comparison
+ *
+ * | Feature               | SSS-1 | SSS-2 | SSS-3 |
+ * |-----------------------|-------|-------|-------|
+ * | Mint/Burn             | ✅    | ✅    | ✅    |
+ * | Freeze/Thaw           | ✅    | ✅    | ✅    |
+ * | Metadata              | ✅    | ✅    | ✅    |
+ * | Permanent Delegate    | ❌    | ✅    | ❌    |
+ * | Transfer Hook         | ❌    | ✅    | ❌    |
+ * | Default Frozen        | ❌    | ✅    | ❌    |
+ * | Blacklist             | ❌    | ✅    | ❌    |
+ * | Seize                 | ❌    | ✅    | ❌    |
+ * | Confidential Transfers| ❌    | ❌    | ✅    |
+ */
 export enum Presets {
-  /** Minimal stablecoin: mint + freeze + metadata */
+  /** Minimal: mint + freeze + metadata. For DAO treasuries, ecosystem settlement. */
   SSS_1 = "SSS_1",
-  /** Compliant stablecoin: SSS-1 + permanent delegate + transfer hook + blacklist */
+  /** Compliant: SSS-1 + blacklist + seize. For regulated stablecoins (USDC-class). */
   SSS_2 = "SSS_2",
-  /** Private stablecoin: SSS-1 + confidential transfers (experimental) */
+  /** Private: SSS-1 + confidential transfers. Experimental. */
   SSS_3 = "SSS_3",
 }
 
-/** SSS-1: Minimal Stablecoin configuration */
-export const SSS_1_CONFIG: ExtensionConfig = {
-  permanentDelegate: false,
-  transferHook: false,
-  defaultAccountFrozen: false,
-  confidentialTransfers: false,
+import type { ExtensionConfig } from "./types";
+
+/** Preset extension configurations */
+const PRESET_CONFIGS: Record<Presets, ExtensionConfig> = {
+  [Presets.SSS_1]: {
+    permanentDelegate: false,
+    transferHook: false,
+    defaultAccountFrozen: false,
+    confidentialTransfers: false,
+  },
+  [Presets.SSS_2]: {
+    permanentDelegate: true,
+    transferHook: true,
+    defaultAccountFrozen: true,
+    confidentialTransfers: false,
+  },
+  [Presets.SSS_3]: {
+    permanentDelegate: false,
+    transferHook: false,
+    defaultAccountFrozen: false,
+    confidentialTransfers: true,
+  },
 };
 
-/** SSS-2: Compliant Stablecoin configuration */
-export const SSS_2_CONFIG: ExtensionConfig = {
-  permanentDelegate: true,
-  transferHook: true,
-  defaultAccountFrozen: true,
-  confidentialTransfers: false,
-};
-
-/** SSS-3: Private Stablecoin configuration (experimental) */
-export const SSS_3_CONFIG: ExtensionConfig = {
-  permanentDelegate: false,
-  transferHook: false,
-  defaultAccountFrozen: false,
-  confidentialTransfers: true,
-};
-
-/** Get the extension config for a preset */
+/**
+ * Get the extension configuration for a preset.
+ *
+ * @example
+ * ```typescript
+ * const extensions = getPresetConfig(Presets.SSS_2);
+ * // { permanentDelegate: true, transferHook: true, defaultAccountFrozen: true, ... }
+ * ```
+ */
 export function getPresetConfig(preset: Presets): ExtensionConfig {
-  switch (preset) {
-    case Presets.SSS_1:
-      return { ...SSS_1_CONFIG };
-    case Presets.SSS_2:
-      return { ...SSS_2_CONFIG };
-    case Presets.SSS_3:
-      return { ...SSS_3_CONFIG };
-    default:
-      throw new Error(`Unknown preset: ${preset}`);
-  }
+  return PRESET_CONFIGS[preset];
 }
