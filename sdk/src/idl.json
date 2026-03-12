@@ -134,6 +134,12 @@
           "type": "bool"
         },
         {
+          "name": "oracle_feed",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
           "name": "name",
           "type": "string"
         },
@@ -190,6 +196,10 @@
         {
           "name": "token_account",
           "writable": true
+        },
+        {
+          "name": "oracle_feed_account",
+          "optional": true
         },
         {
           "name": "token_program"
@@ -260,9 +270,80 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "update_mock_oracle",
+      "discriminator": [
+        196,
+        202,
+        24,
+        173,
+        225,
+        179,
+        237,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "oracle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  111,
+                  99,
+                  107,
+                  95,
+                  111,
+                  114,
+                  97,
+                  99,
+                  108,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "decimals",
+          "type": "u8"
+        }
+      ]
     }
   ],
   "accounts": [
+    {
+      "name": "MockOracle",
+      "discriminator": [
+        208,
+        74,
+        71,
+        99,
+        160,
+        22,
+        158,
+        240
+      ]
+    },
     {
       "name": "StablecoinConfig",
       "discriminator": [
@@ -382,6 +463,22 @@
       }
     },
     {
+      "name": "MockOracle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "SeizedEvent",
       "type": {
         "kind": "struct",
@@ -445,6 +542,12 @@
           {
             "name": "auditor",
             "type": "pubkey"
+          },
+          {
+            "name": "oracle_feed",
+            "type": {
+              "option": "pubkey"
+            }
           },
           {
             "name": "bump",

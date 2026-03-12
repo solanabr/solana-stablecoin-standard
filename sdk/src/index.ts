@@ -19,7 +19,8 @@ import hookIdl from '../../target/idl/transfer_hook.json';
 // --- ПРЕСЕТЫ СТАНДАРТОВ ---
 export const Presets = {
     SSS_1: { enableTransferHook: false, enablePermanentDelegate: false },
-    SSS_2: { enableTransferHook: true, enablePermanentDelegate: true }
+    SSS_2: { enableTransferHook: true, enablePermanentDelegate: true },
+    ORACLE_BACKED: { enableTransferHook: false, enablePermanentDelegate: false }
 };
 
 export class StablecoinSDK {
@@ -178,7 +179,8 @@ export class StablecoinSDK {
         uri: string, 
         decimals: number = 6,
         preset: { enableTransferHook: boolean, enablePermanentDelegate: boolean } = Presets.SSS_1,
-        hookAddress?: PublicKey
+        hookAddress?: PublicKey,
+        oracleFeed?: PublicKey
     ) {
         const mintKeypair = Keypair.generate();
         const[configPda] = PublicKey.findProgramAddressSync([Buffer.from("config")], this.program.programId);
@@ -237,7 +239,7 @@ export class StablecoinSDK {
         // 4. ЗАПИСЬ КОНФИГА (Смарт-контракт сам сохранит name, symbol, uri в свой PDA)
         console.log("3/3 Saving Config to Smart Contract...");
         const tx = await this.program.methods
-            .initialize(decimals, preset.enablePermanentDelegate, preset.enableTransferHook, false, name, symbol, uri)
+            .initialize(decimals, preset.enablePermanentDelegate, preset.enableTransferHook, false, oracleFeed || null, name, symbol, uri)
             .accounts({
                 payer: tempAuthority,
                 config: configPda,
@@ -330,7 +332,7 @@ export class StablecoinSDK {
     //     console.log(`✅ Tokens Seized! Tx: https://explorer.solana.com/tx/${tx}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`);
     // }
 
-    public async mint(mintAddress: PublicKey, to: PublicKey, amount: number, decimals: number = 6) {
+    public async mint(mintAddress: PublicKey, to: PublicKey, amount: number, decimals: number = 6, oracleFeed?: PublicKey) {
         const [configPda] = PublicKey.findProgramAddressSync([Buffer.from("config")], this.program.programId);
         const tokenAccount = getAssociatedTokenAddressSync(mintAddress, to, false, TOKEN_2022_PROGRAM_ID);
         const rawAmount = new BN(amount * Math.pow(10, decimals));
@@ -352,6 +354,7 @@ export class StablecoinSDK {
                 config: configPda,
                 mint: mintAddress,
                 tokenAccount: tokenAccount,
+                oracleFeedAccount: oracleFeed || null,
                 tokenProgram: TOKEN_2022_PROGRAM_ID,
             })
             .rpc();
@@ -395,5 +398,23 @@ export class StablecoinSDK {
 
         const transferTx = new Transaction().add(transferIx);
         return await sendAndConfirmTransaction(this.connection, transferTx, [fromKeypair], { commitment: 'confirmed' });
+    }
+
+    public async updateMockOracle(price: number, decimals: number = 6) {
+        const [oraclePda] = PublicKey.findProgramAddressSync([Buffer.from("mock_oracle")], this.program.programId);
+        const rawPrice = new BN(price * Math.pow(10, decimals));
+
+        console.log(`Setting Oracle Price to: ${price}`);
+        const tx = await this.program.methods
+            .updateMockOracle(rawPrice, decimals)
+            .accounts({
+                admin: this.payer.publicKey,
+                oracle: oraclePda,
+                systemProgram: SystemProgram.programId,
+            })
+            .rpc();
+        
+        console.log(`✅ Oracle Updated! Tx: ${tx}`);
+        return oraclePda;
     }
 }

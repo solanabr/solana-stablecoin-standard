@@ -15,6 +15,8 @@ pub struct StablecoinConfig {
     // --- SSS-3: ПРИВАТНОСТЬ ---
     pub enable_confidential_transfers: bool, // Включены ли скрытые переводы
     pub auditor: Pubkey,                     // Кто имеет право расшифровывать суммы
+
+    pub oracle_feed: Option<Pubkey>,
     
     pub bump: u8,
     pub minter_authority: Pubkey,
@@ -24,6 +26,16 @@ pub struct StablecoinConfig {
 }
 
 impl StablecoinConfig {
-    // Увеличили размер для двух новых полей (bool = 1 байт, Pubkey = 32 байта)
-    pub const INIT_SPACE: usize = 32 + 32 + (4 + 32) + (4 + 10) + (4 + 100) + 1 + 1 + 1 + 1 + 1 + 32 + 1 + 32 + 32 + 32 + 32 + 50;
+    // Увеличили размер на 33 байта (1 байт Option + 32 байта Pubkey)
+    pub const INIT_SPACE: usize = 32 + 32 + (4 + 32) + (4 + 10) + (4 + 100) + 1 + 1 + 1 + 1 + 1 + 32 + 1 + 32 + 33 + 32 + 32 + 32 + 32 + 50;
+}
+
+#[account]
+pub struct MockOracle {
+    pub price: u64, // Цена актива с 6 нулями (например, 1.10 USD = 1_100_000)
+    pub decimals: u8,
+}
+
+impl MockOracle {
+    pub const INIT_SPACE: usize = 8 + 8 + 1;
 }
