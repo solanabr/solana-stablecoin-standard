@@ -168,6 +168,10 @@ async function main(): Promise<void> {
         uri: "https://example.com/metadata.json",
         decimals: 6,
         preset: { sss2: {} },
+        enablePermanentDelegate: null,
+        enableTransferHook: null,
+        enableDefaultStateFrozen: null,
+        enableConfidentialTransfers: null,
       },
       mint,
       SSS_TRANSFER_HOOK_PROGRAM_ID

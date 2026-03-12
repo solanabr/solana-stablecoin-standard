@@ -73,9 +73,14 @@ export class SSSError extends Error {
 
   static fromAnchorError(err: any): SSSError | null {
     // Standard AnchorError shape: err.error.errorCode.number
-    const code = err?.error?.errorCode?.number ?? err?.code;
+    const code = err?.error?.errorCode?.number;
     if (typeof code === "number") {
       const result = SSSError.fromCode(code);
+      if (result) return result;
+    }
+    // ProgramError shape: err.code is a number
+    if (typeof err?.code === "number") {
+      const result = SSSError.fromCode(err.code);
       if (result) return result;
     }
     // Parse from transaction logs (SendTransactionError shape)
@@ -90,11 +95,18 @@ export class SSSError extends Error {
         }
       }
     }
-    // Parse from message (custom program error format)
+    // Parse from message (custom program error format or AnchorError in message)
     const msg = err?.message ?? "";
     const hexMatch = String(msg).match(/custom program error: 0x([0-9a-fA-F]+)/);
     if (hexMatch) {
       const num = parseInt(hexMatch[1], 16);
+      const result = SSSError.fromCode(num);
+      if (result) return result;
+    }
+    // Parse Error Number from message (AnchorError text embedded in message)
+    const numMatch = String(msg).match(/Error Number: (\d+)/);
+    if (numMatch) {
+      const num = parseInt(numMatch[1], 10);
       const result = SSSError.fromCode(num);
       if (result) return result;
     }

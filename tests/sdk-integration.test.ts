@@ -183,6 +183,10 @@ describe("SDK Integration: SSSClient", () => {
           uri: "https://example.com/sdk-meta.json",
           decimals: 6,
           preset: { sss1: {} },
+          enablePermanentDelegate: null,
+          enableTransferHook: null,
+          enableDefaultStateFrozen: null,
+          enableConfidentialTransfers: null,
         },
         mint
       );

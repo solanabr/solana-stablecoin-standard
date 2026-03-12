@@ -58,6 +58,10 @@ describe("SSS-1: Minimal Stablecoin", () => {
         uri: "https://example.com/metadata.json",
         decimals: 6,
         preset: { sss1: {} },
+        enablePermanentDelegate: null,
+        enableTransferHook: null,
+        enableDefaultStateFrozen: null,
+        enableConfidentialTransfers: null,
       })
       .accounts({
         authority: authority.publicKey,

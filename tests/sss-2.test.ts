@@ -72,6 +72,10 @@ describe("SSS-2: Compliant Stablecoin", () => {
         uri: "https://example.com/cusd.json",
         decimals: 6,
         preset: { sss2: {} },
+        enablePermanentDelegate: null,
+        enableTransferHook: null,
+        enableDefaultStateFrozen: null,
+        enableConfidentialTransfers: null,
       })
       .accounts({
         authority: authority.publicKey,

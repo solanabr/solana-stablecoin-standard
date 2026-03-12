@@ -58,6 +58,10 @@ describe("SSS-3: Private Stablecoin (Confidential Transfers)", () => {
         uri: "https://example.com/pusd-metadata.json",
         decimals: 6,
         preset: { sss3: {} },
+        enablePermanentDelegate: null,
+        enableTransferHook: null,
+        enableDefaultStateFrozen: null,
+        enableConfidentialTransfers: null,
       })
       .accounts({
         authority: authority.publicKey,
