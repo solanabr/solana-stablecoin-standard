@@ -1,91 +1,96 @@
 import "dotenv/config";
-import express from "express";
 import cors from "cors";
-import { Connection, Keypair } from "@solana/web3.js";
+import express, { Express, RequestHandler } from "express";
 import { Wallet } from "@coral-xyz/anchor";
+import { Connection, Keypair } from "@solana/web3.js";
 import * as fs from "fs";
 import * as path from "path";
 
 import { SSSClient } from "../../sdk/src";
-import { createRoutes } from "./routes";
 import { errorHandler } from "./middleware/error";
-
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
+import { createRateLimitMiddleware } from "./middleware/rate-limit";
+import { createRoutes } from "./routes";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
 const RPC_URL = process.env.RPC_URL || "http://127.0.0.1:8899";
 const KEYPAIR_PATH = process.env.KEYPAIR_PATH || "~/.config/solana/id.json";
 
-/**
- * Resolves a file path that may contain ~ for the home directory.
- */
 function resolvePath(filePath: string): string {
   if (filePath.startsWith("~")) {
     return path.join(process.env.HOME || "/root", filePath.slice(1));
   }
+
   return path.resolve(filePath);
 }
 
-/**
- * Loads a Solana keypair from a JSON file.
- */
 function loadKeypair(keypairPath: string): Keypair {
-  const resolved = resolvePath(keypairPath);
-  const raw = fs.readFileSync(resolved, "utf-8");
-  const secretKey = Uint8Array.from(JSON.parse(raw));
+  const resolvedPath = resolvePath(keypairPath);
+  const rawKeypair = fs.readFileSync(resolvedPath, "utf-8");
+  const secretKey = Uint8Array.from(JSON.parse(rawKeypair));
   return Keypair.fromSecretKey(secretKey);
 }
 
-// ---------------------------------------------------------------------------
-// Bootstrap
-// ---------------------------------------------------------------------------
+interface CreateAppOptions {
+  authority: string;
+  rpcUrl?: string;
+  postRateLimiter?: RequestHandler;
+}
 
-function main(): void {
-  // Require API_KEY for POST endpoint authentication
+export function createApp(client: SSSClient, options: CreateAppOptions): Express {
+  const app = express();
+  const rpcUrl = options.rpcUrl ?? RPC_URL;
+  const postRateLimiter = options.postRateLimiter ?? createRateLimitMiddleware();
+
+  app.use(cors());
+  app.use(express.json());
+
+  app.get("/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      rpcUrl,
+      authority: options.authority,
+      uptime: process.uptime(),
+    });
+  });
+
+  app.use((req, res, next) => {
+    if (req.method !== "POST") {
+      next();
+      return;
+    }
+
+    postRateLimiter(req, res, next);
+  });
+
+  app.use(createRoutes(client));
+  app.use(errorHandler);
+
+  return app;
+}
+
+export function startServer(): void {
   if (!process.env.API_KEY) {
     console.error("FATAL: API_KEY environment variable is required but not set.");
     process.exit(1);
   }
 
-  // Load authority keypair
   const keypair = loadKeypair(KEYPAIR_PATH);
   console.log(`Authority: ${keypair.publicKey.toBase58()}`);
 
-  // Create Solana connection and SSSClient
   const connection = new Connection(RPC_URL, "confirmed");
   const wallet = new Wallet(keypair);
   const client = new SSSClient(connection, wallet);
-
-  // Express application
-  const app = express();
-
-  // Middleware
-  app.use(cors());
-  app.use(express.json());
-
-  // Health check
-  app.get("/health", (_req, res) => {
-    res.json({
-      status: "ok",
-      rpcUrl: RPC_URL,
-      authority: keypair.publicKey.toBase58(),
-      uptime: process.uptime(),
-    });
+  const app = createApp(client, {
+    authority: keypair.publicKey.toBase58(),
+    rpcUrl: RPC_URL,
   });
 
-  // API routes
-  app.use(createRoutes(client));
-
-  // Error handler (must be registered after routes)
-  app.use(errorHandler);
-
-  // Start server
   app.listen(PORT, () => {
     console.log(`SSS Backend listening on http://localhost:${PORT}`);
     console.log(`RPC: ${RPC_URL}`);
   });
 }
 
-main();
+if (require.main === module) {
+  startServer();
+}
