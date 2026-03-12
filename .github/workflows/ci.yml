@@ -78,6 +78,14 @@ jobs:
           avm install 0.31.1
           avm use 0.31.1
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install test dependencies
+        run: yarn install --frozen-lockfile || yarn install
+
       - name: Run Anchor tests
         run: anchor test
 
