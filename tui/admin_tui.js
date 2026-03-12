@@ -57,6 +57,7 @@ const RPC_URL = rpcIdx >= 0 ? args[rpcIdx + 1] : (process.env.RPC_URL || 'https:
 const MINT = mintIdx >= 0 ? args[mintIdx + 1] : (process.env.MINT || '9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv');
 const KEYPAIR_PATH = keypairIdx >= 0 ? args[keypairIdx + 1] : (process.env.KEYPAIR_PATH || DEFAULT_KEYPAIR);
 const PROGRAM_ID = programIdx >= 0 ? args[programIdx + 1] : (process.env.PROGRAM_ID || '5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4');
+const IS_TEST_MODE = process.env.SSS_TUI_TEST_MODE === '1';
 
 // Log unhandled errors to file instead of swallowing silently
 const _errLog = path.join(__dirname, 'error.log');
@@ -205,12 +206,15 @@ function getAuditLogPda(configPda, index) {
 }
 
 // --- 3. DATA FETCHING ---
-async function fetchConfig(mint) {
+async function fetchConfig(mint, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
+  const activeCoder = deps.coder || coder;
   try {
     const [configPda] = getConfigPda(mint);
-    const info = await connection.getAccountInfo(configPda);
+    const info = await activeConnection.getAccountInfo(configPda);
     if (!info) return null;
-    const decoded = coder.decode('StablecoinConfig', info.data);
+    const decoded = activeCoder.decode('StablecoinConfig', info.data);
     return {
       name: decoded.name,
       symbol: decoded.symbol,
@@ -237,12 +241,15 @@ async function fetchConfig(mint) {
   }
 }
 
-async function fetchRoles(configPda) {
+async function fetchRoles(configPda, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
+  const activeCoder = deps.coder || coder;
   try {
     const [rolesPda] = getRoleRegistryPda(configPda);
-    const info = await connection.getAccountInfo(rolesPda);
+    const info = await activeConnection.getAccountInfo(rolesPda);
     if (!info) return null;
-    const decoded = coder.decode('RoleRegistry', info.data);
+    const decoded = activeCoder.decode('RoleRegistry', info.data);
     return {
       masterAuthority: decoded.master_authority.toBase58(),
       pauser: decoded.pauser.toBase58(),
@@ -254,10 +261,14 @@ async function fetchRoles(configPda) {
   }
 }
 
-async function fetchMinters(configPda) {
+async function fetchMinters(configPda, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
+  const activeCoder = deps.coder || coder;
+  const activeProgramId = deps.programId || PROGRAM_ID;
   try {
-    const programId = new PublicKey(PROGRAM_ID);
-    const accounts = await connection.getProgramAccounts(programId, {
+    const programId = new PublicKey(activeProgramId);
+    const accounts = await activeConnection.getProgramAccounts(programId, {
       filters: [
         { dataSize: 106 },
         { memcmp: { offset: 9, bytes: configPda.toBase58() } }
@@ -265,7 +276,7 @@ async function fetchMinters(configPda) {
     });
     return accounts.map(({ pubkey, account }) => {
       try {
-        const decoded = coder.decode('MinterInfo', account.data);
+        const decoded = activeCoder.decode('MinterInfo', account.data);
         return {
           address: decoded.minter.toBase58(),
           isActive: decoded.is_active,
@@ -281,13 +292,18 @@ async function fetchMinters(configPda) {
   }
 }
 
-async function fetchBlacklist(configPda) {
+async function fetchBlacklist(configPda, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
+  const activeCoder = deps.coder || coder;
+  const activeProgramId = deps.programId || PROGRAM_ID;
+  const activeIdl = deps.idl || idl;
   try {
-    const programId = new PublicKey(PROGRAM_ID);
+    const programId = new PublicKey(activeProgramId);
     // Filter by BlacklistEntry discriminator from IDL + config PDA
-    const disc = Buffer.from(idl.accounts.find(a => a.name === 'BlacklistEntry').discriminator);
+    const disc = Buffer.from(activeIdl.accounts.find(a => a.name === 'BlacklistEntry').discriminator);
     const bs58 = require('bs58');
-    const accounts = await connection.getProgramAccounts(programId, {
+    const accounts = await activeConnection.getProgramAccounts(programId, {
       filters: [
         { memcmp: { offset: 0, bytes: bs58.encode(disc) } },
         { memcmp: { offset: 9, bytes: configPda.toBase58() } }
@@ -295,7 +311,7 @@ async function fetchBlacklist(configPda) {
     });
     return accounts.map(({ account }) => {
       try {
-        const decoded = coder.decode('BlacklistEntry', account.data);
+        const decoded = activeCoder.decode('BlacklistEntry', account.data);
         return {
           address: decoded.blocked_address.toBase58(),
           reason: decoded.reason,
@@ -309,7 +325,10 @@ async function fetchBlacklist(configPda) {
   }
 }
 
-async function fetchAttestations(configPda, count) {
+async function fetchAttestations(configPda, count, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
+  const activeCoder = deps.coder || coder;
   const cap = Math.min(count, 50);
   if (cap === 0) return [];
   // Batch-fetch all attestation PDAs in one RPC call
@@ -319,12 +338,12 @@ async function fetchAttestations(configPda, count) {
     pdas.push(pda);
   }
   try {
-    const infos = await connection.getMultipleAccountsInfo(pdas);
+    const infos = await activeConnection.getMultipleAccountsInfo(pdas);
     const results = [];
     for (let i = 0; i < infos.length; i++) {
       if (!infos[i]) continue;
       try {
-        const decoded = coder.decode('ReserveAttestation', infos[i].data);
+        const decoded = activeCoder.decode('ReserveAttestation', infos[i].data);
         results.push({
           index: Number(decoded.index),
           reserveHash: '0x' + Buffer.from(decoded.reserve_hash).toString('hex').slice(0, 8) + '...',
@@ -340,10 +359,12 @@ async function fetchAttestations(configPda, count) {
   } catch { return []; }
 }
 
-async function fetchHolders(mint) {
+async function fetchHolders(mint, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
   try {
     const mintPk = new PublicKey(mint);
-    const result = await connection.getTokenLargestAccounts(mintPk);
+    const result = await activeConnection.getTokenLargestAccounts(mintPk);
     const total = result.value.reduce((sum, a) => sum + (a.uiAmount || 0), 0);
     return result.value.map((acct, i) => ({
       rank: i + 1,
@@ -356,9 +377,11 @@ async function fetchHolders(mint) {
   }
 }
 
-async function fetchTransactions(address, limit) {
+async function fetchTransactions(address, limit, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
   try {
-    const sigs = await connection.getSignaturesForAddress(address, { limit });
+    const sigs = await activeConnection.getSignaturesForAddress(address, { limit });
     return sigs.map(s => ({
       signature: s.signature,
       slot: s.slot,
@@ -394,7 +417,10 @@ let nextRefreshAt = null;
 let consecutiveErrors = 0;
 let refreshInProgress = false;
 
-async function fetchAuditLogs(configPda, count) {
+async function fetchAuditLogs(configPda, count, deps) {
+  deps = deps || {};
+  const activeConnection = deps.connection || connection;
+  const activeCoder = deps.coder || coder;
   const cap = Math.min(count, 50);
   if (cap === 0) return [];
   // Batch-fetch all audit log PDAs in one RPC call
@@ -404,12 +430,12 @@ async function fetchAuditLogs(configPda, count) {
     pdas.push(pda);
   }
   try {
-    const infos = await connection.getMultipleAccountsInfo(pdas);
+    const infos = await activeConnection.getMultipleAccountsInfo(pdas);
     const results = [];
     for (let i = 0; i < infos.length; i++) {
       if (!infos[i]) continue;
       try {
-        const decoded = coder.decode('AuditLogEntry', infos[i].data);
+        const decoded = activeCoder.decode('AuditLogEntry', infos[i].data);
         const actionIdx = decoded.action ? Object.keys(decoded.action)[0] : 'unknown';
         results.push({
           index: Number(decoded.index),
@@ -840,13 +866,8 @@ function exportCsv(filename, headers, rows) {
   showMessage('Export Complete', `Saved ${rows.length} rows to:\n${exportPath}`, 4000);
 }
 
-function openActionModal(actionName) {
-  if (!walletMode) { showMessage('No Wallet', 'Pass --keypair to enable transactions.', 3000); return; }
-
-  const dec = liveData.config ? liveData.config.decimals : 6;
-  const symbol = liveData.config ? liveData.config.symbol : 'tokens';
-
-  const ACTIONS = {
+function getActionDefinitions() {
+  return {
     mint: { title: 'Mint Tokens', fields: ['Recipient Address', 'Amount'], danger: 'high' },
     burn: { title: 'Burn Tokens', fields: ['Wallet Address (empty = self)', 'Amount'], danger: 'high' },
     freeze: { title: 'Freeze Account', fields: ['Target Address'], danger: 'high' },
@@ -861,6 +882,375 @@ function openActionModal(actionName) {
     updateMinter: { title: 'Update Minter', fields: ['Minter Address', 'Mint Quota', 'Active (true/false)'], danger: 'normal' },
     transferAuthority: { title: 'Transfer Authority', fields: ['New Authority Address'], danger: 'critical' },
   };
+}
+
+function executeActionSubmission(actionName, rawValues, deps) {
+  deps = deps || {};
+
+  const showMessageFn = deps.showMessage || showMessage;
+  const confirmActionFn = deps.confirmAction || confirmAction;
+  const executeTxFn = deps.executeTx || executeTx;
+  const currentWalletMode = deps.walletMode !== undefined ? deps.walletMode : walletMode;
+  const currentWallet = deps.wallet || wallet;
+  const currentProgram = deps.program || program;
+  const currentLiveData = deps.liveData || liveData;
+  const currentMint = deps.mint || MINT;
+  const PublicKeyCtor = deps.PublicKey || PublicKey;
+  const tokenProgramId = deps.token2022ProgramId || TOKEN_2022_PROGRAM_ID;
+  const associatedTokenFn = deps.getAssociatedTokenAddressSync || getAssociatedTokenAddressSync;
+  const createAtaFn = deps.createAssociatedTokenAccountIdempotentInstruction || createAssociatedTokenAccountIdempotentInstruction;
+  const systemProgram = deps.systemProgram || SystemProgram;
+  const systemProgramId = systemProgram.programId || systemProgram;
+  const values = (rawValues || []).map((value) => (value == null ? '' : String(value)).trim());
+
+  if (!currentWalletMode) {
+    showMessageFn('No Wallet', 'Pass --keypair to enable transactions.', 3000);
+    return false;
+  }
+
+  const action = getActionDefinitions()[actionName];
+  if (!action) {
+    showMessageFn('Error', 'Unknown action: ' + actionName, 2000);
+    return false;
+  }
+
+  if (action.fields.length > 0 && values.some(v => !v) && actionName !== 'attest') {
+    showMessageFn('Error', 'Fill in all required fields.', 2000);
+    return false;
+  }
+
+  const dec = currentLiveData.config ? currentLiveData.config.decimals : 6;
+  const symbol = currentLiveData.config ? currentLiveData.config.symbol : 'tokens';
+
+  switch (actionName) {
+    case 'mint': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid recipient address.', 2000); return false; }
+      const amount = parseTokenAmount(values[1], dec);
+      if (!amount) { showMessageFn('Error', 'Invalid amount format.', 2000); return false; }
+      const preview = formatUsd(amount.toNumber(), 0) + ' ' + symbol;
+      confirmActionFn('Mint Tokens', 'Minting: ' + preview + '\nTo: ' + shortAddr(values[0]), 'high', () => {
+        executeTxFn('Minting Tokens', async () => {
+          const [configPda] = getConfigPda(currentMint);
+          const [minterPda] = getMinterInfoPda(configPda, currentWallet.publicKey);
+          const mintPk = new PublicKeyCtor(currentMint);
+          const recipientPk = new PublicKeyCtor(values[0]);
+          const recipientAta = associatedTokenFn(mintPk, recipientPk, false, tokenProgramId);
+          const createAtaIx = createAtaFn(
+            currentWallet.publicKey, recipientAta, recipientPk, mintPk, tokenProgramId
+          );
+          return await currentProgram.methods.mintTokens(amount)
+            .accounts({
+              minterAuthority: currentWallet.publicKey,
+              config: configPda,
+              minterInfo: minterPda,
+              mint: mintPk,
+              recipientTokenAccount: recipientAta,
+              recipientBlacklist: null,
+              tokenProgram: tokenProgramId,
+            })
+            .preInstructions([createAtaIx])
+            .signers([currentWallet])
+            .rpc();
+        });
+      });
+      return true;
+    }
+    case 'burn': {
+      const burnTarget = values[0].trim();
+      const amount = parseTokenAmount(values[1], dec);
+      if (!amount) { showMessageFn('Error', 'Invalid amount format.', 2000); return false; }
+      const burnFrom = burnTarget && isValidPubkey(burnTarget) ? new PublicKeyCtor(burnTarget) : currentWallet.publicKey;
+      const isSelf = burnFrom.equals(currentWallet.publicKey);
+      const label = isSelf ? 'your wallet' : shortAddr(burnFrom.toBase58());
+      confirmActionFn('Burn Tokens', 'Burning: ' + formatUsd(amount.toNumber(), 0) + ' ' + symbol + '\nFrom: ' + label, 'high', () => {
+        executeTxFn('Burning Tokens', async () => {
+          const [configPda] = getConfigPda(currentMint);
+          const mintPk = new PublicKeyCtor(currentMint);
+          const burnAta = associatedTokenFn(mintPk, burnFrom, false, tokenProgramId);
+          return await currentProgram.methods.burnTokens(amount)
+            .accounts({
+              burner: currentWallet.publicKey,
+              config: configPda,
+              mint: mintPk,
+              burnTokenAccount: burnAta,
+              tokenProgram: tokenProgramId,
+            })
+            .signers([currentWallet])
+            .rpc();
+        });
+      });
+      return true;
+    }
+    case 'freeze': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid address.', 2000); return false; }
+      executeTxFn('Freezing Account', async () => {
+        const [configPda] = getConfigPda(currentMint);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        const targetPk = new PublicKeyCtor(values[0]);
+        const mintPk = new PublicKeyCtor(currentMint);
+        const targetAta = associatedTokenFn(mintPk, targetPk, false, tokenProgramId);
+        return await currentProgram.methods.freezeAccount()
+          .accounts({
+            authority: currentWallet.publicKey,
+            config: configPda,
+            roleRegistry: rolesPda,
+            mint: mintPk,
+            targetTokenAccount: targetAta,
+            tokenProgram: tokenProgramId,
+          })
+          .signers([currentWallet])
+          .rpc();
+      });
+      return true;
+    }
+    case 'thaw': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid address.', 2000); return false; }
+      executeTxFn('Thawing Account', async () => {
+        const [configPda] = getConfigPda(currentMint);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        const targetPk = new PublicKeyCtor(values[0]);
+        const mintPk = new PublicKeyCtor(currentMint);
+        const targetAta = associatedTokenFn(mintPk, targetPk, false, tokenProgramId);
+        return await currentProgram.methods.thawAccount()
+          .accounts({
+            authority: currentWallet.publicKey,
+            config: configPda,
+            roleRegistry: rolesPda,
+            mint: mintPk,
+            targetTokenAccount: targetAta,
+            tokenProgram: tokenProgramId,
+          })
+          .signers([currentWallet])
+          .rpc();
+      });
+      return true;
+    }
+    case 'blacklistAdd': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid address.', 2000); return false; }
+      confirmActionFn('Add to Blacklist', 'Address: ' + shortAddr(values[0]) + '\nReason: ' + values[1], 'high', () => {
+        executeTxFn('Adding to Blacklist', async () => {
+          const [configPda] = getConfigPda(currentMint);
+          const [rolesPda] = getRoleRegistryPda(configPda);
+          const targetPk = new PublicKeyCtor(values[0]);
+          const [blPda] = getBlacklistPda(configPda, targetPk);
+          const mintPk = new PublicKeyCtor(currentMint);
+          const targetAta = associatedTokenFn(mintPk, targetPk, false, tokenProgramId);
+          const createAtaIx = createAtaFn(
+            currentWallet.publicKey, targetAta, targetPk, mintPk, tokenProgramId
+          );
+          return await currentProgram.methods.blacklistAdd({ reason: values[1] })
+            .accounts({
+              authority: currentWallet.publicKey,
+              config: configPda,
+              roleRegistry: rolesPda,
+              blacklistEntry: blPda,
+              addressToBlacklist: targetPk,
+              mint: mintPk,
+              targetTokenAccount: targetAta,
+              tokenProgram: tokenProgramId,
+              systemProgram: systemProgramId,
+            })
+            .preInstructions([createAtaIx])
+            .signers([currentWallet])
+            .rpc();
+        });
+      });
+      return true;
+    }
+    case 'blacklistRemove': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid address.', 2000); return false; }
+      executeTxFn('Removing from Blacklist', async () => {
+        const [configPda] = getConfigPda(currentMint);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        const targetPk = new PublicKeyCtor(values[0]);
+        const [blPda] = getBlacklistPda(configPda, targetPk);
+        const mintPk = new PublicKeyCtor(currentMint);
+        const targetAta = associatedTokenFn(mintPk, targetPk, false, tokenProgramId);
+        return await currentProgram.methods.blacklistRemove()
+          .accounts({
+            authority: currentWallet.publicKey,
+            config: configPda,
+            roleRegistry: rolesPda,
+            blacklistEntry: blPda,
+            mint: mintPk,
+            targetTokenAccount: targetAta,
+            tokenProgram: tokenProgramId,
+          })
+          .signers([currentWallet])
+          .rpc();
+      });
+      return true;
+    }
+    case 'seize': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid source address.', 2000); return false; }
+      if (!isValidPubkey(values[1])) { showMessageFn('Error', 'Invalid destination address.', 2000); return false; }
+      const amount = parseTokenAmount(values[2], dec);
+      if (!amount) { showMessageFn('Error', 'Invalid amount format.', 2000); return false; }
+      confirmActionFn('Seize Tokens', 'Seizing: ' + formatUsd(amount.toNumber(), 0) + ' ' + symbol + '\nFrom: ' + shortAddr(values[0]) + '\nTo: ' + shortAddr(values[1]), 'high', () => {
+        executeTxFn('Seizing Tokens', async () => {
+          const [configPda] = getConfigPda(currentMint);
+          const [rolesPda] = getRoleRegistryPda(configPda);
+          const targetPk = new PublicKeyCtor(values[0]);
+          const [blPda] = getBlacklistPda(configPda, targetPk);
+          const mintPk = new PublicKeyCtor(currentMint);
+          const fromAta = associatedTokenFn(mintPk, targetPk, false, tokenProgramId);
+          const toAta = new PublicKeyCtor(values[1]);
+          return await currentProgram.methods.seize(amount)
+            .accounts({
+              authority: currentWallet.publicKey,
+              config: configPda,
+              roleRegistry: rolesPda,
+              blacklistEntry: blPda,
+              mint: mintPk,
+              fromTokenAccount: fromAta,
+              toTokenAccount: toAta,
+              tokenProgram: tokenProgramId,
+            })
+            .signers([currentWallet])
+            .rpc();
+        });
+      });
+      return true;
+    }
+    case 'pause': {
+      confirmActionFn('Pause Program', 'This will HALT all token operations.', 'high', () => {
+        executeTxFn('Pausing Program', async () => {
+          const [configPda] = getConfigPda(currentMint);
+          const [rolesPda] = getRoleRegistryPda(configPda);
+          return await currentProgram.methods.pause()
+            .accounts({ authority: currentWallet.publicKey, config: configPda, roleRegistry: rolesPda })
+            .signers([currentWallet])
+            .rpc();
+        });
+      });
+      return true;
+    }
+    case 'unpause': {
+      confirmActionFn('Unpause Program', 'This will RESUME all token operations.', 'high', () => {
+        executeTxFn('Unpausing Program', async () => {
+          const [configPda] = getConfigPda(currentMint);
+          const [rolesPda] = getRoleRegistryPda(configPda);
+          return await currentProgram.methods.unpause()
+            .accounts({ authority: currentWallet.publicKey, config: configPda, roleRegistry: rolesPda })
+            .signers([currentWallet])
+            .rpc();
+        });
+      });
+      return true;
+    }
+    case 'attest': {
+      const hashHex = values[0];
+      const cleanHex = hashHex.startsWith('0x') ? hashHex.slice(2) : hashHex;
+      if (cleanHex.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(cleanHex)) {
+        showMessageFn('Error', 'Hash must be 64 hex chars (32 bytes).', 3000);
+        return false;
+      }
+      const reserveHash = [];
+      for (let i = 0; i < 64; i += 2) reserveHash.push(parseInt(cleanHex.slice(i, i + 2), 16));
+      const totalReservesUsd = parseTokenAmount(values[1], dec);
+      const totalOutstanding = parseTokenAmount(values[2], dec);
+      if (!totalReservesUsd || !totalOutstanding) { showMessageFn('Error', 'Invalid number format.', 2000); return false; }
+      executeTxFn('Submitting Attestation', async () => {
+        const [configPda] = getConfigPda(currentMint);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        const attIdx = currentLiveData.config ? currentLiveData.config.attestationIndex : 0;
+        const [attestPda] = getReserveAttestationPda(configPda, attIdx);
+        return await currentProgram.methods.attestReserve({
+          reserveHash,
+          totalReservesUsd,
+          totalOutstanding,
+          attestationUri: values[3] || '',
+        })
+          .accounts({
+            authority: currentWallet.publicKey,
+            config: configPda,
+            roleRegistry: rolesPda,
+            attestation: attestPda,
+            systemProgram: systemProgramId,
+          })
+          .signers([currentWallet])
+          .rpc();
+      });
+      return true;
+    }
+    case 'updateRole': {
+      const roleMap = { pauser: { pauser: {} }, blacklister: { blacklister: {} }, seizer: { seizer: {} } };
+      const roleEnum = roleMap[values[0].toLowerCase()];
+      if (!roleEnum) { showMessageFn('Error', 'Role must be: pauser, blacklister, or seizer', 2000); return false; }
+      if (!isValidPubkey(values[1])) { showMessageFn('Error', 'Invalid address.', 2000); return false; }
+      executeTxFn('Updating Role', async () => {
+        const [configPda] = getConfigPda(currentMint);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        const newHolder = new PublicKeyCtor(values[1]);
+        return await currentProgram.methods.updateRoles({ role: roleEnum, newHolder })
+          .accounts({ authority: currentWallet.publicKey, config: configPda, roleRegistry: rolesPda })
+          .signers([currentWallet])
+          .rpc();
+      });
+      return true;
+    }
+    case 'updateMinter': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid minter address.', 2000); return false; }
+      const quota = parseTokenAmount(values[1], dec);
+      if (!quota) { showMessageFn('Error', 'Invalid quota format.', 2000); return false; }
+      const isActive = values[2].toLowerCase() !== 'false';
+      executeTxFn('Updating Minter', async () => {
+        const [configPda] = getConfigPda(currentMint);
+        const [rolesPda] = getRoleRegistryPda(configPda);
+        const minterPk = new PublicKeyCtor(values[0]);
+        const [minterPda] = getMinterInfoPda(configPda, minterPk);
+        return await currentProgram.methods.updateMinter({ isActive, mintQuota: quota })
+          .accounts({
+            authority: currentWallet.publicKey,
+            config: configPda,
+            roleRegistry: rolesPda,
+            minterInfo: minterPda,
+            minterWallet: minterPk,
+            systemProgram: systemProgramId,
+          })
+          .signers([currentWallet])
+          .rpc();
+      });
+      return true;
+    }
+    case 'transferAuthority': {
+      if (!isValidPubkey(values[0])) { showMessageFn('Error', 'Invalid address.', 2000); return false; }
+      confirmActionFn(
+        'Transfer Master Authority',
+        'This will PERMANENTLY transfer authority to:\n\n  ' + values[0] + '\n\nThis is IRREVERSIBLE.',
+        'critical',
+        () => {
+          executeTxFn('Transferring Authority', async () => {
+            const [configPda] = getConfigPda(currentMint);
+            const [rolesPda] = getRoleRegistryPda(configPda);
+            const newAuthority = new PublicKeyCtor(values[0]);
+            return await currentProgram.methods.transferAuthority()
+              .accounts({
+                authority: currentWallet.publicKey,
+                config: configPda,
+                roleRegistry: rolesPda,
+                newAuthority,
+              })
+              .signers([currentWallet])
+              .rpc();
+          });
+        }
+      );
+      return true;
+    }
+    default:
+      showMessageFn('Error', 'Unknown action: ' + actionName, 2000);
+      return false;
+  }
+}
+
+function openActionModal(actionName) {
+  if (!walletMode) { showMessage('No Wallet', 'Pass --keypair to enable transactions.', 3000); return; }
+
+  const dec = liveData.config ? liveData.config.decimals : 6;
+  const symbol = liveData.config ? liveData.config.symbol : 'tokens';
+
+  const ACTIONS = getActionDefinitions();
 
   const action = ACTIONS[actionName];
   if (!action) { showMessage('Error', 'Unknown action: ' + actionName, 2000); return; }
@@ -1033,267 +1423,8 @@ function openActionModal(actionName) {
 
   submitBtn.on('press', () => {
     const values = inputs.map(inp => inp.getValue().trim());
-
-    // Validate non-empty required fields
-    if (action.fields.length > 0 && values.some(v => !v) && actionName !== 'attest') {
-      showMessage('Error', 'Fill in all required fields.', 2000);
-      return;
-    }
-
     closeModal();
-
-    // Route to appropriate transaction
-    switch (actionName) {
-      case 'mint': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid recipient address.', 2000); return; }
-        const amount = parseTokenAmount(values[1], dec);
-        if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
-        const preview = formatUsd(amount.toNumber(), 0) + ' ' + symbol;
-        confirmAction('Mint Tokens', 'Minting: ' + preview + '\nTo: ' + shortAddr(values[0]), 'high', () => {
-          executeTx('Minting Tokens', async () => {
-            const [configPda] = getConfigPda(MINT);
-            const [rolesPda] = getRoleRegistryPda(configPda);
-            const [minterPda] = getMinterInfoPda(configPda, wallet.publicKey);
-            const mintPk = new PublicKey(MINT);
-            const recipientPk = new PublicKey(values[0]);
-            const recipientAta = getAssociatedTokenAddressSync(mintPk, recipientPk, false, TOKEN_2022_PROGRAM_ID);
-            const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-            const [auditPda] = getAuditLogPda(configPda, auditIdx);
-            // Auto-create recipient ATA if it doesn't exist
-            const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-              wallet.publicKey, recipientAta, recipientPk, mintPk, TOKEN_2022_PROGRAM_ID
-            );
-            return await program.methods.mintTokens(amount)
-              .accounts({ minterAuthority: wallet.publicKey, config: configPda,
-                minterInfo: minterPda, mint: mintPk, recipientTokenAccount: recipientAta,
-                recipientBlacklist: null, tokenProgram: TOKEN_2022_PROGRAM_ID })
-              .preInstructions([createAtaIx])
-              .signers([wallet]).rpc();
-          });
-        });
-        break;
-      }
-      case 'burn': {
-        const burnTarget = values[0].trim();
-        const amount = parseTokenAmount(values[1], dec);
-        if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
-        // If address is empty or matches signer, burn from self. Otherwise authority burn.
-        const burnFrom = burnTarget && isValidPubkey(burnTarget) ? new PublicKey(burnTarget) : wallet.publicKey;
-        const isSelf = burnFrom.equals(wallet.publicKey);
-        const label = isSelf ? 'your wallet' : shortAddr(burnFrom.toBase58());
-        confirmAction('Burn Tokens', 'Burning: ' + formatUsd(amount.toNumber(), 0) + ' ' + symbol + '\nFrom: ' + label, 'high', () => {
-          executeTx('Burning Tokens', async () => {
-            const [configPda] = getConfigPda(MINT);
-            const mintPk = new PublicKey(MINT);
-            const burnAta = getAssociatedTokenAddressSync(mintPk, burnFrom, false, TOKEN_2022_PROGRAM_ID);
-            return await program.methods.burnTokens(amount)
-              .accounts({ burner: wallet.publicKey, config: configPda, mint: mintPk,
-                burnTokenAccount: burnAta,
-                tokenProgram: TOKEN_2022_PROGRAM_ID })
-              .signers([wallet]).rpc();
-          });
-        });
-        break;
-      }
-      case 'freeze': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid address.', 2000); return; }
-        executeTx('Freezing Account', async () => {
-          const [configPda] = getConfigPda(MINT);
-          const [rolesPda] = getRoleRegistryPda(configPda);
-          const targetPk = new PublicKey(values[0]);
-          const mintPk = new PublicKey(MINT);
-          const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-          const [auditPda] = getAuditLogPda(configPda, auditIdx);
-          return await program.methods.freezeAccount()
-            .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              mint: mintPk, targetTokenAccount: targetAta,
-              tokenProgram: TOKEN_2022_PROGRAM_ID })
-            .signers([wallet]).rpc();
-        });
-        break;
-      }
-      case 'thaw': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid address.', 2000); return; }
-        executeTx('Thawing Account', async () => {
-          const [configPda] = getConfigPda(MINT);
-          const [rolesPda] = getRoleRegistryPda(configPda);
-          const targetPk = new PublicKey(values[0]);
-          const mintPk = new PublicKey(MINT);
-          const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-          return await program.methods.thawAccount()
-            .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              mint: mintPk, targetTokenAccount: targetAta,
-              tokenProgram: TOKEN_2022_PROGRAM_ID })
-            .signers([wallet]).rpc();
-        });
-        break;
-      }
-      case 'blacklistAdd': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid address.', 2000); return; }
-        confirmAction('Add to Blacklist', 'Address: ' + shortAddr(values[0]) + '\nReason: ' + values[1], 'high', () => {
-          executeTx('Adding to Blacklist', async () => {
-            const [configPda] = getConfigPda(MINT);
-            const [rolesPda] = getRoleRegistryPda(configPda);
-            const targetPk = new PublicKey(values[0]);
-            const [blPda] = getBlacklistPda(configPda, targetPk);
-            const mintPk = new PublicKey(MINT);
-            const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-            const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-              wallet.publicKey, targetAta, targetPk, mintPk, TOKEN_2022_PROGRAM_ID
-            );
-            return await program.methods.blacklistAdd({ reason: values[1] })
-              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-                blacklistEntry: blPda, addressToBlacklist: targetPk, mint: mintPk,
-                targetTokenAccount: targetAta, tokenProgram: TOKEN_2022_PROGRAM_ID,
-                systemProgram: SystemProgram.programId })
-              .preInstructions([createAtaIx])
-              .signers([wallet]).rpc();
-          });
-        });
-        break;
-      }
-      case 'blacklistRemove': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid address.', 2000); return; }
-        executeTx('Removing from Blacklist', async () => {
-          const [configPda] = getConfigPda(MINT);
-          const [rolesPda] = getRoleRegistryPda(configPda);
-          const targetPk = new PublicKey(values[0]);
-          const [blPda] = getBlacklistPda(configPda, targetPk);
-          const mintPk = new PublicKey(MINT);
-          const targetAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-          return await program.methods.blacklistRemove()
-            .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              blacklistEntry: blPda, mint: mintPk, targetTokenAccount: targetAta,
-              tokenProgram: TOKEN_2022_PROGRAM_ID })
-            .signers([wallet]).rpc();
-        });
-        break;
-      }
-      case 'seize': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid source address.', 2000); return; }
-        if (!isValidPubkey(values[1])) { showMessage('Error', 'Invalid destination address.', 2000); return; }
-        const amount = parseTokenAmount(values[2], dec);
-        if (!amount) { showMessage('Error', 'Invalid amount format.', 2000); return; }
-        confirmAction('Seize Tokens', 'Seizing: ' + formatUsd(amount.toNumber(), 0) + ' ' + symbol + '\nFrom: ' + shortAddr(values[0]) + '\nTo: ' + shortAddr(values[1]), 'high', () => {
-          executeTx('Seizing Tokens', async () => {
-            const [configPda] = getConfigPda(MINT);
-            const [rolesPda] = getRoleRegistryPda(configPda);
-            const targetPk = new PublicKey(values[0]);
-            const [blPda] = getBlacklistPda(configPda, targetPk);
-            const mintPk = new PublicKey(MINT);
-            const fromAta = getAssociatedTokenAddressSync(mintPk, targetPk, false, TOKEN_2022_PROGRAM_ID);
-            const toAta = new PublicKey(values[1]);
-            return await program.methods.seize(amount)
-              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-                blacklistEntry: blPda, mint: mintPk, fromTokenAccount: fromAta,
-                toTokenAccount: toAta, tokenProgram: TOKEN_2022_PROGRAM_ID })
-              .signers([wallet]).rpc();
-          });
-        });
-        break;
-      }
-      case 'pause': {
-        confirmAction('Pause Program', 'This will HALT all token operations.', 'high', () => {
-          executeTx('Pausing Program', async () => {
-            const [configPda] = getConfigPda(MINT);
-            const [rolesPda] = getRoleRegistryPda(configPda);
-            return await program.methods.pause()
-              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda })
-              .signers([wallet]).rpc();
-          });
-        });
-        break;
-      }
-      case 'unpause': {
-        confirmAction('Unpause Program', 'This will RESUME all token operations.', 'high', () => {
-          executeTx('Unpausing Program', async () => {
-            const [configPda] = getConfigPda(MINT);
-            const [rolesPda] = getRoleRegistryPda(configPda);
-            return await program.methods.unpause()
-              .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda })
-              .signers([wallet]).rpc();
-          });
-        });
-        break;
-      }
-      case 'attest': {
-        const hashHex = values[0];
-        const cleanHex = hashHex.startsWith('0x') ? hashHex.slice(2) : hashHex;
-        if (cleanHex.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(cleanHex)) {
-          showMessage('Error', 'Hash must be 64 hex chars (32 bytes).', 3000); return;
-        }
-        const reserveHash = [];
-        for (let i = 0; i < 64; i += 2) reserveHash.push(parseInt(cleanHex.slice(i, i + 2), 16));
-        const totalReservesUsd = parseTokenAmount(values[1], dec);
-        const totalOutstanding = parseTokenAmount(values[2], dec);
-        if (!totalReservesUsd || !totalOutstanding) { showMessage('Error', 'Invalid number format.', 2000); return; }
-        executeTx('Submitting Attestation', async () => {
-          const [configPda] = getConfigPda(MINT);
-          const [rolesPda] = getRoleRegistryPda(configPda);
-          const attIdx = liveData.config ? liveData.config.attestationIndex : 0;
-          const [attestPda] = getReserveAttestationPda(configPda, attIdx);
-          return await program.methods.attestReserve({
-            reserveHash, totalReservesUsd, totalOutstanding, attestationUri: values[3] || '',
-          }).accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              attestation: attestPda, systemProgram: SystemProgram.programId })
-            .signers([wallet]).rpc();
-        });
-        break;
-      }
-      case 'updateRole': {
-        const roleMap = { pauser: { pauser: {} }, blacklister: { blacklister: {} }, seizer: { seizer: {} } };
-        const roleEnum = roleMap[values[0].toLowerCase()];
-        if (!roleEnum) { showMessage('Error', 'Role must be: pauser, blacklister, or seizer', 2000); return; }
-        if (!isValidPubkey(values[1])) { showMessage('Error', 'Invalid address.', 2000); return; }
-        executeTx('Updating Role', async () => {
-          const [configPda] = getConfigPda(MINT);
-          const [rolesPda] = getRoleRegistryPda(configPda);
-          const newHolder = new PublicKey(values[1]);
-          const auditIdx = liveData.config ? liveData.config.auditLogIndex : 0;
-          const [auditPda] = getAuditLogPda(configPda, auditIdx);
-          return await program.methods.updateRoles({ role: roleEnum, newHolder })
-            .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda })
-            .signers([wallet]).rpc();
-        });
-        break;
-      }
-      case 'updateMinter': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid minter address.', 2000); return; }
-        const quota = parseTokenAmount(values[1], dec);
-        if (!quota) { showMessage('Error', 'Invalid quota format.', 2000); return; }
-        const isActive = values[2].toLowerCase() !== 'false';
-        executeTx('Updating Minter', async () => {
-          const [configPda] = getConfigPda(MINT);
-          const [rolesPda] = getRoleRegistryPda(configPda);
-          const minterPk = new PublicKey(values[0]);
-          const [minterPda] = getMinterInfoPda(configPda, minterPk);
-          return await program.methods.updateMinter({ isActive, mintQuota: quota })
-            .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-              minterInfo: minterPda, minterWallet: minterPk,
-              systemProgram: SystemProgram.programId })
-            .signers([wallet]).rpc();
-        });
-        break;
-      }
-      case 'transferAuthority': {
-        if (!isValidPubkey(values[0])) { showMessage('Error', 'Invalid address.', 2000); return; }
-        confirmAction('Transfer Master Authority',
-          'This will PERMANENTLY transfer authority to:\n\n  ' + values[0] + '\n\nThis is IRREVERSIBLE.',
-          'critical', () => {
-            executeTx('Transferring Authority', async () => {
-              const [configPda] = getConfigPda(MINT);
-              const [rolesPda] = getRoleRegistryPda(configPda);
-              const newAuthority = new PublicKey(values[0]);
-              return await program.methods.transferAuthority()
-                .accounts({ authority: wallet.publicKey, config: configPda, roleRegistry: rolesPda,
-                  newAuthority })
-                .signers([wallet]).rpc();
-            });
-          });
-        break;
-      }
-    }
+    executeActionSubmission(actionName, values);
   });
 
   // Focus first input or submit button
@@ -3639,5 +3770,38 @@ screen.key(['C-c'], () => {
 });
 
 // --- 14. INITIALIZE ---
-renderSplash();
-screen.render();
+if (!IS_TEST_MODE) {
+  renderSplash();
+  screen.render();
+}
+
+module.exports = {
+  shortAddr,
+  formatTimestamp,
+  formatUsd,
+  parseTokenAmount,
+  isValidPubkey,
+  detectNetwork,
+  getConfigPda,
+  getRoleRegistryPda,
+  getMinterInfoPda,
+  getBlacklistPda,
+  getReserveAttestationPda,
+  getAuditLogPda,
+  fetchConfig,
+  fetchRoles,
+  fetchMinters,
+  fetchBlacklist,
+  fetchAttestations,
+  fetchHolders,
+  fetchTransactions,
+  fetchAuditLogs,
+  getActionDefinitions,
+  executeActionSubmission,
+  __constants: {
+    RPC_URL,
+    MINT,
+    PROGRAM_ID,
+    IS_TEST_MODE,
+  },
+};
