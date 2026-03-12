@@ -1,14 +1,14 @@
 [package]
 name = "sss-token"
-version = "0.1.0"
+version = "1.0.1"
 description = "Solana Stablecoin Standard - Token Program with blacklist, seize, freeze, and GENIUS Act compliance"
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/amanhij/solana-stablecoin-standard-pre"
-homepage = "https://github.com/amanhij/solana-stablecoin-standard-pre"
+repository = "https://github.com/solanabr/solana-stablecoin-standard"
+homepage = "https://stablecoinstandard.dev"
 keywords = ["solana", "stablecoin", "token-2022", "spl", "defi"]
 categories = ["cryptography::cryptocurrencies"]
-readme = "../../README.md"
+readme = "README.md"
 
 [lib]
 crate-type = ["cdylib", "lib"]
