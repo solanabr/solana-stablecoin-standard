@@ -28,6 +28,499 @@ SSS is composed of two on-chain Anchor programs that work together:
 
 Both programs are built on **Solana Token-2022** extensions and use PDA-based state management with role-based access control.
 
+## Technical Architecture
+
+<details>
+<summary><strong>System Architecture</strong></summary>
+
+```mermaid
+graph TD
+    subgraph UI["User Interfaces"]
+        DASH["Next.js Dashboard<br/><i>7 routes, live supply charts</i>"]
+        TUI["Terminal UI<br/><i>9 operator tabs, blessed-contrib</i>"]
+        CLI["Rust CLI<br/><i>sss-token binary, 24 subcommands</i>"]
+    end
+
+    subgraph SDK_LAYER["Client Libraries"]
+        SDK["TypeScript SDK<br/><i>SSSClient — 31 async methods</i><br/><i>PDA derivation, error wrapping, events</i>"]
+    end
+
+    subgraph BACKEND["Backend Infrastructure"]
+        API["REST API<br/><i>Express, 32 endpoints</i><br/><i>API key auth, rate limiting</i>"]
+        EVT["Event Listener<br/><i>WebSocket log subscription</i>"]
+        WH["Webhook Dispatcher<br/><i>HMAC-signed delivery</i><br/><i>Exponential backoff + DLQ</i>"]
+        COMP["Compliance Service<br/><i>Address screening</i><br/><i>CSV/JSON audit export</i>"]
+    end
+
+    subgraph SOLANA["Solana Network — Token-2022"]
+        SSS["sss-token<br/><i>Program: 5ZBiFx...BcL4</i><br/><i>20 instructions, 7 PDA account types</i>"]
+        HOOK["sss-transfer-hook<br/><i>Program: FmujD8...RJxy</i><br/><i>Blacklist enforcement on every transfer</i>"]
+        T22["SPL Token-2022 Runtime<br/><i>Extensions: MetadataPointer, PermanentDelegate,</i><br/><i>TransferHook, ConfidentialTransferMint</i>"]
+    end
+
+    DASH -->|"REST + wallet signing"| API
+    DASH -->|"Direct RPC reads"| SDK
+    TUI -->|"SDK client methods"| SDK
+    CLI -->|"Direct Anchor CPI"| SSS
+    CLI -->|"Hook init CPI"| HOOK
+
+    API -->|"All mutations via SDK"| SDK
+    SDK -->|"Anchor RPC transactions"| SSS
+    SDK -->|"initExtraAccountMetaList"| HOOK
+
+    T22 ==>|"CPI on transfer_checked"| HOOK
+    HOOK -.->|"Reads BlacklistEntry PDAs<br/>owned by sss-token"| SSS
+
+    EVT -->|"WebSocket logsSubscribe"| SSS
+    EVT -->|"Forward parsed events"| WH
+    WH -->|"HMAC envelope POST"| COMP
+
+    style SSS fill:#1a1a2e,stroke:#e94560,color:#fff,stroke-width:2px
+    style HOOK fill:#1a1a2e,stroke:#e94560,color:#fff,stroke-width:2px
+    style T22 fill:#0f3460,stroke:#533483,color:#fff,stroke-width:2px
+    style SDK fill:#16213e,stroke:#0f3460,color:#ccc,stroke-width:2px
+    style API fill:#533483,stroke:#e94560,color:#fff
+    style EVT fill:#533483,stroke:#e94560,color:#fff
+    style WH fill:#533483,stroke:#e94560,color:#fff
+    style COMP fill:#533483,stroke:#e94560,color:#fff
+    style DASH fill:#0f3460,stroke:#533483,color:#ccc
+    style TUI fill:#0f3460,stroke:#533483,color:#ccc
+    style CLI fill:#0f3460,stroke:#533483,color:#ccc
+```
+
+The system operates in four tiers. On-chain, `sss-token` owns all stablecoin state and instruction logic while `sss-transfer-hook` is invoked by the Token-2022 runtime on every `transfer_checked` call to enforce blacklist restrictions. Client-side, the TypeScript SDK wraps all program interactions into an ergonomic `SSSClient` class, while the Rust CLI communicates directly via Anchor CPI. The backend layer provides authenticated REST endpoints, real-time event ingestion via WebSocket, and HMAC-signed webhook delivery with exponential backoff and a dead letter queue.
+
+</details>
+
+<details>
+<summary><strong>On-Chain Account Model</strong></summary>
+
+```mermaid
+graph TD
+    MINT["Token-2022 Mint Account<br/><i>Keypair generated at init</i>"]
+
+    MINT -->|"PDA: [b'config', mint.key]"| CONFIG
+    CONFIG["StablecoinConfig<br/><i>430 bytes</i><br/>mint, master_authority, pending_authority<br/>name, symbol, uri, decimals<br/>preset, 4 feature flags, is_paused<br/>supply_cap, total_minted, total_burned<br/>total_seized, audit_log_index<br/>reserve_attestation_index"]
+
+    CONFIG -->|"PDA: [b'roles', config.key]"| ROLES
+    ROLES["RoleRegistry<br/><i>169 bytes</i><br/>master_authority, pauser<br/>blacklister, seizer"]
+
+    CONFIG -->|"PDA: [b'minter', config.key, wallet.key]"| MINTER
+    MINTER["MinterInfo<br/><i>106 bytes — one per minter wallet</i><br/>is_active, mint_quota<br/>total_minted, last_mint_at"]
+
+    CONFIG -->|"PDA: [b'blacklist', config.key, address.key]"| BL
+    BL["BlacklistEntry<br/><i>245 bytes — one per blocked address</i><br/>blocked_address, reason, blacklisted_by, blacklisted_at"]
+
+    CONFIG -->|"PDA: [b'allowlist', config.key, address.key]"| AL
+    AL["AllowlistEntry<br/><i>181 bytes — one per allowed address</i><br/>address, added_by, added_at, reason"]
+
+    CONFIG -->|"PDA: [b'reserve', config.key, index_le]"| RA
+    RA["ReserveAttestation<br/><i>341 bytes — append-only ledger</i><br/>reserve_hash (32-byte SHA-256)<br/>total_reserves_usd, total_outstanding<br/>attested_by, attestation_uri, timestamp"]
+
+    CONFIG -->|"PDA: [b'audit', config.key, index_le]"| AUDIT
+    AUDIT["AuditLogEntry<br/><i>Append-only event record</i><br/>action, actor, target<br/>amount, timestamp"]
+
+    HOOK_META["ExtraAccountMetaList<br/><i>Owned by sss-transfer-hook</i><br/>PDA: [b'extra-account-metas', mint.key]"]
+    MINT -->|"Hook resolution"| HOOK_META
+
+    style CONFIG fill:#1a1a2e,stroke:#e94560,color:#fff,stroke-width:2px
+    style ROLES fill:#16213e,stroke:#e94560,color:#ccc
+    style MINTER fill:#16213e,stroke:#0f3460,color:#ccc
+    style BL fill:#4a0000,stroke:#e94560,color:#fff
+    style AL fill:#003300,stroke:#2e7d32,color:#fff
+    style RA fill:#16213e,stroke:#0f3460,color:#ccc
+    style AUDIT fill:#16213e,stroke:#0f3460,color:#ccc
+    style MINT fill:#0f3460,stroke:#533483,color:#ccc
+    style HOOK_META fill:#1a1a2e,stroke:#533483,color:#ccc
+```
+
+Every account is a PDA derived from the `StablecoinConfig` address, which itself is derived from the mint public key. This creates a single root of trust: given only the mint address, every associated account can be deterministically located. The `ExtraAccountMetaList` PDA is the exception — it is owned by the transfer hook program and resolved by Token-2022 at transfer time.
+
+</details>
+
+<details>
+<summary><strong>Mint Operation — Compliance Gate Sequence</strong></summary>
+
+```mermaid
+sequenceDiagram
+    actor Operator
+    participant Dashboard as Next.js Dashboard
+    participant SDK as SSSClient
+    participant Token as sss-token Program
+    participant Config as StablecoinConfig PDA
+    participant MinterPDA as MinterInfo PDA
+    participant Blacklist as BlacklistEntry PDA
+    participant T22 as Token-2022
+
+    Operator->>Dashboard: Click "Mint 1,000,000 USDS"
+    Dashboard->>SDK: client.mint(mint, recipientAta, amount)
+
+    Note over SDK: Auto-derives required PDAs
+    SDK->>SDK: configPda = findProgramAddress([b"config", mint])
+    SDK->>SDK: minterInfoPda = findProgramAddress([b"minter", config, wallet])
+    SDK->>SDK: blacklistPda = findProgramAddress([b"blacklist", config, recipientOwner])
+
+    SDK->>Token: Submit mintTokens(amount) transaction
+
+    rect rgb(60, 30, 30)
+        Note over Token: Gate 1 — Amount Validation
+        Token->>Token: require amount > 0
+    end
+
+    rect rgb(60, 30, 30)
+        Note over Token: Gate 2 — Pause Check
+        Token->>Config: Load config
+        Token->>Token: require !config.is_paused
+    end
+
+    rect rgb(60, 30, 30)
+        Note over Token,Blacklist: Gate 3 — Mandatory Blacklist Check
+        Token->>Token: require_blacklist_enabled(config)?
+        alt SSS-2/SSS-3: Blacklist enabled
+            Token->>Blacklist: Check data_is_empty()
+            Note over Blacklist: PDA seeds derived from on-chain<br/>recipient_token_account.owner<br/>— cannot be spoofed by caller
+            alt BlacklistEntry exists
+                Token--xOperator: REJECT — RecipientBlacklisted
+            end
+        else SSS-1: Blacklist disabled
+            Note over Token: Account required but check skipped
+        end
+    end
+
+    rect rgb(60, 30, 30)
+        Note over Token,MinterPDA: Gate 4 — Minter Authorization
+        Token->>MinterPDA: Load minter_info
+        Token->>Token: require is_active == true
+        Token->>Token: require can_mint(amount)
+        Note over MinterPDA: quota == 0 → unlimited<br/>quota > 0 → remaining = quota - total_minted
+    end
+
+    rect rgb(60, 30, 30)
+        Note over Token,Config: Gate 5 — Supply Cap
+        alt supply_cap > 0
+            Token->>Token: new_supply = current_supply + amount
+            Token->>Token: require new_supply <= supply_cap
+        end
+    end
+
+    rect rgb(30, 70, 40)
+        Note over Token,T22: All gates passed — Execute CPI
+        Token->>T22: mint_to(mint, recipient_ata, authority=config_pda, amount)
+        Note over Token: Signer seeds: [b"config", mint.key, &[bump]]
+        T22-->>Token: Tokens credited
+    end
+
+    Token->>MinterPDA: total_minted += amount
+    Token->>Config: total_minted += amount
+
+    Token-->>SDK: emit TokensMinted event
+    SDK-->>Dashboard: Update supply charts
+    Dashboard-->>Operator: "1,000,000 USDS minted successfully"
+```
+
+Five compliance gates are evaluated in order — any failure short-circuits with the corresponding `SssError` variant. The mandatory blacklist check at Gate 3 is the critical security invariant: the `recipientBlacklist` account cannot be omitted from the transaction and its PDA seeds are derived from on-chain token account data, preventing callers from substituting a clean wallet address.
+
+</details>
+
+<details>
+<summary><strong>Transfer Hook — Blacklist Enforcement Pipeline</strong></summary>
+
+```mermaid
+sequenceDiagram
+    actor Sender
+    participant T22 as Token-2022 Runtime
+    participant Meta as ExtraAccountMetaList PDA
+    participant Hook as sss-transfer-hook
+    participant SrcBL as Source BlacklistEntry PDA
+    participant DstBL as Dest BlacklistEntry PDA
+
+    Sender->>T22: transfer_checked(src_ata, mint, dst_ata, authority, amount, decimals)
+
+    Note over T22: Token-2022 reads TransferHook extension<br/>from mint account data
+
+    T22->>T22: Validate balance, mint match, decimals
+    T22->>Meta: Load ExtraAccountMetaList<br/>PDA: [b"extra-account-metas", mint.key]
+
+    Note over T22: Dynamically resolve 4 extra accounts
+
+    rect rgb(40, 40, 60)
+        T22->>T22: idx 5: sss-token program ID (literal)
+        T22->>T22: idx 6: StablecoinConfig PDA<br/>find_program_address([b"config", mint.key], sss_token)
+        T22->>T22: idx 7: Source BlacklistEntry PDA<br/>find_program_address([b"blacklist", config.key,<br/>src_ata.data[32..64]], sss_token)
+        T22->>T22: idx 8: Dest BlacklistEntry PDA<br/>find_program_address([b"blacklist", config.key,<br/>dst_ata.data[32..64]], sss_token)
+        Note over T22: Owner read from token account data at<br/>byte offset 32 — NOT from the signer.<br/>Prevents delegate bypass attacks.
+    end
+
+    T22->>Hook: CPI invoke transfer_hook(9 accounts)
+
+    Hook->>Hook: Validate Config PDA derivation and ownership
+
+    alt Config invalid or not SSS mint
+        Hook-->>T22: Ok() — allow by default
+    end
+
+    alt authority == config_pda (privileged operation)
+        Note over Hook: Seize operation uses config PDA as<br/>transfer authority to bypass hook
+        Hook-->>T22: Ok() — privileged bypass
+    end
+
+    Hook->>SrcBL: Check: owner == sss_token AND !data_is_empty()?
+    alt Source is blacklisted
+        Hook--xT22: Err — SourceBlacklisted
+        T22--xSender: Transaction failed
+    end
+
+    Hook->>DstBL: Check: owner == sss_token AND !data_is_empty()?
+    alt Destination is blacklisted
+        Hook--xT22: Err — DestinationBlacklisted
+        T22--xSender: Transaction failed
+    end
+
+    Hook-->>T22: Ok() — transfer ALLOWED
+    T22-->>Sender: Transfer complete
+```
+
+On every Token-2022 `transfer_checked` call for an SSS-2 mint, the runtime invokes the transfer hook with dynamically resolved accounts. The hook reads source and destination owner addresses directly from token account data at byte offset 32, not from the transaction signer — preventing delegate bypass attacks.
+
+</details>
+
+<details>
+<summary><strong>Seizure Mechanism</strong></summary>
+
+```mermaid
+sequenceDiagram
+    actor Seizer as Seizer (Role::Seizer)
+    participant Token as sss-token Program
+    participant T22 as Token-2022
+    participant Victim as Blacklisted Token Account
+    participant Treasury as Treasury Token Account
+
+    Note over Seizer,Treasury: The victim is blacklisted — transfer_checked would trigger<br/>the hook which would REJECT on SourceBlacklisted.<br/>Seizure uses a 4-step burn-and-remint pattern instead.
+
+    Seizer->>Token: seize(amount, victim_ata, treasury_ata)
+
+    rect rgb(70, 50, 20)
+        Note over Token: Step 1 — Thaw victim account
+        Token->>T22: CPI thaw_account(victim_ata, mint, authority=config_pda)
+        Note over T22: Config PDA is freeze_authority via PermanentDelegate<br/>No user consent needed
+    end
+
+    rect rgb(70, 30, 30)
+        Note over Token: Step 2 — Burn victim's tokens
+        Token->>T22: CPI burn(victim_ata, mint, authority=config_pda, amount)
+        Note over T22: Config PDA is permanent_delegate<br/>Can burn from ANY account without owner signature
+    end
+
+    rect rgb(30, 70, 40)
+        Note over Token: Step 3 — Mint same amount to treasury
+        Token->>T22: CPI mint_to(mint, treasury_ata, authority=config_pda, amount)
+        Note over T22: Config PDA is mint_authority<br/>Net supply unchanged — burn + mint cancel out
+    end
+
+    rect rgb(70, 50, 20)
+        Note over Token: Step 4 — Re-freeze victim account
+        Token->>T22: CPI freeze_account(victim_ata, mint, authority=config_pda)
+        Note over T22: Account returns to frozen state<br/>BlacklistEntry PDA still exists
+    end
+
+    Token->>Token: config.total_seized += amount
+    Note over Token: total_minted and total_burned are NOT updated —<br/>seizure is tracked separately for audit transparency
+
+    Token-->>Seizer: emit TokensSeized { config, from, amount, seized_by, timestamp }
+```
+
+Seizure deliberately avoids `transfer_checked` because the transfer hook would reject the transaction. Instead, it uses a burn-and-remint pattern through four CPIs in a single atomic transaction. The `StablecoinConfig` PDA serves triple duty as mint authority, freeze authority, and permanent delegate.
+
+</details>
+
+<details>
+<summary><strong>Authority Governance — Role Model and Transfer Flow</strong></summary>
+
+```mermaid
+graph TD
+    subgraph ROLES["RoleRegistry PDA — [b'roles', config.key]"]
+        MA["master_authority<br/><i>Can perform ANY role action</i>"]
+        PA["pauser<br/><i>pause / unpause</i>"]
+        BK["blacklister<br/><i>blacklist_add / blacklist_remove</i>"]
+        SZ["seizer<br/><i>seize</i>"]
+    end
+
+    subgraph MINTERS["Minter Allocation — separate PDAs"]
+        MI["MinterInfo PDA<br/><i>[b'minter', config, wallet]</i><br/><i>mint_tokens (within quota)</i>"]
+    end
+
+    subgraph INSTRUCTIONS["Instruction Access Control"]
+        I_PAUSE["pause / unpause"]
+        I_FREEZE["freeze / thaw"]
+        I_BL["blacklist_add / blacklist_remove"]
+        I_SEIZE["seize"]
+        I_MINT["mint_tokens"]
+        I_ROLES["update_roles"]
+        I_MINTER["update_minter"]
+        I_CAP["set_supply_cap"]
+        I_META["update_metadata"]
+        I_ATTEST["attest_reserve"]
+        I_TRANSFER["transfer_authority"]
+    end
+
+    MA ==>|"implicit elevation:<br/>has_role() checks master first"| PA
+    MA ==>|"implicit elevation"| BK
+    MA ==>|"implicit elevation"| SZ
+    MA -->|"exclusive"| I_ROLES
+    MA -->|"exclusive"| I_MINTER
+    MA -->|"exclusive"| I_CAP
+    MA -->|"exclusive"| I_META
+    MA -->|"exclusive"| I_TRANSFER
+    MA --> I_ATTEST
+
+    PA --> I_PAUSE
+    PA --> I_FREEZE
+
+    BK --> I_BL
+    SZ --> I_SEIZE
+    MI --> I_MINT
+
+    style MA fill:#e94560,stroke:#fff,color:#fff,stroke-width:2px
+    style PA fill:#533483,stroke:#e94560,color:#fff
+    style BK fill:#533483,stroke:#e94560,color:#fff
+    style SZ fill:#533483,stroke:#e94560,color:#fff
+    style MI fill:#0f3460,stroke:#533483,color:#ccc
+```
+
+```mermaid
+sequenceDiagram
+    actor Current as Current Master Authority
+    actor Nominee as Nominated Authority
+    participant Token as sss-token Program
+    participant Config as StablecoinConfig PDA
+
+    Note over Current,Config: Two-phase authority transfer prevents<br/>accidental loss of control
+
+    Current->>Token: transfer_authority(new_authority)
+    Token->>Config: config.pending_authority = new_authority
+    Token-->>Current: emit AuthorityNominated
+
+    Note over Nominee: Nominee must explicitly accept<br/>by signing a separate transaction
+
+    Nominee->>Token: accept_authority()
+    Token->>Token: require signer == config.pending_authority
+    Token->>Config: config.master_authority = pending_authority
+    Token->>Config: config.pending_authority = Pubkey::default()
+    Token-->>Nominee: emit AuthorityTransferred
+```
+
+The governance model separates duties into four roles stored in a single `RoleRegistry` PDA, plus per-wallet `MinterInfo` PDAs for minting authorization. The `master_authority` implicitly inherits all subordinate role capabilities through the `has_role()` check. Authority transfer uses a two-phase nominate-accept pattern to prevent accidental assignment to an incorrect or inaccessible address.
+
+</details>
+
+<details>
+<summary><strong>Preset Comparison — Token-2022 Extension Matrix</strong></summary>
+
+```mermaid
+graph LR
+    subgraph SSS1["SSS-1 — Minimal"]
+        S1_MP["MetadataPointer"]
+    end
+
+    subgraph SSS2["SSS-2 — Compliant"]
+        S2_MP["MetadataPointer"]
+        S2_PD["PermanentDelegate"]
+        S2_TH["TransferHook"]
+    end
+
+    subgraph SSS3["SSS-3 — Private"]
+        S3_MP["MetadataPointer"]
+        S3_PD["PermanentDelegate"]
+        S3_CT["ConfidentialTransferMint"]
+    end
+
+    subgraph CUSTOM["Custom — Any Combination"]
+        C_MP["MetadataPointer"]
+        C_PD["PermanentDelegate?"]
+        C_TH["TransferHook?"]
+        C_DF["DefaultAccountState?"]
+        C_CT["ConfidentialTransferMint?"]
+    end
+
+    S1_MP --- MINT_BURN["mint, burn, freeze, thaw<br/>pause, unpause, metadata"]
+    S2_TH --- COMPLIANCE["+ blacklist, seize<br/>+ transfer hook enforcement<br/>+ allowlist bookkeeping"]
+    S3_CT --- PRIVACY["+ confidential transfers<br/>+ permanent delegate seizure"]
+    C_PD --- FLEXIBLE["Any combination of<br/>all capabilities"]
+
+    style SSS1 fill:#16213e,stroke:#0f3460,color:#ccc
+    style SSS2 fill:#1a1a2e,stroke:#e94560,color:#fff
+    style SSS3 fill:#1a1a2e,stroke:#533483,color:#fff
+    style CUSTOM fill:#16213e,stroke:#533483,color:#ccc
+    style COMPLIANCE fill:#4a0000,stroke:#e94560,color:#fff
+    style PRIVACY fill:#2a004a,stroke:#533483,color:#fff
+```
+
+| Capability | SSS-1 | SSS-2 | SSS-3 | Custom |
+|---|:---:|:---:|:---:|:---:|
+| Mint / Burn / Freeze / Thaw | Yes | Yes | Yes | Yes |
+| Pause / Unpause | Yes | Yes | Yes | Yes |
+| Metadata Management | Yes | Yes | Yes | Yes |
+| Blacklist / Seize | No | Yes | Yes | Optional |
+| Transfer Hook Enforcement | No | Yes | No | Optional |
+| Confidential Transfers | No | No | Yes | Optional |
+| Default Account Frozen | No | No | No | Optional |
+| Permanent Delegate | No | Yes | Yes | Optional |
+
+</details>
+
+<details>
+<summary><strong>Backend Defense-in-Depth</strong></summary>
+
+```mermaid
+graph TD
+    subgraph REQUEST["Inbound Request"]
+        CLIENT["Client / Dashboard"]
+    end
+
+    subgraph DEFENSE["Defense Pipeline"]
+        RATE["Rate Limiter<br/><i>POST: 20 req/15min per IP</i><br/><i>GET: unlimited</i>"]
+        AUTH["API Key Auth<br/><i>X-API-Key header</i><br/><i>Validated at startup</i>"]
+        VALIDATE["Input Validation<br/><i>Base58 pubkey format</i><br/><i>Required fields check</i>"]
+        HANDLER["Route Handler<br/><i>SDK method call</i>"]
+    end
+
+    subgraph WEBHOOK_FLOW["Webhook Delivery Pipeline"]
+        EVENT["On-chain Event"]
+        REGISTER["Registration<br/><i>SSRF check: DNS resolve</i><br/><i>Reject private IPs</i>"]
+        SIGN["HMAC Signing<br/><i>canonical: timestamp.eventType.payload</i><br/><i>sha256 with per-webhook secret</i>"]
+        DELIVER["Delivery Attempt"]
+        RETRY["Retry Queue<br/><i>Exponential backoff: 1s, 2s, 4s, 8s, 16s</i><br/><i>+20% random jitter</i><br/><i>Max 5 attempts</i>"]
+        DLQ["Dead Letter Queue<br/><i>Permanently failed deliveries</i><br/><i>Manual inspection required</i>"]
+    end
+
+    CLIENT --> RATE
+    RATE -->|"Pass"| AUTH
+    RATE -->|"429"| CLIENT
+    AUTH -->|"Pass"| VALIDATE
+    AUTH -->|"401"| CLIENT
+    VALIDATE -->|"Pass"| HANDLER
+    VALIDATE -->|"400"| CLIENT
+    HANDLER -->|"200"| CLIENT
+
+    EVENT --> REGISTER
+    REGISTER -->|"SSRF safe"| SIGN
+    REGISTER -->|"Private IP / DNS rebind"| DLQ
+    SIGN --> DELIVER
+    DELIVER -->|"2xx"| EVENT
+    DELIVER -->|"Non-2xx or timeout"| RETRY
+    RETRY -->|"Attempts < 5"| SIGN
+    RETRY -->|"Attempts >= 5"| DLQ
+
+    style RATE fill:#533483,stroke:#e94560,color:#fff
+    style AUTH fill:#533483,stroke:#e94560,color:#fff
+    style DLQ fill:#4a0000,stroke:#e94560,color:#fff
+    style SIGN fill:#1a1a2e,stroke:#0f3460,color:#ccc
+```
+
+The backend enforces defense-in-depth at three levels: rate limiting before authentication prevents credential-stuffing attacks, API key validation gates all mutations, and input validation rejects malformed addresses before any RPC call. The webhook delivery pipeline performs SSRF protection on every delivery attempt (not just registration) by resolving the target hostname and rejecting private IP ranges, preventing DNS rebinding attacks.
+
+</details>
+
 ## Presets
 
 SSS ships four preset modes defined directly in the SDK and on-chain initialization logic: `sss1`, `sss2`, `sss3`, and `custom`. The preset selected at initialization fixes the mint's Token-2022 extension set and immutable feature flags for the life of that asset. In the current codebase, all three built-in presets leave `default_account_frozen` disabled by default; the only path that enables default-frozen accounts is the `custom` preset with explicit flags.
