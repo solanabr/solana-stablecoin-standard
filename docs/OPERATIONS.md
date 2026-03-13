@@ -2,6 +2,31 @@
 
 Operator guide for mint, freeze, thaw, pause, blacklist, and seize using the CLI or SDK.
 
+**Security & audits:** The on-chain program has been audited. See [audits/FINAL_AUDIT.md](../audits/FINAL_AUDIT.md) for the audit summary and recommendation.
+
+## Copy-paste: init, mint, freeze/blacklist, view audit
+
+**CLI (SSS-1):**
+```bash
+pnpm run cli init --preset sss-1 -n "My USD" -s MUSD --uri "https://example.com"
+pnpm run cli -m <MINT> mint <RECIPIENT_PUBKEY> 1000000
+pnpm run cli -m <MINT> freeze <OWNER_PUBKEY>
+pnpm run cli -m <MINT> thaw <OWNER_PUBKEY>
+```
+
+**CLI (SSS-2 blacklist + audit):**
+```bash
+pnpm run cli init --preset sss-2 -n "Regulated USD" -s RUSD --uri ""
+pnpm run cli -m <MINT> blacklist add <ADDRESS> --reason "OFAC match"
+BACKEND_URL=http://localhost:3000 pnpm run cli -m <MINT> audit-log
+```
+
+**SDK (minimal):**
+```typescript
+const stable = await SolanaStablecoin.create(connection, { preset: "SSS_1", name: "My USD", symbol: "MUSD", uri: "", decimals: 6 }, authority);
+await stable.mint(authority.publicKey, { recipient: recipientPubkey, amount: 1_000_000n, minter: authority.publicKey });
+```
+
 ## Prerequisites
 
 - Keypair with the required role (authority, minter, burner, pauser, freezer, blacklister, seizer).
@@ -169,6 +194,10 @@ sss-token -m <MINT> holders --min-balance <AMOUNT>
 BACKEND_URL=http://localhost:3000 sss-token -m <MINT> audit-log
 BACKEND_URL=http://localhost:3000 sss-token -m <MINT> audit-log --action mint
 ```
+
+## TUI (admin interface)
+
+Use **backend-driven TUI** when the backend holds the operator keypair and you want audit log and compliance (set `BACKEND_URL`). Use **RPC-only** when you run the TUI with a local keypair and no backend (unset `BACKEND_URL`). Labels and terminology in the TUI match the SDK and docs: presets **SSS-1** / **SSS-2**, roles **minter**, **burner**, **pauser**, **freezer**, **blacklister**, **seizer**. See [API.md#admin-tui](API.md#admin-tui).
 
 ## Recovery: create a stablecoin you control
 

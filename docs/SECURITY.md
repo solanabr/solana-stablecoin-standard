@@ -1,5 +1,14 @@
 # Security
 
+## Program verification checklist
+
+No on-chain code changes; this checklist documents that the program enforces access control and consistency.
+
+- **Role PDA / signer:** Each instruction requires the correct role account (PDA derived from stablecoin + holder) and signer. See `programs/sss-1/src/instructions/` (mint, burn, freeze, thaw, pause, blacklist, seize, update_roles, update_minter, etc.).
+- **Mint/config consistency:** Initialize sets `enable_permanent_delegate`, `enable_transfer_hook`, `default_account_frozen` once; they are immutable.
+- **SSS-2 compliance gating:** `add_to_blacklist`, `remove_from_blacklist` (`programs/sss-1/src/instructions/blacklist.rs`) and `seize` (`programs/sss-1/src/instructions/seize.rs`) check `stablecoin.is_sss2()` and return `StablecoinError::ComplianceNotEnabled` when compliance was not enabled at init. Error code: `programs/sss-1/src/error.rs` (e.g. 6002 ComplianceNotEnabled).
+- **RBAC:** Mint requires minter role + minter info (quota); burn requires burner role; freeze/thaw require pauser or freezer; pause/unpause require pauser; blacklist requires blacklister; seize requires seizer; update_roles and update_minter require authority.
+
 ## Threat model
 
 ### Assumptions

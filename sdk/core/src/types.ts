@@ -1,5 +1,22 @@
 import { PublicKey } from "@solana/web3.js";
 
+/** Branded type for stablecoin token amounts (smallest unit, e.g. 6 decimals). Use for mint/burn/transfer. */
+export type StablecoinAmount = bigint;
+
+/** Coerce a bigint to StablecoinAmount (for explicit amount typing at API boundaries). */
+export function toStablecoinAmount(n: bigint): StablecoinAmount {
+  return n;
+}
+
+/** Role names aligned with program RBAC. */
+export type RoleName =
+  | "minter"
+  | "burner"
+  | "pauser"
+  | "freezer"
+  | "blacklister"
+  | "seizer";
+
 export interface StablecoinExtensions {
   enablePermanentDelegate: boolean;
   enableTransferHook: boolean;
@@ -21,6 +38,17 @@ export const Presets = {
 } as const;
 
 export type PresetName = keyof typeof Presets;
+
+/** Preset config: name + extensions. Use for preset vs custom in type system. */
+export interface PresetConfig {
+  name: PresetName;
+  extensions: StablecoinExtensions;
+}
+
+export const PRESET_CONFIGS: Record<PresetName, PresetConfig> = {
+  SSS_1: { name: "SSS_1", extensions: Presets.SSS_1 },
+  SSS_2: { name: "SSS_2", extensions: Presets.SSS_2 },
+} as const;
 
 export interface CreateStablecoinParams {
   name: string;
@@ -83,12 +111,12 @@ export interface MinterInfo {
 
 export interface MintParams {
   recipient: PublicKey;
-  amount: bigint;
+  amount: StablecoinAmount;
   minter: PublicKey;
 }
 
 export interface BurnParams {
-  amount: bigint;
+  amount: StablecoinAmount;
 }
 
 export interface UpdateRolesParams {

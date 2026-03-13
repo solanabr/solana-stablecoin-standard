@@ -20,4 +20,4 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/sss1-lifecycle.test.ts tests/sss2-compliance.test.ts tests/roles-and-minters.test.ts tests/edge-cases.test.ts tests/authority-transfer.test.ts tests/sss-sdk.test.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/sss1-lifecycle.test.ts tests/sss2-compliance.test.ts tests/roles-and-minters.test.ts tests/edge-cases.test.ts tests/authority-transfer.test.ts tests/sss-sdk.test.ts tests/negative-and-compliance.test.ts"

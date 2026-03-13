@@ -25,6 +25,28 @@ import {
 } from "./schemas";
 import { TOKEN_2022_PROGRAM_ID, getErrorMessage } from "@stbr/sss-token";
 
+/** Distinguish on-chain/tx failures (502) from other server errors (500). */
+function isOnChainFailure(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e);
+  const logs =
+    e && typeof e === "object" && "logs" in e && Array.isArray((e as { logs?: string[] }).logs)
+      ? (e as { logs: string[] }).logs.join(" ")
+      : "";
+  const combined = `${msg} ${logs}`.toLowerCase();
+  return (
+    combined.includes("transaction") ||
+    combined.includes("simulation failed") ||
+    combined.includes("custom program error") ||
+    combined.includes("0x") ||
+    combined.includes("blockhash") ||
+    combined.includes("insufficient") ||
+    combined.includes("unauthorized") ||
+    combined.includes("paused") ||
+    combined.includes("quota exceeded") ||
+    combined.includes("supply cap")
+  );
+}
+
 export function createApp(options?: {
   connection?: Connection;
   getKeypair?: () => Keypair;
@@ -107,7 +129,7 @@ export function createApp(options?: {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
+      res.status(isOnChainFailure(e) ? 502 : 500).json({ error: msg });
     }
   });
 
@@ -159,7 +181,8 @@ export function createApp(options?: {
       });
       res.json({ success: true, signature: sig });
     } catch (e) {
-      res.status(500).json({ error: getErrorMessage(e) });
+      const status = isOnChainFailure(e) ? 502 : 500;
+      res.status(status).json({ error: getErrorMessage(e) });
     }
   });
 
@@ -194,7 +217,8 @@ export function createApp(options?: {
       });
       res.json({ success: true, signature: sig });
     } catch (e) {
-      res.status(500).json({ error: getErrorMessage(e) });
+      const status = isOnChainFailure(e) ? 502 : 500;
+      res.status(status).json({ error: getErrorMessage(e) });
     }
   });
 
@@ -293,7 +317,7 @@ export function createApp(options?: {
       res.json({ success: true, signature: sig });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
+      res.status(isOnChainFailure(e) ? 502 : 500).json({ error: msg });
     }
   });
 
@@ -311,7 +335,7 @@ export function createApp(options?: {
       res.json({ success: true, signature: sig });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
+      res.status(isOnChainFailure(e) ? 502 : 500).json({ error: msg });
     }
   });
 
@@ -350,7 +374,7 @@ export function createApp(options?: {
       res.json({ success: true, signature: sig });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
+      res.status(isOnChainFailure(e) ? 502 : 500).json({ error: msg });
     }
   });
 
@@ -385,7 +409,7 @@ export function createApp(options?: {
       res.json({ success: true, signature: sig });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
+      res.status(isOnChainFailure(e) ? 502 : 500).json({ error: msg });
     }
   });
 

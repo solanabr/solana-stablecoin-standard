@@ -1,4 +1,4 @@
-// Example 1: SSS-1 create, mint, burn, load.
+// Example 1: SSS-1 minimal — init (preset SSS_1), mint, freeze, thaw, burn, load.
 
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -69,6 +69,12 @@ async function main() {
   const program = getProgram(provider);
   const loaded = await SolanaStablecoin.load(program, stable.mintAddress);
   console.log("Loaded same stablecoin:", loaded.mintAddress.toBase58());
+
+  const authorityAta = stable.getRecipientTokenAccount(authority.publicKey);
+  const txFreeze = await stable.freezeAccount(authority.publicKey, authorityAta);
+  console.log("Freeze tx:", txFreeze);
+  const txThaw = await stable.thawAccount(authority.publicKey, authorityAta);
+  console.log("Thaw tx:", txThaw);
 
   const txBurn = await stable.burn(authority.publicKey, { amount: BigInt(50_000_000) });
   console.log("Burn tx:", txBurn);

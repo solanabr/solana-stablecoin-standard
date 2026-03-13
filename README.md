@@ -1,6 +1,5 @@
 # Solana Stablecoin Standard (SSS)
 
-[![CI](https://github.com/stellar/solana-stablecoin-standard/actions/workflows/ci.yml/badge.svg)]
 [![tests](https://img.shields.io/badge/tests-SDK%20%2B%20integration%20%2B%20backend%20%2B%20fuzz-green)](docs/TESTING.md)
 [![Devnet](https://img.shields.io/badge/devnet-deployed-9945FF)](docs/DEVNET.md)
 
@@ -62,6 +61,36 @@ pnpm run build:sdk
 pnpm run test:sdk          # SDK unit tests
 anchor test               # Integration tests (requires local validator)
 ```
+
+### Spin up SSS-1 in ~10 minutes
+
+Use a local validator or devnet. From repo root:
+
+```bash
+anchor build && pnpm run build:sdk
+solana config set --url devnet   # or leave default for localnet
+solana airdrop 2                 # if devnet
+pnpm run cli init --preset sss-1 -n "My USD" -s MUSD --uri "https://example.com"
+# Copy the printed Mint address, then:
+pnpm run cli -m <MINT> mint <YOUR_PUBKEY> 1000000
+pnpm run cli -m <MINT> burn 500000
+```
+
+Optional: freeze/thaw with `pnpm run cli -m <MINT> freeze <OWNER_PUBKEY>` and `thaw <OWNER_PUBKEY>`. See [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+### Spin up SSS-2 with blacklist and audit
+
+After init with `--preset sss-2`, grant blacklister/seizer roles, then use blacklist and (optionally) view audit via backend:
+
+```bash
+pnpm run cli init --preset sss-2 -n "Regulated USD" -s RUSD --uri ""
+# Grant roles (see OPERATIONS), then:
+pnpm run cli -m <MINT> blacklist add <ADDRESS> --reason "OFAC match"
+# Start backend (docker compose up or pnpm run backend), then:
+BACKEND_URL=http://localhost:3000 pnpm run cli -m <MINT> audit-log
+```
+
+**Blessed examples:** Three canonical flows — [examples/1-basic-sss1.ts](examples/1-basic-sss1.ts) (SSS-1 init + mint + freeze/thaw + burn), [examples/2-sss2-compliant.ts](examples/2-sss2-compliant.ts) (SSS-2 + blacklist + seize), [examples/3-custom-config.ts](examples/3-custom-config.ts) (custom extensions). See [SDK](docs/SDK.md#blessed-examples).
 
 ### Using the TypeScript SDK
 
@@ -172,19 +201,27 @@ The backend provides a mint/burn API, event indexer, and compliance module (audi
 
 **Devnet deployment proof:** Program IDs and example transactions are in [DEVNET](docs/DEVNET.md).
 
+## Security & audits
+
+The on-chain program has been audited. See **[audits/FINAL_AUDIT.md](audits/FINAL_AUDIT.md)** for scope, methodology, security findings, and recommendation. Reproducibility: [audits/SCOPE.md](audits/SCOPE.md). *AI Audits by Exo Technologies.*
+
 ## Documentation
 
-- [Testing](docs/TESTING.md) — Run all tests (SDK, backend, integration, fuzz); copy-paste commands
+- [Architecture](docs/ARCH.md) — High-level architecture, system diagram, account map, data flows
+- [Spec](docs/SPEC.md) — On-chain program specification (accounts, instructions, failure modes)
+- [Deploy](docs/DEPLOY_PROGRAM.md) — SSS deployment runbook (prerequisites, keypairs, upgrade script, deploy, verify)
+- [Integration](docs/INTEGRATION.md) — How to integrate: SDK (create/load, mint, burn), backend vs SDK, CLI, env vars, minimal flow
+- [Operations](docs/OPERATIONS.md) — Operator runbook (mint, burn, freeze, thaw, blacklist, seize)
+- [API](docs/API.md) — Backend API reference and error taxonomy
+- [Compliance](docs/COMPLIANCE.md) — Regulatory considerations, audit trail
+- [Testing](docs/TESTING.md) — Run all tests (SDK, backend, integration); copy-paste commands
 - [Architecture](docs/ARCHITECTURE.md) — Layer model, data flows, security
-- [Security Audits](audits/) — SECURITY_AUDIT_1–6.md, FINAL_AUDIT.md (all findings addressed)
 - [SDK](docs/SDK.md) — Presets, custom config, TypeScript API
-- [Operations](docs/OPERATIONS.md) — Operator runbook
 - [SSS-1](docs/SSS-1.md) — Minimal stablecoin spec
 - [SSS-2](docs/SSS-2.md) — Compliant stablecoin spec
-- [Compliance](docs/COMPLIANCE.md) — Regulatory considerations, audit trail
-- [API](docs/API.md) — Backend API reference
 - [Devnet](docs/DEVNET.md) — Deployment and example transactions
 - [Examples](examples/README.md) — Step-by-step TypeScript examples
+- [Audits](audits/) — FINAL_AUDIT.md, SCOPE.md, SECURITY_AUDIT_1–6.md
 
 ## Contributing
 

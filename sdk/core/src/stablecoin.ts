@@ -116,6 +116,32 @@ export class SolanaStablecoin {
     return instance;
   }
 
+  /**
+   * Load a stablecoin by mint using only a connection. Builds a provider from the given signer
+   * or from KEYPAIR_PATH env (if set). Use when you do not already have a Program instance.
+   */
+  static async loadFromConnection(
+    connection: Connection,
+    mint: PublicKey,
+    signer?: Keypair
+  ): Promise<SolanaStablecoin> {
+    let keypair: Keypair;
+    if (signer) {
+      keypair = signer;
+    } else {
+      const keypairPath =
+        process.env.KEYPAIR_PATH ||
+        `${process.env.HOME ?? process.env.USERPROFILE ?? ""}/.config/solana/id.json`;
+      const { readFileSync } = await import("fs");
+      const secret = JSON.parse(readFileSync(keypairPath, "utf-8")) as number[];
+      keypair = Keypair.fromSecretKey(Uint8Array.from(secret));
+    }
+    const { AnchorProvider, Wallet } = await import("@coral-xyz/anchor");
+    const provider = new AnchorProvider(connection, new Wallet(keypair), {});
+    const program = new Program(idl as unknown as Idl, provider) as SSSProgram;
+    return SolanaStablecoin.load(program, mint);
+  }
+
   static async create(
     programOrConnection: SSSProgram | Connection,
     params: CreateStablecoinParams,

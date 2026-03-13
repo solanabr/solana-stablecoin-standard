@@ -27,10 +27,21 @@ Use preset `SSS_2` or `extensions: { enablePermanentDelegate: true, enableTransf
 
 The SDK and CLI perform step 2 automatically when creating an SSS-2 stablecoin.
 
-## Compliance Instructions
+## Instructions (SSS-2)
 
-- `add_to_blacklist(address, reason)` — Blacklister only.
-- `remove_from_blacklist(address)` — Blacklister only.
-- `seize(source_token_account, destination_token_account)` — Seizer only; source/dest are token account addresses.
+All SSS-1 instructions apply. In addition:
 
-These instructions revert with a clear error if the stablecoin was not initialized with compliance enabled (e.g. SSS-1).
+| Instruction | Who signs | Description |
+| ----------- | --------- | ----------- |
+| add_to_blacklist | blacklister | Add address to blacklist with reason. |
+| remove_from_blacklist | blacklister | Remove address from blacklist. |
+| seize | seizer | Transfer full balance from source token account to destination (treasury). |
+
+Transfer hook (sss-2 program) `execute` runs on every transfer and denies if paused or source/dest is blacklisted.
+
+## Failure modes
+
+- All SSS-1 failure modes apply.
+- **ComplianceNotEnabled (6002):** `add_to_blacklist`, `remove_from_blacklist`, or `seize` called on a stablecoin that was not initialized with compliance (e.g. SSS-1). The program checks `enable_permanent_delegate` and `enable_transfer_hook`; both must be true.
+- **AlreadyBlacklisted (6003) / NotBlacklisted (6004):** Add when already listed, or remove when not listed.
+- **Blacklisted (6011):** Transfer hook denies transfer when source or destination is blacklisted.

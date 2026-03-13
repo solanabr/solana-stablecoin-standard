@@ -20,6 +20,32 @@ anchor deploy --provider.cluster devnet
 
 Use the same program IDs in Anchor.toml for devnet so the SDK and CLI work without change.
 
+## Devnet walkthrough (copy-paste)
+
+Full deployment steps are in [DEPLOY_PROGRAM.md](DEPLOY_PROGRAM.md). Minimal sequence to deploy and use each preset on devnet:
+
+```bash
+# 1. Build and set cluster
+anchor build && pnpm run build:sdk
+solana config set --url devnet
+solana airdrop 2
+
+# 2. Deploy (if using your own program IDs, run scripts/upgrade-program-id.sh first)
+anchor deploy --provider.cluster devnet
+
+# 3. SSS-1: init and mint
+pnpm run cli init --preset sss-1 -n "Dev USD" -s DUSD --uri "https://example.com"
+# Set MINT_1 to the printed mint address
+pnpm run cli -m <MINT_1> mint $(solana address) 1000000
+
+# 4. SSS-2: init, mint, one compliance action
+pnpm run cli init --preset sss-2 -n "Reg USD" -s RUSD --uri ""
+# Set MINT_2 to the printed mint; grant blacklister role then:
+pnpm run cli -m <MINT_2> blacklist add <SOME_ADDRESS> --reason "Test"
+```
+
+Replace `<MINT_1>`, `<MINT_2>`, and `<SOME_ADDRESS>` with actual pubkeys. For seize you need a source token account with balance and a destination token account; see [OPERATIONS.md](OPERATIONS.md).
+
 ## Example transactions
 
 After deploying and creating a stablecoin:

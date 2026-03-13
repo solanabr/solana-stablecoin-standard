@@ -14,6 +14,8 @@ HTTP server (default port 3000). Environment: `RPC_URL`, `KEYPAIR_PATH`, `MINT_A
 
 **Input validation:** All operation and compliance request bodies/query params are validated (Zod). Invalid input returns 400 `{ error: "Validation failed", details }`.
 
+**Error taxonomy:** Responses are distinguished by status: **401** — missing or invalid `X-API-Key` (auth). **403** — forbidden (e.g. blocked by compliance screening). **400** — validation failure (body/query) with `details`. **502** — on-chain or transaction failure (e.g. simulation failed, program error, insufficient funds, role check); message is sanitized. **500** — server or configuration error (e.g. `MINT_ADDRESS` not set).
+
 ### Endpoints
 
 - **GET /health**  

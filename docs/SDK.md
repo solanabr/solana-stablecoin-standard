@@ -1,5 +1,15 @@
 # SDK Reference
 
+## Blessed Examples
+
+Three canonical examples demonstrate the full flow per preset:
+
+1. **Minimal SSS-1** — [examples/1-basic-sss1.ts](../examples/1-basic-sss1.ts): init with preset `SSS_1`, mint, burn, optional freeze/thaw. Use for internal settlement, DAO treasuries.
+2. **SSS-2 Compliant** — [examples/2-sss2-compliant.ts](../examples/2-sss2-compliant.ts): init with preset `SSS_2`, roles, blacklist add, seize. Use for regulated stablecoins with on-chain blacklist.
+3. **Custom config** — [examples/3-custom-config.ts](../examples/3-custom-config.ts): init with no preset and custom `extensions` (e.g. permanent delegate without transfer hook). Use for hybrid deployments.
+
+Run from repo root: `npx ts-node -P tsconfig.json examples/1-basic-sss1.ts` (set `RPC_URL` for devnet/localnet).
+
 ## Installation
 
 From the repo:
@@ -43,8 +53,9 @@ const supply = await stable.getTotalSupply();
 
 ### Create and Load
 
-- `SolanaStablecoin.create(connection, params, signer)` — Create new stablecoin (mint + state + roles; SSS-2 also inits transfer hook PDA). Requires keypair for authority. When `enableTransferHook` is true, the program enforces that the transfer hook program is the official SSS-2 hook (see `SSS_HOOK_PROGRAM_ID` in SDK constants).
+- `SolanaStablecoin.create(connection, params, signer)` — Create new stablecoin (mint + state + roles; SSS-2 also inits transfer hook PDA). Requires keypair for authority. Config supports `preset: "SSS_1" | "SSS_2"` or custom `extensions`. When `enableTransferHook` is true, the program enforces that the transfer hook program is the official SSS-2 hook (see `SSS_HOOK_PROGRAM_ID` in SDK constants).
 - `SolanaStablecoin.load(program, mint)` — Load by mint. Use `getProgram(provider)` to build `program`.
+- `SolanaStablecoin.loadFromConnection(connection, mint, signer?)` — Convenience: load by mint using only a connection. Uses `signer` if provided, otherwise reads keypair from `KEYPAIR_PATH` env (default `~/.config/solana/id.json`).
 
 ### State and View
 
@@ -97,4 +108,4 @@ From `@stbr/sss-token`:
 
 ## Types
 
-- `CreateStablecoinParams`, `StablecoinState`, `MintParams`, `BurnParams`, `UpdateRolesParams`, `UpdateMinterParams`, `RoleFlags`, `Presets`.
+- `CreateStablecoinParams`, `InitializeParams`, `StablecoinState`, `MintParams`, `BurnParams`, `UpdateRolesParams`, `UpdateMinterParams`, `RoleFlags`, `RoleName`, `Presets`, `PresetName`, `PresetConfig`, `PRESET_CONFIGS`, `StablecoinExtensions`, `StablecoinAmount`, `toStablecoinAmount`.

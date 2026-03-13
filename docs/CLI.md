@@ -14,7 +14,7 @@ Admin CLI for Solana Stablecoin Standard. Run via `pnpm cli` or `node packages/c
 
 ### init
 
-Initialize a new stablecoin. Creates mint, stablecoin PDA, and grants all roles to the authority.
+Initialize a new stablecoin. Creates mint, stablecoin PDA, and grants all roles to the authority. **Uses SDK** (`SolanaStablecoin.create` with preset or custom config).
 
 ```
 pnpm cli init -p sss-1 -n "My USD" -s MUSD --uri "https://example.com"
@@ -34,7 +34,7 @@ pnpm cli init -p sss-2 -n "Compliant USD" -s cUSD --uri "" --decimals 6
 
 ### mint
 
-Mint tokens to recipient. Requires minter role and quota.
+Mint tokens to recipient. Requires minter role and quota. **Uses SDK.**
 
 ```
 pnpm cli -m <MINT> mint <RECIPIENT_PUBKEY> <AMOUNT>
@@ -45,7 +45,7 @@ pnpm cli -m 9zsXSvAxz1opCQvwgeXswGnMbG4xV8dWmdT1emAFy9nY mint <RECIPIENT> 100000
 
 ### burn
 
-Burn tokens from signer's token account. Requires burner role.
+Burn tokens from signer's token account. Requires burner role. **Uses SDK.**
 
 ```
 pnpm cli -m <MINT> burn <AMOUNT>
@@ -56,7 +56,7 @@ pnpm cli -m <MINT> burn 500000
 
 ### freeze
 
-Freeze a token account (owner's ATA). Requires pauser or freezer role.
+Freeze a token account (owner's ATA). Requires pauser or freezer role. **Uses SDK.**
 
 ```
 pnpm cli -m <MINT> freeze <OWNER_PUBKEY>
@@ -66,7 +66,7 @@ pnpm cli -m <MINT> freeze <OWNER_PUBKEY>
 
 ### thaw
 
-Thaw a token account. Requires pauser or freezer role.
+Thaw a token account. Requires pauser or freezer role. **Uses SDK.**
 
 ```
 pnpm cli -m <MINT> thaw <OWNER_PUBKEY>
@@ -76,7 +76,7 @@ pnpm cli -m <MINT> thaw <OWNER_PUBKEY>
 
 ### pause
 
-Pause the stablecoin. Mint and burn are blocked. Requires pauser role.
+Pause the stablecoin. Mint and burn are blocked. Requires pauser role. **Uses SDK.**
 
 ```
 pnpm cli -m <MINT> pause
@@ -86,7 +86,7 @@ pnpm cli -m <MINT> pause
 
 ### unpause
 
-Unpause the stablecoin. Requires pauser role.
+Unpause the stablecoin. Requires pauser role. **Uses SDK.**
 
 ```
 pnpm cli -m <MINT> unpause
@@ -147,7 +147,7 @@ pnpm cli -m <MINT> supply-cap get
 
 ### blacklist
 
-Blacklist management (SSS-2 only). Requires blacklister role.
+Blacklist management (SSS-2 only). Requires blacklister role. **Uses SDK.**
 
 **add &lt;address&gt;**
 
@@ -173,7 +173,7 @@ pnpm cli -m <MINT> blacklist remove <ADDRESS>
 
 ### seize
 
-Seize full balance from a token account to a destination. SSS-2 only. Requires seizer role.
+Seize full balance from a token account to a destination. SSS-2 only. Requires seizer role. **Uses SDK.**
 
 ```
 pnpm cli -m <MINT> seize <SOURCE_TOKEN_ACCOUNT> --to <DESTINATION_TOKEN_ACCOUNT>
@@ -260,7 +260,7 @@ pnpm cli -m <MINT> holders --min-balance 1000
 
 ### audit-log
 
-Fetch audit log from backend. Requires `BACKEND_URL`.
+Fetch audit log from backend. **Calls backend** when `BACKEND_URL` is set; requires backend to be running.
 
 ```
 BACKEND_URL=http://localhost:3000 pnpm cli -m <MINT> audit-log

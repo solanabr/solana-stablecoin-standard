@@ -1,42 +1,107 @@
-# Final Audit Report
+# Security Audit Report
 
 ## Summary
 
-Based on comprehensive analysis of the solana-stablecoin-standard program (sss-1), all 22 Rust source files totaling approximately 1,500+ lines of code have been reviewed. The program implements an Anchor-based SPL Token-2022 stablecoin with role-based access control and optional SSS-2 compliance features.
+The sss-1 Solana stablecoin program is a well-designed Anchor-based system implementing role-based access control (RBAC) for Token-2022 minting, burning, and compliance operations. The program demonstrates strong security practices with proper PDA validation, arithmetic safety, and CPI protections. All critical issues identified in previous audits have been resolved. Two minor non-critical issues were identified regarding PDA bump storage.
 
 ---
 
-## Analysis Summary
+## Findings
 
-The following components were analyzed:
+### Low (3)
 
-- **Core structures:** 5 state account types with proper Anchor constraints
-- **11 instruction handlers:** initialize, mint, burn, freeze/thaw, pause/unpause, role management, authority transfer, supply cap, and compliance operations (blacklist, seize)
-- **Access control:** Role-based permissions enforced across all user-facing operations
-- **State management:** PDA validation, initialization patterns, and account constraints
+#### 1. Incorrect PDA bump stored in update_roles for newly created role accounts
+
+**Location:** `programs/sss-1/src/instructions/update_roles.rs:43-48`
+
+**Description:**
+
+The update_roles instruction creates role accounts via init_if_needed but stores an incorrect bump value (0 on first creation). The instruction does not receive ctx.bumps and therefore cannot access the correct PDA bump. While the bump field is never used for signing or validation (Anchor handles PDA verification internally), this creates incorrect on-chain state where the stored bump does not match the actual PDA.
+
+**Recommendation:**
+
+Pass the context bumps to the update_roles method and store the correct bump value:
+
+```rust
+// In lib.rs:
+pub fn update_roles(ctx: Context<UpdateRoles>, roles: RoleFlags) -> Result<()> {
+    ctx.accounts.update_roles(roles, &ctx.bumps)
+}
+
+// In update_roles.rs:
+pub fn update_roles(&mut self, roles: RoleFlags, bumps: &UpdateRolesBumps) -> Result<()> {
+    self.role.set_inner(RoleAccount {
+        stablecoin: self.stablecoin.key(),
+        holder: self.holder.key(),
+        roles,
+        bump: bumps.role,  // Use correct bump from context
+    });
+    // ...
+}
+```
 
 ---
 
-## Key Security Observations
+#### 2. Incorrect PDA bump stored in update_supply_cap for newly created supply cap accounts
 
-- **Role-based access control:** Properly enforced through required role accounts before any privileged operation
+**Location:** `programs/sss-1/src/instructions/update_supply_cap.rs:47-50`
 
-- **Account validation:** PDAs properly derived and verified; discriminator checks on manual deserialization
+**Description:**
 
-- **Arithmetic safety:** All addition operations use `checked_add` to prevent overflow
+Similar to update_roles, the update_supply_cap instruction uses init_if_needed on the supply_cap account but stores an incorrect bump value (0 on first creation). The method stores self.supply_cap.bump instead of the correct value from ctx.bumps. While non-functional (bump is never used), this creates inconsistent state.
 
-- **Supply cap validation:** Comprehensive validation with owner check, discriminator verification, and proper data length checks
+**Recommendation:**
 
-- **Token program integration:** Proper use of Token-2022 extensions; CPI redirects prevented with address constraints
+Pass context bumps and store the correct value:
 
-- **Design patterns:** Idempotent role updates, quota-only-increases enforcement, authority handoff without automatic role grant
+```rust
+// In lib.rs:
+pub fn update_supply_cap(ctx: Context<UpdateSupplyCap>, cap: u64) -> Result<()> {
+    ctx.accounts.update_supply_cap(cap, &ctx.bumps)
+}
+
+// In update_supply_cap.rs:
+pub fn update_supply_cap(&mut self, cap: u64, bumps: &UpdateSupplyCapBumps) -> Result<()> {
+    self.supply_cap.set_inner(SupplyCap {
+        cap: effective_cap,
+        bump: bumps.supply_cap,  // Use correct bump
+    });
+    // ...
+}
+```
 
 ---
 
-## Conclusion
+#### 3. Supply cap is cumulative and does not account for burned tokens
 
-The program exhibits strong defensive design with proper separation of concerns between minting, burning, compliance, and administrative operations.
+**Location:** `programs/sss-1/src/instructions/mint.rs:113-115`
+
+**Description:**
+
+The supply cap validation in mint.rs enforces total_minted against the cap, but does not account for total_burned. This means the supply cap represents the maximum cumulative amount minted, not the maximum circulating supply. For example, if cap=1000 and total_minted=1000 but total_burned=500, further minting is blocked even though only 500 tokens are in circulation. This appears to be intentional design (to prevent unbounded minting with burns), but it is not explicitly documented as a feature.
+
+**Recommendation:**
+
+Clarify this behavior in documentation. If the intent is to cap circulating supply rather than cumulative mints, consider tracking supply as (total_minted - total_burned) instead. If cumulative cap is desired (current behavior), document explicitly: 'Supply cap represents maximum cumulative minted amount and is not affected by burn operations.'
 
 ---
+
+### Informational (1)
+
+#### 1. Decimals validation uses semantically incorrect error code
+
+**Location:** `programs/sss-1/src/instructions/initialize_stablecoin.rs:78`
+
+**Description:**
+
+In initialize_stablecoin.rs line 78, the decimals validation uses StablecoinError::InvalidRoleConfig when checking if decimals <= 18. Using InvalidRoleConfig for a decimals validation is semantically odd, as this error code is intended for role configuration issues. While this does not affect functionality, it may cause confusion during error handling.
+
+**Recommendation:**
+
+Create a dedicated error variant for invalid decimals or use a more appropriate existing error. If no dedicated error is needed, at minimum document why InvalidRoleConfig is used for this check.
+
+---
+
+*This report is generated by an AI-powered security auditor. While every effort has been made to ensure accuracy, human review is recommended to validate findings and recommendations.*
 
 *AI Audits by Exo Technologies — https://ai-audits.exotechnologies.xyz*
