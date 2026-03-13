@@ -1,0 +1,36 @@
+{
+  "name": "@stbr/sss-backend",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard - Backend Services",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.10",
+    "@solana/web3.js": "^1.98.0",
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "winston": "^3.14.0",
+    "node-cron": "^3.0.3",
+    "axios": "^1.7.0",
+    "zod": "^3.24.1",
+    "dotenv": "^16.4.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^22.10.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

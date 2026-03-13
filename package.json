@@ -1,0 +1,31 @@
+{
+  "name": "solana-stablecoin-standard",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "sdk/core",
+    "backend"
+  ],
+  "scripts": {
+    "build": "yarn workspace @stbr/sss-token build",
+    "test": "anchor test",
+    "test:sdk": "yarn workspace @stbr/sss-token test",
+    "lint": "eslint . --ext .ts",
+    "clean": "yarn workspaces foreach run clean",
+    "example:sss1": "ts-node -p tsconfig.json examples/sss-1-lifecycle.ts",
+    "example:sss2": "ts-node -p tsconfig.json examples/sss-2-compliance.ts",
+    "example:custom": "ts-node -p tsconfig.json examples/custom-config.ts"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.10",
+    "@solana/web3.js": "^1.98.0",
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
+    "chai": "^4.5.0",
+    "mocha": "^10.8.2",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

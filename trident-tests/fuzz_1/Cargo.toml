@@ -1,0 +1,13 @@
+[package]
+name = "fuzz-1"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+trident-fuzz = "0.8.0"
+sss-token = { path = "../../programs/sss-token", features = ["no-entrypoint"] }
+anchor-lang = "0.31.1"
+
+[[bin]]
+name = "fuzz_1"
+path = "fuzz_1.rs"

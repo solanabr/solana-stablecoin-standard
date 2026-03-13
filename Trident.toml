@@ -1,0 +1,5 @@
+[fuzz]
+fuzzing_with_stats = true
+
+[test]
+validator_startup_timeout = 15000

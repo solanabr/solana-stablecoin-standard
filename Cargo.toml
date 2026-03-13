@@ -1,0 +1,22 @@
+[workspace]
+members = [
+    "programs/sss-token",
+    "programs/sss-transfer-hook",
+    "modules/sss-privacy",
+    "modules/sss-oracle",
+]
+exclude = ["trident-tests/fuzz_0", "trident-tests/fuzz_1"]
+resolver = "2"
+
+[workspace.dependencies]
+blake3 = "=1.5.5"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
+incremental = false
+codegen-units = 1

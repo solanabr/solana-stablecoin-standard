@@ -1,0 +1,20 @@
+[package]
+name = "sss-privacy"
+version = "0.1.0"
+description = "SSS-3 Privacy Module - Confidential Transfers with Scoped Allowlists (Experimental)"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_privacy"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = "0.31.1"
