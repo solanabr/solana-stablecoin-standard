@@ -8,7 +8,10 @@ import {
   getEventAuthorityPda,
 } from "../helpers/pda";
 import {
+  createTransferCheckedInstruction,
   createAssociatedTokenAccountIdempotentInstruction,
+  getAccount,
+  getMint,
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -71,6 +74,12 @@ export function registerTokenOperations(ctx: SssContext): void {
 
     it("allows minter to mint tokens", async () => {
       const amount = 100_000;
+      const beforeMint = await getMint(
+        provider.connection,
+        mintPda,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
       await program.methods
         .mintTokens(new anchor.BN(amount))
         .accountsStrict({
@@ -89,6 +98,20 @@ export function registerTokenOperations(ctx: SssContext): void {
         minterAccountPda,
       );
       expect(minterAccount.minted.toNumber()).to.equal(amount);
+      const adminAccount = await getAccount(
+        provider.connection,
+        adminAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      const afterMint = await getMint(
+        provider.connection,
+        mintPda,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      expect(Number(adminAccount.amount)).to.be.greaterThanOrEqual(amount);
+      expect(Number(afterMint.supply)).to.equal(Number(beforeMint.supply) + amount);
     });
 
     it("rejects mint when non-minter tries to mint", async () => {
@@ -198,6 +221,18 @@ export function registerTokenOperations(ctx: SssContext): void {
         .rpc();
 
       const burnAmount = 10_000;
+      const beforeMint = await getMint(
+        provider.connection,
+        mintPda,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      const beforeAccount = await getAccount(
+        provider.connection,
+        adminAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
       await program.methods
         .burnTokens(new anchor.BN(burnAmount))
         .accountsStrict({
@@ -210,7 +245,22 @@ export function registerTokenOperations(ctx: SssContext): void {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
-      expect(true).to.be.true;
+      const afterMint = await getMint(
+        provider.connection,
+        mintPda,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      const afterAccount = await getAccount(
+        provider.connection,
+        adminAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      expect(Number(afterMint.supply)).to.equal(Number(beforeMint.supply) - burnAmount);
+      expect(Number(afterAccount.amount)).to.equal(
+        Number(beforeAccount.amount) - burnAmount,
+      );
     });
 
     it("rejects burn when non-burner tries to burn", async () => {
@@ -282,7 +332,13 @@ export function registerTokenOperations(ctx: SssContext): void {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
-      expect(true).to.be.true;
+      const frozen = await getAccount(
+        provider.connection,
+        otherUserAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      expect(frozen.isFrozen).to.equal(true);
     });
 
     it("rejects freeze when non-master tries to freeze", async () => {
@@ -354,7 +410,13 @@ export function registerTokenOperations(ctx: SssContext): void {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
-      expect(true).to.be.true;
+      const thawed = await getAccount(
+        provider.connection,
+        otherUserAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      expect(thawed.isFrozen).to.equal(false);
     });
 
     it("rejects thaw when non-master tries to thaw", async () => {
@@ -391,6 +453,101 @@ export function registerTokenOperations(ctx: SssContext): void {
           /AccountNotInitialized|constraint|invalid account/,
         );
       }
+    });
+  });
+
+  describe("transfer behavior with freeze/thaw", () => {
+    let mintPda: anchor.web3.PublicKey;
+    let senderAta: anchor.web3.PublicKey;
+    let receiverAta: anchor.web3.PublicKey;
+    let freezeAuthorityPda: anchor.web3.PublicKey;
+    let masterRolePda: anchor.web3.PublicKey;
+
+    before(async () => {
+      mintPda = ctx.mintTs1Pk;
+      senderAta = getAssociatedTokenAddressSync(
+        mintPda,
+        admin.publicKey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
+      );
+      receiverAta = getAssociatedTokenAddressSync(
+        mintPda,
+        otherUser.publicKey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
+      );
+      [freezeAuthorityPda] = getFreezeAuthorityPda(programId, mintPda);
+      [masterRolePda] = getMasterRolePda(programId, mintPda, admin.publicKey);
+    });
+
+    it("blocks transfer while frozen, then allows after thaw", async () => {
+      await program.methods
+        .freezeAccount()
+        .accountsStrict({
+          master: admin.publicKey,
+          mint: mintPda,
+          ataToFreeze: senderAta,
+          masterRole: masterRolePda,
+          freezeAuthority: freezeAuthorityPda,
+          eventAuthority: getEventAuthorityPda(programId),
+          program: program.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc();
+
+      const mintAccount = await getMint(
+        provider.connection,
+        mintPda,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      const transferIx = createTransferCheckedInstruction(
+        senderAta,
+        mintPda,
+        receiverAta,
+        admin.publicKey,
+        1,
+        mintAccount.decimals,
+        [],
+        TOKEN_2022_PROGRAM_ID,
+      );
+      try {
+        await provider.sendAndConfirm(new anchor.web3.Transaction().add(transferIx));
+        expect.fail("Expected transfer to fail while sender ATA is frozen");
+      } catch (err: unknown) {
+        const msg = (err as { message?: string })?.message ?? String(err);
+        expect(msg).to.match(/frozen|account state|custom program error/i);
+      }
+
+      await program.methods
+        .thawAccount()
+        .accountsStrict({
+          master: admin.publicKey,
+          mint: mintPda,
+          ataToThaw: senderAta,
+          masterRole: masterRolePda,
+          freezeAuthority: freezeAuthorityPda,
+          eventAuthority: getEventAuthorityPda(programId),
+          program: program.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc();
+
+      const beforeReceiver = await getAccount(
+        provider.connection,
+        receiverAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      await provider.sendAndConfirm(new anchor.web3.Transaction().add(transferIx));
+      const afterReceiver = await getAccount(
+        provider.connection,
+        receiverAta,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      expect(Number(afterReceiver.amount)).to.equal(Number(beforeReceiver.amount) + 1);
     });
   });
 }

@@ -1,0 +1,10 @@
+# SSS-2 preset with default_account_frozen = false
+# Same as --preset sss-2 but new accounts are not frozen by default
+name = "SSS-2 Stablecoin"
+symbol = "SSS2"
+uri = "https://example.com/metadata.json"
+decimals = 6
+initial_allowance = 1_000_000_000_000
+enable_permanent_delegate = true
+enable_transfer_hook = true
+default_account_frozen = false

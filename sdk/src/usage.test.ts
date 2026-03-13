@@ -58,7 +58,10 @@ vi.mock("@coral-xyz/anchor", () => {
         initialize: chain,
         mintTokens: chain,
         addToBlacklist: chain,
+        removeFromBlacklist: chain,
         seize: chain,
+        pause: chain,
+        unpause: chain,
       };
       constructor(_idl: unknown, provider: { connection: unknown; publicKey?: PublicKey }) {
         this.provider = provider as MockProgram["provider"];
@@ -77,7 +80,7 @@ vi.mock("@coral-xyz/anchor", () => {
 });
 
 // Import after mocks so SDK uses mocked dependencies
-import { SolanaStablecoin, Presets } from "@stbr/sss-token";
+import { SolanaStablecoin, Presets, PRESET_CONFIGS } from "@stbr/sss-token";
 
 describe("SDK usage (import @stbr/sss-token)", () => {
   let connection: Connection;
@@ -158,6 +161,67 @@ describe("SDK usage (import @stbr/sss-token)", () => {
     const supply = await stable.getTotalSupply();
 
     expect(supply).toBe(BigInt(1_000_000));
+  });
+
+  it("supports SSS-1 preset and blocks compliance helpers", async () => {
+    mockConfigFetch.mockResolvedValueOnce({
+      bump: 1,
+      standard: { sss1: {} },
+      name: "SSS-1 Stablecoin",
+      symbol: "SSS1",
+      uri: "https://example.com/metadata.json",
+      decimals: 6,
+      enablePermanentDelegate: false,
+      enableTransferHook: false,
+      defaultAccountFrozen: false,
+    });
+
+    const stable = await SolanaStablecoin.create(connection, {
+      preset: Presets.SSS_1,
+      authority: adminKeypair,
+    });
+
+    expect(stable.config.standard).toEqual({ sss1: {} });
+    await expect(
+      stable.compliance.blacklistAdd(address, "not allowed on sss1"),
+    ).rejects.toThrow(/requires SSS-2 compliance features/i);
+  });
+
+  it("supports blacklistRemove and pause/unpause SDK helpers", async () => {
+    const stable = await SolanaStablecoin.create(connection, {
+      preset: Presets.SSS_2,
+      authority: adminKeypair,
+    });
+    await expect(stable.compliance.blacklistRemove(address)).resolves.toBeTypeOf(
+      "string",
+    );
+    await expect(stable.pause()).resolves.toBeTypeOf("string");
+    await expect(stable.unpause()).resolves.toBeTypeOf("string");
+  });
+
+  it("keeps SDK presets aligned with expected default flags", () => {
+    expect(PRESET_CONFIGS[Presets.SSS_1]).toMatchObject({
+      standard: "sss1",
+      name: "SSS-1 Stablecoin",
+      symbol: "SSS1",
+      decimals: 6,
+      extensions: {
+        permanentDelegate: false,
+        transferHook: false,
+        defaultAccountFrozen: false,
+      },
+    });
+    expect(PRESET_CONFIGS[Presets.SSS_2]).toMatchObject({
+      standard: "sss2",
+      name: "SSS-2 Stablecoin",
+      symbol: "SSS2",
+      decimals: 6,
+      extensions: {
+        permanentDelegate: true,
+        transferHook: true,
+        defaultAccountFrozen: true,
+      },
+    });
   });
 
   it("exports Presets.SSS_1 and Presets.SSS_2", () => {

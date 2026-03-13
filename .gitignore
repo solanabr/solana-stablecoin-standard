@@ -9,3 +9,4 @@ test-ledger
 dist
 .env
 .cursor
+.fuzz-artifacts

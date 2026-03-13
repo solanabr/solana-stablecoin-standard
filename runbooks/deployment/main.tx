@@ -17,3 +17,10 @@ action "deploy_sss" "svm::deploy_program" {
     // This will make deployments instantaneous, but is deviating from how the deployments will take place on devnet/mainnet.
     // instant_surfnet_deployment = true
 }
+
+action "deploy_transfer_hook" "svm::deploy_program" {
+    description = "Deploy transfer hook program"
+    program = svm::get_program_from_anchor_project("transfer_hook")
+    authority = signer.authority
+    payer = signer.payer
+}

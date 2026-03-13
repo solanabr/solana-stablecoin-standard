@@ -424,7 +424,70 @@ default_account_frozen = false
         .assert()
         .success()
         .stdout(contains("Custom Stablecoin"))
-        .stdout(contains("CUST"));
+        .stdout(contains("CUST"))
+        .stdout(contains("Decimals:              6"))
+        .stdout(contains("Permanent delegate:    false"))
+        .stdout(contains("Transfer hook:         false"))
+        .stdout(contains("Default frozen:        false"));
+}
+
+#[test]
+fn cli_preset_flags_match_expected_defaults() {
+    let rpc = rpc_url();
+    let (_admin_dir, admin_kp, admin_path) = write_keypair_to_temp();
+    airdrop(&admin_kp.pubkey(), 2_000_000_000);
+
+    // SSS-1 preset defaults
+    let (_mint1_dir, mint1_kp, mint1_path) = write_keypair_to_temp();
+    let mint1_pubkey = mint1_kp.pubkey().to_string();
+    sss_token(
+        &rpc,
+        &admin_path,
+        &mint1_pubkey,
+        &[
+            "init",
+            "--preset",
+            "sss-1",
+            "--mint-keypair",
+            mint1_path.to_str().unwrap(),
+        ],
+    )
+    .assert()
+    .success();
+    sss_token(&rpc, &admin_path, &mint1_pubkey, &["status"])
+        .assert()
+        .success()
+        .stdout(contains("Standard:              SSS-1"))
+        .stdout(contains("Symbol:                SSS1"))
+        .stdout(contains("Permanent delegate:    false"))
+        .stdout(contains("Transfer hook:         false"))
+        .stdout(contains("Default frozen:        false"));
+
+    // SSS-2 preset defaults
+    let (_mint2_dir, mint2_kp, mint2_path) = write_keypair_to_temp();
+    let mint2_pubkey = mint2_kp.pubkey().to_string();
+    sss_token(
+        &rpc,
+        &admin_path,
+        &mint2_pubkey,
+        &[
+            "init",
+            "--preset",
+            "sss-2",
+            "--mint-keypair",
+            mint2_path.to_str().unwrap(),
+        ],
+    )
+    .assert()
+    .success();
+    sss_token(&rpc, &admin_path, &mint2_pubkey, &["status"])
+        .assert()
+        .success()
+        .stdout(contains("Standard:              SSS-2"))
+        .stdout(contains("Symbol:                SSS2"))
+        .stdout(contains("Permanent delegate:    true"))
+        .stdout(contains("Transfer hook:         true"))
+        .stdout(contains("Default frozen:        true"));
 }
 
 #[test]

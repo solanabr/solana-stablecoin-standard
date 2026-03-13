@@ -1179,6 +1179,18 @@
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
+          "name": "extra_account_meta_list"
+        },
+        {
+          "name": "sss_program"
+        },
+        {
+          "name": "source_owner_blacklist_entry"
+        },
+        {
+          "name": "destination_owner_blacklist_entry"
+        },
+        {
           "name": "event_authority",
           "pda": {
             "seeds": [
@@ -2288,7 +2300,7 @@
       "name": "MinterAccount",
       "docs": [
         "Per-user minter state with quota. Program checks minted + amount <= allowance on mint.",
-        "Seeds: [MINT_MINTER_SEED, mint, user]"
+        "Seeds: [ROLE_SEED, mint, MINTER_ROLE, user]"
       ],
       "type": {
         "kind": "struct",
@@ -2304,6 +2316,13 @@
           {
             "name": "minted",
             "type": "u64"
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "Mint this minter account is for. Enables RPC filtering by mint when listing minters."
+            ],
+            "type": "pubkey"
           }
         ]
       }
