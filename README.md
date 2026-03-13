@@ -314,6 +314,10 @@ sss --url https://api.devnet.solana.com supply --mint 9MmnDN61FaYd7SRzsnHmwEMj1j
 sss --url https://api.devnet.solana.com dashboard --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
 ```
 
+## Institutional Readiness
+
+SSS is designed for regulated stablecoin issuers operating under compliance frameworks such as the GENIUS Act. The architecture supports Squads v4 multisig governance, Fireblocks and Anchorage custody integration, real-time OFAC blacklist enforcement at the protocol level via the transfer hook, immutable on-chain reserve attestations with supply derived from chain state, and a defense-in-depth backend with HMAC envelope signing, SSRF protection, exponential retry with dead letter queues, and startup-validated API authentication. The SDK accepts custom program IDs for institutional deployments and performs all token arithmetic in string-based decimal to eliminate floating point precision loss. Full security audit reports from SolShield AI, FuzzingLabs Sol-azy, and OtterSec Solana Verify are available upon request.
+
 ## Production Authority Governance (Roadmap)
 
 The current implementation uses a single keypair as `master_authority` for streamlined devnet testing. In production deployments, this authority should be replaced with a Squads v4 multisig (program `SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf`). The stablecoin program itself requires no modification. The `master_authority` field in `StablecoinConfig` accepts any valid public key, including a multisig PDA. The recommended quorum for regulated issuers is 2-of-3: an operations key, a legal/compliance key, and a cold storage recovery key. High-impact operations such as `seize` and `update_roles` should additionally be governed by a 24-hour timelock at the Squads proposal level, providing a detection window before irreversible actions execute. This separation of concerns, where the stablecoin program trusts whoever holds authority and the multisig layer governs how that authority is exercised, mirrors the operational model used by Circle for USDC and aligns with the auditability requirements implicit in the GENIUS Act.
