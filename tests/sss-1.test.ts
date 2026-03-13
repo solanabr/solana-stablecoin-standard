@@ -103,6 +103,7 @@ describe("sss-1: Minimal Stablecoin", () => {
         pauser: authority.publicKey,
         blacklister: null,
         seizer: null,
+        supplyCap: null,
       })
       .accounts({
         authority: authority.publicKey,
@@ -675,6 +676,7 @@ describe("sss-1: Minimal Stablecoin", () => {
           pauser: authority.publicKey,
           blacklister: null,
           seizer: null,
+          supplyCap: null,
         })
         .accounts({
           authority: authority.publicKey,
@@ -714,6 +716,7 @@ describe("sss-1: Minimal Stablecoin", () => {
           pauser: authority.publicKey,
           blacklister: null,
           seizer: null,
+          supplyCap: null,
         })
         .accounts({
           authority: authority.publicKey,
@@ -845,6 +848,153 @@ describe("sss-1: Minimal Stablecoin", () => {
           roleManager: rolesPda,
         })
         .rpc();
+    }
+  });
+
+  // ── Supply Cap Tests ────────────────────────────────────────────────
+
+  it("mints exactly at supply cap", async () => {
+    const capMint = Keypair.generate();
+    const [capConfigPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("config"), capMint.publicKey.toBuffer()],
+      program.programId
+    );
+    const [capRolesPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("roles"), capConfigPda.toBuffer()],
+      program.programId
+    );
+
+    // Init with 200 token (200_000_000 base units) supply cap
+    await program.methods
+      .initialize({
+        name: "Capped Token",
+        symbol: "CAP",
+        uri: "",
+        decimals: 6,
+        enablePermanentDelegate: false,
+        enableTransferHook: false,
+        enableConfidentialTransfers: false,
+        defaultAccountFrozen: false,
+        pauser: authority.publicKey,
+        blacklister: null,
+        seizer: null,
+        supplyCap: new BN(200_000_000),
+      })
+      .accounts({
+        authority: authority.publicKey,
+        config: capConfigPda,
+        roleManager: capRolesPda,
+        mint: capMint.publicKey,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      })
+      .signers([capMint])
+      .rpc({ commitment: "confirmed" });
+
+    // Add minter with exactly cap quota
+    await program.methods
+      .updateMinter(authority.publicKey, new BN(200_000_000))
+      .accounts({
+        authority: authority.publicKey,
+        config: capConfigPda,
+        roleManager: capRolesPda,
+      })
+      .rpc({ commitment: "confirmed" });
+
+    // Create ATA
+    const capRecipientAta = await ensureAta(
+      provider, capMint.publicKey, userKeypair.publicKey, authority
+    );
+
+    // Mint exactly at cap — should succeed
+    await program.methods
+      .mintTokens(new BN(200_000_000))
+      .accounts({
+        minter: authority.publicKey,
+        config: capConfigPda,
+        roleManager: capRolesPda,
+        mint: capMint.publicKey,
+        recipientTokenAccount: capRecipientAta,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc({ commitment: "confirmed" });
+
+    const account = await getAccount(
+      provider.connection, capRecipientAta, "confirmed", TOKEN_2022_PROGRAM_ID
+    );
+    assert.equal(Number(account.amount), 200_000_000);
+  });
+
+  it("rejects mint exceeding supply cap", async () => {
+    const capMint = Keypair.generate();
+    const [capConfigPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("config"), capMint.publicKey.toBuffer()],
+      program.programId
+    );
+    const [capRolesPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("roles"), capConfigPda.toBuffer()],
+      program.programId
+    );
+
+    // Init with 100 token supply cap
+    await program.methods
+      .initialize({
+        name: "Small Cap",
+        symbol: "SCAP",
+        uri: "",
+        decimals: 6,
+        enablePermanentDelegate: false,
+        enableTransferHook: false,
+        enableConfidentialTransfers: false,
+        defaultAccountFrozen: false,
+        pauser: authority.publicKey,
+        blacklister: null,
+        seizer: null,
+        supplyCap: new BN(100_000_000),
+      })
+      .accounts({
+        authority: authority.publicKey,
+        config: capConfigPda,
+        roleManager: capRolesPda,
+        mint: capMint.publicKey,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      })
+      .signers([capMint])
+      .rpc({ commitment: "confirmed" });
+
+    // Add minter with large quota (exceeds cap)
+    await program.methods
+      .updateMinter(authority.publicKey, new BN(500_000_000))
+      .accounts({
+        authority: authority.publicKey,
+        config: capConfigPda,
+        roleManager: capRolesPda,
+      })
+      .rpc({ commitment: "confirmed" });
+
+    const capRecipientAta = await ensureAta(
+      provider, capMint.publicKey, userKeypair.publicKey, authority
+    );
+
+    // Try to mint over cap — should fail
+    try {
+      await program.methods
+        .mintTokens(new BN(100_000_001)) // 1 base unit over cap
+        .accounts({
+          minter: authority.publicKey,
+          config: capConfigPda,
+          roleManager: capRolesPda,
+          mint: capMint.publicKey,
+          recipientTokenAccount: capRecipientAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc({ commitment: "confirmed" });
+      assert.fail("Should have thrown SupplyCapExceeded");
+    } catch (err: any) {
+      assert.include(err.toString(), "SupplyCapExceeded");
     }
   });
 });

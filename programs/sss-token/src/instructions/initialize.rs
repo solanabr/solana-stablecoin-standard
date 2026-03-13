@@ -34,6 +34,9 @@ pub struct InitializeParams {
     pub blacklister: Option<Pubkey>,
     /// SSS-2: Address that can seize tokens
     pub seizer: Option<Pubkey>,
+    /// Optional hard supply cap. When set, mint_tokens will reject
+    /// mints that would push total_minted above this ceiling.
+    pub supply_cap: Option<u64>,
 }
 
 /// Accounts for the initialize instruction.
@@ -347,6 +350,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     config.enable_transfer_hook = params.enable_transfer_hook;
     config.enable_confidential_transfers = params.enable_confidential_transfers;
     config.default_account_frozen = params.default_account_frozen;
+    config.supply_cap = params.supply_cap;
     config.bump = ctx.bumps.config;
 
     // ── Step 9: Populate role manager ───────────────────────────────

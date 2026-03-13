@@ -44,6 +44,11 @@ pub struct StablecoinConfig {
     /// SSS-2: New token accounts start frozen (requires explicit thaw)
     pub default_account_frozen: bool,
 
+    /// Optional hard supply ceiling. When set, total_minted can never
+    /// exceed this value. Prevents compromised minter keys from destroying
+    /// the peg by minting unlimited tokens.
+    pub supply_cap: Option<u64>,
+
     /// PDA bump seed
     pub bump: u8,
 }
@@ -66,6 +71,7 @@ impl StablecoinConfig {
         1 +     // enable_transfer_hook
         1 +     // enable_confidential_transfers
         1 +     // default_account_frozen
+        1 + 8 + // supply_cap (Option<u64>: 1 byte tag + 8 bytes value)
         1 // bump
     }
 

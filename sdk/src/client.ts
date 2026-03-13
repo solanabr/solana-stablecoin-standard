@@ -191,6 +191,7 @@ export class SolanaStablecoin {
       pauser: params.roles?.pauser ?? wallet.publicKey,
       blacklister: params.roles?.blacklister ?? null,
       seizer: params.roles?.seizer ?? null,
+      supplyCap: params.supplyCap ?? null,
     }, mintKeypair);
 
     const tx = new Transaction().add(ix);
@@ -680,6 +681,7 @@ export class SolanaStablecoin {
       pauser: PublicKey;
       blacklister: PublicKey | null;
       seizer: PublicKey | null;
+      supplyCap: BN | null;
     },
     mintKeypair: Keypair,
   ): TransactionInstruction {

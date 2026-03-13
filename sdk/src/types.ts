@@ -20,6 +20,7 @@ export interface StablecoinConfig {
   enableTransferHook: boolean;
   enableConfidentialTransfers: boolean;
   defaultAccountFrozen: boolean;
+  supplyCap: bigint | null;
   bump: number;
 }
 
@@ -74,6 +75,8 @@ export interface CreateParams {
   roles?: InitialRoles;
   /** Optional: provide your own mint keypair (for deterministic testing) */
   mintKeypair?: Keypair;
+  /** Optional hard supply cap — total mintable tokens. Prevents over-minting. */
+  supplyCap?: bigint;
 }
 
 /** Token-2022 extension configuration */

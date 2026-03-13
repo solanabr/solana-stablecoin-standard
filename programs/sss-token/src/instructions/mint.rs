@@ -83,11 +83,18 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
         .checked_add(amount)
         .ok_or(SssError::ArithmeticOverflow)?;
 
-    // Update total minted
-    config.total_minted = config
+    // Check supply cap (if set)
+    let new_total = config
         .total_minted
         .checked_add(amount)
         .ok_or(SssError::ArithmeticOverflow)?;
+
+    if let Some(cap) = config.supply_cap {
+        require!(new_total <= cap, SssError::SupplyCapExceeded);
+    }
+
+    // Update total minted
+    config.total_minted = new_total;
 
     // CPI: Mint tokens
     let config_key = config.mint;

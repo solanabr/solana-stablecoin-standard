@@ -42,6 +42,9 @@ pub enum SssError {
     #[msg("Maximum number of burners reached")]
     MaxBurnersReached,
 
+    #[msg("Minting would exceed the supply cap")]
+    SupplyCapExceeded,
+
     // ── Feature Gate Errors ───────────────────────────────────────────
     #[msg("Compliance module not enabled: permanent delegate is required")]
     ComplianceNotEnabled,

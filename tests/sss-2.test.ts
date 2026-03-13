@@ -91,6 +91,7 @@ describe("sss-2: Compliant Stablecoin", () => {
         pauser: authority.publicKey,
         blacklister: blacklister.publicKey,
         seizer: seizer.publicKey,
+        supplyCap: null,
       })
       .accounts({
         authority: authority.publicKey,
@@ -378,6 +379,7 @@ describe("sss-2: Compliant Stablecoin", () => {
         pauser: authority.publicKey,
         blacklister: null,
         seizer: null,
+        supplyCap: null,
       })
       .accounts({
         authority: authority.publicKey,
@@ -529,6 +531,7 @@ describe("sss-2: Compliant Stablecoin", () => {
           pauser: authority.publicKey,
           blacklister: blacklister.publicKey,
           seizer: seizer.publicKey,
+          supplyCap: null,
         })
         .accounts({
           authority: authority.publicKey,

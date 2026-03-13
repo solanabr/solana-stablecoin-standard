@@ -51,6 +51,7 @@ describe("sss-3: Private Stablecoin", () => {
         pauser: authority.publicKey,
         blacklister: authority.publicKey,
         seizer: authority.publicKey,
+        supplyCap: null,
       })
       .accounts({
         authority: authority.publicKey,
