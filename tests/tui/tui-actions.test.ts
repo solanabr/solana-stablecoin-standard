@@ -1,136 +1,16 @@
 // @ts-nocheck
 import { Keypair, PublicKey } from "@solana/web3.js";
-
-const DEVNET_MINT = "9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv";
-
-function createWidget(overrides: Record<string, any> = {}) {
-  const widget: Record<string, any> = {
-    children: [],
-    style: {},
-    hidden: false,
-    destroyed: false,
-    content: "",
-    value: "",
-    type: "box",
-    on: jest.fn(),
-    key: jest.fn(),
-    focus: jest.fn(),
-    select: jest.fn(),
-    setLabel: jest.fn(),
-    setContent: jest.fn(function setContent(content: string) {
-      widget.content = content;
-    }),
-    getValue: jest.fn(() => widget.value || ""),
-    render: jest.fn(),
-    append: jest.fn((child: any) => widget.children.push(child)),
-    destroy: jest.fn(() => {
-      widget.destroyed = true;
-    }),
-    display: jest.fn((_text: string, _timeout: number, cb?: () => void) => {
-      cb?.();
-    }),
-    ...overrides,
-  };
-
-  return widget;
-}
-
-function createBlessedMock() {
-  const screen = createWidget({
-    type: "screen",
-    width: 160,
-    height: 50,
-    focused: null,
-    program: {
-      on: jest.fn(),
-      removeListener: jest.fn(),
-    },
-  });
-
-  const makeFactory =
-    (type: string) =>
-    (options: Record<string, any> = {}) =>
-      createWidget({ type, ...options });
-
-  function textarea() {}
-  textarea.prototype = {};
-
-  return {
-    textarea,
-    screen: jest.fn(() => screen),
-    box: jest.fn(makeFactory("box")),
-    list: jest.fn(makeFactory("list")),
-    button: jest.fn(makeFactory("button")),
-    text: jest.fn(makeFactory("text")),
-    message: jest.fn(() => createWidget({ type: "message" })),
-  };
-}
-
-function loadTuiModule() {
-  jest.resetModules();
-  process.env.SSS_TUI_TEST_MODE = "1";
-  jest.doMock("blessed", () => createBlessedMock(), { virtual: true });
-  jest.doMock("blessed-contrib", () => ({}), { virtual: true });
-  return require("../../tui/admin_tui.js");
-}
-
-function createProgramHarness() {
-  const calls: any[] = [];
-  const methods: Record<string, jest.Mock> = {};
-
-  const methodNames = [
-    "mintTokens",
-    "burnTokens",
-    "freezeAccount",
-    "thawAccount",
-    "blacklistAdd",
-    "blacklistRemove",
-    "seize",
-    "pause",
-    "unpause",
-    "attestReserve",
-    "updateRoles",
-    "updateMinter",
-    "transferAuthority",
-  ];
-
-  for (const methodName of methodNames) {
-    methods[methodName] = jest.fn((...args: any[]) => {
-      const record: any = {
-        methodName,
-        args,
-        accounts: null,
-        preInstructions: [],
-        signers: [],
-      };
-      calls.push(record);
-
-      const chain = {
-        accounts: jest.fn((accounts: any) => {
-          record.accounts = accounts;
-          return chain;
-        }),
-        preInstructions: jest.fn((instructions: any[]) => {
-          record.preInstructions = instructions;
-          return chain;
-        }),
-        signers: jest.fn((signers: any[]) => {
-          record.signers = signers;
-          return chain;
-        }),
-        rpc: jest.fn(async () => `${methodName}-signature`),
-      };
-
-      return chain;
-    });
-  }
-
-  return {
-    program: { methods },
-    methods,
-    calls,
-  };
-}
+import {
+  DEVNET_MINT,
+  VALID_ADDRESS,
+  SssErrorCode,
+  SssErrorMessage,
+  createWidget,
+  createBlessedMock,
+  loadTuiModule,
+  createProgramHarness,
+  buildActionDeps,
+} from "./test-helpers";
 
 describe("admin TUI helpers and actions", () => {
   let tui: any;
@@ -532,50 +412,6 @@ describe("admin TUI helpers and actions", () => {
   });
 
   describe("action execution flows", () => {
-    function buildActionDeps() {
-      const wallet = Keypair.generate();
-      const programHarness = createProgramHarness();
-      const showMessage = jest.fn();
-      const confirmAction = jest.fn(
-        (_title: string, _details: string, _danger: string, onConfirm: () => void) => {
-          onConfirm();
-        }
-      );
-      const executeTx = jest.fn(async (_title: string, txFn: () => Promise<any>) => txFn());
-
-      return {
-        wallet,
-        programHarness,
-        showMessage,
-        confirmAction,
-        executeTx,
-        deps: {
-          walletMode: true,
-          wallet,
-          program: programHarness.program,
-          liveData: {
-            config: {
-              symbol: "dUSD",
-              decimals: 6,
-              attestationIndex: 4,
-            },
-          },
-          mint: DEVNET_MINT,
-          token2022ProgramId: Keypair.generate().publicKey,
-          getAssociatedTokenAddressSync: jest.fn(() => Keypair.generate().publicKey),
-          createAssociatedTokenAccountIdempotentInstruction: jest.fn(() => ({
-            kind: "create-ata",
-          })),
-          systemProgram: {
-            programId: new PublicKey("11111111111111111111111111111111"),
-          },
-          showMessage,
-          confirmAction,
-          executeTx,
-        },
-      };
-    }
-
     it("executeActionSubmission blocks all actions when wallet mode is disabled", () => {
       const showMessage = jest.fn();
       const result = tui.executeActionSubmission("mint", [VALID_ADDRESS, "1"], {
@@ -766,6 +602,60 @@ describe("admin TUI helpers and actions", () => {
       expect(result).toBe(true);
       expect(confirmAction).toHaveBeenCalledTimes(1);
       expect(programHarness.methods.pause).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("SSS-2 preset error codes", () => {
+    it("BlacklistNotEnabled error code is 6010 matching the program definition", () => {
+      expect(SssErrorCode.BlacklistNotEnabled).toBe(6010);
+    });
+
+    it("BlacklistNotEnabled message matches the on-chain error string", () => {
+      expect(SssErrorMessage[SssErrorCode.BlacklistNotEnabled]).toBe(
+        "Blacklist feature requires SSS-2 or higher preset"
+      );
+    });
+
+    it("RecipientBlacklisted error code is 6015 for SSS-2 blacklist enforcement", () => {
+      expect(SssErrorCode.RecipientBlacklisted).toBe(6015);
+    });
+
+    it("RecipientBlacklisted message matches the on-chain error string", () => {
+      expect(SssErrorMessage[SssErrorCode.RecipientBlacklisted]).toBe(
+        "Cannot mint to a blacklisted recipient"
+      );
+    });
+
+    it("CannotBlacklistAuthority error code is 6014 for SSS-2 authority protection", () => {
+      expect(SssErrorCode.CannotBlacklistAuthority).toBe(6014);
+    });
+
+    it("CannotBlacklistAuthority message matches the on-chain error string", () => {
+      expect(SssErrorMessage[SssErrorCode.CannotBlacklistAuthority]).toBe(
+        "Cannot blacklist the master authority"
+      );
+    });
+
+    it("TransferHookNotEnabled error code is 6011 for SSS-2 transfer hook gating", () => {
+      expect(SssErrorCode.TransferHookNotEnabled).toBe(6011);
+    });
+
+    it("TransferHookNotEnabled message matches the on-chain error string", () => {
+      expect(SssErrorMessage[SssErrorCode.TransferHookNotEnabled]).toBe(
+        "Transfer hook feature requires SSS-2 or higher preset"
+      );
+    });
+
+    it("all SSS-2 related error codes are contiguous in the 6010-6015 range", () => {
+      const sss2Codes = [
+        SssErrorCode.BlacklistNotEnabled,
+        SssErrorCode.TransferHookNotEnabled,
+        SssErrorCode.ConfidentialTransfersNotEnabled,
+        SssErrorCode.CustomFlagsMissing,
+        SssErrorCode.CannotBlacklistAuthority,
+        SssErrorCode.RecipientBlacklisted,
+      ];
+      expect(sss2Codes).toEqual([6010, 6011, 6012, 6013, 6014, 6015]);
     });
   });
 });

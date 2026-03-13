@@ -55,6 +55,13 @@ export interface SSSClientOptions {
   provider?: AnchorProvider;
 }
 
+function withProgramAddress(idl: unknown, programId: PublicKey): unknown {
+  return {
+    ...(idl as Record<string, unknown>),
+    address: programId.toBase58(),
+  };
+}
+
 export class SSSClient {
   readonly connection: Connection;
   readonly provider: AnchorProvider;
@@ -74,8 +81,14 @@ export class SSSClient {
     this.provider = options?.provider ?? new AnchorProvider(connection, wallet, {
       commitment: "confirmed",
     });
-    this.tokenProgram = new Program(sssTokenIdl as any, this.provider);
-    this.hookProgram = new Program(sssTransferHookIdl as any, this.provider);
+    this.tokenProgram = new Program(
+      withProgramAddress(sssTokenIdl, this.tokenProgramId) as any,
+      this.provider
+    );
+    this.hookProgram = new Program(
+      withProgramAddress(sssTransferHookIdl, this.hookProgramId) as any,
+      this.provider
+    );
   }
 
   // --- PDA Helpers ---
@@ -217,30 +230,20 @@ export class SSSClient {
       this.provider.wallet.publicKey
     );
 
-    // Resolve the blacklist PDA for the recipient owner.
-    // Only pass the PDA if it exists on-chain (i.e. the address is blacklisted).
-    // For Option<Account>, Anchor requires null if the account doesn't exist.
-    let recipientBlacklist: PublicKey | null = null;
-    try {
-      let owner = recipientOwner;
-      if (!owner) {
-        const accountInfo = await this.connection.getAccountInfo(recipientTokenAccount);
-        if (accountInfo && accountInfo.data.length >= 64) {
-          // Token-2022 account layout: first 32 bytes = mint, next 32 = owner
-          owner = new PublicKey(accountInfo.data.subarray(32, 64));
-        }
+    let owner = recipientOwner;
+    if (!owner) {
+      const accountInfo = await this.connection.getAccountInfo(recipientTokenAccount);
+      if (!accountInfo || accountInfo.data.length < 64) {
+        throw new Error(
+          "Recipient token account must exist so the blacklist PDA can be derived."
+        );
       }
-      if (owner) {
-        const [blacklistPda] = this.getBlacklistPda(configPda, owner);
-        // Only pass the PDA if the blacklist entry actually exists on-chain
-        const blAccount = await this.connection.getAccountInfo(blacklistPda);
-        if (blAccount && blAccount.data.length > 0) {
-          recipientBlacklist = blacklistPda;
-        }
-      }
-    } catch {
-      // If we can't resolve, pass null and let the program skip the check
+
+      // Token-2022 account layout: first 32 bytes = mint, next 32 = owner.
+      owner = new PublicKey(accountInfo.data.subarray(32, 64));
     }
+
+    const [recipientBlacklist] = this.getBlacklistPda(configPda, owner);
 
     try {
       const signature = await this.tokenProgram.methods
@@ -251,7 +254,7 @@ export class SSSClient {
           minterInfo: minterInfoPda,
           mint,
           recipientTokenAccount,
-          recipientBlacklist: recipientBlacklist as any,
+          recipientBlacklist,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();

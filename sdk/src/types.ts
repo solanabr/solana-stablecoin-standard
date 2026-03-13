@@ -135,6 +135,5 @@ export interface UpdateMetadataParams {
 export interface AttestReserveParams {
   reserveHash: number[];
   totalReservesUsd: BN;
-  totalOutstanding: BN;
   attestationUri: string;
 }

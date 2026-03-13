@@ -2,10 +2,9 @@
  * SSS TUI Comprehensive Test Suite
  *
  * Tests all pure/utility functions from tui/admin_tui.js.
- * Because admin_tui.js is a single-file app that immediately boots a blessed
- * screen, we re-implement the pure functions here verbatim (copied from source)
- * and test them against known inputs/outputs.  For PDA derivation we use the
- * real @solana/web3.js PublicKey so the seeds are verified end-to-end.
+ * Shared helpers are imported from test-helpers.ts to avoid duplication.
+ * For PDA derivation we use the real @solana/web3.js PublicKey so the seeds
+ * are verified end-to-end.
  */
 
 const { PublicKey } = require('@solana/web3.js');
@@ -15,143 +14,32 @@ const fs = require('fs');
 const os = require('os');
 
 // ---------------------------------------------------------------------------
-// Constants matching admin_tui.js defaults
+// Shared helpers (extracted to test-helpers.ts to eliminate duplication)
 // ---------------------------------------------------------------------------
-const PROGRAM_ID = '5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4';
-const DEFAULT_MINT = '9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv';
-
-// ---------------------------------------------------------------------------
-// PURE FUNCTION COPIES  (verbatim from admin_tui.js)
-// ---------------------------------------------------------------------------
-
-function getConfigPda(mint, programId) {
-  programId = programId || PROGRAM_ID;
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('config'), new PublicKey(mint).toBuffer()],
-    new PublicKey(programId)
-  );
-}
-
-function getRoleRegistryPda(configPda, programId) {
-  programId = programId || PROGRAM_ID;
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('roles'), configPda.toBuffer()],
-    new PublicKey(programId)
-  );
-}
-
-function getReserveAttestationPda(configPda, index, programId) {
-  programId = programId || PROGRAM_ID;
-  const buf = Buffer.alloc(8);
-  buf.writeBigUInt64LE(BigInt(index));
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('reserve'), configPda.toBuffer(), buf],
-    new PublicKey(programId)
-  );
-}
-
-function getMinterInfoPda(configPda, minterPk, programId) {
-  programId = programId || PROGRAM_ID;
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('minter'), configPda.toBuffer(), minterPk.toBuffer()],
-    new PublicKey(programId)
-  );
-}
-
-function getBlacklistPda(configPda, addressPk, programId) {
-  programId = programId || PROGRAM_ID;
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('blacklist'), configPda.toBuffer(), addressPk.toBuffer()],
-    new PublicKey(programId)
-  );
-}
-
-function getAuditLogPda(configPda, index, programId) {
-  programId = programId || PROGRAM_ID;
-  const buf = Buffer.alloc(8);
-  buf.writeBigUInt64LE(BigInt(index));
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('audit'), configPda.toBuffer(), buf],
-    new PublicKey(programId)
-  );
-}
-
-function shortAddr(addr) {
-  if (!addr || addr.length < 10) return addr || 'N/A';
-  return addr.slice(0, 4) + '...' + addr.slice(-4);
-}
-
-function formatTimestamp(ts) {
-  if (!ts) return 'N/A';
-  const d = new Date(ts * 1000);
-  return d.toISOString().replace('T', ' ').slice(0, 19);
-}
-
-function formatUsd(amount, decimals) {
-  decimals = decimals || 6;
-  return (amount / Math.pow(10, decimals)).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function parseTokenAmount(str, decimals) {
-  const cleaned = str.trim();
-  if (!/^\d+(\.\d+)?$/.test(cleaned)) return null;
-  const [whole, frac = ''] = cleaned.split('.');
-  const padded = frac.padEnd(decimals, '0').slice(0, decimals);
-  return new BN(whole + padded);
-}
-
-function isValidPubkey(str) {
-  try {
-    new PublicKey(str);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function detectNetwork(url) {
-  let net = 'CUSTOM';
-  if (url.includes('mainnet')) net = 'MAINNET';
-  else if (url.includes('devnet')) net = 'DEVNET';
-  else if (url.includes('testnet')) net = 'TESTNET';
-  else if (url.includes('localhost') || url.includes('127.0.0.1')) net = 'LOCAL';
-  if (url.includes('helius')) return net + '/Helius';
-  if (url.includes('quicknode')) return net + '/QuickNode';
-  if (url.includes('alchemy')) return net + '/Alchemy';
-  if (url.includes('triton')) return net + '/Triton';
-  if (url.includes('shyft')) return net + '/Shyft';
-  if (url.includes('api.devnet.solana.com') || url.includes('api.mainnet-beta.solana.com'))
-    return net + '/Public';
-  return net;
-}
-
-const colors = {
-  bg: 'black',
-  text: '#e0e0e0',
-  accent: '#ffb300',
-  secondary: '#00bcd4',
-  border: '#424242',
-  danger: '#e53935',
-  success: '#43a047',
-  dim: '#757575',
-  warning: '#ff9800',
-  highlight: '#1a237e',
-};
-
-function dimText(str) {
-  return `{${colors.dim}-fg}${str}{/${colors.dim}-fg}`;
-}
-
-function exportCsv(filename, headers, rows) {
-  const eol = process.platform === 'win32' ? '\r\n' : '\n';
-  const csvContent = [headers.join(',')]
-    .concat(rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')))
-    .join(eol);
-  return csvContent;
-}
+const helpers = require('./test-helpers');
+const {
+  PROGRAM_ID,
+  DEFAULT_MINT,
+  DEVNET_MINT,
+  VALID_ADDRESS,
+  SssErrorCode,
+  SssErrorMessage,
+  getConfigPda,
+  getRoleRegistryPda,
+  getReserveAttestationPda,
+  getMinterInfoPda,
+  getBlacklistPda,
+  getAuditLogPda,
+  shortAddr,
+  formatTimestamp,
+  formatUsd,
+  parseTokenAmount,
+  isValidPubkey,
+  detectNetwork,
+  colors,
+  dimText,
+  exportCsv,
+} = helpers;
 
 // ---------------------------------------------------------------------------
 // TEST SUITES
