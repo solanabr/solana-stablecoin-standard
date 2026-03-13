@@ -8,6 +8,7 @@ import { registerConfigCommand } from "./commands/config";
 import { registerBlacklistCommand } from "./commands/blacklist";
 import { registerSeizeCommand } from "./commands/seize";
 import { registerTuiCommand } from "./commands/tui";
+import { registerAuditCommand } from "./commands/audit";
 
 const program = new Command();
 
@@ -24,5 +25,6 @@ registerConfigCommand(program);
 registerBlacklistCommand(program);
 registerSeizeCommand(program);
 registerTuiCommand(program);
+registerAuditCommand(program);
 
 program.parse(process.argv);
