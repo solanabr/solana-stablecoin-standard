@@ -744,8 +744,9 @@ describe("dashboard stablecoin API", () => {
       expect(delivered).toBe(1);
       expect(fetchImpl).toHaveBeenCalledTimes(1);
       const [, options] = fetchImpl.mock.calls[0];
+      const expectedTimestamp = new Date(1_700_300_000_000).toISOString();
       expect(options.headers["X-Webhook-Signature"]).toBe(
-        `sha256=${computeWebhookSignature("dispatch-secret", payload)}`
+        `sha256=${computeWebhookSignature("dispatch-secret", expectedTimestamp, "stablecoin.attested", payload)}`
       );
       expect(options.body).toContain('"type":"stablecoin.attested"');
     });
