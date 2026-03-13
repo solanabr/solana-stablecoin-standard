@@ -104,4 +104,90 @@ describe("sss-3: Private Stablecoin", () => {
     assert.equal(config.symbol, "pUSD");
     assert.equal(config.decimals, 6);
   });
+
+  // ── Test 4: CT + other extensions coexist ───────────────────────────
+
+  it("has all required extensions on the mint", async () => {
+    const mintInfo = await getMint(
+      provider.connection,
+      mintKeypair.publicKey,
+      "confirmed",
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const extensions = getExtensionTypes(mintInfo.tlvData);
+
+    // SSS-3 with permanent delegate + transfer hook + CT should have:
+    assert.include(extensions, ExtensionType.ConfidentialTransferMint, "CT");
+    assert.include(extensions, ExtensionType.PermanentDelegate, "PermanentDelegate");
+    assert.include(extensions, ExtensionType.TransferHook, "TransferHook");
+    assert.include(extensions, ExtensionType.MetadataPointer, "MetadataPointer");
+  });
+
+  // ── Test 5: Mint still works on CT-enabled token ────────────────────
+
+  it("can mint tokens on a CT-enabled stablecoin", async () => {
+    // Add authority as minter
+    await program.methods
+      .updateMinter(authority.publicKey, new BN(1_000_000_000))
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleManager: rolesPda,
+      })
+      .rpc({ commitment: "confirmed" });
+
+    // Create ATA for recipient
+    const { createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } =
+      await import("@solana/spl-token");
+
+    const recipientAta = getAssociatedTokenAddressSync(
+      mintKeypair.publicKey,
+      authority.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const createAtaIx = createAssociatedTokenAccountInstruction(
+      authority.publicKey,
+      recipientAta,
+      authority.publicKey,
+      mintKeypair.publicKey,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const tx = new anchor.web3.Transaction().add(createAtaIx);
+    await anchor.web3.sendAndConfirmTransaction(
+      provider.connection, tx, [authority], { commitment: "confirmed" }
+    );
+
+    // Mint 500 tokens
+    await program.methods
+      .mintTokens(new BN(500_000_000))
+      .accounts({
+        minter: authority.publicKey,
+        config: configPda,
+        roleManager: rolesPda,
+        mint: mintKeypair.publicKey,
+        recipientTokenAccount: recipientAta,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc({ commitment: "confirmed" });
+
+    const { getAccount } = await import("@solana/spl-token");
+    const account = await getAccount(
+      provider.connection, recipientAta, "confirmed", TOKEN_2022_PROGRAM_ID
+    );
+    assert.equal(Number(account.amount), 500_000_000, "should have 500 tokens");
+  });
+
+  // ── Test 6: Verify supply tracking on CT mint ──────────────────────
+
+  it("tracks total_minted on CT-enabled config", async () => {
+    const config = await program.account.stablecoinConfig.fetch(configPda);
+    assert.equal(
+      config.totalMinted.toNumber(), 500_000_000,
+      "total_minted should reflect 500 tokens"
+    );
+  });
 });
