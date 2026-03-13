@@ -3,9 +3,10 @@ import { createHmac } from "crypto";
 import express, { Express, Request, Response } from "express";
 
 const DEFAULT_PORT = parseInt(process.env.PORT || "3001", 10);
-const DEFAULT_MAX_RETRIES = parseInt(process.env.MAX_RETRIES || "5", 10);
+const DEFAULT_MAX_RETRIES = 5;
 const DEFAULT_BASE_DELAY_MS = 1000;
-const DEFAULT_RETRY_INTERVAL_MS = 5000;
+const DEFAULT_RETRY_INTERVAL_MS = 500;
+const RETRY_JITTER_RATIO = 0.2;
 
 export interface WebhookRegistration {
   id: string;
@@ -29,16 +30,32 @@ interface DispatchRequest {
 
 export interface DeliveryAttempt {
   webhookId: string;
+  webhookUrl: string;
   eventType: string;
   payload: unknown;
   attempts: number;
   nextRetryAt: number;
+  lastError: string | null;
+  createdAt: string;
+  lastAttemptAt: string;
+}
+
+export interface DeadLetterEntry {
+  webhookId: string;
+  webhookUrl: string;
+  eventType: string;
+  payload: unknown;
+  attempts: number;
+  createdAt: string;
+  lastAttemptAt: string;
+  failedAt: string;
   lastError: string | null;
 }
 
 export interface WebhookServiceState {
   webhooks: Map<string, WebhookRegistration>;
   retryQueue: DeliveryAttempt[];
+  deadLetterQueue: DeadLetterEntry[];
 }
 
 interface WebhookServiceOptions {
@@ -49,7 +66,44 @@ interface WebhookServiceOptions {
   retryIntervalMs?: number;
   fetchImpl?: typeof fetch;
   now?: () => number;
+  random?: () => number;
   disableRetryProcessor?: boolean;
+}
+
+function readIntegerEnv(
+  value: string | undefined,
+  fallback: number,
+  minimum: number
+): number {
+  const parsed = Number.parseInt(value || "", 10);
+  if (!Number.isFinite(parsed) || parsed < minimum) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function readMaxRetries(): number {
+  return readIntegerEnv(
+    process.env.WEBHOOK_MAX_RETRIES ?? process.env.MAX_RETRIES,
+    DEFAULT_MAX_RETRIES,
+    0
+  );
+}
+
+function readBaseDelayMs(): number {
+  return readIntegerEnv(process.env.WEBHOOK_BASE_DELAY_MS, DEFAULT_BASE_DELAY_MS, 1);
+}
+
+function computeRetryDelayMs(
+  attempts: number,
+  baseDelayMs: number,
+  random: () => number
+): number {
+  const nominalDelay = baseDelayMs * Math.pow(2, Math.max(0, attempts - 1));
+  const jitterSeed = Math.min(1, Math.max(0, random()));
+  const jitterFactor = 1 + jitterSeed * RETRY_JITTER_RATIO;
+  return Math.round(nominalDelay * jitterFactor);
 }
 
 function generateId(now: () => number): string {
@@ -86,16 +140,46 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
 } {
   const apiKey = options.apiKey ?? process.env.API_KEY;
   const port = options.port ?? DEFAULT_PORT;
-  const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
-  const baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
-  const retryIntervalMs = options.retryIntervalMs ?? DEFAULT_RETRY_INTERVAL_MS;
+  const maxRetries = options.maxRetries ?? readMaxRetries();
+  const baseDelayMs = options.baseDelayMs ?? readBaseDelayMs();
+  const retryIntervalMs =
+    options.retryIntervalMs ??
+    Math.max(250, Math.min(DEFAULT_RETRY_INTERVAL_MS, baseDelayMs));
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? Date.now;
+  const random = options.random ?? Math.random;
 
   const state: WebhookServiceState = {
     webhooks: new Map<string, WebhookRegistration>(),
     retryQueue: [],
+    deadLetterQueue: [],
   };
+
+  function pushToDeadLetterQueue(
+    attempt: DeliveryAttempt,
+    failedAt: number
+  ): void {
+    state.deadLetterQueue.push({
+      webhookId: attempt.webhookId,
+      webhookUrl: attempt.webhookUrl,
+      eventType: attempt.eventType,
+      payload: attempt.payload,
+      attempts: attempt.attempts,
+      createdAt: attempt.createdAt,
+      lastAttemptAt: attempt.lastAttemptAt,
+      failedAt: new Date(failedAt).toISOString(),
+      lastError: attempt.lastError,
+    });
+  }
+
+  function scheduleRetry(
+    attempt: DeliveryAttempt,
+    scheduledAt: number
+  ): DeliveryAttempt {
+    attempt.nextRetryAt =
+      scheduledAt + computeRetryDelayMs(attempt.attempts, baseDelayMs, random);
+    return attempt;
+  }
 
   async function deliverToWebhook(
     registration: WebhookRegistration,
@@ -161,14 +245,27 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
 
       registration.stats.failed++;
       registration.stats.pending--;
-      state.retryQueue.push({
+      const attempt: DeliveryAttempt = {
         webhookId: registration.id,
+        webhookUrl: registration.url,
         eventType,
         payload,
         attempts: 1,
-        nextRetryAt: now() + baseDelayMs,
+        nextRetryAt: 0,
         lastError: registration.stats.lastError,
-      });
+        createdAt: new Date(now()).toISOString(),
+        lastAttemptAt: new Date(now()).toISOString(),
+      };
+
+      if (maxRetries === 0) {
+        pushToDeadLetterQueue(attempt, now());
+        console.error(
+          `[retry] Sending ${eventType} to ${registration.url} failed with retries disabled`
+        );
+        continue;
+      }
+
+      state.retryQueue.push(scheduleRetry(attempt, now()));
     }
 
     return dispatched;
@@ -176,22 +273,20 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
 
   async function processRetryQueue(): Promise<void> {
     const currentTime = now();
-    const readyItems = state.retryQueue.filter((item) => item.nextRetryAt <= currentTime);
-
-    for (const item of readyItems) {
-      const queueIndex = state.retryQueue.indexOf(item);
-      const registration = state.webhooks.get(item.webhookId);
-
-      if (queueIndex === -1) {
+    for (let queueIndex = state.retryQueue.length - 1; queueIndex >= 0; queueIndex--) {
+      const item = state.retryQueue[queueIndex];
+      if (!item || item.nextRetryAt > currentTime) {
         continue;
       }
 
+      const registration = state.webhooks.get(item.webhookId);
       if (!registration) {
         state.retryQueue.splice(queueIndex, 1);
         continue;
       }
 
-      item.attempts++;
+      item.attempts += 1;
+      item.lastAttemptAt = new Date(currentTime).toISOString();
       const success = await deliverToWebhook(
         registration,
         item.eventType,
@@ -204,17 +299,19 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
         continue;
       }
 
-      if (item.attempts >= maxRetries) {
+      registration.stats.failed++;
+      item.lastError = registration.stats.lastError;
+
+      if (item.attempts - 1 >= maxRetries) {
+        pushToDeadLetterQueue(item, currentTime);
         console.error(
-          `[retry] Giving up on delivery to ${registration.url} after ${item.attempts} attempts`
+          `[retry] Giving up on delivery to ${registration.url} after ${item.attempts - 1} retries (${item.attempts} attempts total)`
         );
         state.retryQueue.splice(queueIndex, 1);
         continue;
       }
 
-      const delay = baseDelayMs * Math.pow(2, item.attempts - 1);
-      item.nextRetryAt = currentTime + delay;
-      item.lastError = registration.stats.lastError;
+      scheduleRetry(item, currentTime);
     }
   }
 
@@ -233,6 +330,7 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
       service: "webhook-service",
       registeredWebhooks: state.webhooks.size,
       retryQueueSize: state.retryQueue.length,
+      deadLetterQueueSize: state.deadLetterQueue.length,
       uptime: process.uptime(),
     });
   });
@@ -312,6 +410,7 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
       dispatched,
       totalWebhooks: state.webhooks.size,
       retryQueueSize: state.retryQueue.length,
+      deadLetterQueueSize: state.deadLetterQueue.length,
     });
   });
 
@@ -327,11 +426,25 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
     res.json({
       webhooks: registrations,
       retryQueueSize: state.retryQueue.length,
+      deadLetterQueueSize: state.deadLetterQueue.length,
       retryQueue: state.retryQueue.map((item) => ({
         webhookId: item.webhookId,
+        webhookUrl: item.webhookUrl,
         eventType: item.eventType,
         attempts: item.attempts,
+        createdAt: item.createdAt,
+        lastAttemptAt: item.lastAttemptAt,
         nextRetryAt: new Date(item.nextRetryAt).toISOString(),
+        lastError: item.lastError,
+      })),
+      deadLetterQueue: state.deadLetterQueue.map((item) => ({
+        webhookId: item.webhookId,
+        webhookUrl: item.webhookUrl,
+        eventType: item.eventType,
+        attempts: item.attempts,
+        createdAt: item.createdAt,
+        lastAttemptAt: item.lastAttemptAt,
+        failedAt: item.failedAt,
         lastError: item.lastError,
       })),
     });
