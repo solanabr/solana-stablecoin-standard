@@ -127,6 +127,10 @@ export const log = {
   error: (msg: string) => console.error(`❌ ${msg}`),
   info: (msg: string) => console.log(`ℹ️  ${msg}`),
   warn: (msg: string) => console.log(`⚠️  ${msg}`),
+  section: (title: string) => {
+    console.log();
+    console.log(`  ┌─ ${title} ${"─".repeat(Math.max(0, 60 - title.length))}┐`);
+  },
   tx: (sig: string, url?: string) => {
     const explorer = url ?? resolveRpcUrl();
     const isDevnet = explorer.includes("devnet");

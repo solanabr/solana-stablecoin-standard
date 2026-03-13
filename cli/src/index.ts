@@ -633,6 +633,262 @@ program
     }
   });
 
+// ── Audit Log Command ───────────────────────────────────────────────────
+
+program
+  .command("audit-log")
+  .description("Show on-chain audit trail for a stablecoin")
+  .option("--mint <address>", "Mint address (or set SSS_MINT)")
+  .option("--action <type>", "Filter by action (mint, burn, freeze, thaw, blacklist, seize, pause)")
+  .option("--format <fmt>", "Output format: table (default) or json", "table")
+  .option("--limit <n>", "Max entries to show", "50")
+  .action(async (options) => {
+    try {
+      const globalOpts = getGlobalOpts();
+      const connection = getConnection(globalOpts.url);
+      const mint = resolveMint(options);
+
+      const limit = parseInt(options.limit) || 50;
+      const sigs = await connection.getSignaturesForAddress(mint, { limit });
+
+      // Instruction discriminator prefixes for event identification
+      const ACTION_PATTERNS: Record<string, string[]> = {
+        mint: ["Instruction: MintTokens", "TokensMinted"],
+        burn: ["Instruction: BurnTokens", "TokensBurned"],
+        freeze: ["Instruction: FreezeAccount", "AccountFrozen"],
+        thaw: ["Instruction: ThawAccount", "AccountThawed"],
+        pause: ["Instruction: Pause", "OperationsPaused"],
+        unpause: ["Instruction: Unpause", "OperationsUnpaused"],
+        blacklist: ["Instruction: AddToBlacklist", "AddressBlacklisted"],
+        seize: ["Instruction: Seize", "TokensSeized"],
+      };
+
+      const entries: Array<{
+        timestamp: string;
+        action: string;
+        signature: string;
+        status: string;
+      }> = [];
+
+      for (const sig of sigs) {
+        const tx = await connection.getTransaction(sig.signature, {
+          maxSupportedTransactionVersion: 0,
+        });
+
+        if (!tx?.meta?.logMessages) continue;
+
+        const logs = tx.meta.logMessages.join("\n");
+        let action = "unknown";
+
+        for (const [name, patterns] of Object.entries(ACTION_PATTERNS)) {
+          if (patterns.some(p => logs.includes(p))) {
+            action = name;
+            break;
+          }
+        }
+
+        // Filter by action if specified
+        if (options.action && action !== options.action) continue;
+
+        const timestamp = sig.blockTime
+          ? new Date(sig.blockTime * 1000).toISOString()
+          : "unknown";
+
+        entries.push({
+          timestamp,
+          action,
+          signature: sig.signature,
+          status: sig.err ? "failed" : "success",
+        });
+      }
+
+      if (options.format === "json") {
+        console.log(JSON.stringify(entries, null, 2));
+      } else {
+        log.section("Audit Log");
+        console.log(`  Mint: ${mint.toBase58()}`);
+        console.log(`  Entries: ${entries.length}`);
+        console.log();
+
+        if (entries.length === 0) {
+          console.log("  No matching entries found.");
+        } else {
+          console.log(
+            "  " +
+            "Timestamp".padEnd(25) +
+            "Action".padEnd(12) +
+            "Status".padEnd(10) +
+            "Signature"
+          );
+          console.log("  " + "─".repeat(90));
+
+          for (const e of entries) {
+            const ts = e.timestamp.replace("T", " ").slice(0, 19);
+            console.log(
+              "  " +
+              ts.padEnd(25) +
+              e.action.padEnd(12) +
+              e.status.padEnd(10) +
+              e.signature.slice(0, 44) + "..."
+            );
+          }
+        }
+        console.log();
+      }
+    } catch (err: unknown) {
+      log.error((err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ── Validate Command ────────────────────────────────────────────────────
+
+program
+  .command("validate")
+  .description("Validate a stablecoin configuration before deployment")
+  .option("--preset <preset>", "Preset to validate (sss-1, sss-2, sss-3)")
+  .option("--custom <config>", "Custom TOML/JSON config file to validate")
+  .option("--name <name>", "Token name")
+  .option("--symbol <symbol>", "Token symbol")
+  .option("--decimals <decimals>", "Token decimals", "6")
+  .option("--uri <uri>", "Metadata URI", "")
+  .option("--supply-cap <amount>", "Supply cap in base units")
+  .action(async (options) => {
+    try {
+      log.section("Configuration Validation");
+
+      const issues: string[] = [];
+      const warnings: string[] = [];
+      const info: string[] = [];
+
+      // Resolve preset
+      let preset = options.preset?.toUpperCase().replace("-", "_") || "custom";
+      let name = options.name || "";
+      let symbol = options.symbol || "";
+      let decimals = parseInt(options.decimals) || 6;
+      let uri = options.uri || "";
+      let supplyCap = options.supplyCap
+        ? BigInt(options.supplyCap)
+        : undefined;
+
+      // If custom config file provided, try parsing it
+      if (options.custom) {
+        const fs = await import("fs");
+        const content = fs.readFileSync(options.custom, "utf-8");
+        let config: Record<string, any>;
+        if (options.custom.endsWith(".json")) {
+          config = JSON.parse(content);
+        } else {
+          // Basic TOML parsing for simple flat configs
+          config = {};
+          for (const line of content.split("\n")) {
+            const match = line.match(/^(\w+)\s*=\s*"?([^"]*)"?\s*$/);
+            if (match) config[match[1]] = match[2];
+          }
+        }
+        name = config.name || name;
+        symbol = config.symbol || symbol;
+        decimals = parseInt(config.decimals) || decimals;
+        uri = config.uri || uri;
+        preset = config.preset?.toUpperCase().replace("-", "_") || preset;
+        if (config.supply_cap) supplyCap = BigInt(config.supply_cap);
+      }
+
+      // ── Validation Rules ──────────────────────────────────────────
+
+      // Name
+      if (!name) {
+        issues.push("Name is required");
+      } else if (name.length > 32) {
+        issues.push(`Name "${name}" exceeds 32 character limit (${name.length})`);
+      } else {
+        info.push(`Name: "${name}" (${name.length}/32 chars)`);
+      }
+
+      // Symbol
+      if (!symbol) {
+        issues.push("Symbol is required");
+      } else if (symbol.length > 10) {
+        issues.push(`Symbol "${symbol}" exceeds 10 character limit (${symbol.length})`);
+      } else {
+        info.push(`Symbol: "${symbol}" (${symbol.length}/10 chars)`);
+      }
+
+      // Decimals
+      if (decimals < 0 || decimals > 18) {
+        issues.push(`Decimals must be 0-18 (got ${decimals})`);
+      } else if (decimals !== 6) {
+        warnings.push(`Non-standard decimals: ${decimals} (stablecoins typically use 6)`);
+      }
+      info.push(`Decimals: ${decimals}`);
+
+      // URI
+      if (uri && uri.length > 200) {
+        issues.push(`URI exceeds 200 character limit (${uri.length})`);
+      }
+
+      // Supply Cap
+      if (supplyCap !== undefined) {
+        if (supplyCap <= 0n) {
+          issues.push("Supply cap must be positive");
+        } else {
+          const humanCap = Number(supplyCap) / Math.pow(10, decimals);
+          info.push(`Supply Cap: ${humanCap.toLocaleString()} tokens (${supplyCap.toString()} base units)`);
+        }
+      } else {
+        warnings.push("No supply cap set — minters can mint unlimited tokens");
+      }
+
+      // Preset-specific validation
+      if (preset === "SSS_1") {
+        info.push("Preset: SSS-1 (Minimal)");
+        info.push("Extensions: None (mint + freeze + metadata only)");
+      } else if (preset === "SSS_2") {
+        info.push("Preset: SSS-2 (Compliant)");
+        info.push("Extensions: PermanentDelegate + TransferHook + Blacklist");
+        warnings.push("SSS-2 requires a separate transfer-hook program deployment");
+        if (!supplyCap) {
+          warnings.push("Compliance tokens should have a supply cap for regulatory safety");
+        }
+      } else if (preset === "SSS_3") {
+        info.push("Preset: SSS-3 (Private)");
+        info.push("Extensions: ConfidentialTransferMint (experimental)");
+        warnings.push("SSS-3 requires Token-2022 with zk-ops — not available on mainnet yet");
+      }
+
+      // Estimated deployment cost
+      const estimatedRent = preset === "SSS_2" ? "~0.015 SOL" : "~0.008 SOL";
+      info.push(`Estimated rent: ${estimatedRent} (config + roles + mint)`);
+
+      // ── Output ─────────────────────────────────────────────────────
+
+      if (info.length > 0) {
+        console.log("  ℹ️  Configuration:");
+        for (const i of info) console.log(`     ${i}`);
+        console.log();
+      }
+
+      if (warnings.length > 0) {
+        console.log("  ⚠️  Warnings:");
+        for (const w of warnings) console.log(`     ${w}`);
+        console.log();
+      }
+
+      if (issues.length > 0) {
+        console.log("  ❌ Errors:");
+        for (const i of issues) console.log(`     ${i}`);
+        console.log();
+        log.error(`Validation failed with ${issues.length} error(s)`);
+        process.exit(1);
+      } else {
+        log.success("Configuration is valid — ready to deploy");
+      }
+    } catch (err: unknown) {
+      log.error((err as Error).message);
+      process.exit(1);
+    }
+  });
+
 // ── Parse ───────────────────────────────────────────────────────────────
 
 program.parse();
