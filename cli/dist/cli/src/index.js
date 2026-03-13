@@ -12,6 +12,7 @@ const config_1 = require("./commands/config");
 // Новые импорты
 const blacklist_1 = require("./commands/blacklist");
 const seize_1 = require("./commands/seize");
+const tui_1 = require("./commands/tui");
 const program = new commander_1.Command();
 program
     .name("sss-token")
@@ -24,5 +25,6 @@ program
 (0, config_1.registerConfigCommand)(program);
 (0, blacklist_1.registerBlacklistCommand)(program);
 (0, seize_1.registerSeizeCommand)(program);
+(0, tui_1.registerTuiCommand)(program);
 program.parse(process.argv);
 //# sourceMappingURL=index.js.map

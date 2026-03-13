@@ -7,6 +7,7 @@ import { registerConfigCommand } from "./commands/config";
 // Новые импорты
 import { registerBlacklistCommand } from "./commands/blacklist";
 import { registerSeizeCommand } from "./commands/seize";
+import { registerTuiCommand } from "./commands/tui";
 
 const program = new Command();
 
@@ -22,5 +23,6 @@ registerBurnCommand(program);
 registerConfigCommand(program);
 registerBlacklistCommand(program);
 registerSeizeCommand(program);
+registerTuiCommand(program);
 
 program.parse(process.argv);
