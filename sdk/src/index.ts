@@ -417,4 +417,27 @@ export class StablecoinSDK {
         console.log(`✅ Oracle Updated! Tx: ${tx}`);
         return oraclePda;
     }
+
+    public async burn(mintAddress: PublicKey, fromAccount: PublicKey, amount: number, decimals: number = 6) {
+        const [configPda] = PublicKey.findProgramAddressSync([Buffer.from("config")], this.program.programId);
+        
+        // Вычисляем ATA аккаунта, с которого будем сжигать
+        const tokenAccount = getAssociatedTokenAddressSync(mintAddress, fromAccount, false, TOKEN_2022_PROGRAM_ID);
+        const rawAmount = new BN(amount).mul(new BN(10).pow(new BN(decimals)));
+
+        console.log(`🔥 Burning ${amount} tokens from ${fromAccount.toBase58()}...`);
+        
+        const tx = await this.program.methods
+            .burnToken(rawAmount)
+            .accounts({
+                signer: this.payer.publicKey, // Тот, кто вызывает сжигание (Должен быть Burner)
+                config: configPda,
+                mint: mintAddress,
+                tokenAccount: tokenAccount,
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .rpc();
+
+        console.log(`✅ Burn Successful! Transaction: https://explorer.solana.com/tx/${tx}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899`);
+    }
 }

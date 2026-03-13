@@ -45,6 +45,7 @@ async function main() {
         }
 
         const badGuyAta = getAssociatedTokenAddressSync(mintAddress, badGuy.publicKey, false, TOKEN_2022_PROGRAM_ID);
+        console.log(`BadGuyAta: ${badGuyAta}`)
         console.log("\n--- SEIZING TOKENS ---");
         await sdk.compliance.seize(mintAddress, badGuyAta, treasury, 900);
 
