@@ -1,5 +1,7 @@
 import * as crypto from "crypto";
 import { createHmac } from "crypto";
+import * as dns from "node:dns";
+import * as net from "node:net";
 import express, { Express, Request, Response } from "express";
 
 const DEFAULT_PORT = parseInt(process.env.PORT || "3001", 10);
@@ -68,6 +70,110 @@ interface WebhookServiceOptions {
   now?: () => number;
   random?: () => number;
   disableRetryProcessor?: boolean;
+  dnsLookup?: DnsLookupFn;
+}
+
+function isPrivateIPv4(ip: string): boolean {
+  const parts = ip.split(".").map(Number);
+  if (parts.length !== 4) return false;
+  // 0.0.0.0
+  if (parts[0] === 0 && parts[1] === 0 && parts[2] === 0 && parts[3] === 0) return true;
+  // 127.0.0.0/8 (loopback)
+  if (parts[0] === 127) return true;
+  // 10.0.0.0/8
+  if (parts[0] === 10) return true;
+  // 172.16.0.0/12
+  if (parts[0] === 172 && parts[1]! >= 16 && parts[1]! <= 31) return true;
+  // 192.168.0.0/16
+  if (parts[0] === 192 && parts[1] === 168) return true;
+  // 169.254.0.0/16 (link-local)
+  if (parts[0] === 169 && parts[1] === 254) return true;
+  return false;
+}
+
+function isPrivateIPv6(ip: string): boolean {
+  const normalized = ip.toLowerCase();
+  // ::1 loopback
+  if (normalized === "::1") return true;
+  // :: unspecified
+  if (normalized === "::") return true;
+  // fc00::/7 (unique local: fc00-fdff)
+  if (normalized.startsWith("fc") || normalized.startsWith("fd")) return true;
+  // fe80::/10 (link-local: fe80-febf)
+  if (
+    normalized.startsWith("fe8") ||
+    normalized.startsWith("fe9") ||
+    normalized.startsWith("fea") ||
+    normalized.startsWith("feb")
+  )
+    return true;
+  return false;
+}
+
+export function isPrivateIP(ip: string): boolean {
+  if (net.isIPv4(ip)) return isPrivateIPv4(ip);
+  if (net.isIPv6(ip)) return isPrivateIPv6(ip);
+  return false;
+}
+
+export type DnsLookupFn = (
+  hostname: string
+) => Promise<
+  { address: string; family: number } | { address: string; family: number }[]
+>;
+
+async function defaultDnsLookup(
+  hostname: string
+): Promise<{ address: string; family: number }[]> {
+  return dns.promises.lookup(hostname, { all: true, verbatim: true });
+}
+
+export async function validateWebhookUrl(
+  url: string,
+  lookup: DnsLookupFn = defaultDnsLookup
+): Promise<string | null> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return "url must be a valid URL";
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return "SSRF protection: only http and https schemes are allowed";
+  }
+
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, "");
+
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+    return "SSRF protection: localhost URLs are not allowed";
+  }
+
+  // If hostname is already an IP literal, check directly
+  if (net.isIP(hostname)) {
+    if (isPrivateIP(hostname)) {
+      return "SSRF protection: webhook URL points to a private/reserved IP address";
+    }
+    return null;
+  }
+
+  // Resolve hostname and check resolved IP
+  try {
+    const resolved = await lookup(hostname);
+    const addresses = Array.isArray(resolved) ? resolved : [resolved];
+
+    if (addresses.length === 0) {
+      return "SSRF protection: could not resolve webhook URL hostname";
+    }
+
+    if (addresses.some(({ address }) => isPrivateIP(address))) {
+      return "SSRF protection: webhook URL resolves to a private/reserved IP address";
+    }
+  } catch {
+    return "SSRF protection: could not resolve webhook URL hostname";
+  }
+
+  return null;
 }
 
 function readIntegerEnv(
@@ -110,11 +216,7 @@ function generateId(now: () => number): string {
   return `wh_${now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function isAuthorized(req: Request, res: Response, apiKey?: string): boolean {
-  if (!apiKey) {
-    return true;
-  }
-
+function isAuthorized(req: Request, res: Response, apiKey: string): boolean {
   const auth = req.headers.authorization;
   if (!auth || auth !== `Bearer ${apiKey}`) {
     res.status(401).json({ error: "Unauthorized" });
@@ -124,9 +226,25 @@ function isAuthorized(req: Request, res: Response, apiKey?: string): boolean {
   return true;
 }
 
-export function computeWebhookSignature(secret: string, payload: unknown): string {
+/**
+ * Compute HMAC-SHA256 over a canonical signing string that binds the timestamp,
+ * event type, and payload together. The canonical form is:
+ *   `${timestamp}.${eventType}.${JSON.stringify(payload)}`
+ *
+ * Receivers should:
+ *   1. Extract the timestamp from the X-Webhook-Timestamp header.
+ *   2. Reject signatures where the timestamp is older than 5 minutes (replay protection).
+ *   3. Reconstruct the canonical string and verify the HMAC.
+ */
+export function computeWebhookSignature(
+  secret: string,
+  timestamp: string,
+  eventType: string,
+  payload: unknown
+): string {
+  const canonicalString = `${timestamp}.${eventType}.${JSON.stringify(payload)}`;
   return createHmac("sha256", secret)
-    .update(JSON.stringify(payload))
+    .update(canonicalString)
     .digest("hex");
 }
 
@@ -138,7 +256,13 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
   start: () => void;
   stopRetryProcessor: () => void;
 } {
-  const apiKey = options.apiKey ?? process.env.API_KEY;
+  const rawApiKey = options.apiKey ?? process.env.API_KEY;
+  const apiKey = rawApiKey?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "FATAL: API_KEY environment variable is required and must be non-empty"
+    );
+  }
   const port = options.port ?? DEFAULT_PORT;
   const maxRetries = options.maxRetries ?? readMaxRetries();
   const baseDelayMs = options.baseDelayMs ?? readBaseDelayMs();
@@ -148,6 +272,7 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? Date.now;
   const random = options.random ?? Math.random;
+  const dnsLookup = options.dnsLookup ?? defaultDnsLookup;
 
   const state: WebhookServiceState = {
     webhooks: new Map<string, WebhookRegistration>(),
@@ -188,20 +313,33 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
     attempt: number
   ): Promise<boolean> {
     try {
+      const urlError = await validateWebhookUrl(registration.url, dnsLookup);
+      if (urlError) {
+        registration.stats.lastError = urlError;
+        return false;
+      }
+
+      const timestamp = new Date(now()).toISOString();
       const body = JSON.stringify({
         id: `evt_${now().toString(36)}`,
         type: eventType,
         payload,
-        timestamp: new Date(now()).toISOString(),
+        timestamp,
         attempt,
       });
-      const signature = computeWebhookSignature(registration.secret, payload);
+      const signature = computeWebhookSignature(
+        registration.secret,
+        timestamp,
+        eventType,
+        payload
+      );
 
       const response = await fetchImpl(registration.url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Webhook-Id": registration.id,
+          "X-Webhook-Timestamp": timestamp,
           "X-Webhook-Signature": `sha256=${signature}`,
         },
         body,
@@ -335,7 +473,7 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
     });
   });
 
-  app.post("/webhook/register", (req: Request, res: Response) => {
+  app.post("/webhook/register", async (req: Request, res: Response) => {
     if (!isAuthorized(req, res, apiKey)) {
       return;
     }
@@ -351,10 +489,9 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
       return;
     }
 
-    try {
-      new URL(url);
-    } catch {
-      res.status(400).json({ error: "url must be a valid URL" });
+    const urlError = await validateWebhookUrl(url, dnsLookup);
+    if (urlError) {
+      res.status(400).json({ error: urlError });
       return;
     }
 
@@ -414,11 +551,16 @@ export function createWebhookService(options: WebhookServiceOptions = {}): {
     });
   });
 
-  app.get("/webhook/status", (_req: Request, res: Response) => {
+  app.get("/webhook/status", (req: Request, res: Response) => {
+    if (!isAuthorized(req, res, apiKey)) {
+      return;
+    }
+
     const registrations = Array.from(state.webhooks.values()).map((webhook) => ({
       id: webhook.id,
       url: webhook.url,
       eventTypes: webhook.eventTypes,
+      secret: "[REDACTED]",
       createdAt: webhook.createdAt,
       stats: webhook.stats,
     }));

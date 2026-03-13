@@ -6,6 +6,8 @@ import request from "supertest";
 import {
   StubProvider,
   createComplianceService,
+  createProvider,
+  validateApiKeys,
 } from "../services/compliance-service";
 
 describe("compliance service", () => {
@@ -93,7 +95,9 @@ describe("compliance service", () => {
         address: "SanctionedAddr111111111111111111111111111",
       });
 
-    const response = await request(service.app).get("/compliance/export?format=csv");
+    const response = await request(service.app)
+      .get("/compliance/export?format=csv")
+      .set("Authorization", `Bearer ${apiKey}`);
 
     expect(response.status).toBe(200);
     expect(response.headers["content-type"]).toContain("text/csv");
@@ -123,5 +127,76 @@ describe("compliance service", () => {
     });
 
     randomSpy.mockRestore();
+  });
+});
+
+describe("validateApiKeys", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("throws in production when stub provider is used", () => {
+    process.env.NODE_ENV = "production";
+    expect(() => validateApiKeys("stub")).toThrow(
+      "Stub compliance provider cannot be used in production"
+    );
+  });
+
+  it("throws in production for unknown provider (defaults to stub)", () => {
+    process.env.NODE_ENV = "production";
+    expect(() => validateApiKeys("unknown")).toThrow(
+      "Stub compliance provider cannot be used in production"
+    );
+  });
+
+  it("logs warning when stub is used in non-production", () => {
+    process.env.NODE_ENV = "development";
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+    validateApiKeys("stub");
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("WARNING: Using stub compliance provider")
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("throws when chainalysis provider is used without API key", () => {
+    delete process.env.CHAINALYSIS_API_KEY;
+    expect(() => validateApiKeys("chainalysis")).toThrow(
+      "CHAINALYSIS_API_KEY environment variable is required"
+    );
+  });
+
+  it("throws when elliptic provider is used without API key", () => {
+    delete process.env.ELLIPTIC_API_KEY;
+    expect(() => validateApiKeys("elliptic")).toThrow(
+      "ELLIPTIC_API_KEY environment variable is required"
+    );
+  });
+
+  it("passes when chainalysis provider has API key set", () => {
+    process.env.CHAINALYSIS_API_KEY = "test-key";
+    expect(() => validateApiKeys("chainalysis")).not.toThrow();
+  });
+
+  it("passes when elliptic provider has API key set", () => {
+    process.env.ELLIPTIC_API_KEY = "test-key";
+    expect(() => validateApiKeys("elliptic")).not.toThrow();
+  });
+
+  it("createProvider calls validateApiKeys and creates stub with warning in dev", () => {
+    process.env.NODE_ENV = "development";
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+    const provider = createProvider("stub");
+    expect(provider.name).toBe("sss-compliance-stub");
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("NOT suitable for production")
+    );
+    warnSpy.mockRestore();
   });
 });

@@ -601,7 +601,7 @@ export function createStablecoinRouter(client: SSSClient): Router {
   /**
    * POST /api/stablecoin/:mint/attest
    * Attest reserves.
-   * Body: { reserveHash, totalReservesUsd, totalOutstanding, attestationUri }
+   * Body: { reserveHash, totalReservesUsd, attestationUri }
    * reserveHash is a 32-element number array.
    */
   router.post(
@@ -612,13 +612,11 @@ export function createStablecoinRouter(client: SSSClient): Router {
         const mint = new PublicKey(req.params.mint);
         const reserveHash: number[] = req.body.reserveHash;
         const totalReservesUsd = new BN(req.body.totalReservesUsd);
-        const totalOutstanding = new BN(req.body.totalOutstanding);
         const attestationUri: string = req.body.attestationUri;
 
         const { signature } = await client.attestReserve(mint, {
           reserveHash,
           totalReservesUsd,
-          totalOutstanding,
           attestationUri,
         });
 

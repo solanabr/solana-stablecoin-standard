@@ -155,7 +155,40 @@ class EllipticProvider implements ComplianceProvider {
   }
 }
 
+export function validateApiKeys(providerName: string): void {
+  const isProduction = process.env.NODE_ENV === "production";
+  const name = providerName.trim().toLowerCase();
+  const isStubProvider = name === "stub" || name === "sss-compliance-stub";
+
+  if (isStubProvider || (name !== "chainalysis" && name !== "elliptic")) {
+    if (isProduction) {
+      throw new Error(
+        "FATAL: Stub compliance provider cannot be used in production. " +
+          "Set COMPLIANCE_PROVIDER to 'chainalysis' or 'elliptic' and provide the corresponding API key."
+      );
+    }
+    console.warn(
+      "⚠ WARNING: Using stub compliance provider. NOT suitable for production."
+    );
+    return;
+  }
+
+  if (name === "chainalysis" && !process.env.CHAINALYSIS_API_KEY?.trim()) {
+    throw new Error(
+      "FATAL: CHAINALYSIS_API_KEY environment variable is required for the Chainalysis provider."
+    );
+  }
+
+  if (name === "elliptic" && !process.env.ELLIPTIC_API_KEY?.trim()) {
+    throw new Error(
+      "FATAL: ELLIPTIC_API_KEY environment variable is required for the Elliptic provider."
+    );
+  }
+}
+
 export function createProvider(name: string): ComplianceProvider {
+  validateApiKeys(name);
+
   switch (name.toLowerCase()) {
     case "chainalysis":
       return new ChainalysisProvider();
@@ -220,10 +253,13 @@ export function createComplianceService(options: ComplianceServiceOptions = {}):
   screenAddress: (address: string) => Promise<ScreeningResult>;
   start: () => void;
 } {
-  const apiKey = options.apiKey ?? process.env.API_KEY;
+  const apiKey = options.apiKey?.trim() || process.env.API_KEY?.trim();
+  const providerName = options.providerName ?? options.provider?.name ?? DEFAULT_PROVIDER_NAME;
   const port = options.port ?? DEFAULT_PORT;
-  const provider =
-    options.provider ?? createProvider(options.providerName ?? DEFAULT_PROVIDER_NAME);
+  if (options.provider) {
+    validateApiKeys(providerName);
+  }
+  const provider = options.provider ?? createProvider(providerName);
   const historyLogPath = options.historyLogPath ?? DEFAULT_HISTORY_LOG_PATH;
 
   ensureLogDir(historyLogPath);
@@ -351,7 +387,11 @@ export function createComplianceService(options: ComplianceServiceOptions = {}):
     });
   });
 
-  app.get("/compliance/status", (_req: Request, res: Response) => {
+  app.get("/compliance/status", (req: Request, res: Response) => {
+    if (!isAuthorized(req, res, apiKey)) {
+      return;
+    }
+
     res.json({
       stats,
       provider: provider.name,
@@ -362,6 +402,10 @@ export function createComplianceService(options: ComplianceServiceOptions = {}):
   });
 
   app.get("/compliance/export", (req: Request, res: Response) => {
+    if (!isAuthorized(req, res, apiKey)) {
+      return;
+    }
+
     const format = (req.query.format as string) || "json";
 
     if (format === "csv") {
