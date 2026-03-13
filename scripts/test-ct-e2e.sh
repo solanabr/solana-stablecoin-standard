@@ -106,7 +106,6 @@ echo ""
 echo -e "${CYAN}── Step 1: Create SSS-3 Stablecoin ──${NC}"
 
 # Create mint with CT extension using spl-token CLI
-# This creates a Token-2022 mint with ConfidentialTransferMint extension
 MINT_OUTPUT=$(spl-token create-token \
   --program-id TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb \
   --enable-confidential-transfers auto \
@@ -114,7 +113,8 @@ MINT_OUTPUT=$(spl-token create-token \
   --owner "$AUTHORITY_KEYPAIR" \
   --url localhost 2>&1)
 
-MINT_ADDRESS=$(echo "$MINT_OUTPUT" | grep -oP 'Creating token [A-Za-z0-9]+' | awk '{print $3}')
+# Extract mint address (macOS-compatible)
+MINT_ADDRESS=$(echo "$MINT_OUTPUT" | awk '/Creating token/ {print $3}')
 if [ -z "$MINT_ADDRESS" ]; then
   MINT_ADDRESS=$(echo "$MINT_OUTPUT" | head -1 | awk '{print $3}')
 fi
@@ -132,13 +132,16 @@ echo ""
 
 echo -e "${CYAN}── Step 2: Create Token Accounts ──${NC}"
 
-SENDER_ATA=$(spl-token create-account "$MINT_ADDRESS" \
+# Extract account address using awk (macOS-compatible)
+SENDER_CREATE_OUT=$(spl-token create-account "$MINT_ADDRESS" \
   --owner "$SENDER_KEYPAIR" \
-  --url localhost 2>&1 | grep -oP '[A-Za-z0-9]{32,}' | head -1)
+  --url localhost 2>&1)
+SENDER_ATA=$(echo "$SENDER_CREATE_OUT" | awk '/Creating account/ {print $3}')
 
-RECIPIENT_ATA=$(spl-token create-account "$MINT_ADDRESS" \
+RECIPIENT_CREATE_OUT=$(spl-token create-account "$MINT_ADDRESS" \
   --owner "$RECIPIENT_KEYPAIR" \
-  --url localhost 2>&1 | grep -oP '[A-Za-z0-9]{32,}' | head -1)
+  --url localhost 2>&1)
+RECIPIENT_ATA=$(echo "$RECIPIENT_CREATE_OUT" | awk '/Creating account/ {print $3}')
 
 echo "  Sender ATA:    $SENDER_ATA"
 echo "  Recipient ATA: $RECIPIENT_ATA"
@@ -154,7 +157,7 @@ spl-token mint "$MINT_ADDRESS" 1000 "$SENDER_ATA" \
   --mint-authority "$AUTHORITY_KEYPAIR" \
   --url localhost >/dev/null 2>&1
 
-SENDER_BALANCE=$(spl-token balance "$MINT_ADDRESS" --owner "$SENDER" --url localhost 2>&1 | grep -oP '[0-9.]+' | head -1)
+SENDER_BALANCE=$(spl-token balance "$MINT_ADDRESS" --owner "$SENDER" --url localhost 2>&1 | awk '{print $1}')
 echo "  Sender public balance: $SENDER_BALANCE"
 check "1000 tokens minted to sender" "echo '$SENDER_BALANCE' | grep -q '1000'"
 
@@ -165,20 +168,22 @@ echo ""
 echo -e "${CYAN}── Step 4: Configure CT on Token Accounts ──${NC}"
 
 # Configure sender's account for CT (generates ElGamal keypair)
-spl-token configure-confidential-transfer-account \
+CT_SENDER_OUT=$(spl-token configure-confidential-transfer-account \
   --address "$SENDER_ATA" \
   --owner "$SENDER_KEYPAIR" \
-  --url localhost >/dev/null 2>&1 || true
+  --url localhost 2>&1 || true)
 
-check "Sender account configured for CT" "true"
+echo "  Sender CT: $CT_SENDER_OUT"
+check "Sender account configured for CT" "echo '$CT_SENDER_OUT' | grep -qiv 'error'"
 
 # Configure recipient's account for CT
-spl-token configure-confidential-transfer-account \
+CT_RECIP_OUT=$(spl-token configure-confidential-transfer-account \
   --address "$RECIPIENT_ATA" \
   --owner "$RECIPIENT_KEYPAIR" \
-  --url localhost >/dev/null 2>&1 || true
+  --url localhost 2>&1 || true)
 
-check "Recipient account configured for CT" "true"
+echo "  Recipient CT: $CT_RECIP_OUT"
+check "Recipient account configured for CT" "echo '$CT_RECIP_OUT' | grep -qiv 'error'"
 
 echo ""
 
@@ -186,12 +191,14 @@ echo ""
 
 echo -e "${CYAN}── Step 5: Deposit 500 Tokens into Confidential Balance ──${NC}"
 
-spl-token deposit-confidential-tokens "$MINT_ADDRESS" 500 \
+DEPOSIT_OUT=$(spl-token deposit-confidential-tokens "$MINT_ADDRESS" 500 \
   --address "$SENDER_ATA" \
   --owner "$SENDER_KEYPAIR" \
-  --url localhost >/dev/null 2>&1 || true
+  --url localhost 2>&1 || true)
 
-SENDER_PUBLIC=$(spl-token balance "$MINT_ADDRESS" --owner "$SENDER" --url localhost 2>&1 | grep -oP '[0-9.]+' | head -1)
+echo "  Deposit: $DEPOSIT_OUT"
+
+SENDER_PUBLIC=$(spl-token balance "$MINT_ADDRESS" --owner "$SENDER" --url localhost 2>&1 | awk '{print $1}')
 echo "  Sender public balance after deposit: $SENDER_PUBLIC"
 check "500 tokens deposited to confidential balance" "echo '$SENDER_PUBLIC' | grep -q '500'"
 
@@ -201,12 +208,13 @@ echo ""
 
 echo -e "${CYAN}── Step 6: Apply Pending Balance ──${NC}"
 
-spl-token apply-pending-balance \
+APPLY_OUT=$(spl-token apply-pending-balance \
   --address "$SENDER_ATA" \
   --owner "$SENDER_KEYPAIR" \
-  --url localhost >/dev/null 2>&1 || true
+  --url localhost 2>&1 || true)
 
-check "Pending balance applied (available for transfer)" "true"
+echo "  Apply: $APPLY_OUT"
+check "Pending balance applied (available for transfer)" "echo '$APPLY_OUT' | grep -qiv 'error'"
 
 echo ""
 
@@ -219,10 +227,10 @@ CT_TX=$(spl-token transfer "$MINT_ADDRESS" 200 "$RECIPIENT_ATA" \
   --from "$SENDER_ATA" \
   --owner "$SENDER_KEYPAIR" \
   --confidential \
-  --url localhost 2>&1 || echo "FAILED")
+  --url localhost 2>&1 || echo "CT_TRANSFER_FAILED")
 
 echo "  Transfer result: $CT_TX"
-check "Confidential transfer of 200 tokens" "echo '$CT_TX' | grep -qiv 'error\|failed'"
+check "Confidential transfer of 200 tokens" "! echo '$CT_TX' | grep -qi 'CT_TRANSFER_FAILED\|error'"
 
 echo ""
 
@@ -230,12 +238,13 @@ echo ""
 
 echo -e "${CYAN}── Step 8: Apply Recipient's Pending Balance ──${NC}"
 
-spl-token apply-pending-balance \
+APPLY_RECIP_OUT=$(spl-token apply-pending-balance \
   --address "$RECIPIENT_ATA" \
   --owner "$RECIPIENT_KEYPAIR" \
-  --url localhost >/dev/null 2>&1 || true
+  --url localhost 2>&1 || true)
 
-check "Recipient pending balance applied" "true"
+echo "  Apply: $APPLY_RECIP_OUT"
+check "Recipient pending balance applied" "echo '$APPLY_RECIP_OUT' | grep -qiv 'error'"
 
 echo ""
 
@@ -243,12 +252,14 @@ echo ""
 
 echo -e "${CYAN}── Step 9: Withdraw 100 Tokens from Confidential Balance ──${NC}"
 
-spl-token withdraw-confidential-tokens "$MINT_ADDRESS" 100 \
+WITHDRAW_OUT=$(spl-token withdraw-confidential-tokens "$MINT_ADDRESS" 100 \
   --address "$RECIPIENT_ATA" \
   --owner "$RECIPIENT_KEYPAIR" \
-  --url localhost >/dev/null 2>&1 || true
+  --url localhost 2>&1 || true)
 
-RECIPIENT_PUBLIC=$(spl-token balance "$MINT_ADDRESS" --owner "$RECIPIENT" --url localhost 2>&1 | grep -oP '[0-9.]+' | head -1)
+echo "  Withdraw: $WITHDRAW_OUT"
+
+RECIPIENT_PUBLIC=$(spl-token balance "$MINT_ADDRESS" --owner "$RECIPIENT" --url localhost 2>&1 | awk '{print $1}')
 echo "  Recipient public balance after withdrawal: $RECIPIENT_PUBLIC"
 check "100 tokens withdrawn from confidential to public" "echo '$RECIPIENT_PUBLIC' | grep -q '100'"
 
@@ -258,8 +269,8 @@ echo ""
 
 echo -e "${CYAN}── Step 10: Final Balance Verification ──${NC}"
 
-FINAL_SENDER=$(spl-token balance "$MINT_ADDRESS" --owner "$SENDER" --url localhost 2>&1 | grep -oP '[0-9.]+' | head -1)
-FINAL_RECIPIENT=$(spl-token balance "$MINT_ADDRESS" --owner "$RECIPIENT" --url localhost 2>&1 | grep -oP '[0-9.]+' | head -1)
+FINAL_SENDER=$(spl-token balance "$MINT_ADDRESS" --owner "$SENDER" --url localhost 2>&1 | awk '{print $1}')
+FINAL_RECIPIENT=$(spl-token balance "$MINT_ADDRESS" --owner "$RECIPIENT" --url localhost 2>&1 | awk '{print $1}')
 
 echo "  Sender public balance:    $FINAL_SENDER (expected: 500)"
 echo "  Recipient public balance: $FINAL_RECIPIENT (expected: 100)"
@@ -297,8 +308,13 @@ rm -f "$SENDER_KEYPAIR" "$RECIPIENT_KEYPAIR" "$AUTHORITY_KEYPAIR"
 # Save proof log
 PROOF_LOG="evidence/ct-e2e-proof.log"
 mkdir -p evidence
-echo "SSS-3 Confidential Transfer E2E — $(date -u '+%Y-%m-%dT%H:%M:%SZ')" > "$PROOF_LOG"
-echo "Passed: $PASS/$TOTAL" >> "$PROOF_LOG"
-echo "Mint: $MINT_ADDRESS" >> "$PROOF_LOG"
+{
+  echo "SSS-3 Confidential Transfer E2E — $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  echo "Passed: $PASS/$TOTAL"
+  echo "Failed: $FAIL/$TOTAL"
+  echo "Mint: $MINT_ADDRESS"
+  echo "Sender: $SENDER"
+  echo "Recipient: $RECIPIENT"
+} > "$PROOF_LOG"
 
 exit $FAIL
