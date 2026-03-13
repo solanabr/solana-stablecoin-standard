@@ -1,0 +1,12 @@
+Solana Stablecoin Standard frontend static export
+
+Host this folder over HTTP or HTTPS.
+Do not open index.html via file:// if you need Phantom, Solflare, or Backpack.
+
+Local preview:
+  node scripts/frontend-serve.mjs
+  open http://127.0.0.1:4173
+
+Wallet note:
+  Browser extension wallets generally do not inject into file:// pages.
+  Demo Wallet continues to work for offline preview.

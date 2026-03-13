@@ -1,0 +1,308 @@
+{
+  "checkedAt": "2026-03-13T09:15:58.683Z",
+  "seed": 1337,
+  "steps": 80,
+  "authority": "6Hrt2UtA8zzkyKEUek1BrDgkDXKCbVjJdtrxFLcGj7V6",
+  "operator": "5o4oGgC8u1C3eB56rZgxQXSQ2SFtQDPdU1rT6XGfb2q4",
+  "nextAuthority": "A8oAeiqW3GGaKJUrCESnHt9qUZWkbvxVB7zwDwbnenxQ",
+  "coverage": {
+    "initialize": 4,
+    "update_roles": 5,
+    "thaw_account": 17,
+    "register_release": 1,
+    "deprecate_release": 1,
+    "register_stablecoin": 3,
+    "mint": 44,
+    "burn": 13,
+    "pause": 16,
+    "unpause": 16,
+    "freeze_account": 12,
+    "add_to_blacklist": 11,
+    "remove_from_blacklist": 11,
+    "seize": 1,
+    "update_compliance_root": 14,
+    "submit_proof_receipt": 14,
+    "revoke_proof_receipt": 14,
+    "propose_authority": 1,
+    "accept_authority": 1
+  },
+  "randomActions": [
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "13738"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "31750"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "115095"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "27011"
+    },
+    {
+      "action": "sss1_delegated_mint",
+      "amount": "25072"
+    },
+    {
+      "action": "sss1_delegated_mint",
+      "amount": "48659"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "19151"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "38748"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss1_delegated_mint",
+      "amount": "14012"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "4706"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "25673"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "23704"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "22642"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "6652"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss1_delegated_mint",
+      "amount": "10158"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "14058"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "17831"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "23785"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "24553"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "2887"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss1_delegated_mint",
+      "amount": "1324"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss2_pause_cycle"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "1324"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "3245"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "12204"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss1_delegated_mint",
+      "amount": "11455"
+    },
+    {
+      "action": "sss1_delegated_mint",
+      "amount": "16777"
+    },
+    {
+      "action": "sss2_mint_transfer",
+      "amount": "23796"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss2_blacklist_cycle"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "13877"
+    },
+    {
+      "action": "sss1_delegated_burn",
+      "amount": "14355"
+    },
+    {
+      "action": "sss2_freeze_cycle"
+    },
+    {
+      "action": "sss3_proof_cycle"
+    }
+  ],
+  "counts": {
+    "positive": 187,
+    "negative": 40
+  },
+  "finalState": {
+    "sss1Supply": "400000",
+    "sss2Treasury": "900000",
+    "transferAuthority": "A8oAeiqW3GGaKJUrCESnHt9qUZWkbvxVB7zwDwbnenxQ",
+    "registeredStablecoins": [
+      "2d6j4fKCy66WRMgy8pGKcnNH2NNNFKoZTgq1QXjv8XiN",
+      "Fq5348kFdAw7Ao4BhPUHghp1TJMrx4nTd1enaRuPiNWt",
+      "8g2aRCm6RLW8Bcx9NJeg3aZWnca8dmK6LR4okXKm4mCC"
+    ]
+  }
+}

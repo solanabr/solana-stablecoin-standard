@@ -1,0 +1,10 @@
+[preset]
+extends = ["./SAMPLE_ISSUER_BASE.toml"]
+
+[overrides]
+name = "Example Regulated USD"
+symbol = "rUSD"
+uri = "https://example.com/metadata/sss2.json"
+decimals = 6
+default_account_frozen = false
+standard_version = "sss/1.0.0"

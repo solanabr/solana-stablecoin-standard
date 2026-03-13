@@ -1,0 +1,32 @@
+{
+  "generatedAt": "2026-03-12T16:11:51.408Z",
+  "gitCommit": null,
+  "rpcUrl": "https://api.devnet.solana.com",
+  "packages": {
+    "root": "solana-stablecoin-standard",
+    "sdk": "0.1.0",
+    "backend": "0.1.0"
+  },
+  "programs": {
+    "stablecoin": {
+      "id": "Gm2SdmH1ydLKmPtjNE4W2ZLjW5kMvPrx784L7oUcw4w",
+      "binaryPath": "target/deploy/stablecoin.so",
+      "sha256": "e43dd126a862d01bc5e3c108a53d90065b40b8263af32a18ec308694430e579d"
+    },
+    "transferHook": {
+      "id": "E24UT9RMiw9zBh51ZMzXRdmoiLQ2PkVZ1sYhBKqazYy8",
+      "binaryPath": "target/deploy/transfer_hook.so",
+      "sha256": "8e48d0e3519245b5e57729b36c9e59090a570b57a6edfaae1696533e7a478aeb"
+    },
+    "registry": {
+      "id": "5vedffCtRhecm5sSXJCbgrwe7GYnGC9XK5vWLiMHLVXB",
+      "binaryPath": "target/deploy/sss_registry.so",
+      "sha256": "de401430e975408a1ec5fae4068db637b8e8be1dd6da63abe88ebe162f095f07"
+    }
+  },
+  "exampleMints": {
+    "sss1": "5CtycKpzocgMiXHxBLsg2D3BeLoXfgUQTYUMT5FH9jS3",
+    "sss2": "GfmjjNV65fbHh2rkpZeN2n9Va2Zthy9Ryg7joUiLECon",
+    "sss3": "H546fRf1MRhPM1rFejYdViTFqPUVsTtbisbFMGH9JhEQ"
+  }
+}

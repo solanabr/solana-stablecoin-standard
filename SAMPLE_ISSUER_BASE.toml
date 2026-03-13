@@ -1,0 +1,9 @@
+[preset]
+extends = "sss-2"
+
+[registry]
+homepage = "https://issuer.example.com"
+jurisdiction = "US"
+
+[overrides]
+standard_version = "sss/1.0.0"

@@ -1,0 +1,22 @@
+[package]
+name = "transfer-hook"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "transfer_hook"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build"]
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["interface-instructions"] }
+stablecoin = { path = "../stablecoin", features = ["no-entrypoint", "idl-build"] }
+spl-tlv-account-resolution = "0.10.0"
+spl-transfer-hook-interface = "0.10.0"

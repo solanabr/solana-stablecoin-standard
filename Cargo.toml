@@ -1,0 +1,18 @@
+[workspace]
+members = [
+    "crates/sss-zk-compliance",
+    "programs/stablecoin",
+    "programs/transfer-hook",
+    "programs/sss-registry",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.32.1"
+anchor-spl = { version = "0.32.1", features = ["token_2022", "token_2022_extensions"] }
+
+[profile.release]
+overflow-checks = true
+
+[profile.dev]
+debug = 0

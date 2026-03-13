@@ -1,0 +1,5 @@
+preset = "sss-1"
+name = "Example Treasury USD"
+symbol = "eUSD"
+uri = "https://example.com/metadata/sss1.json"
+decimals = 6

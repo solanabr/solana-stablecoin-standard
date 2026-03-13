@@ -1,0 +1,16 @@
+[preset]
+extends = ["./SAMPLE_ISSUER_BASE.toml"]
+
+[overrides]
+preset = "sss-3"
+name = "Example Private Regulated USD"
+symbol = "prUSD"
+uri = "https://example.com/metadata/sss3.json"
+decimals = 6
+enable_confidential_transfers = true
+enable_zk_compliance_proofs = true
+enable_compressed_compliance_state = true
+standard_version = "sss/1.1.0"
+proof_verifier_program_id = "11111111111111111111111111111111"
+compressed_compliance_root = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+compliance_circuit = "sss3-not-blacklisted-v1"

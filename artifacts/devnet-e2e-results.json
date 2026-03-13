@@ -1,0 +1,116 @@
+{
+  "checkedAt": "2026-03-13T10:42:31.190Z",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "authority": "9BeBqNy15zt5mq112RrR35GaHNoqkPNFe1brhtEocdpU",
+  "delegatedOperator": "3bckHh1yFdFyhmB7i1s7NmiGFeyq5WMoZLjoaj3vj8pU",
+  "programs": {
+    "stablecoin": "Gm2SdmH1ydLKmPtjNE4W2ZLjW5kMvPrx784L7oUcw4w",
+    "transferHook": "E24UT9RMiw9zBh51ZMzXRdmoiLQ2PkVZ1sYhBKqazYy8",
+    "registry": "5vedffCtRhecm5sSXJCbgrwe7GYnGC9XK5vWLiMHLVXB"
+  },
+  "registry": {
+    "config": "HoC2rSYk4WMiU35FeizxkN253dGSxpJi1yowVig4PW5",
+    "initializeSignature": "5kRZRwhePmLtJcpDjDiyRbbzhLeHKhCKAkPuu9Cxf4vKwaz5sTEHwFAzbe3KpR9Gdb9tiKouKk4gvmjLBgNJamtk",
+    "release110Signature": "3TmxAAgn5xx6QztoeFYmukUmQpG2b4ZLBKEMeMbn6eqTCCfbPbvDHnvrW2s4xXhsrf5iZRF8Dqtg5vaH61LukpK4"
+  },
+  "stablecoins": {
+    "sss1": {
+      "mint": "5CtycKpzocgMiXHxBLsg2D3BeLoXfgUQTYUMT5FH9jS3",
+      "config": "JCeXdny8fM2wTNw8mavT7YbTgRz6NYSLVqosfjrTkk6P",
+      "signature": "4tNPwAzaBo6z6FZLDj6HEHF8gvsKMsjhWX4keuuMvPSH3jZ3ko3DMmV4VKngj3edRwJ6r2AFmdWX2HujyRvyY87x",
+      "preset": "sss-1",
+      "standardVersion": "sss/1.0.0",
+      "configHash": "bdaef2455f5b95aed56e9a9a8c3ba4431126f36936e0597b047689c1612de678",
+      "transferHookInitSignature": null,
+      "registrySignature": "5aR65Q9e1fA2cRvGfh3fyQoPQqogahEswPxQHEFDMreV5iSv5XVJxFRd4pfrEgzNRHmGsK4vmctABx8emLQ1cUac",
+      "extra": {
+        "roleGrantSignatures": {
+          "minter": "3tSLzv795NGBpkZKpHjU5tbkFUbkAGRhqhTEoQ7BmHET1iVHFCYTstCjB3KEWvEWWtLM8NQGnPQBP7ZcZCoXKDAd",
+          "burner": "5YeavBN9eBD9VG6QSFb35K1NNtx4cqR8SqgMdMWttPsPbqxQ7Ppzscgif32eaCt8s3L7Rxv3WzhTnLRLWh2837dZ"
+        },
+        "accounts": {
+          "authorityAta": "FnLWTYddCeSNhYc7pvwRCNLdx4MYoPkefnHhhW3HBQBg",
+          "operatorOwner": "3bckHh1yFdFyhmB7i1s7NmiGFeyq5WMoZLjoaj3vj8pU",
+          "operatorAta": "DoCZubJsGpCuSBHL3VSXFXZBZiX246g7CjUVheWrZo8p"
+        },
+        "authorityMintSignature": "3VKsVF4E2GPwzzftm93aMmUL2JkDzFGV6JjvL4dscK3CNxe48GuNLQkPB9FCEncohnrbxjcnL9jjHD2WWGMek3qQ",
+        "authorityBurnSignature": "4najtxV9dkXoZExrpapzxmteK1MJ15feRm2cPH1XbRxNbHG6DfzVgmpu5r7QWdDD179oYuuSWRASEaMbxEDHYcgk",
+        "delegatedMintSignature": "2e9r75wkhghXgJGgGtufgPi7y7n7vBV8PdZx1Q2Zb2EfVh5zneML3KC9HZHiW7PieLfX7ZMEWmoXQtdLNw3ujJGh",
+        "quotaExceededCheck": "expected-failure",
+        "delegatedBurnSignature": "5bkdUnuY5BvYAmEUvVM5AYizmuPeLUTstaCyzxTUn5oMenq4pjs5AMQCjKT7hz3wFVyiUP6sapNAgTqphXB9rDVR"
+      },
+      "registration": "5jsZj233fcjdbxwDQLydNAcT6TFiy6b4gxgRcRRRtDXx"
+    },
+    "sss2": {
+      "mint": "GfmjjNV65fbHh2rkpZeN2n9Va2Zthy9Ryg7joUiLECon",
+      "config": "52YVYX1TinD1NZgjkYL95HRJKyH58Putmk2i7fYY819U",
+      "signature": "2YVBr9AdHf5rJdCMqRAnodwasLNFPeLUGxrHrCmFH24xDYbRrLphF1jCEQYEwYDFqPtr7ijoqxK5WK2vJvNFbL6c",
+      "preset": "sss-2",
+      "standardVersion": "sss/1.0.0",
+      "configHash": "d0d2397a9330c3bad8a5baa75a05ec8fcae68faba8703121a33a99881b9f7094",
+      "transferHookInitSignature": "4UDZwfwPeDEUkuASgm5pcE33gr9RLhVySD2jFWerwptTKKSvyoiZpYK92mt5mf1Wmu4oJF8eQCKQ6riE2V3qePFw",
+      "registrySignature": "3hTAqkeAd5LdVFNbNvK5eRx9g8UXmtftafKSWdM4UzKDPAehaGM9CnUj6ULJzkw3A9AN1vfiJ4Bm5PeP7M8cAQyY",
+      "extra": {
+        "roleGrantSignatures": {
+          "pauser": "coMuFUhaLFUp3anXV4dURyDci8hSibocG4WZPazGyYCg2M59U4cNrd5XrVDvEeYx7pe73Rm5dpnLCwejBd6qRJ6",
+          "blacklister": "2gL4aHTH1WziG39fHgZQ6PqrX2nsm5ovipWviF46D8AbXvuS2jHhRAB52fT1pTyivFUGDPaY1VxNYnRH6teQSwWj",
+          "seizer": "4bJa7s49i4K8o9eKpHYRDoCmipBw2ekEamUnVsBS6SkdCSV8V7foDXi85ugm1Viup7GUzVrUmVWNUjpoWTFEtpDq"
+        },
+        "accounts": {
+          "sourceOwner": "Ab8ejX21o7VLM2aADyYF4vARPXHFj2HLTWJdCoQZuJDi",
+          "sourceAta": "HkxcPEJFR2KJX8BErtbS4tzyGtE8eE5cxp3YBTvmA9uy",
+          "destinationOwner": "HYt5FjBRfcxwM9WeeMam6xFTYPZqeVNdkkPgkMazyoRP",
+          "destinationAta": "7rnAmUBVraE4jSHk8Pp2jwTiUVePjSQoL5rrrSZvFNcP",
+          "treasuryAta": "GodNVLvMPK59wA9qbAWLiYWV6mPRtrxXxCdnwYXHeMfU"
+        },
+        "defaultFrozenCheck": "verified",
+        "delegatedPauseSignature": "4x35W4kAshfUimkxArAUTLGRTkdg3sPZFyN1zBYdsWCeeSBTMM1wxDoYz41r14Dhjze8sZ6uP2HNHxsTxHzh64F7",
+        "pauseBlocksMintCheck": "expected-failure",
+        "delegatedUnpauseSignature": "4YWYQophAjJUHAakX74qCBYdwBWUfsKJAfkHnaRNgfnppdnyq7mToMf8EEGHjsJzLTqR8Y56uEFjDhHM1bFDsJHn",
+        "sss2_source_thawSignature": "5QjY5z6oZqMVCYiDioXbeDgHVYjrp2MqmHNt538aaDhhYPCiNtPTgvZc2kVHybUQjSezkE8bAwGGc8U7hA95c7re",
+        "sss2_destination_thawSignature": "65SrENtmDeM3TEHQW7p6RaRKo4Po273RFvhaxWadczjNgLxWe7ubQ4y3Ck5G4K4dqBT31VQmS3n6neDvkjcxKWyj",
+        "sss2_treasury_thawSignature": "3s5HGsscQmzLmePVp8eEkaKF2P5qUCEeU8SRxog9hW1np9FPsxBATRia2QgVbGaiRbSeZQ2ygY2jBjXALaV1iPQL",
+        "authorityMintSignature": "5mJ5C7hMDqcEXTdqUgSVy63ZosXHwFDepas2LKCb7aw9jdqQFwZt64BT2NvzTSKT8EsQaqKQdJfCuj1a3DHkGKoE",
+        "delegatedFreezeSignature": "CW3Pwkb9iPsJVLBWpnokzEcU9RnVcKyhgJDnkNMjDrwixdXxcTbvjdpYrEph1AFjRYgza972wwAq6vSVYsCDDSS",
+        "freezeBlocksTransferCheck": "expected-failure",
+        "delegatedThawSignature": "2QwXdPRqkNYpB2NaRbkKgJfPkvDfXZgW1ovBzoV8iCodpBvL3C61htMkofZ8omzq98FLMcSnco2hQGU8WxxwUWyE",
+        "transferBeforeBlacklistSignature": "5BpN4xXh83um6BspQydM6iUnz1eHwtToEgDGmzZd7kT6cgnAj4gogW1s2HsxU5r7xbdPakcTYy6eo22H7eqceMzF",
+        "delegatedBlacklistAddSignature": "4cbnvqERT7GXycUkG2vZ38q5fRKAh1agdyXn33EX92BmZJMHfwzAfJp1S6gX4ZV3zt8Z3mPXo6aDLBNmzQMiJxUq",
+        "blacklistBlocksTransferCheck": "expected-failure",
+        "delegatedBlacklistRemoveSignature": "43f8YC7Xv9NKh5fpnGQcfpMRzqUZ13k67DhnS22WwQVQuiJKphmt6ZVuZyGZfduVuvzDhfFKUSKqd8Hg6q3mxcTa",
+        "transferAfterBlacklistRemovalSignature": "4TwJKuNpgAQcg3ETr8KyRH92GvYG33Tkk5pdHR2amnMcnYBmdRC5tNZgMBGxZVuYmHBqdMotLrZEQcoszmV5dK3o",
+        "delegatedSeizeSignature": "63Cd66eomBdkgL4Kx3CCeYi3nar1sSBi8CGEHNBA1b7R4q57DPy1agr2swhHEW5SVo37wJhaaduSpso9tfP9dbBU"
+      },
+      "registration": "F8bieYZyxv8TRMHWJwDa2LpcBpV56NvA3D8h2xa3iktM"
+    },
+    "sss3": {
+      "mint": "H546fRf1MRhPM1rFejYdViTFqPUVsTtbisbFMGH9JhEQ",
+      "config": "4z1LmpFBqfYQugbSTbWteZzLntgCN6vU934ZKwCGiuCx",
+      "signature": "4U53iJsWiEsFEintSajDPkME1MvigqiPzUmQk38CbQfgFLmu6A6xypnJceksozFsznRUL9x24nF35uaBzw2ka6ka",
+      "preset": "sss-3",
+      "standardVersion": "sss/1.1.0",
+      "configHash": "8e5571396f35300db5b3a4700214e453ceee574f69fe25d9f4d62707783b1a98",
+      "transferHookInitSignature": "3tzngJ96aWr3wCiMp1enh98BicfbhiDtYo3XwBavcwFBkE16qCtmvyck3jZantpReYjxGamq2SUt3TrtHAExFBRr",
+      "registrySignature": "RiKb87REnAdP7KMLM73R48znU3e9fsMbv6WivpfH7GCYsUVVBx3h6nmhaSHSP8V3axyYYP5r91xA44MFMUvGv1J",
+      "extra": {
+        "accounts": {
+          "owner": "AVLKwvXS7ejExCuU2rHhoFjERVoJH2LPac8MJUn9hUTL",
+          "sourceAccount": "4TNdr76LBiTvLb6icrrUCj6doAnrWWFbpjxjPzTW9fXr",
+          "destinationAccount": "DDBkgWSrm54g2q7ns46NGbeBoT1reqzdFygutbjtwzYf",
+          "tokenAccountSize": 165
+        },
+        "defaultFrozenCheck": "verified",
+        "sourceThawSignature": "5NGRjMeQ8pkMosoa7Er6qKkkEHiDzBCMH9kkzbCLDD7eBUpnmHCdptDdLDKSCSL56jmWWJGcuqjdHgtMEqmteKeh",
+        "destinationThawSignature": "4ZCbdGLEsRQzt8tzrQF3ukMHkJKZ8MSX5ypwJogqbh3HChgHLKTKYyWTTGREthY3TUVC2UgLTjpG3je4MAt9eFar",
+        "authorityMintSignature": "3QWbrjR1JTdLTc6QA34zrD6MjpWEUZk8tHGoFTWCjoq4566vpR74hk7uDL8cTXdwzxi7dkC8XZnfo7tc65SWqzxb",
+        "preProofTransferCheck": "expected-failure",
+        "complianceRootUpdateSignature": "35831iej57FxXm8nKXV8L9afQq2YdXWP6jAuc8xAuXYGx3B9uj3vdRR1QdHKkuDVS1tqCaad3BqGGbNPKiAcioYB",
+        "proofSubmitSignature": "3K3tuZq2eyDeLHvMBme97awQjxt2p2a1LSDGZFWQh6FMs9vp16Cgp4Jn855xCLHAXPwo7YMoUpJkrsJQdi4pdvq5",
+        "transferWithProofSignature": "4TmSJ6eBY3qBcngd3P4fkHQdUjHkiXUMPFgdGqjuvMNKSYa1Xc3ZzUyh6sYZh4finLhRZHhmnn4dTx9MptFYPKAW",
+        "proofRevokeSignature": "Z9MnKZE9fEdVrnmgmjpbGCbYDkMx3W7LtMsHWYnsA2UKqmaRpP7yukjHQFd3CN5ERJVT8WodcdtGHW1J2v2c9Vo",
+        "postRevokeTransferCheck": "expected-failure"
+      },
+      "registration": "7D5DCv2yRoyHk12ZfbdjfJjiYN25VsKvNX4qfQEs5d2y"
+    }
+  }
+}

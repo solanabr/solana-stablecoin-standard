@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  mint-service:
+    build: .
+    command: node dist/mint-service/index.js
+    ports:
+      - "3001:3001"
+    environment:
+      STORE_PATH: /app/data/store.json
+      SSS_KEYPAIR: ${SSS_KEYPAIR:-}
+      SSS_MINT: ${SSS_MINT:-}
+      SSS_STABLECOIN_PROGRAM_ID: ${SSS_STABLECOIN_PROGRAM_ID:-}
+    volumes:
+      - ./data:/app/data
+  event-indexer:
+    build: .
+    command: node dist/event-indexer/index.js
+    ports:
+      - "3002:3002"
+    environment:
+      STORE_PATH: /app/data/store.json
+    volumes:
+      - ./data:/app/data
+  compliance-service:
+    build: .
+    command: node dist/compliance-service/index.js
+    ports:
+      - "3003:3003"
+    environment:
+      STORE_PATH: /app/data/store.json
+      SANCTIONS_SCREENING_URL: ${SANCTIONS_SCREENING_URL:-}
+      SANCTIONS_SCREENING_API_KEY: ${SANCTIONS_SCREENING_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+  webhook-service:
+    build: .
+    command: node dist/webhook-service/index.js
+    ports:
+      - "3004:3004"
+    environment:
+      STORE_PATH: /app/data/store.json
+    volumes:
+      - ./data:/app/data

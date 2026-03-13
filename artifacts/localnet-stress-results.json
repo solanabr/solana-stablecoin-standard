@@ -1,0 +1,254 @@
+{
+  "checkedAt": "2026-03-13T09:04:24.625Z",
+  "concurrency": 6,
+  "rounds": 12,
+  "totals": {
+    "successful": 220,
+    "failed": 0
+  },
+  "phases": [
+    {
+      "name": "mint-round-1",
+      "durationMs": 1038,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-2",
+      "durationMs": 1018,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-3",
+      "durationMs": 1019,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-4",
+      "durationMs": 992,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-5",
+      "durationMs": 1005,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-6",
+      "durationMs": 1017,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-7",
+      "durationMs": 984,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-8",
+      "durationMs": 1009,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-9",
+      "durationMs": 1004,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-10",
+      "durationMs": 1015,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-11",
+      "durationMs": 1016,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "mint-round-12",
+      "durationMs": 991,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-1",
+      "durationMs": 1013,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-2",
+      "durationMs": 1038,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-3",
+      "durationMs": 1037,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-4",
+      "durationMs": 987,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-5",
+      "durationMs": 1004,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-6",
+      "durationMs": 1021,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-7",
+      "durationMs": 965,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-8",
+      "durationMs": 979,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-9",
+      "durationMs": 970,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-10",
+      "durationMs": 999,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-11",
+      "durationMs": 988,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "burn-round-12",
+      "durationMs": 994,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-1",
+      "durationMs": 981,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-2",
+      "durationMs": 993,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-3",
+      "durationMs": 980,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-4",
+      "durationMs": 997,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-5",
+      "durationMs": 992,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-6",
+      "durationMs": 990,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-7",
+      "durationMs": 990,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-8",
+      "durationMs": 991,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-9",
+      "durationMs": 966,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-10",
+      "durationMs": 1010,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-11",
+      "durationMs": 995,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "transfer-round-12",
+      "durationMs": 993,
+      "successful": 6,
+      "failed": 0
+    },
+    {
+      "name": "registry-register",
+      "durationMs": 1021,
+      "successful": 4,
+      "failed": 0
+    }
+  ],
+  "durationMs": 110810,
+  "finalState": {
+    "sss1Supply": "323640",
+    "sss1OperatorBalances": [
+      "53940",
+      "53940",
+      "53940",
+      "53940",
+      "53940",
+      "53940"
+    ],
+    "sss2DestinationBalances": [
+      "1266",
+      "1278",
+      "1290",
+      "1302",
+      "1314",
+      "1326"
+    ],
+    "registryRegistrations": 4
+  }
+}

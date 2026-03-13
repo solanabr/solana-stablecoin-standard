@@ -1,0 +1,32 @@
+{
+  "name": "solana-stablecoin-standard",
+  "private": true,
+  "workspaces": [
+    "sdk",
+    "cli",
+    "backend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces && npm run build:frontend",
+    "build:programs": "cargo build-sbf --manifest-path programs/stablecoin/Cargo.toml --sbf-out-dir target/deploy && cargo build-sbf --manifest-path programs/transfer-hook/Cargo.toml --sbf-out-dir target/deploy && cargo build-sbf --manifest-path programs/sss-registry/Cargo.toml --sbf-out-dir target/deploy",
+    "build:frontend": "esbuild frontend/app.js --bundle --platform=browser --format=iife --target=es2022 --outfile=frontend/dist/app.js --sourcemap --minify",
+    "frontend:serve": "node scripts/frontend-serve.mjs",
+    "frontend:export": "node scripts/frontend-export.mjs",
+    "frontend:deploy": "npm run build:frontend && npm run frontend:export",
+    "test": "npm run build && node tests/run-tests.mjs all",
+    "verify": "node scripts/verify.mjs",
+    "devnet:preflight": "node scripts/devnet-preflight.mjs",
+    "devnet:manifest": "node scripts/devnet-manifest.mjs",
+    "devnet:test": "node scripts/devnet-e2e.mjs",
+    "devnet:verify": "node scripts/devnet-verify.mjs",
+    "smoke:localnet:e2e": "node scripts/localnet-e2e.mjs",
+    "smoke:localnet": "node scripts/localnet-smoke.mjs",
+    "smoke:localnet:fuzz": "node scripts/localnet-fuzz.mjs",
+    "smoke:localnet:stress": "node scripts/localnet-stress.mjs",
+    "first-error": "node scripts/first-error.mjs"
+  },
+  "devDependencies": {
+    "@solana/spl-token": "^0.4.14",
+    "esbuild": "^0.27.3"
+  }
+}
