@@ -116,24 +116,24 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
         .and_then(|c| c.decimals)
         .unwrap_or(args.decimals);
 
-    let (custom_pd, custom_th, custom_df, custom_ct) =
-        if matches!(preset, StablecoinPreset::Custom) {
-            let tc = toml_config.as_ref();
-            (
-                Some(
-                    tc.and_then(|c| c.enable_permanent_delegate)
-                        .unwrap_or(false),
-                ),
-                Some(tc.and_then(|c| c.enable_transfer_hook).unwrap_or(false)),
-                Some(tc.and_then(|c| c.default_account_frozen).unwrap_or(false)),
-                Some(
-                    tc.and_then(|c| c.enable_confidential_transfers)
-                        .unwrap_or(false),
-                ),
-            )
-        } else {
-            (None, None, None, None)
-        };
+    let (custom_pd, custom_th, custom_df, custom_ct) = if matches!(preset, StablecoinPreset::Custom)
+    {
+        let tc = toml_config.as_ref();
+        (
+            Some(
+                tc.and_then(|c| c.enable_permanent_delegate)
+                    .unwrap_or(false),
+            ),
+            Some(tc.and_then(|c| c.enable_transfer_hook).unwrap_or(false)),
+            Some(tc.and_then(|c| c.default_account_frozen).unwrap_or(false)),
+            Some(
+                tc.and_then(|c| c.enable_confidential_transfers)
+                    .unwrap_or(false),
+            ),
+        )
+    } else {
+        (None, None, None, None)
+    };
 
     let should_initialize_transfer_hook =
         matches!(preset, StablecoinPreset::SSS2) || custom_th == Some(true);
@@ -225,8 +225,10 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
 /// Retry hook setup for a previously initialized mint that is missing its ExtraAccountMetaList.
 fn retry_hook_setup(config: &CliConfig, args: &InitArgs) -> Result<()> {
     let mint_str = args.mint.as_ref().ok_or_else(|| {
-        anyhow::anyhow!("--mint is required with --retry-hook-setup.\n\
-            Usage: sss-token init --retry-hook-setup --mint <MINT_ADDRESS>")
+        anyhow::anyhow!(
+            "--mint is required with --retry-hook-setup.\n\
+            Usage: sss-token init --retry-hook-setup --mint <MINT_ADDRESS>"
+        )
     })?;
     let mint_pubkey =
         Pubkey::from_str(mint_str).context("Invalid mint address: must be a base58 pubkey")?;
@@ -238,7 +240,10 @@ fn retry_hook_setup(config: &CliConfig, args: &InitArgs) -> Result<()> {
     // Idempotency check: skip if the ExtraAccountMetaList account already exists
     if let Ok(account) = config.rpc_client.get_account(&extra_account_meta_list_pda) {
         if !account.data.is_empty() {
-            println!("ExtraAccountMetaList already exists for mint {}", mint_pubkey);
+            println!(
+                "ExtraAccountMetaList already exists for mint {}",
+                mint_pubkey
+            );
             println!("  ExtraAccountMetaList: {}", extra_account_meta_list_pda);
             println!("No action needed — hook setup is already complete.");
             return Ok(());

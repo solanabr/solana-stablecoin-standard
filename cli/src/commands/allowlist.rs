@@ -1,7 +1,5 @@
 use crate::config::CliConfig;
-use crate::pda::{
-    get_allowlist_pda, get_config_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID,
-};
+use crate::pda::{get_allowlist_pda, get_config_pda, get_role_registry_pda, SSS_TOKEN_PROGRAM_ID};
 use anchor_lang::{InstructionData, ToAccountMetas};
 use anyhow::Result;
 use clap::{Args, Subcommand};

@@ -4,10 +4,7 @@ use anchor_lang::{InstructionData, ToAccountMetas};
 use anyhow::{Context, Result};
 use clap::Args;
 use solana_sdk::{
-    pubkey::Pubkey,
-    signature::read_keypair_file,
-    signer::Signer,
-    transaction::Transaction,
+    pubkey::Pubkey, signature::read_keypair_file, signer::Signer, transaction::Transaction,
 };
 use std::io::{self, Write};
 
