@@ -53,10 +53,15 @@ const EVENT_TYPES = new Set([
   "roleUpdated",
   "minterUpdated",
   "authorityTransferred",
+  "authorityNominated",
   "blacklistAdded",
   "blacklistRemoved",
+  "allowlistAdded",
+  "allowlistRemoved",
   "tokensSeized",
   "auditLogRecorded",
+  "supplyCapUpdated",
+  "metadataUpdated",
 ]);
 
 // ---------------------------------------------------------------------------
