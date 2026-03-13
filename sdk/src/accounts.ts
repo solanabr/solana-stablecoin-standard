@@ -74,6 +74,15 @@ export function deserializeStablecoinConfig(data: Buffer): StablecoinConfig {
   const defaultAccountFrozen = data.readUInt8(offset) === 1;
   offset += 1;
 
+  // supply_cap: Option<u64> — 1 byte tag + 8 bytes value
+  const hasSupplyCap = data.readUInt8(offset) === 1;
+  offset += 1;
+  let supplyCap: bigint | null = null;
+  if (hasSupplyCap) {
+    supplyCap = data.readBigUInt64LE(offset);
+  }
+  offset += 8;
+
   const bump = data.readUInt8(offset);
 
   return {
@@ -90,6 +99,7 @@ export function deserializeStablecoinConfig(data: Buffer): StablecoinConfig {
     enableTransferHook,
     enableConfidentialTransfers,
     defaultAccountFrozen,
+    supplyCap,
     bump,
   };
 }
