@@ -88,15 +88,78 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
     );
 
     // ── Read balance from the frozen token account ──────────────────
-    //
-    // We use the permanent delegate to transfer the entire balance.
-    // The config PDA is the permanent delegate (set at initialize).
-    //
-    // TODO: Phase 3 - Read token account balance and execute
-    //       transfer_checked CPI using config PDA as permanent delegate
-    //       signer seeds: [b"config", mint_key, &[bump]]
+    let from_data = ctx.accounts.from_token_account.try_borrow_data()?;
+    let amount = u64::from_le_bytes(
+        from_data[64..72]
+            .try_into()
+            .map_err(|_| SssError::ArithmeticOverflow)?
+    );
+    drop(from_data);
 
-    let amount = 0u64; // Placeholder until Phase 3
+    require!(amount > 0, SssError::ZeroMintAmount);
+
+    // ── PDA signer seeds ────────────────────────────────────────────
+    let mint_key = config.mint;
+    let bump = config.bump;
+    let signer_seeds: &[&[&[u8]]] = &[&[b"config", mint_key.as_ref(), &[bump]]];
+
+    // ── Step 1: Thaw the frozen account ─────────────────────────────
+    //
+    // Token-2022 blocks transfer_checked from frozen accounts, even with
+    // a permanent delegate. We must thaw first, transfer, then re-freeze.
+    anchor_lang::solana_program::program::invoke_signed(
+        &spl_token_2022::instruction::thaw_account(
+            ctx.accounts.token_program.key,
+            &ctx.accounts.from_token_account.key(),
+            &config.mint,
+            &config.key(), // freeze authority = config PDA
+            &[],
+        )?,
+        &[
+            ctx.accounts.from_token_account.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.config.to_account_info(),
+        ],
+        signer_seeds,
+    )?;
+
+    // ── Step 2: Transfer all tokens to treasury ─────────────────────
+    anchor_lang::solana_program::program::invoke_signed(
+        &spl_token_2022::instruction::transfer_checked(
+            ctx.accounts.token_program.key,
+            &ctx.accounts.from_token_account.key(),
+            &config.mint,
+            &ctx.accounts.treasury_token_account.key(),
+            &config.key(),  // permanent delegate authority
+            &[],
+            amount,
+            config.decimals,
+        )?,
+        &[
+            ctx.accounts.from_token_account.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.treasury_token_account.to_account_info(),
+            ctx.accounts.config.to_account_info(),
+        ],
+        signer_seeds,
+    )?;
+
+    // ── Step 3: Re-freeze the account ───────────────────────────────
+    anchor_lang::solana_program::program::invoke_signed(
+        &spl_token_2022::instruction::freeze_account(
+            ctx.accounts.token_program.key,
+            &ctx.accounts.from_token_account.key(),
+            &config.mint,
+            &config.key(), // freeze authority = config PDA
+            &[],
+        )?,
+        &[
+            ctx.accounts.from_token_account.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.config.to_account_info(),
+        ],
+        signer_seeds,
+    )?;
 
     emit!(TokensSeized {
         config: config.key(),

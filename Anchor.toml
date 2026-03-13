@@ -22,5 +22,10 @@ url = "https://api.apr.dev"
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
+[test.validator]
+url = "http://127.0.0.1:18899"
+rpc_port = 18899
+faucet_port = 18901
+
 [scripts]
-test = "pnpm run test"
+test = "node_modules/.bin/mocha --require tsx -t 1000000 'tests/**/*.test.ts'"

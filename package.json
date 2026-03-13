@@ -12,6 +12,18 @@
     "lint": "pnpm -r lint",
     "clean": "pnpm -r clean"
   },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "mocha": "^10.0.0",
+    "chai": "^4.4.0",
+    "@types/mocha": "^10.0.0",
+    "@types/chai": "^4.3.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.98.0",
+    "@solana/spl-token": "^0.4.12"
+  },
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"

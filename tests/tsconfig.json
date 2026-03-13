@@ -11,7 +11,11 @@
     "outDir": "./dist",
     "rootDir": ".",
     "sourceMap": true,
-    "types": ["mocha", "chai", "node"]
+    "types": ["mocha", "chai", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@stbr/sss-token": ["../sdk/src/index"]
+    }
   },
   "include": ["./**/*.ts"],
   "exclude": ["node_modules", "dist"]

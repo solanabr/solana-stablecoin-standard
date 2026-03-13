@@ -8,11 +8,11 @@ export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
 );
 
 export const TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  "Hook111111111111111111111111111111111111111"
+  "HmbTLCmaGtYhSJaoxkmcJA2MkRYEbn7gxjoYDMgbGnHb"
 );
 
 export const ORACLE_MODULE_PROGRAM_ID = new PublicKey(
-  "Orac1e1111111111111111111111111111111111111"
+  "J4ywvRqWbRSuijhFkvSfMbjXZvzR2eJYyGBJASarBPJc"
 );
 
 // Token-2022 program
