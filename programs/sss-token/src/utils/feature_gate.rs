@@ -5,7 +5,7 @@ use crate::state::StablecoinConfig;
 
 pub fn require_blacklist_enabled(config: &StablecoinConfig) -> Result<()> {
     require!(
-        config.enable_permanent_delegate && config.enable_transfer_hook,
+        config.enable_permanent_delegate,
         SssError::BlacklistNotEnabled
     );
     Ok(())

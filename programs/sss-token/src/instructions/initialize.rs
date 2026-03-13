@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::invoke;
+use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use anchor_spl::token_2022::{self, spl_token_2022};
 use spl_token_2022::{
     extension::{
@@ -8,10 +8,17 @@ use spl_token_2022::{
     },
     instruction::initialize_mint2,
 };
+use spl_token_metadata_interface::instruction::initialize as init_token_metadata;
 
 use crate::errors::SssError;
 use crate::events::StablecoinInitialized;
 use crate::state::*;
+
+const TOKEN_METADATA_TLV_HEADER_LEN: usize = 12;
+const TOKEN_METADATA_OPTIONAL_PUBKEY_LEN: usize = 32;
+const TOKEN_METADATA_PUBKEY_LEN: usize = 32;
+const TOKEN_METADATA_STRING_PREFIX_LEN: usize = 4;
+const TOKEN_METADATA_VEC_PREFIX_LEN: usize = 4;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct InitializeParams {
@@ -59,6 +66,20 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, token_2022::Token2022>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+fn token_metadata_tlv_len(params: &InitializeParams) -> Result<usize> {
+    let packed_len = TOKEN_METADATA_OPTIONAL_PUBKEY_LEN
+        .checked_add(TOKEN_METADATA_PUBKEY_LEN)
+        .and_then(|len| len.checked_add(TOKEN_METADATA_STRING_PREFIX_LEN + params.name.len()))
+        .and_then(|len| len.checked_add(TOKEN_METADATA_STRING_PREFIX_LEN + params.symbol.len()))
+        .and_then(|len| len.checked_add(TOKEN_METADATA_STRING_PREFIX_LEN + params.uri.len()))
+        .and_then(|len| len.checked_add(TOKEN_METADATA_VEC_PREFIX_LEN))
+        .ok_or(SssError::Overflow)?;
+
+    TOKEN_METADATA_TLV_HEADER_LEN
+        .checked_add(packed_len)
+        .ok_or(SssError::Overflow.into())
 }
 
 pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
@@ -125,8 +146,16 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&extensions)
             .map_err(|_| SssError::Overflow)?;
 
+    // Additional space for Token-2022 embedded metadata (variable-length TLV entry).
+    // TokenMetadata data is stored as one TLV record in the mint account.
+    let metadata_len = token_metadata_tlv_len(&params)?;
+
+    let mint_account_space = mint_space
+        .checked_add(metadata_len)
+        .ok_or(SssError::Overflow)?;
+
     let rent = &ctx.accounts.rent;
-    let lamports = rent.minimum_balance(mint_space);
+    let lamports = rent.minimum_balance(mint_account_space);
 
     // Create the mint account
     invoke(
@@ -134,7 +163,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
             ctx.accounts.authority.key,
             ctx.accounts.mint.key,
             lamports,
-            mint_space as u64,
+            mint_account_space as u64,
             &token_2022::Token2022::id(),
         ),
         &[
@@ -229,6 +258,39 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         )?,
         &[ctx.accounts.mint.to_account_info()],
     )?;
+
+    // Initialize Token-2022 embedded metadata (must be after mint init)
+    // The metadata pointer already points to the mint; now write actual name/symbol/uri
+    {
+        let mint_key = ctx.accounts.mint.key();
+        let bump = [ctx.bumps.config];
+        let signer_seeds: &[&[u8]] = &[
+            StablecoinConfig::SEED_PREFIX,
+            mint_key.as_ref(),
+            &bump,
+        ];
+
+        invoke_signed(
+            &init_token_metadata(
+                &token_2022::Token2022::id(),
+                ctx.accounts.mint.key,  // metadata account = mint (self-referencing)
+                &config_key,            // update authority = config PDA
+                ctx.accounts.mint.key,  // mint
+                &config_key,            // mint authority (signer) = config PDA
+                params.name.clone(),
+                params.symbol.clone(),
+                params.uri.clone(),
+            ),
+            &[
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.mint.to_account_info(),
+                ctx.accounts.config.to_account_info(),
+                ctx.accounts.mint.to_account_info(),
+                ctx.accounts.config.to_account_info(),
+            ],
+            &[signer_seeds],
+        )?;
+    }
 
     // Initialize StablecoinConfig
     let config = &mut ctx.accounts.config;

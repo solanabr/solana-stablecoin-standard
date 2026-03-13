@@ -69,7 +69,6 @@ pub enum FuzzInstruction {
     AttestReserve {
         reserve_hash: [u8; 32],
         total_reserves_usd: u64,
-        total_outstanding: u64,
         attestation_uri: String,
     },
 }
@@ -547,7 +546,6 @@ mod tests {
                 &FuzzInstruction::AttestReserve {
                     reserve_hash: [i; 32],
                     total_reserves_usd: 100_00,
-                    total_outstanding: 100,
                     attestation_uri: "".into(),
                 },
                 &authority,

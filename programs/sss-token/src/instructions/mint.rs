@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::errors::SssError;
 use crate::events::TokensMinted;
 use crate::state::*;
-use crate::utils::require_not_paused;
+use crate::utils::{require_blacklist_enabled, require_not_paused};
 
 #[derive(Accounts)]
 pub struct MintTokens<'info> {
@@ -44,10 +44,13 @@ pub struct MintTokens<'info> {
     )]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
 
-    /// Optional blacklist entry for the recipient token account owner.
-    /// If SSS-2 is enabled and this account exists with data, mint is rejected.
-    /// Seeds derived from the actual on-chain owner of recipient_token_account
-    /// to prevent callers from spoofing a clean wallet.
+    /// CHECK: Blacklist PDA for the recipient token account owner.
+    /// Mandatory account — callers cannot omit it, preventing blacklist bypass.
+    /// The PDA seeds are derived from the on-chain token account owner (not caller input)
+    /// so callers cannot spoof a clean wallet address.
+    /// When permanent_delegate is enabled and this PDA has data, the mint is rejected
+    /// because a BlacklistEntry exists for the recipient.
+    /// When permanent_delegate is disabled, the account is still required but ignored.
     #[account(
         seeds = [
             BlacklistEntry::SEED_PREFIX,
@@ -55,9 +58,8 @@ pub struct MintTokens<'info> {
             recipient_token_account.owner.as_ref(),
         ],
         bump,
-        seeds::program = crate::ID,
     )]
-    pub recipient_blacklist: Option<Account<'info, BlacklistEntry>>,
+    pub recipient_blacklist: UncheckedAccount<'info>,
 
     pub token_program: Program<'info, Token2022>,
 }
@@ -68,9 +70,12 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     let config = &ctx.accounts.config;
     require_not_paused(config)?;
 
-    // SSS-2: Reject minting to blacklisted recipients
-    if config.enable_permanent_delegate {
-        if let Some(ref _bl) = ctx.accounts.recipient_blacklist {
+    // SSS-2: Mandatory blacklist check — recipient_blacklist is always required (not Optional),
+    // so callers cannot skip the check by omitting the account.
+    // The PDA seeds constraint above validates derivation from the actual token account owner.
+    if require_blacklist_enabled(config).is_ok() {
+        // If the blacklist PDA has data, a BlacklistEntry exists for this recipient — reject.
+        if !ctx.accounts.recipient_blacklist.data_is_empty() {
             return Err(SssError::RecipientBlacklisted.into());
         }
     }

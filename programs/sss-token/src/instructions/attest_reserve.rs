@@ -8,7 +8,6 @@ use crate::utils::require_master_authority;
 pub struct AttestReserveParams {
     pub reserve_hash: [u8; 32],
     pub total_reserves_usd: u64,
-    pub total_outstanding: u64,
     pub attestation_uri: String,
 }
 
@@ -55,13 +54,20 @@ pub fn handler(ctx: Context<AttestReserve>, params: AttestReserveParams) -> Resu
         SssError::UriTooLong
     );
 
-    require!(
-        params.total_reserves_usd >= params.total_outstanding,
-        SssError::InsufficientReserves
-    );
-
     let clock = Clock::get()?;
     let config = &ctx.accounts.config;
+
+    // Derive total outstanding from on-chain state, never trust caller input
+    // Uses config.total_minted and config.total_burned tracked by mint/burn instructions
+    let total_outstanding = config
+        .total_minted
+        .checked_sub(config.total_burned)
+        .ok_or(SssError::Overflow)?;
+
+    require!(
+        params.total_reserves_usd >= total_outstanding,
+        SssError::InsufficientReserves
+    );
 
     let attestation = &mut ctx.accounts.attestation;
     attestation.bump = ctx.bumps.attestation;
@@ -69,7 +75,7 @@ pub fn handler(ctx: Context<AttestReserve>, params: AttestReserveParams) -> Resu
     attestation.index = config.reserve_attestation_index;
     attestation.reserve_hash = params.reserve_hash;
     attestation.total_reserves_usd = params.total_reserves_usd;
-    attestation.total_outstanding = params.total_outstanding;
+    attestation.total_outstanding = total_outstanding;
     attestation.attested_by = ctx.accounts.authority.key();
     attestation.attestation_uri = params.attestation_uri;
     attestation.timestamp = clock.unix_timestamp;
