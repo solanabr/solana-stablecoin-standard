@@ -478,7 +478,7 @@ graph TD
     end
 
     subgraph DEFENSE["Defense Pipeline"]
-        RATE["Rate Limiter<br/><i>POST: 20 req/15min per IP</i><br/><i>GET: unlimited</i>"]
+        RATE["Rate Limiter<br/><i>POST: 100 req/60s per IP (configurable)</i><br/><i>GET: unlimited</i>"]
         AUTH["API Key Auth<br/><i>X-API-Key header</i><br/><i>Validated at startup</i>"]
         VALIDATE["Input Validation<br/><i>Base58 pubkey format</i><br/><i>Required fields check</i>"]
         HANDLER["Route Handler<br/><i>SDK method call</i>"]
