@@ -3,39 +3,56 @@
  *
  * TypeScript SDK for the Solana Stablecoin Standard.
  *
- * @example
+ * ## Quick Start
+ *
  * ```typescript
- * import {
- *   SolanaStablecoin,
- *   Presets,
- *   deriveConfigPda,
- *   SssError,
- * } from "@stbr/sss-token";
+ * import { SolanaStablecoin, Presets } from "@stbr/sss-token";
  *
  * // Create a new SSS-2 compliant stablecoin
- * const client = await SolanaStablecoin.create(connection, wallet, {
- *   preset: "SSS_2",
+ * const stable = await SolanaStablecoin.create(connection, wallet, {
+ *   preset: Presets.SSS_2,
  *   name: "BRL Stable",
  *   symbol: "BRLs",
  *   decimals: 6,
  * });
  *
  * // Mint tokens
- * await client.mint({
- *   recipient: userPubkey,
- *   amount: BigInt(1_000_000), // 1 BRLs
- * });
+ * await stable.mint({ recipient: userPubkey, amount: BigInt(1_000_000) });
  *
- * // Check config
- * const config = await client.getConfig();
- * console.log(config.enablePermanentDelegate); // true (SSS-2)
+ * // Compliance (SSS-2)
+ * await stable.compliance.blacklistAdd(suspectAddress, "Sanctions match");
+ * await stable.compliance.seize(frozenAccount, treasury);
+ *
+ * // Query
+ * const config = await stable.getConfig();
+ * const supply = await stable.getTotalSupply();
  * ```
+ *
+ * ## Architecture
+ *
+ * The SDK provides three levels of abstraction:
+ * 1. **Client class** (`SolanaStablecoin`) — high-level, auto-sends transactions
+ * 2. **Account fetchers** (`fetchStablecoinConfig`, `fetchRoleManager`) — standalone queries
+ * 3. **Constants & PDA helpers** (`deriveConfigPda`, `deriveBlacklistPda`) — pure functions
  */
 
-// Client
+// ── Client ────────────────────────────────────────────────────────────
 export { SolanaStablecoin } from "./client";
 
-// Types (all interfaces and enums)
+// ── Compliance Module ─────────────────────────────────────────────────
+export { ComplianceManager } from "./compliance";
+
+// ── Account Fetchers ──────────────────────────────────────────────────
+export {
+  fetchStablecoinConfig,
+  fetchRoleManager,
+  fetchBlacklistEntry,
+  deserializeStablecoinConfig,
+  deserializeRoleManager,
+  deserializeBlacklistEntry,
+} from "./accounts";
+
+// ── Types ─────────────────────────────────────────────────────────────
 export type {
   StablecoinConfig,
   RoleManager,
@@ -54,10 +71,10 @@ export type {
   ComplianceModule,
 } from "./types";
 
-// Presets
+// ── Presets ───────────────────────────────────────────────────────────
 export { Presets, getPresetConfig } from "./presets";
 
-// Constants & PDA helpers
+// ── Constants & PDA Helpers ───────────────────────────────────────────
 export {
   SSS_TOKEN_PROGRAM_ID,
   TRANSFER_HOOK_PROGRAM_ID,
@@ -72,5 +89,5 @@ export {
   deriveAllPdas,
 } from "./constants";
 
-// Error utilities
+// ── Error Utilities ───────────────────────────────────────────────────
 export { SssError, SssErrorCode } from "./utils";

@@ -153,11 +153,13 @@ export interface BlacklistAddParams {
 /** Compliance module interface for SSS-2 operations */
 export interface ComplianceModule {
   /** Add an address to the blacklist */
-  blacklistAdd(params: BlacklistAddParams): Promise<string>;
+  blacklistAdd(address: PublicKey, reason: string): Promise<string>;
   /** Remove an address from the blacklist */
   blacklistRemove(address: PublicKey): Promise<string>;
   /** Seize tokens from a frozen, blacklisted account */
   seize(from: PublicKey, treasury: PublicKey): Promise<string>;
   /** Check if an address is blacklisted */
   isBlacklisted(address: PublicKey): Promise<boolean>;
+  /** Fetch the full blacklist entry */
+  getBlacklistEntry(address: PublicKey): Promise<BlacklistEntry | null>;
 }

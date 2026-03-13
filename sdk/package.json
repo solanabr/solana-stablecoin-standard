@@ -1,11 +1,38 @@
 {
   "name": "@stbr/sss-token",
   "version": "0.1.0",
-  "description": "TypeScript SDK for the Solana Stablecoin Standard",
+  "description": "TypeScript SDK for the Solana Stablecoin Standard — configurable toolkit for issuing stablecoins on Solana with Token-2022",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solanabr/solana-stablecoin-standard",
+    "directory": "sdk"
+  },
+  "homepage": "https://github.com/solanabr/solana-stablecoin-standard#readme",
+  "keywords": [
+    "solana",
+    "stablecoin",
+    "token-2022",
+    "anchor",
+    "spl-token",
+    "compliance",
+    "blacklist",
+    "sdk"
+  ],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",

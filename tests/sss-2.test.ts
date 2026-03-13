@@ -295,7 +295,7 @@ describe("sss-2: Compliant Stablecoin", () => {
         tokenAccount: suspectAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
-      .rpc();
+      .rpc({ commitment: "confirmed" });
 
     let account = await getAccount(
       provider.connection, suspectAta, "confirmed", TOKEN_2022_PROGRAM_ID
@@ -320,7 +320,7 @@ describe("sss-2: Compliant Stablecoin", () => {
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([seizer])
-      .rpc();
+      .rpc({ commitment: "confirmed" });
 
     // Verify tokens moved to treasury
     const treasuryAccount = await getAccount(
