@@ -1,0 +1,19 @@
+{
+  "name": "sss-example-reserve-attestation",
+  "private": true,
+  "scripts": {
+    "prepare-sdk": "npm --prefix ../../sdk run build",
+    "start": "npm run prepare-sdk && tsx index.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.0",
+    "bn.js": "^5.2.1",
+    "solana-stablecoin-standard": "file:../../sdk"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "typescript": "^5.7.3"
+  }
+}
