@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@stbr/sss-token": ["sdk/src"]
+    }
+  },
+  "include": ["tests/**/*.ts", "sdk/src/**/*.ts", "cli/src/**/*.ts"]
+}

@@ -1,0 +1,98 @@
+# =========================
+# Rust / Anchor / Solana
+# =========================
+.anchor/
+target/
+test-ledger/
+deploy/
+*.rs.bk
+
+# =========================
+# Node / TypeScript / Vite
+# =========================
+node_modules/
+./node_modules
+dist/
+build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+coverage/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.test
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================
+# Mac OS
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# =========================
+# Windows
+# =========================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# =========================
+# IDEs and Editors
+# =========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.vim
+*~
+
+# =========================
+# Keys & Secrets
+# =========================
+*-keypair.json
+id.json
+wallet.json
+secrets.json
+*.pem
+*.key
+
+# =========================
+# Logs and Databases
+# =========================
+*.log
+sqlite3.db

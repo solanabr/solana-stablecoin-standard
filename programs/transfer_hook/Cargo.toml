@@ -1,0 +1,27 @@
+[package]
+name = "transfer-hook"
+version = "0.1.0"
+description = "Solana Stablecoin Standard Transfer Hook"
+edition = "2021"
+rust-version = "1.75.0"
+
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "transfer_hook"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = []
+
+[dependencies]
+anchor-lang = "=0.30.0"
+anchor-spl = { version = "=0.30.0", features = ["token_2022", "token"] }
+solana-program = "=1.18.15"
+spl-tlv-account-resolution = "0.6.3"
+spl-transfer-hook-interface = "0.6.3"
+sss = { path = "../sss", features = ["cpi"] }

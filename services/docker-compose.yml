@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  indexer:
+    build:
+      context: ./indexer
+    environment:
+      - RPC_URL=http://solana:8899
+      - STABLECOIN_PROGRAM_ID=HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM
+    depends_on:
+      - solana
+      - database
+
+  compliance-api:
+    build:
+      context: ./compliance
+    environment:
+      - DATABASE_URL=postgres://user:pass@database:5432/sss
+      - RPC_URL=http://solana:8899
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+
+  database:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=sss
+    ports:
+      - "5432:5432"
+
+  orchestrator:
+    build:
+      context: ./orchestrator
+    environment:
+      - ORCHESTRATOR_PORT=8081
+      - WEBHOOK_URL=http://localhost:3000/webhook
+    ports:
+      - "8081:8081"
+    depends_on:
+      - solana
+
+  frontend:
+    build:
+      context: ../apps/frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - orchestrator
+
+  solana:
+    image: solanalabs/solana:v1.18.15
+    command: ["solana-test-validator"]
+    ports:
+      - "8899:8899"
+      - "8900:8900"

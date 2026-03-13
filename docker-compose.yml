@@ -1,0 +1,98 @@
+services:
+  solana:
+    image: ghcr.io/beeman/solana-test-validator:latest
+    container_name: sss-solana
+    ports:
+      - "8899:8899"
+      - "8900:8900"
+    security_opt:
+      - seccomp=unconfined
+    entrypoint: /bin/bash
+    command: 
+      - -c
+      - "IP=$$(hostname -i) && solana-test-validator --bind-address $$IP --reset --log"
+    healthcheck:
+      test: ["CMD-SHELL", "solana cluster-version || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  database:
+    image: postgres:14-alpine
+    container_name: sss-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=sss
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # This service waits for solana to be ready and then deploys the programs
+  # Note: Requires anchor build artifacts locally or a build container
+  builder:
+    image: ghcr.io/beeman/solana-test-validator:latest
+    container_name: sss-builder
+    volumes:
+      - .:/app
+    working_dir: /app
+    security_opt:
+      - seccomp=unconfined
+    depends_on:
+      solana:
+        condition: service_healthy
+    command: >
+      bash -c "solana config set --url http://solana:8899 && 
+               solana-keygen new --no-passphrase -so id.json --force && 
+               solana program deploy target/deploy/sss.so --program-id HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM --keypair id.json && 
+               solana program deploy target/deploy/transfer_hook.so --program-id 3J9p2UafzvtLMWRao29D9DEbMqyUG6GS6GS8QCQakGA3 --keypair id.json &&
+               solana program deploy target/deploy/oracle_module.so --program-id BzKd12nujUa9hejZJVSKXF8QHivBJu2XoqfXqMF5Ls3P --keypair id.json &&
+               echo 'Programs Deployed Successfully'"
+
+  indexer:
+    build:
+      context: ./services/indexer
+    container_name: sss-indexer
+    environment:
+      - RPC_URL=http://solana:8899
+      - DATABASE_URL=postgres://user:pass@database:5432/sss
+      - STABLECOIN_PROGRAM_ID=HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM
+    depends_on:
+      builder:
+        condition: service_completed_successfully
+      database:
+        condition: service_healthy
+
+  orchestrator:
+    build:
+      context: ./services/orchestrator
+    container_name: sss-orchestrator
+    environment:
+      - ORCHESTRATOR_PORT=8081
+      - DATABASE_URL=postgres://user:pass@database:5432/sss
+      - RPC_URL=http://solana:8899
+      - API_KEY=sss_secret_key_2026
+    ports:
+      - "8081:8081"
+    depends_on:
+      builder:
+        condition: service_completed_successfully
+      database:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./apps/frontend/Dockerfile.prod
+    container_name: sss-frontend
+    environment:
+      - VITE_RPC_URL=http://localhost:8899
+      - VITE_ORCHESTRATOR_URL=http://localhost:8081
+    ports:
+      - "5173:5173"
+    depends_on:
+      - orchestrator

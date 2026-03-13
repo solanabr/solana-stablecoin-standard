@@ -1,0 +1,27 @@
+[package]
+name = "oracle-module"
+version = "0.1.0"
+description = "Superteam SSS Oracle Integration Module"
+edition = "2021"
+rust-version = "1.75.0"
+
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "oracle_module"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = []
+
+[dependencies]
+anchor-lang = "=0.30.0"
+solana-program = "=1.18.15"
+
+sss = { path = "../sss", features = ["cpi"] }
+# Switchboard-v2 would be included in prod, mocking for reference bounty
+# switchboard-v2 = "0.4.0"

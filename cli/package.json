@@ -1,0 +1,24 @@
+{
+  "name": "sss-token-cli",
+  "version": "1.0.0",
+  "description": "SSS Operator CLI",
+  "main": "dist/index.js",
+  "bin": {
+    "sss-token": "./dist/index.js",
+    "sss-tui": "./dist/tui.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.0",
+    "@solana/web3.js": "^1.95.3",
+    "@stbr/sss-token": "file:../sdk",
+    "commander": "^10.0.1",
+    "enquirer": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.9.3"
+  }
+}

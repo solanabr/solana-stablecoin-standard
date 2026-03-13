@@ -1,0 +1,28 @@
+# Production Build for SSS Frontend
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy root package.json if it exists, but we'll focus on the frontend and sdk
+COPY sdk ./sdk
+COPY apps/frontend ./apps/frontend
+
+# Build SDK
+WORKDIR /app/sdk
+RUN npm install
+RUN npm run build
+
+# Build Frontend
+WORKDIR /app/apps/frontend
+RUN npm install
+# Install local SDK directly from built directory
+RUN npm install /app/sdk
+RUN npm run build
+
+# Serve stage
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app/apps/frontend/dist ./dist
+RUN npm install -g serve
+EXPOSE 5173
+CMD ["serve", "-s", "dist", "-l", "5173"]
