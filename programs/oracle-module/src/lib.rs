@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("J4ywvRqWbRSuijhFkvSfMbjXZvzR2eJYyGBJASarBPJc");
+declare_id!("27eVzSd6UBsLAzzXaSfMbUM5dgZLv4H8fiQTVqXkESFb");
 
 /// Oracle Integration Module for Solana Stablecoin Standard
 ///
@@ -97,7 +97,7 @@ impl OracleConfig {
         32 +    // feed_address
         (4 + Self::MAX_CURRENCY_LEN) + // base_currency
         8 +     // staleness_threshold
-        1       // bump
+        1 // bump
     }
 }
 

@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, ThawAccount as ThawAccountCpi, TokenInterface};
 
-use crate::state::{StablecoinConfig, RoleManager};
 use crate::errors::SssError;
+use crate::state::{RoleManager, StablecoinConfig};
 
 /// Accounts for the thaw_account instruction.
 #[derive(Accounts)]

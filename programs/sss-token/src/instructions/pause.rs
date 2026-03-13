@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{StablecoinConfig, RoleManager};
 use crate::errors::SssError;
+use crate::state::{RoleManager, StablecoinConfig};
 
 /// Accounts for the pause instruction.
 #[derive(Accounts)]

@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{StablecoinConfig, RoleManager, MinterEntry};
-use crate::state::roles::{MAX_MINTERS, MAX_BURNERS};
 use crate::errors::SssError;
+use crate::state::roles::{MAX_BURNERS, MAX_MINTERS};
+use crate::state::{MinterEntry, RoleManager, StablecoinConfig};
 
 /// Parameters for updating role assignments.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
@@ -139,11 +139,7 @@ pub struct AuthorityTransferred {
     pub new_authority: Pubkey,
 }
 
-pub fn update_minter_handler(
-    ctx: Context<UpdateMinter>,
-    minter: Pubkey,
-    quota: u64,
-) -> Result<()> {
+pub fn update_minter_handler(ctx: Context<UpdateMinter>, minter: Pubkey, quota: u64) -> Result<()> {
     let role_manager = &mut ctx.accounts.role_manager;
     let authority_key = ctx.accounts.authority.key();
 
@@ -157,7 +153,10 @@ pub fn update_minter_handler(
         entry.quota = quota;
     } else {
         // Add new minter
-        require!(role_manager.minters.len() < MAX_MINTERS, SssError::MaxMintersReached);
+        require!(
+            role_manager.minters.len() < MAX_MINTERS,
+            SssError::MaxMintersReached
+        );
         role_manager.minters.push(MinterEntry {
             address: minter,
             quota,
@@ -175,10 +174,7 @@ pub fn update_minter_handler(
     Ok(())
 }
 
-pub fn remove_minter_handler(
-    ctx: Context<RemoveMinter>,
-    minter: Pubkey,
-) -> Result<()> {
+pub fn remove_minter_handler(ctx: Context<RemoveMinter>, minter: Pubkey) -> Result<()> {
     let role_manager = &mut ctx.accounts.role_manager;
     let authority_key = ctx.accounts.authority.key();
 
@@ -204,10 +200,7 @@ pub fn remove_minter_handler(
     Ok(())
 }
 
-pub fn update_roles_handler(
-    ctx: Context<UpdateRoles>,
-    params: UpdateRolesParams,
-) -> Result<()> {
+pub fn update_roles_handler(ctx: Context<UpdateRoles>, params: UpdateRolesParams) -> Result<()> {
     let role_manager = &mut ctx.accounts.role_manager;
     let authority_key = ctx.accounts.authority.key();
 
@@ -230,7 +223,10 @@ pub fn update_roles_handler(
 
     if let Some(burner) = params.add_burner {
         if !role_manager.is_burner(&burner) {
-            require!(role_manager.burners.len() < MAX_BURNERS, SssError::MaxBurnersReached);
+            require!(
+                role_manager.burners.len() < MAX_BURNERS,
+                SssError::MaxBurnersReached
+            );
             role_manager.burners.push(burner);
         }
     }

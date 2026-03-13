@@ -116,6 +116,7 @@ describe("sss-1: Minimal Stablecoin", () => {
       .signers([mintKeypair])
       .rpc();
 
+    console.log(`    ✦ Mint: ${mintKeypair.publicKey.toBase58()}`);
 
     // Verify config account
     const config = await program.account.stablecoinConfig.fetch(configPda);

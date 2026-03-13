@@ -35,6 +35,6 @@ impl BlacklistEntry {
         (4 + MAX_REASON_LEN) + // reason
         8 +     // blacklisted_at
         32 +    // blacklisted_by
-        1       // bump
+        1 // bump
     }
 }

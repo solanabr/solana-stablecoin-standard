@@ -6,7 +6,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t");
 
 /// # Solana Stablecoin Standard (SSS) — Main Token Program
 ///
@@ -79,7 +79,10 @@ pub mod sss_token {
     }
 
     /// Transfer master authority to a new address.
-    pub fn transfer_authority(ctx: Context<TransferAuthority>, new_authority: Pubkey) -> Result<()> {
+    pub fn transfer_authority(
+        ctx: Context<TransferAuthority>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
         instructions::roles::transfer_authority_handler(ctx, new_authority)
     }
 

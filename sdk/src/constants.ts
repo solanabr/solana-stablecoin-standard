@@ -4,15 +4,15 @@ import { PublicKey } from "@solana/web3.js";
 // These are the deployed program addresses. Update after devnet deployment.
 
 export const SSS_TOKEN_PROGRAM_ID = new PublicKey(
-  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+  "AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t"
 );
 
 export const TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  "HmbTLCmaGtYhSJaoxkmcJA2MkRYEbn7gxjoYDMgbGnHb"
+  "8nWGGHT4kkuvtY8NqXeYEdiyC79qQ2taS82UGwmfdKgu"
 );
 
 export const ORACLE_MODULE_PROGRAM_ID = new PublicKey(
-  "J4ywvRqWbRSuijhFkvSfMbjXZvzR2eJYyGBJASarBPJc"
+  "27eVzSd6UBsLAzzXaSfMbUM5dgZLv4H8fiQTVqXkESFb"
 );
 
 // Token-2022 program

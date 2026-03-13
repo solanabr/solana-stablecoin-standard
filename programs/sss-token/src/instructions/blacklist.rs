@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{StablecoinConfig, RoleManager, BlacklistEntry};
-use crate::state::blacklist::MAX_REASON_LEN;
 use crate::errors::SssError;
+use crate::state::blacklist::MAX_REASON_LEN;
+use crate::state::{BlacklistEntry, RoleManager, StablecoinConfig};
 
 /// Accounts for the add_to_blacklist instruction.
 #[derive(Accounts)]
@@ -99,11 +99,15 @@ pub fn add_handler(ctx: Context<AddToBlacklist>, reason: String) -> Result<()> {
     let blacklister_key = ctx.accounts.blacklister.key();
 
     // Feature gate: compliance must be enabled
-    require!(config.is_compliance_enabled(), SssError::ComplianceNotEnabled);
+    require!(
+        config.is_compliance_enabled(),
+        SssError::ComplianceNotEnabled
+    );
 
     // Check authorization
     require!(
-        blacklister_key == role_manager.blacklister || blacklister_key == role_manager.master_authority,
+        blacklister_key == role_manager.blacklister
+            || blacklister_key == role_manager.master_authority,
         SssError::UnauthorizedBlacklister
     );
 
@@ -135,11 +139,15 @@ pub fn remove_handler(ctx: Context<RemoveFromBlacklist>) -> Result<()> {
     let blacklister_key = ctx.accounts.blacklister.key();
 
     // Feature gate: compliance must be enabled
-    require!(config.is_compliance_enabled(), SssError::ComplianceNotEnabled);
+    require!(
+        config.is_compliance_enabled(),
+        SssError::ComplianceNotEnabled
+    );
 
     // Check authorization
     require!(
-        blacklister_key == role_manager.blacklister || blacklister_key == role_manager.master_authority,
+        blacklister_key == role_manager.blacklister
+            || blacklister_key == role_manager.master_authority,
         SssError::UnauthorizedBlacklister
     );
 

@@ -5,7 +5,6 @@ use anchor_lang::prelude::*;
 #[error_code]
 pub enum SssError {
     // ── Authorization Errors ──────────────────────────────────────────
-
     #[msg("Unauthorized: caller is not the master authority")]
     UnauthorizedMasterAuthority,
 
@@ -25,7 +24,6 @@ pub enum SssError {
     UnauthorizedSeizer,
 
     // ── State Errors ──────────────────────────────────────────────────
-
     #[msg("Operations are paused")]
     Paused,
 
@@ -48,7 +46,6 @@ pub enum SssError {
     MaxBurnersReached,
 
     // ── Feature Gate Errors ───────────────────────────────────────────
-
     #[msg("Compliance module not enabled: permanent delegate is required")]
     ComplianceNotEnabled,
 
@@ -59,7 +56,6 @@ pub enum SssError {
     ConfidentialTransfersNotEnabled,
 
     // ── Blacklist Errors ──────────────────────────────────────────────
-
     #[msg("Address is already blacklisted")]
     AlreadyBlacklisted,
 
@@ -70,7 +66,6 @@ pub enum SssError {
     AccountNotFrozen,
 
     // ── Validation Errors ─────────────────────────────────────────────
-
     #[msg("Token name exceeds maximum length of 32 characters")]
     NameTooLong,
 
@@ -93,7 +88,6 @@ pub enum SssError {
     InvalidDecimals,
 
     // ── Arithmetic Errors ─────────────────────────────────────────────
-
     #[msg("Arithmetic overflow")]
     ArithmeticOverflow,
 }

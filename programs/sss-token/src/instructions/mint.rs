@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, MintTo, TokenInterface};
 
-use crate::state::{StablecoinConfig, RoleManager};
 use crate::errors::SssError;
+use crate::state::{RoleManager, StablecoinConfig};
 
 /// Accounts for the mint instruction.
 #[derive(Accounts)]

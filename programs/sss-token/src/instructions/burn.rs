@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Burn, TokenInterface};
 
-use crate::state::{StablecoinConfig, RoleManager};
 use crate::errors::SssError;
+use crate::state::{RoleManager, StablecoinConfig};
 
 /// Accounts for the burn instruction.
 #[derive(Accounts)]
@@ -84,10 +84,7 @@ pub fn handler(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
         authority: ctx.accounts.burner.to_account_info(),
     };
 
-    let cpi_ctx = CpiContext::new(
-        ctx.accounts.token_program.to_account_info(),
-        cpi_accounts,
-    );
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
 
     token_interface::burn(cpi_ctx, amount)?;
 

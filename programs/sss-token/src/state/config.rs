@@ -35,7 +35,6 @@ pub struct StablecoinConfig {
     pub total_burned: u64,
 
     // ── Feature flags (set at init, immutable after) ──────────────────
-
     /// SSS-2: Enable permanent delegate for token seizure
     pub enable_permanent_delegate: bool,
     /// SSS-2: Enable transfer hook for blacklist enforcement
@@ -67,7 +66,7 @@ impl StablecoinConfig {
         1 +     // enable_transfer_hook
         1 +     // enable_confidential_transfers
         1 +     // default_account_frozen
-        1       // bump
+        1 // bump
     }
 
     /// Returns true if SSS-2 compliance features are enabled.

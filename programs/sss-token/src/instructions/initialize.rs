@@ -1,13 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::{invoke, invoke_signed};
 use anchor_spl::token_interface::TokenInterface;
-use spl_token_2022::{
-    extension::ExtensionType,
-    instruction as token_instruction,
-    state::Mint,
-};
+use spl_token_2022::{extension::ExtensionType, instruction as token_instruction, state::Mint};
 
-use crate::state::{StablecoinConfig, RoleManager};
+use crate::state::{RoleManager, StablecoinConfig};
 
 /// Parameters for initializing a new stablecoin.
 ///
@@ -108,8 +104,14 @@ pub struct StablecoinInitialized {
 
 pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
     // ── Step 1: Validate input ──────────────────────────────────────
-    require!(params.name.len() <= 32, crate::errors::SssError::NameTooLong);
-    require!(params.symbol.len() <= 10, crate::errors::SssError::SymbolTooLong);
+    require!(
+        params.name.len() <= 32,
+        crate::errors::SssError::NameTooLong
+    );
+    require!(
+        params.symbol.len() <= 10,
+        crate::errors::SssError::SymbolTooLong
+    );
     require!(params.uri.len() <= 200, crate::errors::SssError::UriTooLong);
 
     // ── Step 2: Determine which extensions to enable ────────────────
@@ -122,7 +124,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     // SSS-3: + ConfidentialTransferMint (experimental)
 
     let mut extension_types: Vec<ExtensionType> = vec![
-        ExtensionType::MetadataPointer,  // Points to on-chain metadata
+        ExtensionType::MetadataPointer,    // Points to on-chain metadata
         ExtensionType::MintCloseAuthority, // Allows closing the mint to reclaim rent
     ];
 
@@ -154,7 +156,10 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     // Layout: TLV discriminator (8) + length (4) + update_authority (33) +
     //         mint (32) + name (4+len) + symbol (4+len) + uri (4+len) +
     //         additional_metadata vec len (4)
-    let metadata_space = 8 + 4 + 33 + 32
+    let metadata_space = 8
+        + 4
+        + 33
+        + 32
         + (4 + params.name.len())
         + (4 + params.symbol.len())
         + (4 + params.uri.len())
@@ -196,8 +201,8 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         &spl_token_2022::extension::metadata_pointer::instruction::initialize(
             ctx.accounts.token_program.key,
             ctx.accounts.mint.key,
-            Some(ctx.accounts.config.key()),  // authority over metadata pointer
-            Some(*ctx.accounts.mint.key),      // metadata address = the mint itself
+            Some(ctx.accounts.config.key()), // authority over metadata pointer
+            Some(*ctx.accounts.mint.key),    // metadata address = the mint itself
         )?,
         &[ctx.accounts.mint.to_account_info()],
     )?;
@@ -249,7 +254,7 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         &token_instruction::initialize_mint2(
             ctx.accounts.token_program.key,
             ctx.accounts.mint.key,
-            &ctx.accounts.config.key(),       // mint authority = config PDA
+            &ctx.accounts.config.key(), // mint authority = config PDA
             Some(&ctx.accounts.config.key()), // freeze authority = config PDA
             params.decimals,
         )?,
@@ -268,9 +273,9 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         &spl_token_metadata_interface::instruction::initialize(
             ctx.accounts.token_program.key,
             ctx.accounts.mint.key,
-            &ctx.accounts.config.key(),         // update authority
-            ctx.accounts.mint.key,              // metadata account = mint
-            &ctx.accounts.config.key(),         // mint authority (required signer)
+            &ctx.accounts.config.key(), // update authority
+            ctx.accounts.mint.key,      // metadata account = mint
+            &ctx.accounts.config.key(), // mint authority (required signer)
             params.name.clone(),
             params.symbol.clone(),
             params.uri.clone(),
@@ -340,7 +345,12 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         default_account_frozen: config.default_account_frozen,
     });
 
-    msg!("Initialized {} stablecoin: {} ({})", preset, config.name, config.symbol);
+    msg!(
+        "Initialized {} stablecoin: {} ({})",
+        preset,
+        config.name,
+        config.symbol
+    );
 
     Ok(())
 }

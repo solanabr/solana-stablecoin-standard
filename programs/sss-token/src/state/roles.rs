@@ -42,7 +42,7 @@ impl RoleManager {
         (4 + MAX_BURNERS * 32) +                // burners vec
         32 +    // blacklister
         32 +    // seizer
-        1       // bump
+        1 // bump
     }
 
     /// Check if an address is an authorized minter and has quota remaining.

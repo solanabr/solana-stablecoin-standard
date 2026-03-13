@@ -5,11 +5,11 @@ use spl_tlv_account_resolution::{
 };
 use spl_transfer_hook_interface::instruction::ExecuteInstruction;
 
-declare_id!("HmbTLCmaGtYhSJaoxkmcJA2MkRYEbn7gxjoYDMgbGnHb");
+declare_id!("8nWGGHT4kkuvtY8NqXeYEdiyC79qQ2taS82UGwmfdKgu");
 
 /// SSS Token Program ID — used for blacklist PDA derivation
 const SSS_TOKEN_PROGRAM_ID: Pubkey =
-    anchor_lang::solana_program::pubkey!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+    anchor_lang::solana_program::pubkey!("AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t");
 
 /// Transfer Hook Program for SSS-2 Compliant Stablecoins
 ///
@@ -93,16 +93,14 @@ pub mod transfer_hook {
         ];
 
         // Calculate space needed
-        let account_size =
-            ExtraAccountMetaList::size_of(account_metas.len())? as u64;
+        let account_size = ExtraAccountMetaList::size_of(account_metas.len())? as u64;
 
         // Create the ExtraAccountMetaList account
         let lamports = Rent::get()?.minimum_balance(account_size as usize);
         let mint = ctx.accounts.mint.key();
         let signer_seeds: &[&[u8]] = &[b"extra-account-metas", mint.as_ref()];
         let (_, bump) = Pubkey::find_program_address(signer_seeds, &crate::ID);
-        let signer_seeds_with_bump: &[&[u8]] =
-            &[b"extra-account-metas", mint.as_ref(), &[bump]];
+        let signer_seeds_with_bump: &[&[u8]] = &[b"extra-account-metas", mint.as_ref(), &[bump]];
 
         system_program::create_account(
             CpiContext::new_with_signer(
@@ -120,10 +118,7 @@ pub mod transfer_hook {
 
         // Initialize the list
         ExtraAccountMetaList::init::<ExecuteInstruction>(
-            &mut ctx
-                .accounts
-                .extra_account_meta_list
-                .try_borrow_mut_data()?,
+            &mut ctx.accounts.extra_account_meta_list.try_borrow_mut_data()?,
             &account_metas,
         )?;
 

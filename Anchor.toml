@@ -6,14 +6,14 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-sss_token = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-transfer_hook = "HmbTLCmaGtYhSJaoxkmcJA2MkRYEbn7gxjoYDMgbGnHb"
-oracle_module = "J4ywvRqWbRSuijhFkvSfMbjXZvzR2eJYyGBJASarBPJc"
+sss_token = "AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t"
+transfer_hook = "8nWGGHT4kkuvtY8NqXeYEdiyC79qQ2taS82UGwmfdKgu"
+oracle_module = "27eVzSd6UBsLAzzXaSfMbUM5dgZLv4H8fiQTVqXkESFb"
 
 [programs.devnet]
-sss_token = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-transfer_hook = "HmbTLCmaGtYhSJaoxkmcJA2MkRYEbn7gxjoYDMgbGnHb"
-oracle_module = "J4ywvRqWbRSuijhFkvSfMbjXZvzR2eJYyGBJASarBPJc"
+sss_token = "AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t"
+transfer_hook = "8nWGGHT4kkuvtY8NqXeYEdiyC79qQ2taS82UGwmfdKgu"
+oracle_module = "27eVzSd6UBsLAzzXaSfMbUM5dgZLv4H8fiQTVqXkESFb"
 
 [registry]
 url = "https://api.apr.dev"
@@ -21,11 +21,6 @@ url = "https://api.apr.dev"
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
-
-[test.validator]
-url = "http://127.0.0.1:18899"
-rpc_port = 18899
-faucet_port = 18901
 
 [scripts]
 test = "node_modules/.bin/mocha --require tsx -t 1000000 'tests/**/*.test.ts'"

@@ -1,12 +1,12 @@
-pub mod initialize;
-pub mod mint;
+pub mod blacklist;
 pub mod burn;
 pub mod freeze;
-pub mod thaw;
+pub mod initialize;
+pub mod mint;
 pub mod pause;
 pub mod roles;
-pub mod blacklist;
 pub mod seize;
+pub mod thaw;
 
 // Anchor's #[program] macro generates __client_accounts_* types
 // via #[derive(Accounts)], and expects them accessible via glob
@@ -15,12 +15,12 @@ pub mod seize;
 //
 // The `handler` name ambiguity warning is harmless — Anchor
 // calls handlers via the explicit paths in lib.rs anyway.
-pub use initialize::*;
-pub use mint::*;
+pub use blacklist::*;
 pub use burn::*;
 pub use freeze::*;
-pub use thaw::*;
+pub use initialize::*;
+pub use mint::*;
 pub use pause::*;
 pub use roles::*;
-pub use blacklist::*;
 pub use seize::*;
+pub use thaw::*;

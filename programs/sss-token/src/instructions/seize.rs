@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{StablecoinConfig, RoleManager, BlacklistEntry};
 use crate::errors::SssError;
+use crate::state::{BlacklistEntry, RoleManager, StablecoinConfig};
 
 /// Accounts for the seize instruction.
 ///
@@ -78,8 +78,14 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
     let seizer_key = ctx.accounts.seizer.key();
 
     // ── Feature gate: SSS-2 required ────────────────────────────────
-    require!(config.is_compliance_enabled(), SssError::ComplianceNotEnabled);
-    require!(config.enable_permanent_delegate, SssError::ComplianceNotEnabled);
+    require!(
+        config.is_compliance_enabled(),
+        SssError::ComplianceNotEnabled
+    );
+    require!(
+        config.enable_permanent_delegate,
+        SssError::ComplianceNotEnabled
+    );
 
     // ── Authorization check ─────────────────────────────────────────
     require!(
@@ -92,7 +98,7 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
     let amount = u64::from_le_bytes(
         from_data[64..72]
             .try_into()
-            .map_err(|_| SssError::ArithmeticOverflow)?
+            .map_err(|_| SssError::ArithmeticOverflow)?,
     );
     drop(from_data);
 
@@ -130,7 +136,7 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
             &ctx.accounts.from_token_account.key(),
             &config.mint,
             &ctx.accounts.treasury_token_account.key(),
-            &config.key(),  // permanent delegate authority
+            &config.key(), // permanent delegate authority
             &[],
             amount,
             config.decimals,
