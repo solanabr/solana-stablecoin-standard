@@ -6,8 +6,8 @@ pub struct MinterInfo {
     pub config: Pubkey,
     pub minter: Pubkey,
     pub is_active: bool,
-    pub mint_quota: u64,    // Max allowed mint (0 = unlimited)
-    pub total_minted: u64,  // Running total for this minter
+    pub mint_quota: u64,   // Max allowed mint (0 = unlimited)
+    pub total_minted: u64, // Running total for this minter
     pub created_at: i64,
     pub last_mint_at: i64,
 }

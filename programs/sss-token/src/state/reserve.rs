@@ -5,7 +5,7 @@ pub struct ReserveAttestation {
     pub bump: u8,
     pub config: Pubkey,
     pub index: u64,
-    pub reserve_hash: [u8; 32], // SHA-256 of off-chain reserve proof
+    pub reserve_hash: [u8; 32],  // SHA-256 of off-chain reserve proof
     pub total_reserves_usd: u64, // In minor units (cents)
     pub total_outstanding: u64,  // Total stablecoins outstanding
     pub attested_by: Pubkey,
