@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::{invoke, invoke_signed};
+use anchor_lang::solana_program::pubkey::Pubkey as SolPubkey;
 use anchor_spl::token_interface::TokenInterface;
 use spl_token_2022::{extension::ExtensionType, instruction as token_instruction, state::Mint};
 
@@ -132,12 +133,13 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         extension_types.push(ExtensionType::PermanentDelegate);
     }
 
+    if params.enable_transfer_hook {
+        extension_types.push(ExtensionType::TransferHook);
+    }
+
     if params.default_account_frozen {
         extension_types.push(ExtensionType::DefaultAccountState);
     }
-
-    // Note: TransferHook and ConfidentialTransferMint extensions
-    // require additional setup that we'll wire in Phase 3 and Phase 7.
 
     // ── Step 3: Calculate mint account size with extensions ──────────
     //
@@ -240,6 +242,24 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
                 ctx.accounts.token_program.key,
                 ctx.accounts.mint.key,
                 &spl_token_2022::state::AccountState::Frozen,
+            )?,
+            &[ctx.accounts.mint.to_account_info()],
+        )?;
+    }
+
+    // 5e. TransferHook (SSS-2) — enables on-transfer validation
+    //     via the transfer-hook program for blacklist enforcement.
+    if params.enable_transfer_hook {
+        // Transfer hook program ID — deployed separately
+        let transfer_hook_program_id: SolPubkey = "8nWGGHT4kkuvtY8NqXeYEdiyC79qQ2taS82UGwmfdKgu"
+            .parse()
+            .unwrap();
+        invoke(
+            &spl_token_2022::extension::transfer_hook::instruction::initialize(
+                ctx.accounts.token_program.key,
+                ctx.accounts.mint.key,
+                Some(ctx.accounts.config.key()),
+                Some(transfer_hook_program_id),
             )?,
             &[ctx.accounts.mint.to_account_info()],
         )?;

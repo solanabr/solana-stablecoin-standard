@@ -36,9 +36,6 @@ pub enum SssError {
     #[msg("Minter not found")]
     MinterNotFound,
 
-    #[msg("Minter already exists")]
-    MinterAlreadyExists,
-
     #[msg("Maximum number of minters reached")]
     MaxMintersReached,
 
@@ -49,21 +46,9 @@ pub enum SssError {
     #[msg("Compliance module not enabled: permanent delegate is required")]
     ComplianceNotEnabled,
 
-    #[msg("Transfer hook not enabled on this stablecoin")]
-    TransferHookNotEnabled,
-
-    #[msg("Confidential transfers not enabled on this stablecoin")]
-    ConfidentialTransfersNotEnabled,
-
     // ── Blacklist Errors ──────────────────────────────────────────────
     #[msg("Address is already blacklisted")]
     AlreadyBlacklisted,
-
-    #[msg("Address is not blacklisted")]
-    NotBlacklisted,
-
-    #[msg("Account must be frozen before seizure")]
-    AccountNotFrozen,
 
     // ── Validation Errors ─────────────────────────────────────────────
     #[msg("Token name exceeds maximum length of 32 characters")]

@@ -119,6 +119,29 @@ describe("sss-2: Compliant Stablecoin", () => {
 
   });
 
+  // ── Test 1b: Initialize Transfer Hook ExtraAccountMetaList ────────
+
+  it("initializes transfer hook extra account meta list", async () => {
+    const transferHookProgram = anchor.workspace.TransferHook as Program;
+    const TRANSFER_HOOK_PROGRAM_ID = transferHookProgram.programId;
+
+    // Derive the ExtraAccountMetaList PDA
+    const [extraAccountMetaListPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("extra-account-metas"), mintKeypair.publicKey.toBuffer()],
+      TRANSFER_HOOK_PROGRAM_ID
+    );
+
+    await transferHookProgram.methods
+      .initializeExtraAccountMetaList()
+      .accounts({
+        payer: authority.publicKey,
+        extraAccountMetaList: extraAccountMetaListPda,
+        mint: mintKeypair.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+  });
+
   // ── Test 2: Setup — mint tokens to suspect ────────────────────────
 
   it("setup: mint tokens to suspect address", async () => {
@@ -387,6 +410,140 @@ describe("sss-2: Compliant Stablecoin", () => {
       assert.fail("Should have thrown");
     } catch (err: any) {
       assert.include(err.toString(), "Compliance");
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // EDGE CASE TESTS — SSS-2 Compliance
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Edge 1: Unauthorized seize ───────────────────────────────────
+
+  it("rejects seize from unauthorized seizer", async () => {
+    const attacker = await fundedKeypair(provider);
+    const suspectAta = getAssociatedTokenAddressSync(
+      mintKeypair.publicKey, suspectKeypair.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+    const treasuryAta = getAssociatedTokenAddressSync(
+      mintKeypair.publicKey, treasuryKeypair.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+
+    // Blacklist PDA should still exist from seize flow test
+    const [blacklistPda] = deriveBlacklistPda(
+      configPda, suspectKeypair.publicKey, program.programId
+    );
+
+    try {
+      await program.methods
+        .seize()
+        .accounts({
+          seizer: attacker.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+          blacklistEntry: blacklistPda,
+          mint: mintKeypair.publicKey,
+          fromTokenAccount: suspectAta,
+          treasuryTokenAccount: treasuryAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([attacker])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "Unauthorized");
+    }
+  });
+
+  // ── Edge 2: Blacklist reason too long ─────────────────────────────
+
+  it("rejects blacklist reason > 128 chars", async () => {
+    const target = await fundedKeypair(provider);
+    const [blacklistPda] = deriveBlacklistPda(
+      configPda, target.publicKey, program.programId
+    );
+
+    try {
+      await program.methods
+        .addToBlacklist("X".repeat(129)) // 129 chars — exceeds limit
+        .accounts({
+          blacklister: blacklister.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+          blacklistEntry: blacklistPda,
+          addressToBlacklist: target.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([blacklister])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "reason");
+    }
+  });
+
+  // ── Edge 3: Unauthorized remove from blacklist ───────────────────
+
+  it("rejects remove from blacklist by non-blacklister", async () => {
+    // The suspect is still blacklisted from the seize test
+    const [blacklistPda] = deriveBlacklistPda(
+      configPda, suspectKeypair.publicKey, program.programId
+    );
+
+    const attacker = await fundedKeypair(provider);
+
+    try {
+      await program.methods
+        .removeFromBlacklist()
+        .accounts({
+          blacklister: attacker.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+          blacklistEntry: blacklistPda,
+        })
+        .signers([attacker])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "Unauthorized");
+    }
+  });
+
+  // ── Edge 4: URI too long ─────────────────────────────────────────
+
+  it("rejects initialize with URI > 200 chars", async () => {
+    const badMint = Keypair.generate();
+    const [badConfig] = deriveConfigPda(badMint.publicKey, program.programId);
+    const [badRoles] = deriveRolesPda(badConfig, program.programId);
+
+    try {
+      await program.methods
+        .initialize({
+          name: "Test",
+          symbol: "TST",
+          uri: "U".repeat(201), // 201 chars — exceeds limit
+          decimals: 6,
+          enablePermanentDelegate: true,
+          enableTransferHook: true,
+          enableConfidentialTransfers: false,
+          defaultAccountFrozen: false,
+          pauser: authority.publicKey,
+          blacklister: blacklister.publicKey,
+          seizer: seizer.publicKey,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          config: badConfig,
+          roleManager: badRoles,
+          mint: badMint.publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .signers([badMint])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "URI");
     }
   });
 });

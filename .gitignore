@@ -34,6 +34,7 @@ Thumbs.db
 # Build artifacts
 *.so
 *.dylib
+.turbo
 
 # Logs
 *.log

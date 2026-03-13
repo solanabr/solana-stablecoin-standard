@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token_interface::{self, Burn, MintTo, TokenInterface};
 
 use crate::errors::SssError;
 use crate::state::{BlacklistEntry, RoleManager, StablecoinConfig};
@@ -7,9 +8,9 @@ use crate::state::{BlacklistEntry, RoleManager, StablecoinConfig};
 ///
 /// ## How seize works (SSS-2 only):
 /// 1. Verify the target account is frozen AND blacklisted
-/// 2. Use the **permanent delegate** authority to transfer all tokens
-///    from the frozen account to the treasury
-/// 3. The permanent delegate is the config PDA — set during initialize
+/// 2. Use the **permanent delegate** authority to burn all tokens
+///    from the frozen account, then mint equivalent to treasury
+/// 3. The permanent delegate / mint authority is the config PDA
 ///
 /// This is how regulated stablecoins (USDC, USDT) handle compliance —
 /// the issuer can seize tokens from sanctioned addresses.
@@ -19,7 +20,7 @@ pub struct Seize<'info> {
     #[account(mut)]
     pub seizer: Signer<'info>,
 
-    /// The stablecoin configuration (also the permanent delegate).
+    /// The stablecoin configuration (also the permanent delegate + mint authority).
     #[account(
         seeds = [b"config", config.mint.as_ref()],
         bump = config.bump,
@@ -44,7 +45,7 @@ pub struct Seize<'info> {
 
     /// The Token-2022 mint.
     /// CHECK: Validated via config constraint.
-    #[account(address = config.mint)]
+    #[account(mut, address = config.mint)]
     pub mint: AccountInfo<'info>,
 
     /// The frozen token account to seize from.
@@ -58,8 +59,7 @@ pub struct Seize<'info> {
     pub treasury_token_account: AccountInfo<'info>,
 
     /// Token-2022 program.
-    /// CHECK: Validated by interface constraint.
-    pub token_program: AccountInfo<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 /// Event emitted when tokens are seized.
@@ -111,8 +111,8 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
 
     // ── Step 1: Thaw the frozen account ─────────────────────────────
     //
-    // Token-2022 blocks transfer_checked from frozen accounts, even with
-    // a permanent delegate. We must thaw first, transfer, then re-freeze.
+    // Token-2022 blocks burns from frozen accounts.
+    // We must thaw first, burn, mint to treasury, then re-freeze.
     anchor_lang::solana_program::program::invoke_signed(
         &spl_token_2022::instruction::thaw_account(
             ctx.accounts.token_program.key,
@@ -129,34 +129,47 @@ pub fn handler(ctx: Context<Seize>) -> Result<()> {
         signer_seeds,
     )?;
 
-    // ── Step 2: Transfer all tokens to treasury ─────────────────────
-    anchor_lang::solana_program::program::invoke_signed(
-        &spl_token_2022::instruction::transfer_checked(
-            ctx.accounts.token_program.key,
-            &ctx.accounts.from_token_account.key(),
-            &config.mint,
-            &ctx.accounts.treasury_token_account.key(),
-            &config.key(), // permanent delegate authority
-            &[],
-            amount,
-            config.decimals,
-        )?,
-        &[
-            ctx.accounts.from_token_account.to_account_info(),
-            ctx.accounts.mint.to_account_info(),
-            ctx.accounts.treasury_token_account.to_account_info(),
-            ctx.accounts.config.to_account_info(),
-        ],
-        signer_seeds,
+    // ── Step 2: Burn tokens from blacklisted account ────────────────
+    //
+    // We use burn (not transfer_checked) because the TransferHook
+    // would block transfers FROM blacklisted addresses.
+
+    let burn_accounts = Burn {
+        mint: ctx.accounts.mint.to_account_info(),
+        from: ctx.accounts.from_token_account.to_account_info(),
+        authority: ctx.accounts.config.to_account_info(),
+    };
+    token_interface::burn(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            burn_accounts,
+            signer_seeds,
+        ),
+        amount,
     )?;
 
-    // ── Step 3: Re-freeze the account ───────────────────────────────
+    // ── Step 3: Mint equivalent tokens to treasury ──────────────────
+    let mint_accounts = MintTo {
+        mint: ctx.accounts.mint.to_account_info(),
+        to: ctx.accounts.treasury_token_account.to_account_info(),
+        authority: ctx.accounts.config.to_account_info(),
+    };
+    token_interface::mint_to(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            mint_accounts,
+            signer_seeds,
+        ),
+        amount,
+    )?;
+
+    // ── Step 4: Re-freeze the account ───────────────────────────────
     anchor_lang::solana_program::program::invoke_signed(
         &spl_token_2022::instruction::freeze_account(
             ctx.accounts.token_program.key,
             &ctx.accounts.from_token_account.key(),
             &config.mint,
-            &config.key(), // freeze authority = config PDA
+            &config.key(),
             &[],
         )?,
         &[

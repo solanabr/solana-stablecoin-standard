@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Sparkline from "../components/Sparkline";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -47,6 +48,22 @@ interface AuditEvent {
   memo: string | null;
 }
 
+interface BlacklistEntry {
+  address: string;
+  pda: string;
+}
+
+interface LiveEvent {
+  type: string;
+  data: {
+    signature?: string;
+    status?: string;
+    blockTime?: string;
+    memo?: string;
+  };
+  receivedAt: string;
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────
 
 function shortKey(key: string): string {
@@ -64,16 +81,31 @@ function formatAmount(raw: string | number, decimals = 6): string {
 
 // ── Dashboard ───────────────────────────────────────────────────────────
 
+type TabKey = "minters" | "holders" | "audit" | "blacklist";
+
 export default function Dashboard() {
   const [apiUrl, setApiUrl] = useState("http://localhost:3000");
   const [status, setStatus] = useState<StatusData | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"minters" | "holders" | "audit">("minters");
+  const [tab, setTab] = useState<TabKey>("minters");
   const [minters, setMinters] = useState<Minter[]>([]);
   const [holders, setHolders] = useState<Holder[]>([]);
   const [auditLog, setAuditLog] = useState<AuditEvent[]>([]);
+  const [blacklist, setBlacklist] = useState<BlacklistEntry[]>([]);
   const [tabLoading, setTabLoading] = useState(false);
+  const [supplyHistory, setSupplyHistory] = useState<number[]>([]);
+  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // Saved mints for multi-mint support
+  const [savedMints, setSavedMints] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sss-saved-mints");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -85,20 +117,38 @@ export default function Dashboard() {
       setStatus(data);
       setConnected(true);
       setError(null);
+
+      // Save mint to list
+      if (data.mint && !savedMints.includes(data.mint)) {
+        const updated = [...savedMints, data.mint];
+        setSavedMints(updated);
+        localStorage.setItem("sss-saved-mints", JSON.stringify(updated));
+      }
     } catch (err) {
       setError(`Cannot connect to ${apiUrl}: ${(err as Error).message}`);
       setConnected(false);
     }
+  }, [apiUrl, savedMints]);
+
+  const fetchSupplyHistory = useCallback(async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/supply/history`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      const { snapshots } = await res.json();
+      setSupplyHistory(snapshots.map((s: { supply: number }) => s.supply));
+    } catch { /* ignore */ }
   }, [apiUrl]);
 
   const loadTab = useCallback(
-    async (t: "minters" | "holders" | "audit") => {
+    async (t: TabKey) => {
       setTabLoading(true);
       try {
-        const endpoints = {
+        const endpoints: Record<TabKey, string> = {
           minters: "/api/v1/minters",
           holders: "/api/v1/holders",
           audit: "/api/v1/audit-log?limit=20",
+          blacklist: "/api/v1/blacklist",
         };
         const res = await fetch(`${apiUrl}${endpoints[t]}`, {
           signal: AbortSignal.timeout(8000),
@@ -107,6 +157,7 @@ export default function Dashboard() {
         if (t === "minters") setMinters(data.minters || []);
         if (t === "holders") setHolders(data.holders || []);
         if (t === "audit") setAuditLog(data.events || []);
+        if (t === "blacklist") setBlacklist(data.entries || []);
       } catch {
         /* silently fail on tab load */
       }
@@ -115,22 +166,62 @@ export default function Dashboard() {
     [apiUrl]
   );
 
+  // Connect WebSocket
+  const connectWs = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+
+    const wsUrl = apiUrl.replace(/^http/, "ws") + "/ws";
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        setLiveEvents((prev) => [
+          { ...parsed, receivedAt: new Date().toISOString() },
+          ...prev.slice(0, 49),
+        ]);
+      } catch { /* ignore parse errors */ }
+    };
+
+    ws.onclose = () => {
+      // Auto-reconnect after 3s
+      setTimeout(() => {
+        if (connected) connectWs();
+      }, 3000);
+    };
+  }, [apiUrl, connected]);
+
   const connect = async () => {
     await fetchStatus();
     await loadTab(tab);
+    await fetchSupplyHistory();
+    connectWs();
   };
 
   // Auto-refresh
   useEffect(() => {
     if (!connected) return;
-    const interval = setInterval(fetchStatus, 10000);
+    const interval = setInterval(() => {
+      fetchStatus();
+      fetchSupplyHistory();
+    }, 10000);
     return () => clearInterval(interval);
-  }, [connected, fetchStatus]);
+  }, [connected, fetchStatus, fetchSupplyHistory]);
 
   // Load tab data when tab changes
   useEffect(() => {
     if (connected) loadTab(tab);
   }, [tab, connected, loadTab]);
+
+  // Cleanup WebSocket
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, []);
 
   return (
     <div className="app">
@@ -156,6 +247,22 @@ export default function Dashboard() {
           </button>
         </div>
       </header>
+
+      {/* Saved Mints Dropdown */}
+      {savedMints.length > 0 && (
+        <div className="mint-selector">
+          <span className="mint-label">Saved Mints:</span>
+          {savedMints.map((m) => (
+            <button
+              key={m}
+              className={`mint-chip ${status?.mint === m ? "active" : ""}`}
+              title={m}
+            >
+              {shortKey(m)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -210,6 +317,37 @@ export default function Dashboard() {
             </div>
           </section>
 
+          {/* Supply Sparkline */}
+          <section className="sparkline-section">
+            <div className="panel">
+              <h3 className="panel-title">Supply History</h3>
+              <Sparkline data={supplyHistory} width={500} height={80} />
+            </div>
+          </section>
+
+          {/* Live Events */}
+          {liveEvents.length > 0 && (
+            <section className="live-events">
+              <div className="live-header">
+                <span className="live-dot" />
+                <span className="live-label">Live Events</span>
+              </div>
+              <div className="event-ticker">
+                {liveEvents.slice(0, 5).map((e, i) => (
+                  <div key={i} className="event-item">
+                    <span className={`event-badge ${e.type}`}>{e.type}</span>
+                    {e.data.signature && (
+                      <span className="event-sig">{shortKey(e.data.signature)}</span>
+                    )}
+                    <span className="event-time">
+                      {new Date(e.receivedAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Features & Roles */}
           <section className="details-section">
             <div className="panel">
@@ -251,13 +389,15 @@ export default function Dashboard() {
           {/* Tabs */}
           <section className="tab-section">
             <div className="tab-bar">
-              {(["minters", "holders", "audit"] as const).map((t) => (
+              {(["minters", "holders", "audit", "blacklist"] as const).map((t) => (
                 <button
                   key={t}
                   className={`tab-btn ${tab === t ? "active" : ""}`}
                   onClick={() => setTab(t)}
                 >
-                  {t === "audit" ? "Audit Log" : t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === "audit"
+                    ? "Audit Log"
+                    : t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
@@ -268,8 +408,10 @@ export default function Dashboard() {
                 <MinterTable minters={minters} decimals={status.decimals} />
               ) : tab === "holders" ? (
                 <HolderTable holders={holders} decimals={status.decimals} />
-              ) : (
+              ) : tab === "audit" ? (
                 <AuditTable events={auditLog} />
+              ) : (
+                <BlacklistTable entries={blacklist} />
               )}
             </div>
           </section>
@@ -371,6 +513,33 @@ function AuditTable({ events }: { events: AuditEvent[] }) {
             <td style={{ color: e.status === "success" ? "var(--green)" : "var(--red)" }}>
               {e.status}
             </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function BlacklistTable({ entries }: { entries: BlacklistEntry[] }) {
+  if (entries.length === 0)
+    return (
+      <table className="data-table">
+        <tbody>
+          <tr><td className="empty-row" colSpan={2}>No blacklisted addresses</td></tr>
+        </tbody>
+      </table>
+    );
+
+  return (
+    <table className="data-table">
+      <thead>
+        <tr><th>Address</th><th>PDA</th></tr>
+      </thead>
+      <tbody>
+        {entries.map((e) => (
+          <tr key={e.address}>
+            <td title={e.address}>{shortKey(e.address)}</td>
+            <td title={e.pda} className="pda-cell">{shortKey(e.pda)}</td>
           </tr>
         ))}
       </tbody>

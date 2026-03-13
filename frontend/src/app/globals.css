@@ -344,3 +344,158 @@ body {
   .header { flex-direction: column; gap: 12px; }
   .url-input { width: 160px; }
 }
+
+/* ── Sparkline ─────────────────────────────────────────────────────────── */
+
+.sparkline-section {
+  margin-bottom: 24px;
+  animation: fadeIn 0.4s ease 0.15s both;
+}
+
+.sparkline-section .panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sparkline-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 20px 0;
+  font-style: italic;
+}
+
+/* ── Live Events ───────────────────────────────────────────────────────── */
+
+.live-events {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  animation: fadeIn 0.4s ease;
+}
+
+.live-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
+.live-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.event-ticker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(42, 42, 58, 0.3);
+  animation: slideDown 0.3s ease;
+}
+
+.event-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  min-width: 80px;
+  text-align: center;
+}
+
+.event-badge.transaction {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.event-badge.config_changed {
+  background: rgba(234, 179, 8, 0.1);
+  color: var(--yellow);
+  border-color: rgba(234, 179, 8, 0.2);
+}
+
+.event-sig {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+.event-time {
+  margin-left: auto;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+/* ── Mint Selector ─────────────────────────────────────────────────────── */
+
+.mint-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 0;
+  flex-wrap: wrap;
+}
+
+.mint-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.mint-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mint-chip:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.mint-chip.active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Blacklist ─────────────────────────────────────────────────────────── */
+
+.pda-cell {
+  color: var(--text-dim) !important;
+}
+

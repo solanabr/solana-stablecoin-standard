@@ -34,9 +34,13 @@ export class StablecoinService {
     return fetchStablecoinConfig(this.connection, this.configPda);
   }
 
-  /** Get role assignments */
-  async getRoles(): Promise<RoleManager> {
-    return fetchRoleManager(this.connection, this.rolesPda);
+  /** Get role assignments (returns null for SSS-1 minimal preset) */
+  async getRoles(): Promise<RoleManager | null> {
+    try {
+      return await fetchRoleManager(this.connection, this.rolesPda);
+    } catch {
+      return null;
+    }
   }
 
   /** Get supply info */
@@ -60,6 +64,28 @@ export class StablecoinService {
   async getBlacklistEntry(address: string): Promise<BlacklistEntry | null> {
     const [blacklistPda] = deriveBlacklistPda(this.configPda, new PublicKey(address));
     return fetchBlacklistEntry(this.connection, blacklistPda);
+  }
+
+  /** Get all blacklisted addresses */
+  async getBlacklist(): Promise<BlacklistInfo[]> {
+    try {
+      const accounts = await this.connection.getProgramAccounts(
+        new PublicKey("AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t"),
+        {
+          filters: [
+            { memcmp: { offset: 0, bytes: "3" } }, // Blacklist discriminator hint
+          ],
+        }
+      );
+      // If getProgramAccounts works, parse entries
+      return accounts.slice(0, 50).map((a) => ({
+        address: a.pubkey.toBase58(),
+        pda: a.pubkey.toBase58(),
+      }));
+    } catch {
+      // Fallback: return empty (getProgramAccounts may not be available)
+      return [];
+    }
   }
 
   /** Get recent transactions for audit log */
@@ -86,6 +112,7 @@ export class StablecoinService {
   /** Get minter list with quotas */
   async getMinters(): Promise<MinterInfo[]> {
     const roles = await this.getRoles();
+    if (!roles) return [];
     return roles.minters.map((m) => ({
       address: m.address.toBase58(),
       quota: m.quota.toString(),
@@ -117,14 +144,23 @@ export class StablecoinService {
         confidentialTransfers: config.enableConfidentialTransfers,
         defaultAccountFrozen: config.defaultAccountFrozen,
       },
-      roles: {
-        masterAuthority: roles.masterAuthority.toBase58(),
-        pauser: roles.pauser.toBase58(),
-        blacklister: roles.blacklister.toBase58(),
-        seizer: roles.seizer.toBase58(),
-        minterCount: roles.minters.length,
-        burnerCount: roles.burners.length,
-      },
+      roles: roles
+        ? {
+          masterAuthority: roles.masterAuthority.toBase58(),
+          pauser: roles.pauser.toBase58(),
+          blacklister: roles.blacklister.toBase58(),
+          seizer: roles.seizer.toBase58(),
+          minterCount: roles.minters.length,
+          burnerCount: roles.burners.length,
+        }
+        : {
+          masterAuthority: config.authority.toBase58(),
+          pauser: "—",
+          blacklister: "—",
+          seizer: "—",
+          minterCount: 0,
+          burnerCount: 0,
+        },
     };
   }
 }
@@ -173,4 +209,9 @@ export interface StatusResponse {
     minterCount: number;
     burnerCount: number;
   };
+}
+
+export interface BlacklistInfo {
+  address: string;
+  pda: string;
 }

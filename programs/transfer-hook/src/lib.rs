@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs, deprecated)]
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use spl_tlv_account_resolution::{

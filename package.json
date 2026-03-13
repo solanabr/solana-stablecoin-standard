@@ -5,14 +5,17 @@
   "description": "Solana Stablecoin Standard — Modular SDK with standardized presets for Solana stablecoins",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm -r build",
+    "dev": "turbo run dev --filter=@stbr/sss-backend --filter=@stbr/sss-frontend",
+    "dev:all": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
     "test": "pnpm --filter tests test",
     "test:unit": "pnpm --filter tests test:unit",
-    "test:integration": "pnpm --filter tests test:integration",
-    "lint": "pnpm -r lint",
-    "clean": "pnpm -r clean"
+    "test:integration": "pnpm --filter tests test:integration"
   },
   "devDependencies": {
+    "turbo": "^2.0.0",
     "tsx": "^4.7.0",
     "mocha": "^10.0.0",
     "chai": "^4.4.0",
@@ -27,5 +30,6 @@
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.31.0"
 }

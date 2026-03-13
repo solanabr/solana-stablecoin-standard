@@ -291,7 +291,7 @@ describe("sss-1: Minimal Stablecoin", () => {
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([userKeypair])
-      .rpc();
+      .rpc({ commitment: "confirmed" });
 
     // Check balance reduced
     const tokenAccount = await getAccount(
@@ -448,5 +448,403 @@ describe("sss-1: Minimal Stablecoin", () => {
       .signers([newAuthority])
       .rpc();
 
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // EDGE CASE TESTS — Authorization, Validation, State Errors
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Edge 1: Unauthorized burn ────────────────────────────────────
+
+  it("rejects burn from unauthorized burner", async () => {
+    const attacker = await fundedKeypair(provider);
+    const attackerAta = await ensureAta(
+      provider, mintKeypair.publicKey, attacker.publicKey, authority
+    );
+
+    try {
+      await program.methods
+        .burnTokens(new BN(1))
+        .accounts({
+          burner: attacker.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+          mint: mintKeypair.publicKey,
+          burnerTokenAccount: attackerAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([attacker])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "Unauthorized");
+    }
+  });
+
+  // ── Edge 2: Unauthorized pause ───────────────────────────────────
+
+  it("rejects pause from unauthorized pauser", async () => {
+    const attacker = await fundedKeypair(provider);
+
+    try {
+      await program.methods
+        .pause()
+        .accounts({
+          pauser: attacker.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .signers([attacker])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "Unauthorized");
+    }
+  });
+
+  // ── Edge 3: Unpause when not paused ──────────────────────────────
+
+  it("rejects unpause when not paused", async () => {
+    try {
+      await program.methods
+        .unpause()
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "not paused");
+    }
+  });
+
+  // ── Edge 4: Unauthorized transfer authority ──────────────────────
+
+  it("rejects transfer authority from non-authority", async () => {
+    const attacker = await fundedKeypair(provider);
+
+    try {
+      await program.methods
+        .transferAuthority(attacker.publicKey)
+        .accounts({
+          authority: attacker.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .signers([attacker])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "Unauthorized");
+    }
+  });
+
+  // ── Edge 5: Unauthorized update minter ───────────────────────────
+
+  it("rejects update minter from non-authority", async () => {
+    const attacker = await fundedKeypair(provider);
+
+    try {
+      await program.methods
+        .updateMinter(attacker.publicKey, new BN(1_000_000))
+        .accounts({
+          authority: attacker.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .signers([attacker])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "Unauthorized");
+    }
+  });
+
+  // ── Edge 6: Remove non-existent minter ───────────────────────────
+
+  it("rejects removing a non-existent minter", async () => {
+    const fakeMinter = Keypair.generate();
+
+    try {
+      await program.methods
+        .removeMinter(fakeMinter.publicKey)
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "not found");
+    }
+  });
+
+  // ── Edge 7: Zero mint amount ─────────────────────────────────────
+
+  it("rejects minting zero tokens", async () => {
+    // Re-add a minter first
+    await program.methods
+      .updateMinter(minterKeypair.publicKey, new BN(1_000_000_000))
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleManager: rolesPda,
+      })
+      .rpc();
+
+    const recipientAta = getAssociatedTokenAddressSync(
+      mintKeypair.publicKey, userKeypair.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+
+    try {
+      await program.methods
+        .mintTokens(new BN(0))
+        .accounts({
+          minter: minterKeypair.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+          mint: mintKeypair.publicKey,
+          recipientTokenAccount: recipientAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([minterKeypair])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "zero");
+    }
+
+    // Clean up: remove the minter again
+    await program.methods
+      .removeMinter(minterKeypair.publicKey)
+      .accounts({
+        authority: authority.publicKey,
+        config: configPda,
+        roleManager: rolesPda,
+      })
+      .rpc();
+  });
+
+  // ── Edge 8: Zero burn amount ─────────────────────────────────────
+
+  it("rejects burning zero tokens", async () => {
+    const userAta = getAssociatedTokenAddressSync(
+      mintKeypair.publicKey, userKeypair.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+
+    try {
+      await program.methods
+        .burnTokens(new BN(0))
+        .accounts({
+          burner: userKeypair.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+          mint: mintKeypair.publicKey,
+          burnerTokenAccount: userAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([userKeypair])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "zero");
+    }
+  });
+
+  // ── Edge 9: Name too long ────────────────────────────────────────
+
+  it("rejects initialize with name > 32 chars", async () => {
+    const badMint = Keypair.generate();
+    const [badConfig] = deriveConfigPda(badMint.publicKey, program.programId);
+    const [badRoles] = deriveRolesPda(badConfig, program.programId);
+
+    try {
+      await program.methods
+        .initialize({
+          name: "A".repeat(33), // 33 chars — exceeds limit
+          symbol: "BAD",
+          uri: "",
+          decimals: 6,
+          enablePermanentDelegate: false,
+          enableTransferHook: false,
+          enableConfidentialTransfers: false,
+          defaultAccountFrozen: false,
+          pauser: authority.publicKey,
+          blacklister: null,
+          seizer: null,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          config: badConfig,
+          roleManager: badRoles,
+          mint: badMint.publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .signers([badMint])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "name");
+    }
+  });
+
+  // ── Edge 10: Symbol too long ─────────────────────────────────────
+
+  it("rejects initialize with symbol > 10 chars", async () => {
+    const badMint = Keypair.generate();
+    const [badConfig] = deriveConfigPda(badMint.publicKey, program.programId);
+    const [badRoles] = deriveRolesPda(badConfig, program.programId);
+
+    try {
+      await program.methods
+        .initialize({
+          name: "Valid Name",
+          symbol: "X".repeat(11), // 11 chars — exceeds limit
+          uri: "",
+          decimals: 6,
+          enablePermanentDelegate: false,
+          enableTransferHook: false,
+          enableConfidentialTransfers: false,
+          defaultAccountFrozen: false,
+          pauser: authority.publicKey,
+          blacklister: null,
+          seizer: null,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          config: badConfig,
+          roleManager: badRoles,
+          mint: badMint.publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .signers([badMint])
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "symbol");
+    }
+  });
+
+  // ── Edge 11: Max minters reached ─────────────────────────────────
+
+  it("rejects adding minter when max (16) reached", async () => {
+    // Add 16 minters (the max)
+    const minters: Keypair[] = [];
+    for (let i = 0; i < 16; i++) {
+      const m = Keypair.generate();
+      minters.push(m);
+      await program.methods
+        .updateMinter(m.publicKey, new BN(1_000))
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+    }
+
+    // The 17th should fail
+    const extraMinter = Keypair.generate();
+    try {
+      await program.methods
+        .updateMinter(extraMinter.publicKey, new BN(1_000))
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "minters");
+    }
+
+    // Clean up: remove all 16 minters
+    for (const m of minters) {
+      await program.methods
+        .removeMinter(m.publicKey)
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+    }
+  });
+
+  // ── Edge 12: Max burners reached ─────────────────────────────────
+
+  it("rejects adding burner when max (16) reached", async () => {
+    // Check how many burners already exist, then fill to max
+    const rolesBefore = await program.account.roleManager.fetch(rolesPda);
+    const existingBurners = rolesBefore.burners.length;
+    const toAdd = 16 - existingBurners; // fill to exactly 16 (the max)
+
+    const burners: Keypair[] = [];
+    for (let i = 0; i < toAdd; i++) {
+      const b = Keypair.generate();
+      burners.push(b);
+      await program.methods
+        .updateRoles({
+          newPauser: null,
+          newBlacklister: null,
+          newSeizer: null,
+          addBurner: b.publicKey,
+          removeBurner: null,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+    }
+
+    // The next one should fail (16 already = max)
+    const extraBurner = Keypair.generate();
+    try {
+      await program.methods
+        .updateRoles({
+          newPauser: null,
+          newBlacklister: null,
+          newSeizer: null,
+          addBurner: extraBurner.publicKey,
+          removeBurner: null,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+      assert.fail("Should have thrown");
+    } catch (err: any) {
+      assert.include(err.toString(), "burners");
+    }
+
+    // Clean up: remove the 15 added burners
+    for (const b of burners) {
+      await program.methods
+        .updateRoles({
+          newPauser: null,
+          newBlacklister: null,
+          newSeizer: null,
+          addBurner: null,
+          removeBurner: b.publicKey,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          config: configPda,
+          roleManager: rolesPda,
+        })
+        .rpc();
+    }
   });
 });

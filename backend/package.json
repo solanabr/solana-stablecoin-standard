@@ -19,7 +19,9 @@
     "@fastify/swagger-ui": "^5.0.0",
     "@solana/web3.js": "^1.98.0",
     "dotenv": "^16.4.0",
-    "pino": "^9.0.0"
+    "pino": "^9.0.0",
+    "pino-pretty": "^13.0.0",
+    "@fastify/websocket": "^11.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
