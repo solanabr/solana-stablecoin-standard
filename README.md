@@ -185,6 +185,18 @@ anchor test
 cd sdk && pnpm build
 ```
 
+## Deployed on Devnet
+
+All programs are deployed and verified on Solana devnet:
+
+| Program | Program ID |
+|---------|------------|
+| `sss_token` | [`AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t`](https://explorer.solana.com/address/AcmGr2zw5RqMjuT1BN68Gk8gBhaFeF4piUXTyRQrVw3t?cluster=devnet) |
+| `transfer_hook` | [`8nWGGHT4kkuvtY8NqXeYEdiyC79qQ2taS82UGwmfdKgu`](https://explorer.solana.com/address/8nWGGHT4kkuvtY8NqXeYEdiyC79qQ2taS82UGwmfdKgu?cluster=devnet) |
+| `oracle_module` | [`27eVzSd6UBsLAzzXaSfMbUM5dgZLv4H8fiQTVqXkESFb`](https://explorer.solana.com/address/27eVzSd6UBsLAzzXaSfMbUM5dgZLv4H8fiQTVqXkESFb?cluster=devnet) |
+
+> See [docs/DEPLOY.md](docs/DEPLOY.md) for deployment instructions.
+
 ## License
 
 MIT
