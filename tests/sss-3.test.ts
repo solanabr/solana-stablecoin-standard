@@ -63,7 +63,7 @@ describe("sss-3: Private Stablecoin", () => {
         rent: SYSVAR_RENT_PUBKEY,
       })
       .signers([mintKeypair])
-      .rpc();
+      .rpc({ commitment: "confirmed" });
 
     // Verify config
     const config = await program.account.stablecoinConfig.fetch(configPda);
