@@ -16,8 +16,6 @@ pub struct AttestArgs {
     pub hash: String,
     #[arg(long, help = "Total reserves in USD cents")]
     pub reserves_usd: u64,
-    #[arg(long, help = "Total outstanding supply")]
-    pub outstanding: u64,
     #[arg(long, default_value = "")]
     pub uri: String,
 }
@@ -42,7 +40,6 @@ pub fn execute(config: &CliConfig, args: &AttestArgs) -> Result<()> {
     let params = sss_token::instructions::AttestReserveParams {
         reserve_hash: hash_bytes,
         total_reserves_usd: args.reserves_usd,
-        total_outstanding: args.outstanding,
         attestation_uri: args.uri.clone(),
     };
 

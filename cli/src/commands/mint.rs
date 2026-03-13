@@ -19,11 +19,6 @@ pub fn execute(config: &CliConfig, args: &MintArgs) -> Result<()> {
     let (config_pda, _) = get_config_pda(&args.mint);
     let (minter_info_pda, _) = get_minter_info_pda(&config_pda, &config.payer.pubkey());
     let (recipient_blacklist_pda, _) = get_blacklist_pda(&config_pda, &args.recipient);
-    let recipient_blacklist = config
-        .rpc_client
-        .get_account_with_commitment(&recipient_blacklist_pda, config.commitment)?
-        .value
-        .map(|_| recipient_blacklist_pda);
     let recipient_token_account = get_associated_token_account_2022(&args.recipient, &args.mint);
 
     let accounts = sss_token::accounts::MintTokens {
@@ -32,7 +27,7 @@ pub fn execute(config: &CliConfig, args: &MintArgs) -> Result<()> {
         minter_info: minter_info_pda,
         mint: args.mint,
         recipient_token_account,
-        recipient_blacklist,
+        recipient_blacklist: recipient_blacklist_pda,
         token_program: spl_token_2022_id(),
     }
     .to_account_metas(None);

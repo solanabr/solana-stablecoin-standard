@@ -3,7 +3,7 @@ use crate::pda::{
     get_config_pda, get_extra_account_meta_list_pda, get_role_registry_pda,
     SSS_TRANSFER_HOOK_PROGRAM_ID,
 };
-use anchor_lang::{InstructionData, ToAccountMetas};
+use anchor_lang::{AccountDeserialize, InstructionData, ToAccountMetas};
 use anyhow::{Context, Result};
 use clap::Args;
 use serde::Deserialize;
@@ -11,22 +11,34 @@ use solana_sdk::{
     instruction::AccountMeta, pubkey::Pubkey, signature::Keypair, signer::Signer, sysvar::rent,
     transaction::Transaction,
 };
-use sss_token::state::StablecoinPreset;
+use sss_token::state::{StablecoinConfig, StablecoinPreset};
+use std::str::FromStr;
 
 #[derive(Args)]
 pub struct InitArgs {
-    #[arg(long, value_parser = parse_preset)]
-    pub preset: StablecoinPreset,
-    #[arg(long)]
-    pub name: String,
-    #[arg(long)]
-    pub symbol: String,
+    #[arg(long, value_parser = parse_preset, required_unless_present = "retry_hook_setup")]
+    pub preset: Option<StablecoinPreset>,
+    #[arg(long, required_unless_present = "retry_hook_setup")]
+    pub name: Option<String>,
+    #[arg(long, required_unless_present = "retry_hook_setup")]
+    pub symbol: Option<String>,
     #[arg(long, default_value = "")]
     pub uri: String,
     #[arg(long, default_value_t = 6)]
     pub decimals: u8,
     #[arg(long, help = "Path to TOML config file (for custom preset)")]
     pub config: Option<String>,
+    #[arg(
+        long,
+        help = "Retry transfer hook setup for a previously initialized mint that is missing its ExtraAccountMetaList"
+    )]
+    pub retry_hook_setup: bool,
+    #[arg(
+        long,
+        help = "Mint address (required with --retry-hook-setup)",
+        requires = "retry_hook_setup"
+    )]
+    pub mint: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -55,6 +67,22 @@ fn parse_preset(s: &str) -> Result<StablecoinPreset, String> {
 }
 
 pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
+    if args.retry_hook_setup {
+        return retry_hook_setup(config, args);
+    }
+
+    let preset = args
+        .preset
+        .ok_or_else(|| anyhow::anyhow!("--preset is required unless --retry-hook-setup is used"))?;
+    let default_name = args
+        .name
+        .clone()
+        .ok_or_else(|| anyhow::anyhow!("--name is required unless --retry-hook-setup is used"))?;
+    let default_symbol = args
+        .symbol
+        .clone()
+        .ok_or_else(|| anyhow::anyhow!("--symbol is required unless --retry-hook-setup is used"))?;
+
     let mint = Keypair::new();
     let (config_pda, _) = get_config_pda(&mint.pubkey());
     let (role_registry_pda, _) = get_role_registry_pda(&config_pda);
@@ -74,11 +102,11 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
     let name = toml_config
         .as_ref()
         .and_then(|c| c.name.clone())
-        .unwrap_or_else(|| args.name.clone());
+        .unwrap_or(default_name);
     let symbol = toml_config
         .as_ref()
         .and_then(|c| c.symbol.clone())
-        .unwrap_or_else(|| args.symbol.clone());
+        .unwrap_or(default_symbol);
     let uri = toml_config
         .as_ref()
         .and_then(|c| c.uri.clone())
@@ -89,7 +117,7 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
         .unwrap_or(args.decimals);
 
     let (custom_pd, custom_th, custom_df, custom_ct) =
-        if matches!(args.preset, StablecoinPreset::Custom) {
+        if matches!(preset, StablecoinPreset::Custom) {
             let tc = toml_config.as_ref();
             (
                 Some(
@@ -108,14 +136,14 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
         };
 
     let should_initialize_transfer_hook =
-        matches!(args.preset, StablecoinPreset::SSS2) || custom_th == Some(true);
+        matches!(preset, StablecoinPreset::SSS2) || custom_th == Some(true);
 
     let params = sss_token::instructions::InitializeParams {
         name,
         symbol,
         uri,
         decimals,
-        preset: args.preset,
+        preset,
         enable_permanent_delegate: custom_pd,
         enable_transfer_hook: custom_th,
         enable_default_state_frozen: custom_df,
@@ -143,21 +171,42 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
 
     let ix_data = sss_token::instruction::Initialize { params }.data();
 
-    let ix = solana_sdk::instruction::Instruction {
+    let init_ix = solana_sdk::instruction::Instruction {
         program_id: crate::pda::SSS_TOKEN_PROGRAM_ID,
         accounts,
         data: ix_data,
     };
 
+    // Build all instructions for a single atomic transaction
+    let mut instructions = vec![init_ix];
+
+    if should_initialize_transfer_hook {
+        let hook_ix = build_hook_setup_ix(config, &mint.pubkey(), &config_pda, &system_program);
+        instructions.push(hook_ix);
+    }
+
     let recent_blockhash = config.rpc_client.get_latest_blockhash()?;
     let tx = Transaction::new_signed_with_payer(
-        &[ix],
+        &instructions,
         Some(&config.payer.pubkey()),
         &[&config.payer, &mint],
         recent_blockhash,
     );
 
-    let sig = config.rpc_client.send_and_confirm_transaction(&tx)?;
+    let sig = config
+        .rpc_client
+        .send_and_confirm_transaction(&tx)
+        .context(if should_initialize_transfer_hook {
+            format!(
+                "Failed to initialize stablecoin with transfer hook.\n\
+                 Mint: {}\n\
+                 Both initialization and hook setup were submitted atomically \
+                 — no partial state was created. You can safely retry.",
+                mint.pubkey()
+            )
+        } else {
+            "Failed to initialize stablecoin".to_string()
+        })?;
 
     println!("Stablecoin initialized!");
     println!("  Mint:      {}", mint.pubkey());
@@ -166,39 +215,106 @@ pub fn execute(config: &CliConfig, args: &InitArgs) -> Result<()> {
 
     if should_initialize_transfer_hook {
         let (extra_account_meta_list_pda, _) = get_extra_account_meta_list_pda(&mint.pubkey());
-        let hook_accounts = sss_transfer_hook::accounts::InitializeExtraAccountMetaList {
-            payer: config.payer.pubkey(),
-            authority: config.payer.pubkey(),
-            extra_account_meta_list: extra_account_meta_list_pda,
-            mint: mint.pubkey(),
-            config: config_pda,
-            system_program,
-        }
-        .to_account_metas(None);
-
-        let hook_ix_data = sss_transfer_hook::instruction::InitializeExtraAccountMetaList {}.data();
-        let hook_ix = solana_sdk::instruction::Instruction {
-            program_id: SSS_TRANSFER_HOOK_PROGRAM_ID,
-            accounts: hook_accounts,
-            data: hook_ix_data,
-        };
-
-        let recent_blockhash = config.rpc_client.get_latest_blockhash()?;
-        let hook_tx = Transaction::new_signed_with_payer(
-            &[hook_ix],
-            Some(&config.payer.pubkey()),
-            &[&config.payer],
-            recent_blockhash,
-        );
-
-        let hook_sig = config.rpc_client.send_and_confirm_transaction(&hook_tx)?;
-
-        println!("Transfer hook ExtraAccountMetaList initialized");
+        println!("  Transfer hook ExtraAccountMetaList initialized");
         println!("  ExtraAccountMetaList: {}", extra_account_meta_list_pda);
-        println!("  Signature: {}", hook_sig);
     }
 
     Ok(())
+}
+
+/// Retry hook setup for a previously initialized mint that is missing its ExtraAccountMetaList.
+fn retry_hook_setup(config: &CliConfig, args: &InitArgs) -> Result<()> {
+    let mint_str = args.mint.as_ref().ok_or_else(|| {
+        anyhow::anyhow!("--mint is required with --retry-hook-setup.\n\
+            Usage: sss-token init --retry-hook-setup --mint <MINT_ADDRESS>")
+    })?;
+    let mint_pubkey =
+        Pubkey::from_str(mint_str).context("Invalid mint address: must be a base58 pubkey")?;
+
+    let (config_pda, _) = get_config_pda(&mint_pubkey);
+    let (extra_account_meta_list_pda, _) = get_extra_account_meta_list_pda(&mint_pubkey);
+    let system_program = solana_sdk::pubkey!("11111111111111111111111111111111");
+
+    // Idempotency check: skip if the ExtraAccountMetaList account already exists
+    if let Ok(account) = config.rpc_client.get_account(&extra_account_meta_list_pda) {
+        if !account.data.is_empty() {
+            println!("ExtraAccountMetaList already exists for mint {}", mint_pubkey);
+            println!("  ExtraAccountMetaList: {}", extra_account_meta_list_pda);
+            println!("No action needed — hook setup is already complete.");
+            return Ok(());
+        }
+    }
+
+    // Verify the mint was actually initialized with this program and needs hook setup
+    let config_data = config
+        .rpc_client
+        .get_account_data(&config_pda)
+        .context(format!(
+            "Could not find config account for mint {}.\n\
+             Ensure this mint was initialized with sss-token.",
+            mint_pubkey
+        ))?;
+    let stablecoin_config = StablecoinConfig::try_deserialize(&mut &config_data[..])
+        .context("Failed to deserialize stablecoin config")?;
+
+    anyhow::ensure!(
+        stablecoin_config.enable_transfer_hook,
+        "Mint {} was not initialized with the transfer-hook feature enabled.",
+        mint_pubkey
+    );
+
+    let hook_ix = build_hook_setup_ix(config, &mint_pubkey, &config_pda, &system_program);
+
+    let recent_blockhash = config.rpc_client.get_latest_blockhash()?;
+    let tx = Transaction::new_signed_with_payer(
+        &[hook_ix],
+        Some(&config.payer.pubkey()),
+        &[&config.payer],
+        recent_blockhash,
+    );
+
+    let sig = config
+        .rpc_client
+        .send_and_confirm_transaction(&tx)
+        .context(format!(
+            "Failed to initialize ExtraAccountMetaList for mint {}.\n\
+             The mint exists but the transfer hook setup failed.\n\
+             You can retry with: sss-token init --retry-hook-setup --mint {}",
+            mint_pubkey, mint_pubkey
+        ))?;
+
+    println!("Transfer hook ExtraAccountMetaList initialized!");
+    println!("  Mint:                {}", mint_pubkey);
+    println!("  ExtraAccountMetaList: {}", extra_account_meta_list_pda);
+    println!("  Signature:           {}", sig);
+
+    Ok(())
+}
+
+/// Build the ExtraAccountMetaList initialization instruction for a given mint.
+fn build_hook_setup_ix(
+    config: &CliConfig,
+    mint: &Pubkey,
+    config_pda: &Pubkey,
+    system_program: &Pubkey,
+) -> solana_sdk::instruction::Instruction {
+    let (extra_account_meta_list_pda, _) = get_extra_account_meta_list_pda(mint);
+    let hook_accounts = sss_transfer_hook::accounts::InitializeExtraAccountMetaList {
+        payer: config.payer.pubkey(),
+        authority: config.payer.pubkey(),
+        extra_account_meta_list: extra_account_meta_list_pda,
+        mint: *mint,
+        config: *config_pda,
+        system_program: *system_program,
+    }
+    .to_account_metas(None);
+
+    let hook_ix_data = sss_transfer_hook::instruction::InitializeExtraAccountMetaList {}.data();
+    solana_sdk::instruction::Instruction {
+        program_id: SSS_TRANSFER_HOOK_PROGRAM_ID,
+        accounts: hook_accounts,
+        data: hook_ix_data,
+    }
 }
 
 fn spl_token_2022_id() -> Pubkey {

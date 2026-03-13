@@ -70,6 +70,8 @@ enum Commands {
     Holders(commands::holders::HoldersArgs),
     /// Show audit log and attestation history
     AuditLog(commands::audit_log::AuditLogArgs),
+    /// Transfer master authority to a new keypair (immediate, both parties sign)
+    TransferAuthority(commands::transfer_authority::TransferAuthorityArgs),
 }
 
 fn main() -> Result<()> {
@@ -100,5 +102,6 @@ fn main() -> Result<()> {
         Commands::Minters(args) => commands::minters::execute(&config, args),
         Commands::Holders(args) => commands::holders::execute(&config, args),
         Commands::AuditLog(args) => commands::audit_log::execute(&config, args),
+        Commands::TransferAuthority(args) => commands::transfer_authority::execute(&config, args),
     }
 }

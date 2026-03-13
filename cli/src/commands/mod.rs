@@ -19,5 +19,6 @@ pub mod set_supply_cap;
 pub mod status;
 pub mod supply;
 pub mod thaw;
+pub mod transfer_authority;
 pub mod unpause;
 pub mod update_metadata;
