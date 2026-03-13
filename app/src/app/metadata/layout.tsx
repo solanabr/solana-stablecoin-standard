@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "700"],
 });
 
-export default function AllowlistLayout({
+export default function MetadataLayout({
   children,
 }: {
   children: React.ReactNode;
