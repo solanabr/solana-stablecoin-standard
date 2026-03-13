@@ -1,6 +1,7 @@
 #![allow(unexpected_cfgs, ambiguous_glob_reexports, deprecated)]
 
 use anchor_lang::prelude::*;
+#[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
 pub mod errors;
@@ -13,6 +14,7 @@ use instructions::*;
 
 declare_id!("5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4");
 
+#[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     name: "SSS Token",
     project_url: "https://github.com/solanabr/solana-stablecoin-standard",

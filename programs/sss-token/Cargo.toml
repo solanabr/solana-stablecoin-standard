@@ -1,6 +1,6 @@
 [package]
 name = "sss-token"
-version = "1.0.1"
+version = "1.0.3"
 description = "Solana Stablecoin Standard - Token Program with blacklist, seize, freeze, and GENIUS Act compliance"
 edition = "2021"
 license = "Apache-2.0"

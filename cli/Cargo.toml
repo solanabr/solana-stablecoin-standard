@@ -1,8 +1,13 @@
 [package]
 name = "sss-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "CLI for the Solana Stablecoin Standard (SSS)"
 edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/solanabr/solana-stablecoin-standard"
+homepage = "https://stablecoinstandard.dev"
+keywords = ["solana", "stablecoin", "cli", "token-2022", "spl"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "sss-token"

@@ -1,6 +1,6 @@
 [package]
 name = "sss-transfer-hook"
-version = "1.0.1"
+version = "1.0.3"
 description = "Solana Stablecoin Standard - Transfer Hook for blacklist enforcement on Token-2022 transfers"
 edition = "2021"
 license = "Apache-2.0"

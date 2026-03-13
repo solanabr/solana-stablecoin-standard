@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use anchor_spl::token_interface::Mint;
+#[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 use spl_tlv_account_resolution::{
     account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList,
@@ -9,6 +10,7 @@ use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookI
 
 declare_id!("FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy");
 
+#[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     name: "SSS Transfer Hook",
     project_url: "https://github.com/solanabr/solana-stablecoin-standard",
