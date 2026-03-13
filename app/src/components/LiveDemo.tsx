@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { explorerTxUrl, explorerAddressUrl } from "@/components/dashboard/consoleUtils";
 
-const EXPLORER = "https://explorer.solana.com/tx/";
-const CLUSTER = "?cluster=devnet";
 const MINT = "C9TssJentaYfyyfbhihHRGfxS5t3aWHS8LoXJbopyLgp";
-const MINT_EXPLORER = `https://explorer.solana.com/address/${MINT}?cluster=devnet`;
 
 interface TxEntry {
   step: number;
@@ -153,7 +151,7 @@ export default function LiveDemo() {
             </h2>
           </div>
           <a
-            href={MINT_EXPLORER}
+            href={explorerAddressUrl(MINT)}
             target="_blank"
             rel="noopener noreferrer"
             className="brutal-btn bg-paper text-ink px-6 py-3 font-mono text-xs uppercase tracking-wider hover-target inline-block self-start md:self-end"
@@ -168,7 +166,7 @@ export default function LiveDemo() {
             SSS-2 Mint:
           </span>
           <a
-            href={MINT_EXPLORER}
+            href={explorerAddressUrl(MINT)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-accent hover:underline break-all"
@@ -182,7 +180,7 @@ export default function LiveDemo() {
           {txs.map((tx, i) => (
             <a
               key={tx.sig}
-              href={`${EXPLORER}${tx.sig}${CLUSTER}`}
+              href={explorerTxUrl(tx.sig)}
               target="_blank"
               rel="noopener noreferrer"
               className={`group border-2 border-paper/20 p-4 hover:border-accent hover:bg-accent/5 transition-all duration-300 ${
@@ -219,7 +217,7 @@ export default function LiveDemo() {
           </div>
           <div className="flex gap-4 font-mono text-xs uppercase">
             <a
-              href="https://explorer.solana.com/address/5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4?cluster=devnet"
+              href={explorerAddressUrl("5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4")}
               target="_blank"
               rel="noopener noreferrer"
               className="text-paper/50 hover:text-accent transition-colors"
@@ -227,7 +225,7 @@ export default function LiveDemo() {
               sss-token program
             </a>
             <a
-              href="https://explorer.solana.com/address/FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy?cluster=devnet"
+              href={explorerAddressUrl("FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy")}
               target="_blank"
               rel="noopener noreferrer"
               className="text-paper/50 hover:text-accent transition-colors"

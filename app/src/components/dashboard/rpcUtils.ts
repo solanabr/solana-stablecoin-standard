@@ -143,6 +143,7 @@ export async function withRpcRetry<T>(
     maxRetries?: number;
     baseDelayMs?: number;
     maxDelayMs?: number;
+    signal?: AbortSignal;
     onRetry?: (
       error: NormalizedRpcError,
       delayMs: number,
@@ -155,9 +156,13 @@ export async function withRpcRetry<T>(
   const maxDelayMs = options?.maxDelayMs ?? 4_000;
 
   for (let attempt = 0; ; attempt += 1) {
+    options?.signal?.throwIfAborted();
+
     try {
       return await operation();
     } catch (error) {
+      options?.signal?.throwIfAborted();
+
       const wrapped = toRpcError(error, options?.fallbackMessage);
       const normalized = getNormalizedRpcError(wrapped, options?.fallbackMessage);
 
@@ -172,8 +177,16 @@ export async function withRpcRetry<T>(
 
       options?.onRetry?.(normalized, delayMs, attempt + 1);
 
-      await new Promise((resolve) => {
-        window.setTimeout(resolve, delayMs);
+      await new Promise<void>((resolve, reject) => {
+        const timer = window.setTimeout(resolve, delayMs);
+        options?.signal?.addEventListener(
+          "abort",
+          () => {
+            window.clearTimeout(timer);
+            reject(options.signal!.reason);
+          },
+          { once: true }
+        );
       });
     }
   }

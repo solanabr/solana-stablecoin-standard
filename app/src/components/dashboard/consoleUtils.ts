@@ -101,8 +101,31 @@ export function formatTokenAmount(
   }`;
 }
 
+function getExplorerClusterSuffix(): string {
+  const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK?.trim();
+  if (network) {
+    if (network === "mainnet-beta") return "";
+    if (network === "devnet" || network === "testnet") return `?cluster=${network}`;
+    return `?cluster=custom&customUrl=${encodeURIComponent(network)}`;
+  }
+
+  const rpc = process.env.NEXT_PUBLIC_RPC_URL?.trim();
+  if (rpc) {
+    if (rpc.includes("mainnet")) return "";
+    if (rpc.includes("devnet")) return "?cluster=devnet";
+    if (rpc.includes("testnet")) return "?cluster=testnet";
+    return `?cluster=custom&customUrl=${encodeURIComponent(rpc)}`;
+  }
+
+  return "?cluster=devnet";
+}
+
 export function explorerTxUrl(signature: string): string {
-  return `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
+  return `https://explorer.solana.com/tx/${signature}${getExplorerClusterSuffix()}`;
+}
+
+export function explorerAddressUrl(address: string): string {
+  return `https://explorer.solana.com/address/${address}${getExplorerClusterSuffix()}`;
 }
 
 export function formatTimestamp(

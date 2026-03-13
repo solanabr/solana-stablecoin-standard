@@ -6,6 +6,7 @@ import { BN } from "@coral-xyz/anchor";
 import { UserCog, UserPlus } from "lucide-react";
 import type { SSSState } from "@/hooks/useSSS";
 import ActionButton from "../ActionButton";
+import { explorerTxUrl } from "@/components/dashboard/consoleUtils";
 
 const DEFAULT_PK = "11111111111111111111111111111111";
 
@@ -106,7 +107,7 @@ export default function AccessPillar({ sss }: { sss: SSSState }) {
           </div>
           {txSig && (
             <a
-              href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
+              href={explorerTxUrl(txSig)}
               target="_blank"
               rel="noreferrer"
               className="tx-link block mt-2 text-[12px]"

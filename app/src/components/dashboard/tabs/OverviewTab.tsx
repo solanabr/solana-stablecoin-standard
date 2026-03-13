@@ -6,6 +6,7 @@ import { ConfirmedSignatureInfo } from "@solana/web3.js";
 import BrutalCard from "@/components/ui/BrutalCard";
 import BrutalButton from "@/components/ui/BrutalButton";
 import type { SSSState } from "@/hooks/useSSS";
+import { explorerTxUrl } from "@/components/dashboard/consoleUtils";
 
 export default function OverviewTab({ sss }: { sss: SSSState }) {
   const { connection } = useConnection();
@@ -174,7 +175,7 @@ export default function OverviewTab({ sss }: { sss: SSSState }) {
                     className="border-b-[3px] border-[#0A0A0A] hover:bg-[#FF3E00] hover:text-[#EBE9E1] group cursor-pointer"
                     onClick={() =>
                       window.open(
-                        `https://explorer.solana.com/tx/${sig.signature}?cluster=devnet`,
+                        explorerTxUrl(sig.signature),
                         "_blank"
                       )
                     }

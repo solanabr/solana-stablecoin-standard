@@ -21,7 +21,19 @@ import {
 let _defaultMint: PublicKey | null = null;
 function getDefaultMint(): PublicKey {
   if (!_defaultMint) {
-    _defaultMint = new PublicKey(process.env.NEXT_PUBLIC_DEFAULT_MINT!.trim());
+    const mintEnv = process.env.NEXT_PUBLIC_DEFAULT_MINT;
+    if (!mintEnv || !mintEnv.trim()) {
+      throw new Error(
+        "NEXT_PUBLIC_DEFAULT_MINT environment variable is required"
+      );
+    }
+    try {
+      _defaultMint = new PublicKey(mintEnv.trim());
+    } catch {
+      throw new Error(
+        `NEXT_PUBLIC_DEFAULT_MINT contains an invalid public key: "${mintEnv.trim()}"`
+      );
+    }
   }
   return _defaultMint;
 }
@@ -110,6 +122,8 @@ export function useSSS(): SSSState {
   } | null>(null);
   const inFlightRef = useRef<Promise<void> | null>(null);
   const queuedRefreshRef = useRef(false);
+  const requestGenRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const client = useMemo(() => {
     if (!publicKey || !signTransaction || !signAllTransactions) return null;
@@ -132,6 +146,12 @@ export function useSSS(): SSSState {
       scheduledRefreshRef.current = null;
     }
 
+    requestGenRef.current += 1;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
     inFlightRef.current = null;
     queuedRefreshRef.current = false;
     setConfig(null);
@@ -151,6 +171,17 @@ export function useSSS(): SSSState {
       return;
     }
 
+    // Cancel any previous in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const gen = ++requestGenRef.current;
+
+    const isStale = () =>
+      !mountedRef.current || gen !== requestGenRef.current;
+
     setLoading(true);
     setError(null);
     setRetrying(null);
@@ -158,8 +189,13 @@ export function useSSS(): SSSState {
     try {
       const result = await withRpcRetry(
         async () => {
+          controller.signal.throwIfAborted();
+
           const [configPda] = client.getConfigPda(mint);
           const configAccount = await client.fetchConfig(mint);
+
+          controller.signal.throwIfAborted();
+
           const [minterList, allowlistList, roleRegistry] = await Promise.all([
             client.fetchAllMinters(mint).catch((fetchError) => {
               if (isAccountNotFoundError(fetchError)) {
@@ -194,8 +230,9 @@ export function useSSS(): SSSState {
         },
         {
           fallbackMessage: "Failed to load stablecoin data.",
+          signal: controller.signal,
           onRetry: (retryError, delayMs, attempt) => {
-            if (!mountedRef.current) return;
+            if (isStale()) return;
             const message = buildRetryMessage(retryError, delayMs);
             setRetrying({ attempt, message });
             setError(message);
@@ -203,7 +240,7 @@ export function useSSS(): SSSState {
         }
       );
 
-      if (!mountedRef.current) return;
+      if (isStale()) return;
 
       setConfig(result.config);
       setSupply(result.supply);
@@ -214,7 +251,7 @@ export function useSSS(): SSSState {
       setRetrying(null);
       setLastUpdated(Date.now());
     } catch (loadError) {
-      if (!mountedRef.current) return;
+      if (isStale()) return;
 
       const normalized = getNormalizedRpcError(
         loadError,
@@ -233,7 +270,7 @@ export function useSSS(): SSSState {
       setError(normalized.message);
       setRetrying(null);
     } finally {
-      if (mountedRef.current) {
+      if (!isStale()) {
         setLoading(false);
       }
     }
@@ -306,6 +343,11 @@ export function useSSS(): SSSState {
 
     return () => {
       mountedRef.current = false;
+      requestGenRef.current += 1;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
       if (debounceTimerRef.current) {
         window.clearTimeout(debounceTimerRef.current);
       }
@@ -319,6 +361,15 @@ export function useSSS(): SSSState {
     }
 
     void refresh();
+
+    return () => {
+      // Cancel in-flight requests when dependencies change
+      requestGenRef.current += 1;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, [client, clearState, mint, refresh]);
 
   return {

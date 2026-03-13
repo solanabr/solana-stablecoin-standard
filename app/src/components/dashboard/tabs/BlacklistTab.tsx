@@ -6,6 +6,7 @@ import { BN } from "@coral-xyz/anchor";
 import BrutalCard from "@/components/ui/BrutalCard";
 import BrutalButton from "@/components/ui/BrutalButton";
 import type { SSSState } from "@/hooks/useSSS";
+import { explorerTxUrl } from "@/components/dashboard/consoleUtils";
 
 export default function BlacklistTab({ sss }: { sss: SSSState }) {
   const [address, setAddress] = useState("");
@@ -103,7 +104,7 @@ export default function BlacklistTab({ sss }: { sss: SSSState }) {
         <div className={`font-mono text-sm border-2 p-4 ${status.startsWith("Error") ? "border-[#FF3E00] text-[#FF3E00]" : "border-[#0A0A0A]"}`}>
           {status}
           {txSig && (
-            <a href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`} target="_blank" rel="noreferrer" className="block mt-2 underline text-[#0044FF]">
+            <a href={explorerTxUrl(txSig)} target="_blank" rel="noreferrer" className="block mt-2 underline text-[#0044FF]">
               View on Explorer
             </a>
           )}

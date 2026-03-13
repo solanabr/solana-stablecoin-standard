@@ -8,8 +8,55 @@ import { Coins, Flame, AlertOctagon, Play } from "lucide-react";
 import type { SSSState } from "@/hooks/useSSS";
 import MetricBlock from "../MetricBlock";
 import ActionButton from "../ActionButton";
+import {
+  explorerTxUrl,
+  parseTokenAmountInput,
+} from "@/components/dashboard/consoleUtils";
 
 type ActiveForm = "mint" | "burn" | null;
+
+function parseAmountToBn(value: string, decimals: number): BN {
+  const parsed = parseTokenAmountInput(value, decimals);
+  if (parsed === null) {
+    throw new Error(
+      `Enter a valid amount with at most ${decimals} decimal places.`
+    );
+  }
+
+  return new BN(parsed.toString());
+}
+
+/** Format a BN with given decimals into a compact display string (e.g. "1.23M", "45.67K", "123.45"). All string-based, no JS number conversion. */
+function formatBnShort(bn: BN, decimals: number): string {
+  const raw = bn.toString();
+  const padded = raw.padStart(decimals + 1, "0");
+  const intPart = padded.slice(0, padded.length - decimals);
+  const fracDigits = padded.slice(padded.length - decimals);
+
+  if (intPart.length >= 7) {
+    const mInt = intPart.slice(0, intPart.length - 6);
+    const mFrac = intPart.slice(intPart.length - 6, intPart.length - 4);
+    return `${mInt}.${mFrac}M`;
+  }
+  if (intPart.length >= 4) {
+    const kInt = intPart.slice(0, intPart.length - 3);
+    const kFrac = intPart.slice(intPart.length - 3, intPart.length - 1);
+    return `${kInt}.${kFrac}K`;
+  }
+
+  const twoFrac = fracDigits.slice(0, 2).padEnd(2, "0");
+  return `${intPart}.${twoFrac}`;
+}
+
+/** Format a BN with given decimals into a full display string with thousand separators (e.g. "1,234,567.89"). All string-based. */
+function formatBnFull(bn: BN, decimals: number): string {
+  const raw = bn.toString();
+  const padded = raw.padStart(decimals + 1, "0");
+  const intPart = padded.slice(0, padded.length - decimals);
+  const fracPart = padded.slice(padded.length - decimals).replace(/0+$/, "");
+  const withSeparators = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fracPart ? `${withSeparators}.${fracPart}` : withSeparators;
+}
 
 export default function SupplyPillar({ sss }: { sss: SSSState }) {
   const { publicKey } = useWallet();
@@ -23,19 +70,9 @@ export default function SupplyPillar({ sss }: { sss: SSSState }) {
   const [loading, setLoading] = useState(false);
 
   const decimals = sss.supply?.decimals ?? 6;
-  const pow = Math.pow(10, decimals);
-  const currentSupply = sss.supply ? sss.supply.currentSupply.toNumber() / pow : 0;
-  const totalMinted = sss.supply ? sss.supply.totalMinted.toNumber() / pow : 0;
-  const totalBurned = sss.supply ? sss.supply.totalBurned.toNumber() / pow : 0;
+  const zeroBn = new BN(0);
   const symbol = sss.config?.symbol || "---";
   const isPaused = sss.config?.isPaused ?? false;
-
-  const fmt = (n: number) =>
-    n >= 1_000_000
-      ? (n / 1_000_000).toFixed(2) + "M"
-      : n >= 1_000
-        ? (n / 1_000).toFixed(2) + "K"
-        : n.toFixed(2);
 
   const clearStatus = () => { setStatus(null); setTxSig(null); };
 
@@ -62,7 +99,7 @@ export default function SupplyPillar({ sss }: { sss: SSSState }) {
     setStatus("Preparing mint...");
     setTxSig(null);
     try {
-      const amount = new BN(parseFloat(mintAmount) * pow);
+      const amount = parseAmountToBn(mintAmount, decimals);
       const recipientPk = new PublicKey(recipient);
       const recipientAta = await ensureAta(recipientPk);
       setStatus("Sending mint transaction...");
@@ -88,7 +125,7 @@ export default function SupplyPillar({ sss }: { sss: SSSState }) {
     setStatus("Sending burn transaction...");
     setTxSig(null);
     try {
-      const amount = new BN(parseFloat(burnAmount) * pow);
+      const amount = parseAmountToBn(burnAmount, decimals);
       const burnerAta = sss.client.getAssociatedTokenAddress(sss.mint, publicKey);
       const { signature } = await sss.client.burnTokens(sss.mint, amount, burnerAta);
       setTxSig(signature);
@@ -134,7 +171,7 @@ export default function SupplyPillar({ sss }: { sss: SSSState }) {
           </div>
           {txSig && (
             <a
-              href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
+              href={explorerTxUrl(txSig)}
               target="_blank"
               rel="noreferrer"
               className="tx-link block mt-2 text-[12px]"
@@ -148,15 +185,15 @@ export default function SupplyPillar({ sss }: { sss: SSSState }) {
       {/* Metrics */}
       <MetricBlock
         label={`Total Outstanding Supply (${symbol})`}
-        value={fmt(currentSupply)}
-        subtext={currentSupply.toLocaleString() + " tokens"}
+        value={formatBnShort(sss.supply?.currentSupply ?? zeroBn, decimals)}
+        subtext={formatBnFull(sss.supply?.currentSupply ?? zeroBn, decimals) + " tokens"}
         highlight
         large
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <MetricBlock label="Total Minted" value={"+" + fmt(totalMinted)} />
-        <MetricBlock label="Total Burned" value={"-" + fmt(totalBurned)} />
+        <MetricBlock label="Total Minted" value={"+" + formatBnShort(sss.supply?.totalMinted ?? zeroBn, decimals)} />
+        <MetricBlock label="Total Burned" value={"-" + formatBnShort(sss.supply?.totalBurned ?? zeroBn, decimals)} />
       </div>
 
       {/* Decorative chart */}

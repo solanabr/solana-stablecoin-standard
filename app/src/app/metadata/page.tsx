@@ -10,7 +10,7 @@ import {
   SectionLabel,
   StatusBanner,
 } from "@/components/dashboard/ConsolePrimitives";
-import { formatTimestamp, shortAddress } from "@/components/dashboard/consoleUtils";
+import { explorerTxUrl, formatTimestamp, shortAddress } from "@/components/dashboard/consoleUtils";
 import { getRpcErrorMessage } from "@/components/dashboard/rpcUtils";
 import { useSSS } from "@/hooks/useSSS";
 
@@ -116,7 +116,7 @@ function MetadataPageContent() {
         <StatusBanner tone={status.tone} message={status.message}>
           {status.signature ? (
             <a
-              href={`https://explorer.solana.com/tx/${status.signature}?cluster=devnet`}
+              href={explorerTxUrl(status.signature)}
               target="_blank"
               rel="noreferrer"
               className="tx-link hover-trigger"

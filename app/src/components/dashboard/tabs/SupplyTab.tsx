@@ -7,6 +7,7 @@ import { BN } from "@coral-xyz/anchor";
 import BrutalCard from "@/components/ui/BrutalCard";
 import BrutalButton from "@/components/ui/BrutalButton";
 import type { SSSState } from "@/hooks/useSSS";
+import { explorerTxUrl } from "@/components/dashboard/consoleUtils";
 
 export default function SupplyTab({ sss }: { sss: SSSState }) {
   const { publicKey } = useWallet();
@@ -94,7 +95,7 @@ export default function SupplyTab({ sss }: { sss: SSSState }) {
           {status}
           {txSig && (
             <a
-              href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
+              href={explorerTxUrl(txSig)}
               target="_blank"
               rel="noreferrer"
               className="block mt-2 underline text-[#0044FF]"

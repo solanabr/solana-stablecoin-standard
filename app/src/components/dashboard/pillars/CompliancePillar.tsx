@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { SSSState } from "@/hooks/useSSS";
 import ActionButton from "../ActionButton";
+import { explorerTxUrl } from "@/components/dashboard/consoleUtils";
 
 type ActiveForm = "blacklistAdd" | "blacklistRemove" | "freeze" | "thaw" | "seize" | null;
 
@@ -201,7 +202,7 @@ export default function CompliancePillar({ sss }: { sss: SSSState }) {
           </div>
           {txSig && (
             <a
-              href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
+              href={explorerTxUrl(txSig)}
               target="_blank"
               rel="noreferrer"
               className="tx-link block mt-2 text-[12px]"

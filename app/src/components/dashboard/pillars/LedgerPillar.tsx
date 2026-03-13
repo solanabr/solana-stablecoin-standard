@@ -5,6 +5,7 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { ExternalLink, Radio } from "lucide-react";
 import type { ConfirmedSignatureInfo } from "@solana/web3.js";
 import type { SSSState } from "@/hooks/useSSS";
+import { explorerTxUrl } from "@/components/dashboard/consoleUtils";
 
 export default function LedgerPillar({ sss }: { sss: SSSState }) {
   const { connection } = useConnection();
@@ -94,7 +95,7 @@ export default function LedgerPillar({ sss }: { sss: SSSState }) {
         {signatures.map((sig, i) => (
           <a
             key={i}
-            href={`https://explorer.solana.com/tx/${sig.signature}?cluster=devnet`}
+            href={explorerTxUrl(sig.signature)}
             target="_blank"
             rel="noreferrer"
             className="hover-trigger dark-card flex items-center justify-between group hover:border-[#D4FF00]/20 transition-colors"

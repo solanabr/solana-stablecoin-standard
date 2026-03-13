@@ -18,6 +18,7 @@ import {
   StatusBanner,
 } from "@/components/dashboard/ConsolePrimitives";
 import {
+  explorerTxUrl,
   formatTimestamp,
   formatTokenAmount,
   isValidPublicKey,
@@ -266,10 +267,16 @@ function TransferPageContent() {
 
       const transaction = new Transaction().add(...instructions);
       const signature = await sendTransaction(transaction, connection);
-      await withRpcRetry(
+      const confirmation = await withRpcRetry(
         () => connection.confirmTransaction(signature, "confirmed"),
         { fallbackMessage: "Failed to confirm the transfer transaction." }
       );
+
+      if (confirmation.value.err) {
+        throw new Error(
+          `Transaction confirmed but failed on-chain: ${JSON.stringify(confirmation.value.err)}`
+        );
+      }
 
       const formattedAmount = formatTokenAmount(baseAmount, decimals, decimals);
 
@@ -306,7 +313,7 @@ function TransferPageContent() {
         <StatusBanner tone={status.tone} message={status.message}>
           {status.signature ? (
             <a
-              href={`https://explorer.solana.com/tx/${status.signature}?cluster=devnet`}
+              href={explorerTxUrl(status.signature)}
               target="_blank"
               rel="noreferrer"
               className="tx-link hover-trigger"

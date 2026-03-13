@@ -13,6 +13,7 @@ import {
   StatusBanner,
 } from "@/components/dashboard/ConsolePrimitives";
 import {
+  explorerTxUrl,
   formatTimestamp,
   isDefaultPublicKey,
   isValidPublicKey,
@@ -142,7 +143,7 @@ function AuthorityPageContent() {
         <StatusBanner tone={status.tone} message={status.message}>
           {status.signature ? (
             <a
-              href={`https://explorer.solana.com/tx/${status.signature}?cluster=devnet`}
+              href={explorerTxUrl(status.signature)}
               target="_blank"
               rel="noreferrer"
               className="tx-link hover-trigger"
