@@ -6,14 +6,16 @@
 
 | Suite | Happy Path | Edge Cases | Total | Status |
 |-------|-----------|-----------|-------|--------|
-| SSS-1 (Minimal) | 10 | 12 | **22** | ✅ Complete |
+| SSS-1 (Minimal) | 11 | 13 | **24** | ✅ Complete |
 | SSS-2 (Compliant) | 9 | 5 | **14** | ✅ Complete |
-| SSS-3 (Private) | 3 | 0 | **3** | ✅ Complete |
+| SSS-3 (Private) | 4 | 2 | **6** | ✅ Complete |
 | Oracle Module | 5 | 3 | **8** | ✅ Complete |
-| **Total** | **27** | **20** | **47** | |
+| **Total** | **29** | **23** | **52** | |
 
-**SSS Token error path coverage: 21/22 (95%)** — remaining 2 are guarded by prior constraints.
+**SSS Token error path coverage: 22/23 (96%)** — remaining 1 guarded by prior constraints.
 **Oracle error path coverage: 3/6 (50%)** — remaining 3 require Switchboard feed on devnet.
+**New: Supply cap enforcement** — 2 tests (mint at cap, reject over cap).
+**New: E2E CT script** — 14 checks via `scripts/test-ct-e2e.sh`.
 
 ---
 
@@ -24,7 +26,7 @@
 | Instruction | File | Happy Path | Error Paths Tested |
 |-------------|------|-----------|-------------------|
 | `initialize` | `initialize.rs` | ✅ SSS-1 + SSS-2 + SSS-3 | `NameTooLong`, `SymbolTooLong`, `UriTooLong` |
-| `mint_tokens` | `mint.rs` | ✅ | `UnauthorizedMinter`, `MinterQuotaExceeded`, `Paused`, `ZeroMintAmount` |
+| `mint_tokens` | `mint.rs` | ✅ | `UnauthorizedMinter`, `MinterQuotaExceeded`, `Paused`, `ZeroMintAmount`, `SupplyCapExceeded` |
 | `burn_tokens` | `burn.rs` | ✅ | `UnauthorizedBurner`, `ZeroBurnAmount` |
 | `freeze_account` | `freeze.rs` | ✅ | — |
 | `thaw_account` | `thaw.rs` | ✅ | — |
