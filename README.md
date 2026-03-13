@@ -30,74 +30,73 @@ Both programs are built on **Solana Token-2022** extensions and use PDA-based st
 
 ## Presets
 
-SSS defines three built-in presets and a custom mode. Each preset activates a specific combination of Token-2022 extensions and program features.
+SSS ships four preset modes defined directly in the SDK and on-chain initialization logic: `sss1`, `sss2`, `sss3`, and `custom`. The preset selected at initialization fixes the mint's Token-2022 extension set and immutable feature flags for the life of that asset. In the current codebase, all three built-in presets leave `default_account_frozen` disabled by default; the only path that enables default-frozen accounts is the `custom` preset with explicit flags.
 
-| Preset | Description | Token-2022 Extensions |
-|--------|-------------|----------------------|
-| **SSS-1 (Minimal)** | Basic stablecoin with mint/burn/freeze/thaw/pause. Suitable for internal or low-regulation environments. | MetadataPointer |
-| **SSS-2 (Compliant)** | Full compliance suite with permanent delegate, transfer hook, blacklist, and asset seizure. Designed for regulated stablecoin issuers. | MetadataPointer, PermanentDelegate, TransferHook, DefaultAccountState |
-| **SSS-3 (Private)** | Privacy-preserving stablecoin with confidential transfers. For use cases requiring transaction privacy with regulatory oversight. | MetadataPointer, PermanentDelegate, ConfidentialTransferMint |
-| **Custom** | User-defined combination of feature flags. | Varies |
+| Preset | Permanent Delegate | Transfer Hook | Default Account Frozen | Confidential Transfers | Operational Profile |
+|---|:---:|:---:|:---:|:---:|---|
+| `SSS-1` | No | No | No | No | Minimal Token-2022 stablecoin with metadata, minting, burning, freeze/thaw, pause/unpause, minter quotas, role assignment, and reserve attestations. |
+| `SSS-2` | Yes | Yes | No | No | Compliance-focused profile with blacklist entries, seizure support, and transfer-time blacklist enforcement through the hook program. |
+| `SSS-3` | Yes | No | No | Yes | Private-transfer profile with confidential transfer mint support and permanent delegate authority, but without transfer-hook enforcement. |
+| `Custom` | Caller-defined | Caller-defined | Caller-defined | Caller-defined | Advanced mode that requires all four feature flags to be supplied explicitly at initialization. |
+
+SSS-2 is the only built-in preset that enables transfer-hook enforcement. After the mint is created, the hook program's `initialize_extra_account_meta_list` path must also be executed so Token-2022 can resolve the additional accounts required on each transfer. The Rust CLI's `init` flow performs that second step automatically when the hook is enabled, and the backend `POST /api/stablecoin/initialize` route does the same.
+
+SSS-3 should be described precisely. The preset enables `PermanentDelegate` and `ConfidentialTransferMint`, but not the transfer hook. The codebase does test blacklist entry creation on SSS-3 because blacklist gating follows `enable_permanent_delegate`; however, transfer-time blacklist enforcement remains exclusive to hook-enabled mints. Likewise, allowlist entry management is implemented in the program, SDK, CLI, and event model, but the current transfer hook checks blacklist PDAs only and does not evaluate allowlist PDAs.
 
 For a detailed comparison, see [docs/presets.md](docs/presets.md).
 
 ## Quick Start
 
-### Prerequisites
-
-- Rust 1.75+ with Cargo
-- Solana CLI 2.x (Agave)
-- Anchor 0.31.1
-- Node.js 18+
-
-### Build
+The workspace is organized around Anchor 0.31.1, Token-2022, Node.js 18+, and Solana CLI 2.x. A standard development flow builds the programs, compiles the Rust CLI, runs the Anchor suites, and then exercises the service layer separately.
 
 ```bash
 anchor build
+cargo build -p sss-cli
+anchor test
 ```
 
-If the build fails with a `blake3` edition2024 parse error, pin the dependency:
+If your local toolchain fails on `blake3` because of an `edition = "2024"` parse error, pin the dependency once and rebuild.
 
 ```bash
 cargo update -p blake3 --precise 1.5.5
 anchor build
 ```
 
-### Test
+The default `anchor test` path covers the on-chain and SDK integration suites. The broader repository test surface extends beyond Anchor into dedicated Jest and Trident suites, and the current repository contains the following counts.
+
+| Suite | Cases |
+|---|---:|
+| `tests/sss-1.test.ts` | 16 |
+| `tests/sss-2.test.ts` | 12 |
+| `tests/sss-3.test.ts` | 9 |
+| `tests/sdk-integration.test.ts` | 23 |
+| Anchor and SDK subtotal | 60 |
+| `tests/cli/cli-commands.test.ts` | 87 |
+| `tests/dashboard-api/dashboard-api.test.ts` | 73 |
+| `backend/src/tests/api.test.ts` | 4 |
+| `backend/src/tests/compliance-service.test.ts` | 12 |
+| `backend/src/tests/webhook-service.test.ts` | 36 |
+| Backend service subtotal | 52 |
+| `tests/tui` active Jest surface | 289 |
+| `tests/docker/docker-compose.test.ts` | 112 |
+| `trident-tests` Rust tests | 79 |
+| `tests/e2e-devnet.ts` scripted devnet checks | 20 steps |
+
+The Docker topology is a six-service stack that brings up the API, event listener, webhook worker, compliance service, frontend, and documentation site on one bridge network. All POST routes in the API, webhook service, and compliance service are authenticated with a Bearer token when `API_KEY` is set.
 
 ```bash
-anchor test
-```
-
-The test suite runs 60 integration tests across all presets plus SDK integration and 69 fuzz/property tests.
-
-| Suite | Tests | Coverage |
-|-------|-------|----------|
-| SSS-1 | 16 | init, minter, mint, burn, freeze, thaw, pause, unpause, feature-gate, quota, roles, **unauthorized access (4 tests)** |
-| SSS-2 | 12 | init with hook, ExtraAccountMetaList, mint, blacklist, seize, pause, attestation, **transfer hook execution (4 tests)** |
-| SSS-3 | 9 | init with confidential transfers, mint, burn, freeze, thaw, pause, blacklist, roles |
-| SDK Integration | 23 | Client construction, PDA derivation, all instructions, error handling |
-| Fuzz / Property | 69 | Validation boundaries, overflow protection, RBAC, proptest generative |
-
-### Backend (Docker)
-
-```bash
-# Set your API key for authenticated endpoints
 export API_KEY=your-secret-key
-
-# Build and start all 6 services
 docker compose up --build
 ```
 
-This spins up:
-
-| Service | Port | Description |
-|---------|------|-------------|
-| `sss-api` | 3000 | REST API for all stablecoin operations |
-| `sss-webhook-service` | 3001 | Event dispatch with retry |
-| `sss-compliance-service` | 3002 | Sanctions screening |
-| `sss-event-listener` | -- | On-chain log subscriber |
-| `sss-frontend` | 3003 | Next.js management dashboard |
+| Service | Published Port | Function |
+|---|---:|---|
+| `api` | 3000 | Express API for stablecoin operations, health, and supply/holder/audit reads |
+| `event-listener` | none | WebSocket log subscriber for `sss-token`, with JSONL persistence and webhook forwarding |
+| `webhook-service` | 3001 | HMAC-signed event delivery with retries and dead-letter queue |
+| `compliance-service` | 3002 | Screening and export service for sanctions and risk checks |
+| `frontend` | 3003 | Next.js management dashboard |
+| `docs` | 3004 | Docusaurus documentation site |
 | `sss-docs` | 3004 | Docusaurus documentation site |
 
 All POST endpoints require `Authorization: Bearer <API_KEY>` header. GET endpoints are public.
@@ -112,223 +111,150 @@ The binary is output to `target/debug/sss` (or `target/release/sss` with `--rele
 
 ## Project Structure
 
-```
-programs/
-  sss-token/          # Core program — 14 instructions, 5 account types, 25 error codes
-  sss-transfer-hook/  # Transfer hook — blacklist enforcement on every transfer (SSS-2)
-sdk/                  # TypeScript SDK — SSSClient, PDA helpers, oracle module, presets
-cli/                  # Rust CLI — 14 subcommands with formatted terminal output
-tui/                  # Node.js TUI — interactive admin dashboard (blessed/blessed-contrib)
-app/                  # Next.js frontend — landing page + wallet-connected dashboard
-backend/              # Express.js REST API wrapping the SDK
-tests/                # Anchor integration + E2E devnet tests
-docs/                 # Architecture, presets, compliance, operations docs
-```
+The repository is split cleanly between on-chain programs, client libraries, operational tooling, and service infrastructure. The counts below reflect the present source tree.
+
+| Path | Scope |
+|---|---|
+| `programs/sss-token` | Core Anchor program with 20 public instruction entrypoints, 7 account types, 19 Anchor events, and 35 custom error variants. |
+| `programs/sss-transfer-hook` | Transfer-hook program with `initialize_extra_account_meta_list`, the runtime `transfer_hook` handler, and Anchor fallback routing for Token-2022 dispatch. |
+| `sdk` | TypeScript package exporting 27 runtime symbols and 43 type exports, including the client, PDAs, constants, presets, errors, events, and oracle utilities. |
+| `cli` | Rust crate `sss-cli` whose installed binary is `sss-token`; it exposes 24 top-level subcommands and 26 executable leaf command paths. |
+| `tui` | Interactive Node.js operator terminal built on `blessed` and `blessed-contrib`, with read-only and signing modes. |
+| `app` | Next.js frontend for the public site and dashboard-oriented management views. |
+| `backend` | Express API layer with 22 stablecoin endpoints under `/api/stablecoin`, plus separate compliance and webhook services. |
+| `tests` | Anchor suites, SDK integration, CLI contract tests, dashboard API tests, TUI tests, Docker integration tests, and the devnet end-to-end script. |
+| `trident-tests` | Rust fuzz and property-oriented test workspace for protocol invariants and instruction behavior. |
+| `docs` | Eight repository-local reference documents covering architecture, presets, specifications, compliance, operations, and API behavior. |
+| `docs-site` | Twenty Docusaurus content pages spanning onboarding, architecture, guides, SDK reference, and the LLM guide. |
+| `examples` | Four runnable TypeScript examples: basic setup, mint and burn, compliance flow, and reserve attestation. |
+| `scripts` | Deployment and helper scripts, including the devnet deployment workflow. |
 
 ## Features
 
-### On-Chain Program (14 Instructions)
+The core protocol surface is broader than the earlier README suggested. `sss-token` currently exposes 20 instruction entrypoints: `initialize`, `mint_tokens`, `burn_tokens`, `freeze_account`, `thaw_account`, `pause`, `unpause`, `update_roles`, `update_minter`, `transfer_authority`, `nominate_authority`, `accept_authority`, `blacklist_add`, `blacklist_remove`, `allowlist_add`, `allowlist_remove`, `seize`, `set_supply_cap`, `update_metadata`, and `attest_reserve`. The companion hook program adds the one-time `initialize_extra_account_meta_list` setup path and the runtime `transfer_hook` handler that Token-2022 invokes on transfer.
 
-- **initialize** -- Create a new stablecoin mint with Token-2022 extensions, config PDA, and role registry
-- **mint_tokens** -- Mint tokens to a recipient (requires active minter with sufficient quota)
-- **burn_tokens** -- Burn tokens from the caller's token account
-- **freeze_account** -- Freeze a token account (master authority or pauser)
-- **thaw_account** -- Thaw a frozen token account
-- **pause** -- Pause all minting and burning operations globally
-- **unpause** -- Resume operations after a pause
-- **update_roles** -- Assign or reassign pauser, blacklister, and seizer roles
-- **update_minter** -- Create or update a minter with active status and mint quota
-- **transfer_authority** -- Transfer master authority to a new address
-- **blacklist_add** -- Add an address to the blacklist and freeze their token account (SSS-2)
-- **blacklist_remove** -- Remove an address from the blacklist and thaw their token account (SSS-2)
-- **seize** -- Seize tokens from a blacklisted address via burn+mint (SSS-2)
-- **attest_reserve** -- Record an on-chain reserve attestation with hash, amounts, and URI (GENIUS Act)
+| Domain | Implemented Surface |
+|---|---|
+| Issuance and supply control | Minting through per-minter quotas, burning, total minted and burned counters, current-supply derivation, and an explicit `set_supply_cap` instruction enforced during minting. |
+| Operational controls | Freeze, thaw, pause, and unpause flows, with the master authority inheriting subordinate role powers. |
+| Governance | Immediate dual-signature authority transfer, two-step nomination and acceptance, and targeted role reassignment for pauser, blacklister, and seizer. |
+| Compliance | Blacklist entry creation and removal, seizure via burn-and-remint semantics, reserve attestations, and transfer-time blacklist enforcement through the hook program on SSS-2 mints. |
+| Metadata and configuration | Embedded Token-2022 metadata at initialization and post-deployment updates through `update_metadata`. |
+| State model | `StablecoinConfig`, `RoleRegistry`, `MinterInfo`, `BlacklistEntry`, `AllowlistEntry`, `ReserveAttestation`, and `AuditLogEntry`. |
+| Event surface | 19 Anchor event types, SDK event parsing helpers, an event-listener service, and JSONL persistence for off-chain audit ingestion. |
+| Service layer | 22 stablecoin API endpoints, 5 webhook-service endpoints, and 5 compliance-service endpoints, each with health reporting and operational metadata. |
 
-### Role-Based Access Control
-
-| Role | Capabilities |
-|------|-------------|
-| **Master Authority** | All operations, role assignment, authority transfer |
-| **Pauser** | Pause and unpause the program |
-| **Blacklister** | Add and remove blacklist entries (SSS-2) |
-| **Seizer** | Seize tokens from blacklisted addresses (SSS-2) |
-| **Minter** | Mint tokens up to assigned quota |
-
-### GENIUS Act Compliance
-
-On-chain reserve attestations store a SHA-256 hash of off-chain reserve proof data, total reserves in USD, total outstanding tokens, the attester's public key, and a URI pointing to the full audit report. Each attestation is indexed and immutable once recorded.
-
-### Oracle Integration
-
-The SDK includes an `OracleModule` for fetching real-time price data from Pyth price feeds, computing reserve hashes, and building attestation data structures.
-
-### Interactive TUI Dashboard
-
-The project includes an interactive Node.js terminal dashboard (powered by blessed/blessed-contrib) that displays live stablecoin configuration, supply metrics, role assignments, minter status, and lets operators execute all program operations directly from the terminal.
-
-```bash
-cd tui && npm install
-node admin_tui.js --rpc https://api.devnet.solana.com --mint <MINT_ADDRESS> --keypair ~/.config/solana/id.json
-```
-
-#### Wallet Setup
-
-The TUI starts in **read-only mode** by default (safe for auditors). To execute transactions, pass a Solana keypair via `--keypair`:
-
-**Option 1 — Use the default Solana CLI keypair:**
-
-```bash
-# If you already have the Solana CLI installed:
-node admin_tui.js --keypair ~/.config/solana/id.json --mint <MINT>
-```
-
-**Option 2 — Generate a new keypair:**
-
-```bash
-solana-keygen new -o ~/my-sss-wallet.json
-solana airdrop 2 ~/my-sss-wallet.json   # devnet only
-node admin_tui.js --keypair ~/my-sss-wallet.json --mint <MINT>
-```
-
-**Option 3 — Export from Phantom / Backpack:**
-
-Export your private key as a byte array JSON file and pass the path:
-
-```bash
-node admin_tui.js --keypair /path/to/exported-wallet.json --mint <MINT>
-```
-
-You can also set these as environment variables in `tui/.env`:
-
-```
-RPC_URL=https://api.devnet.solana.com
-MINT=<YOUR_MINT_ADDRESS>
-KEYPAIR_PATH=~/.config/solana/id.json
-```
-
-The TUI auto-detects the wallet on startup — the status bar shows **OPERATOR** when connected or **READ-ONLY** when no keypair is provided.
+The role model is explicit and compact. The on-chain `RoleRegistry` tracks four roles: `MasterAuthority`, `Pauser`, `Blacklister`, and `Seizer`. Minters are modeled separately as `MinterInfo` accounts with activation flags, quotas, minted totals, and timestamps. `update_roles` is intentionally unable to rotate the master authority; that path must use either `transfer_authority` or the `nominate_authority` / `accept_authority` sequence.
 
 ## SDK
 
-The TypeScript SDK provides a high-level `SSSClient` for interacting with both programs.
+The published TypeScript package is `solana-stablecoin-standard`. It is not a thin wrapper around a single client class; it exports the full operational surface needed to initialize assets, derive PDAs, execute privileged flows, parse events, map program errors, and work with reserve-attestation data.
 
 ```bash
 npm install solana-stablecoin-standard
 ```
 
-See [sdk/README.md](sdk/README.md) for the full API reference.
+| Export Group | Surface |
+|---|---|
+| Client | `SSSClient` and `SSSClientOptions` |
+| Constants | `SSS_TOKEN_PROGRAM_ID`, `SSS_TRANSFER_HOOK_PROGRAM_ID`, `TOKEN_2022_PROGRAM_ID`, `ASSOCIATED_TOKEN_PROGRAM_ID`, `SEEDS` |
+| PDA helpers | `getConfigPda`, `getRoleRegistryPda`, `getMinterInfoPda`, `getBlacklistPda`, `getAllowlistPda`, `getReserveAttestationPda`, `getExtraAccountMetaListPda` |
+| Types and enums | `StablecoinPreset`, `Role`, plus the account and instruction parameter interfaces exported from `sdk/src/types.ts` |
+| Errors | `SSSError`, `SSS_TOKEN_ERRORS`, `TRANSFER_HOOK_ERRORS`, and `SSSErrorInfo` |
+| Events | `createEventParser`, `parseTransactionEvents`, the `SSSEvent` union, and 19 event interfaces |
+| Presets | `PRESET_CONFIGS`, `getPresetAnchorEnum`, `buildInitializeParams`, `PresetConfig`, `CustomFeatureFlags` |
+| Oracle utilities | `OracleModule`, `KNOWN_FEEDS`, `DEFAULT_CPI_CONFIG`, `BRAZIL_IPCA_CONFIG`, and the related data types |
+
+`SSSClient` itself includes 7 PDA helper instance methods, 6 on-chain fetchers, 21 transaction-building and execution methods, supply and holder query helpers, and ATA utilities. The client also accepts custom token and hook program IDs, which is important for issuers deploying their own addresses rather than pointing at the public devnet programs.
 
 ## CLI
 
-The Rust CLI (`sss`) provides all program operations as subcommands with formatted terminal output.
+The Rust operator interface is distributed as the `sss-cli` crate and builds a binary named `sss-token`. That naming matters operationally: local builds produce `target/debug/sss-token`, and `cargo install --path cli` installs `sss-token`, not `sss`.
 
 ```bash
 cargo install --path cli
-sss --help
+sss-token --help
 ```
 
-See [cli/README.md](cli/README.md) for the complete command reference.
+The CLI exposes 24 top-level subcommands and 26 executable leaf paths once nested actions are counted. It covers a broader administrative surface than the current REST API.
+
+| Command Family | Commands |
+|---|---|
+| Initialization and configuration | `init`, `update-metadata`, `set-supply-cap`, `info`, `status`, `supply` |
+| Supply operations | `mint`, `burn`, `minter`, `minters list`, `holders` |
+| Operational controls | `freeze`, `thaw`, `pause`, `unpause` |
+| Compliance and attestations | `blacklist add`, `blacklist remove`, `allowlist add`, `allowlist remove`, `seize`, `attest`, `audit-log` |
+| Governance | `roles`, `nominate`, `accept-authority`, `transfer-authority` |
+
+The `init` path deserves special attention because it also handles hook-enabled initialization. When an asset is created with SSS-2 or a custom transfer-hook-enabled profile, the CLI builds the mint initialization and hook metadata setup into one operational flow so the asset is usable without a second manual RPC sequence.
 
 ## Documentation
 
-**Live docs: [docs.stablecoinstandard.dev](https://docs.stablecoinstandard.dev)**
+The repository carries both source-level markdown references and a Docusaurus documentation site. The local `docs` directory currently contains eight authored reference documents, while `docs-site/docs` contains twenty structured pages for the published site.
 
-- [Architecture](docs/architecture.md) -- PDA schema, Token-2022 extensions, transfer hook flow, role model
-- [Presets](docs/presets.md) -- Feature comparison matrix and use cases
-- [SSS-1 Specification](docs/SSS-1.md) -- Minimal stablecoin preset details
-- [SSS-2 Specification](docs/SSS-2.md) -- Compliant stablecoin preset with transfer hook
-- [SSS-3 Specification](docs/SSS-3.md) -- Private stablecoin preset with confidential transfers
-- [Compliance](docs/COMPLIANCE.md) -- GENIUS Act mapping, OFAC screening, regulatory considerations
-- [Operations](docs/OPERATIONS.md) -- Operator runbook: deployment, monitoring, incident response
-- [API Reference](docs/API.md) -- Backend REST API endpoint documentation
+| Documentation Surface | Coverage |
+|---|---|
+| `docs/architecture.md` | Program architecture and on-chain model |
+| `docs/presets.md` | Preset matrix and configuration behavior |
+| `docs/SSS-1.md`, `docs/SSS-2.md`, `docs/SSS-3.md` | Preset-specific specifications |
+| `docs/COMPLIANCE.md` | Compliance and regulatory framing |
+| `docs/OPERATIONS.md` | Operating guidance and deployment considerations |
+| `docs/API.md` | REST API behavior |
+| `docs-site/docs/intro.md`, `installation.md`, `quickstart.md` | Site onboarding |
+| `docs-site/docs/architecture/*` | Architecture overview, compliance, and instruction documentation |
+| `docs-site/docs/guides/*` | Roles, mint and burn, blacklist, attestations, and transfer-hook workflows |
+| `docs-site/docs/sdk/*` | SDK client, constants, errors, events, oracle, PDA, preset, and type references |
+| `docs-site/docs/llm/agent-guide.md` | Repository guide for agent and automation workflows |
 
 ## Devnet Deployment
 
-Both programs are deployed to Solana devnet:
+Both programs are configured for public Solana devnet deployment under the IDs already declared in the repository source and SDK constants.
 
-| Program | Program ID | Explorer |
-|---------|-----------|----------|
-| **sss-token** | `5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4` | [View on Explorer](https://explorer.solana.com/address/5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4?cluster=devnet) |
-| **sss-transfer-hook** | `FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy` | [View on Explorer](https://explorer.solana.com/address/FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy?cluster=devnet) |
+| Program | Program ID |
+|---|---|
+| `sss-token` | `5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4` |
+| `sss-transfer-hook` | `FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy` |
 
-### Deploy to Devnet
+The repository includes `scripts/deploy-devnet.sh`, a six-stage helper that switches the Solana CLI to devnet, checks wallet balance, builds when needed, deploys both programs with Anchor, and then attempts an example initialization flow.
 
 ```bash
 ./scripts/deploy-devnet.sh
 ```
 
-The deploy script will:
-1. Configure Solana CLI for devnet
-2. Build programs if needed
-3. Deploy both programs
-4. Run example transactions (init SSS-1, add minter, mint tokens)
-
-### Example Devnet Transactions
-
-| Action | Signature |
-|--------|-----------|
-| Deploy sss-token | [`4Qo6Uq...u7rNHh`](https://explorer.solana.com/tx/4Qo6UqzYjFXgTK5e834vzSQtgJBrubiWgNqhFpbWjQMWn9TG7uMMeTMf1Lv3C76fxoWEzLZTP9iDDUDjsLu7rNHh?cluster=devnet) |
-| Deploy sss-transfer-hook | [`3tL27q...hPBYn`](https://explorer.solana.com/tx/3tL27qMEeiGRfH7NGzhkfDtBoyBi32gXMFqjob7pN1JG2sSioQVf87WQnQUAHQCUZpisNkg9oVkRqt1fn5qhPBYn?cluster=devnet) |
-| Init SSS-1 (DevnetUSD) | [`24fcq8...4AtyF`](https://explorer.solana.com/tx/24fcq83aVQNuvEeMf7P6HuPcPhb8YhNbYeDdHhCdUKBKrapRkfwL8G9qQuR5Dmm9MTJJx2n8thWdfKEjVoq4AtyF?cluster=devnet) |
-
-**Example Mint:** [`9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv`](https://explorer.solana.com/address/9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv?cluster=devnet)
-
-### Live Demo: Full SSS-2 Workflow
-
-Every operation executed end-to-end on Solana devnet against a single SSS-2 mint. Click any signature to verify on Solana Explorer.
-
-**Mint:** [`C9TssJentaYfyyfbhihHRGfxS5t3aWHS8LoXJbopyLgp`](https://explorer.solana.com/address/C9TssJentaYfyyfbhihHRGfxS5t3aWHS8LoXJbopyLgp?cluster=devnet)
-
-| # | Operation | Description | Transaction |
-|---|-----------|-------------|-------------|
-| 1 | **Initialize SSS-2** | Create mint with MetadataPointer + PermanentDelegate + TransferHook + DefaultAccountState | [`2Cueq6...cZF9`](https://explorer.solana.com/tx/2Cueq6MC4JzDczrcGXXmgyYAfVUU832RzYUMqfnYygJNp6imRxQw712xmz61YB8EKLhbeGQT2VrvFXDNSt9jcZF9?cluster=devnet) |
-| 2 | **Init Transfer Hook** | Initialize ExtraAccountMetaList for blacklist enforcement | [`3VRxTx...NCfr`](https://explorer.solana.com/tx/3VRxTxjwdk4eCUyzqT2dcoWsa2DwsNvSXbr2khg4PKf9b5BX15jxSCdiwAexVqH4TQBqygy1ovFV7myzTvNHNCfr?cluster=devnet) |
-| 3 | **Register Minter** | Add minter with 1,000,000 token quota | [`5rLcNs...ipSF`](https://explorer.solana.com/tx/5rLcNs7G2aQqaJ6hBJDnzkMwXAenHeSLLvF49tQ2ZoaRxdRz6vNBaQNLEoQgEPCqLdrgePQ7jmnhMGKJuaw6ipSF?cluster=devnet) |
-| 4 | **Mint 1,000 Tokens** | Mint tokens to recipient (auto-creates ATA) | [`2hpwXK...mSt2`](https://explorer.solana.com/tx/2hpwXKWK2wQe5E7LtYTS4ToXijmiPLNsjTvRzXoNyfQ1etYLQzxjTKUDjN5wvE8hcfRrAoKFFFEUUv6vJUbAmSt2?cluster=devnet) |
-| 5 | **Burn 100 Tokens** | Burn tokens from caller's account | [`rNNVwW...YJfy`](https://explorer.solana.com/tx/rNNVwWtsPvprVBScTLWk5zZf7BF22PVXoPMryMcGt6CdtFgpSZDxrtXysn9gQCL6AxFAywMTjGqRkrzrgkWYJfy?cluster=devnet) |
-| 6 | **Freeze Account** | Freeze a token account | [`2fRzw6...QEPB`](https://explorer.solana.com/tx/2fRzw6SPj9TcEPsAiKXSjLSpagFTkrxK2cgAW3VLh1o7VDmr344c3rZDXN5vonELXqyCvj6UuXcd8nLTMT2xQEPB?cluster=devnet) |
-| 7 | **Thaw Account** | Thaw a frozen token account | [`3hdai9...M6yw`](https://explorer.solana.com/tx/3hdai9dLYouDEV4dfDg3d1MWZ7QQBjSmuXZyWnK6WUwGh5UNdPy686HbSbYVQjpKYHpqgcaYYf8dpXALrsFzM6yw?cluster=devnet) |
-| 8 | **Pause** | Pause all minting and burning globally | [`TwZZCx...hVjR`](https://explorer.solana.com/tx/TwZZCx4nhi6rxAF1QEzmqzf2pNn1Re1bzz89R43fyAshZEpBqR33AXXbdAevs4p8tcbwwFszGUPqqo6zYc3hVjR?cluster=devnet) |
-| 9 | **Unpause** | Resume operations | [`5W9gyY...tQrM`](https://explorer.solana.com/tx/5W9gyYRw9fZvsXGE7CBsLqHR25CeQvrp5PveWyNfkXN5DEHVW3bJop5Z13vTTKQViafn4hCmXzNW6hkSoMyBtQrM?cluster=devnet) |
-| 10 | **Assign Roles** | Set pauser, blacklister, and seizer roles | [`5w3Qeg...kf4D`](https://explorer.solana.com/tx/5w3QegM657D5hHAkhe8ccfB4FoyatDLrYgUjYAC9ze2aB28NNuegBo5dU9txMGWcE9LjbYVDMzsCQHf9XGUjkf4D?cluster=devnet) |
-| 11 | **Blacklist Add** | Add address to blacklist + freeze their account | [`2AQcWo...czVe`](https://explorer.solana.com/tx/2AQcWo6cg4HNLreSZmLW7KvRvgRB39Bcy1WYBkTxqmSk6W12ZGVXKyT7bXSqcwBVcXDF7DtjnNNzVT46NGvUczVe?cluster=devnet) |
-| 12 | **Seize Tokens** | Seize tokens from blacklisted address via burn+mint | [`CHWrRL...v3P`](https://explorer.solana.com/tx/CHWrRLUhhZhxvDg5rgrHgRtACKjqjG3wKcfN4h3M4khUs5q6HpmZFWcqBCn33qpfgi96mUn7KRsJd3SYWZsvu3P?cluster=devnet) |
-| 13 | **Blacklist Remove** | Remove address from blacklist + thaw their account | [`5mq1c8...EoKS`](https://explorer.solana.com/tx/5mq1c8icf3Xf6W8ynLSPUroLqj2fxB6UqF4WmZf43kDBpZLpV3tzWYRkUGYuc8M3kTjP1Y4jforNwgrSQxToEoKS?cluster=devnet) |
-| 14 | **Attest Reserve** | Record on-chain reserve attestation (GENIUS Act) | [`h3X8T9...jBM`](https://explorer.solana.com/tx/h3X8T9F1j2437izqGv3tnJds7qJZr5K9VW9QuXD5Jdor8AsAezwCifJc7tGYAcGroy8QJFbymUdix4WHxDrcjBM?cluster=devnet) |
-
-> All 14 operations executed successfully on devnet in a single automated E2E run.
-
-### Example CLI Usage (Devnet)
+The automated devnet validation path is `tests/e2e-devnet.ts`. It is a 20-step scripted exercise against a fresh SSS-2 mint that walks through initialization, hook setup, minter provisioning, mint, burn, freeze, thaw, pause, unpause, role updates, blacklist add and remove, seizure, reserve attestation, and final state reads.
 
 ```bash
-# Initialize a stablecoin
-sss --url https://api.devnet.solana.com init --preset sss-1 --name "DevnetUSD" --symbol "dUSD"
-
-# Check status
-sss --url https://api.devnet.solana.com status --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
-
-# View supply
-sss --url https://api.devnet.solana.com supply --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
-
-# Launch TUI dashboard
-sss --url https://api.devnet.solana.com dashboard --mint 9MmnDN61FaYd7SRzsnHmwEMj1jbTWh1XD4xaM9nWYujv
+npx ts-node tests/e2e-devnet.ts
 ```
 
 ## Institutional Readiness
 
 SSS is designed for regulated stablecoin issuers operating under compliance frameworks such as the GENIUS Act. The architecture supports Squads v4 multisig governance, Fireblocks and Anchorage custody integration, real-time OFAC blacklist enforcement at the protocol level via the transfer hook, immutable on-chain reserve attestations with supply derived from chain state, and a defense-in-depth backend with HMAC envelope signing, SSRF protection, exponential retry with dead letter queues, and startup-validated API authentication. The SDK accepts custom program IDs for institutional deployments and performs all token arithmetic in string-based decimal to eliminate floating point precision loss. Full security audit reports from SolShield AI, FuzzingLabs Sol-azy, and OtterSec Solana Verify are available upon request.
 
-## Production Authority Governance (Roadmap)
+## Production Authority Governance
 
-The current implementation uses a single keypair as `master_authority` for streamlined devnet testing. In production deployments, this authority should be replaced with a Squads v4 multisig (program `SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf`). The stablecoin program itself requires no modification. The `master_authority` field in `StablecoinConfig` accepts any valid public key, including a multisig PDA. The recommended quorum for regulated issuers is 2-of-3: an operations key, a legal/compliance key, and a cold storage recovery key. High-impact operations such as `seize` and `update_roles` should additionally be governed by a 24-hour timelock at the Squads proposal level, providing a detection window before irreversible actions execute. This separation of concerns, where the stablecoin program trusts whoever holds authority and the multisig layer governs how that authority is exercised, mirrors the operational model used by Circle for USDC and aligns with the auditability requirements implicit in the GENIUS Act.
+Authority management is richer than a simple single-key transfer. The program supports two distinct control paths: immediate rotation through `transfer_authority`, which requires signatures from both the current and incoming authority, and staged rotation through `nominate_authority` followed by `accept_authority`, which records a pending authority on chain and requires the nominee to accept explicitly.
+
+| Governance Action | Current Instruction Path |
+|---|---|
+| Immediate master-authority transfer | `transfer_authority` |
+| Two-step master-authority transfer | `nominate_authority` then `accept_authority` |
+| Pauser, blacklister, and seizer reassignment | `update_roles` |
+| Minter activation and quota changes | `update_minter` |
+
+`update_roles` does not and should not change the master authority. Production operators should therefore separate long-lived governance from day-to-day execution. At minimum, the deployer wallet should not remain the permanent holder of `master_authority`, `pauser`, `blacklister`, `seizer`, and active minter privileges simultaneously. The code is best operated with dedicated operational keys or an external governance layer such as a Squads v4 multisig that can satisfy the signer requirements and provide approval, logging, and incident controls outside the program itself.
 
 ## Build Notes
 
-- **blake3 pinning**: Platform tools ship Cargo 1.84 which cannot parse `edition = "2024"` in blake3 >= 1.6. Pin to 1.5.5 with `cargo update -p blake3 --precise 1.5.5`.
-- **Feature name**: The Token-2022 feature is `token_2022` (underscore), not `token-2022` (hyphen).
-- **Anchor version**: 0.31.1. The `init-if-needed` feature is required in `anchor-lang` for the `UpdateMinter` instruction.
-- **Seize mechanism**: Seize uses burn+mint (not `transfer_checked`) to bypass the transfer hook for privileged operations.
+| Topic | Note |
+|---|---|
+| Anchor and SPL versions | The workspace is built around Anchor 0.31.1, and the programs use `anchor-spl` with the `token_2022` feature flag. |
+| `blake3` compatibility | Older Cargo toolchains can fail on `blake3` editions metadata; pinning `blake3` to `1.5.5` remains the documented workaround. |
+| Transfer-hook coupling | `sss-transfer-hook` embeds the `sss-token` program ID as a compile-time constant. Changing the token program ID for another deployment requires rebuilding and redeploying the hook program as well. |
+| SSS-2 initialization | Hook-enabled mints require `initialize_extra_account_meta_list` after mint creation. The CLI and backend initialization flow handle this automatically when transfer hook is enabled. |
+| CLI binary name | `cargo build -p sss-cli` produces `target/debug/sss-token`. Any scripts or operator notes referring to `sss` are stale. |
+| REST API startup | The API server exits when `API_KEY` is absent, and the POST surface is rate-limited independently of GET traffic. |
 
 ## License
 
-MIT
+Apache-2.0
