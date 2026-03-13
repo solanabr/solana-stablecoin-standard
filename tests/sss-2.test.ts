@@ -170,7 +170,7 @@ describe("sss-2: Compliant Stablecoin", () => {
         recipientTokenAccount: suspectAta,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
-      .rpc();
+      .rpc({ commitment: "confirmed" });
 
     const account = await getAccount(
       provider.connection, suspectAta, "confirmed", TOKEN_2022_PROGRAM_ID

@@ -141,6 +141,10 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
         extension_types.push(ExtensionType::DefaultAccountState);
     }
 
+    if params.enable_confidential_transfers {
+        extension_types.push(ExtensionType::ConfidentialTransferMint);
+    }
+
     // ── Step 3: Calculate mint account size with extensions ──────────
     //
     // Token-2022 mints have variable size depending on enabled extensions.
@@ -260,6 +264,22 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
                 ctx.accounts.mint.key,
                 Some(ctx.accounts.config.key()),
                 Some(transfer_hook_program_id),
+            )?,
+            &[ctx.accounts.mint.to_account_info()],
+        )?;
+    }
+
+    // 5f. ConfidentialTransferMint (SSS-3) — enables private transfer amounts
+    //     Auto-approve mode: new accounts are automatically approved for
+    //     confidential transfers without needing a separate approval tx.
+    if params.enable_confidential_transfers {
+        invoke(
+            &spl_token_2022::extension::confidential_transfer::instruction::initialize_mint(
+                ctx.accounts.token_program.key,
+                ctx.accounts.mint.key,
+                Some(ctx.accounts.config.key()),  // CT authority = config PDA
+                true,                               // auto_approve_new_accounts
+                None,                               // no auditor ElGamal pubkey
             )?,
             &[ctx.accounts.mint.to_account_info()],
         )?;

@@ -183,7 +183,7 @@ describe("sss-1: Minimal Stablecoin", () => {
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .signers([minterKeypair])
-      .rpc();
+      .rpc({ commitment: "confirmed" });
 
     // Check token balance
     const tokenAccount = await getAccount(
