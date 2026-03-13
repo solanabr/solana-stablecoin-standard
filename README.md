@@ -134,6 +134,8 @@ solana-stablecoin-standard/
 | [API Reference](docs/API.md) | Program instructions, account layouts, events |
 | [Compliance](docs/COMPLIANCE.md) | Regulatory guide, audit trail, sanctions |
 | [Oracle](docs/ORACLE.md) | Oracle integration for non-USD pegs |
+| [Deploy](docs/DEPLOY.md) | Step-by-step devnet deployment guide |
+| [Examples](examples/README.md) | Usage scripts for SSS-1, SSS-2, SSS-3 |
 
 ## Testing
 
