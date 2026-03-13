@@ -18,9 +18,13 @@ import {
   withRpcRetry,
 } from "@/components/dashboard/rpcUtils";
 
-const DEFAULT_MINT = new PublicKey(
-  process.env.NEXT_PUBLIC_DEFAULT_MINT ?? "Dr9YFKuQqr8f8ZUFUc9HETmpm2BJpRSKFKGHGFJWxpFk"
-);
+let _defaultMint: PublicKey | null = null;
+function getDefaultMint(): PublicKey {
+  if (!_defaultMint) {
+    _defaultMint = new PublicKey(process.env.NEXT_PUBLIC_DEFAULT_MINT!.trim());
+  }
+  return _defaultMint;
+}
 
 type SupplyState = {
   totalMinted: BN;
@@ -85,7 +89,7 @@ export function useSSS(): SSSState {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { publicKey, signTransaction, signAllTransactions } = wallet;
-  const [mint, setMint] = useState<PublicKey>(DEFAULT_MINT);
+  const [mint, setMint] = useState<PublicKey>(getDefaultMint);
   const [config, setConfig] = useState<StablecoinConfig | null>(null);
   const [roles, setRoles] = useState<RoleRegistry | null>(null);
   const [supply, setSupply] = useState<SSSState["supply"]>(null);
