@@ -2,6 +2,7 @@
   "private": true,
   "license": "ISC",
   "workspaces": [
+    "app",
     "sdk",
     "services/shared",
     "services/indexer",

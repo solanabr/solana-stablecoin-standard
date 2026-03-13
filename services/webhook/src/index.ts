@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import pinoHttp from "pino-http";
 import {
   parseConfig,
@@ -41,6 +42,24 @@ async function main(): Promise<void> {
 
   const app = express();
   app.use(pinoHttp({ logger }));
+
+  // CORS: allow browser clients (e.g. Next.js app) to call the webhook API.
+  // Configure explicit origins via WEBHOOK_CORS_ORIGIN (comma-separated) if desired.
+  const corsOrigins = process.env.WEBHOOK_CORS_ORIGIN
+    ?.split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  app.use(
+    cors({
+      // If no explicit origins are configured or "*" is present, allow all origins.
+      origin:
+        !corsOrigins || corsOrigins.length === 0 || corsOrigins.includes("*")
+          ? true
+          : corsOrigins,
+    }),
+  );
+
   app.use(express.json());
 
   app.use(createHealthRouter({ serviceName: "webhook", checkRedis: true }));
