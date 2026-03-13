@@ -75,10 +75,11 @@ if ! spl-token configure-confidential-transfer-account --help >/dev/null 2>&1; t
   exit 1
 fi
 
-# Generate test keypairs
-SENDER_KEYPAIR=$(mktemp /tmp/sender-XXXXX.json)
-RECIPIENT_KEYPAIR=$(mktemp /tmp/recipient-XXXXX.json)
-AUTHORITY_KEYPAIR=$(mktemp /tmp/authority-XXXXX.json)
+# Generate test keypairs (macOS-compatible temp files)
+TMPDIR_CT=$(mktemp -d)
+SENDER_KEYPAIR="$TMPDIR_CT/sender.json"
+RECIPIENT_KEYPAIR="$TMPDIR_CT/recipient.json"
+AUTHORITY_KEYPAIR="$TMPDIR_CT/authority.json"
 
 solana-keygen new --no-passphrase --outfile "$SENDER_KEYPAIR" --force >/dev/null 2>&1
 solana-keygen new --no-passphrase --outfile "$RECIPIENT_KEYPAIR" --force >/dev/null 2>&1
@@ -303,7 +304,7 @@ fi
 echo ""
 
 # Cleanup
-rm -f "$SENDER_KEYPAIR" "$RECIPIENT_KEYPAIR" "$AUTHORITY_KEYPAIR"
+rm -rf "$TMPDIR_CT"
 
 # Save proof log
 PROOF_LOG="evidence/ct-e2e-proof.log"
