@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSS Frontend Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <style>
+    body { font-family: monospace; max-width: 800px; margin: 50px auto; padding: 20px; }
+    input, button { padding: 8px; margin: 5px; font-family: monospace; }
+    .result { background: #f0f0f0; padding: 10px; margin-top: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>🪙 Solana Stablecoin Standard - Example Frontend</h1>
+  
+  <h2>Derive Config PDA</h2>
+  <label>Mint Address:</label><br>
+  <input id="mintInput" placeholder="J4Z8HDQs2VbmSxs1VURkGY5M51SDmiY8K5a1RVuTN6np" size="50">
+  <button onclick="deriveConfig()">Derive Config PDA</button>
+  <div id="configResult" class="result"></div>
+
+  <h2>Derive Role PDA</h2>
+  <label>Config PDA:</label><br>
+  <input id="configInput" placeholder="Config PDA from above" size="50"><br>
+  <label>Authority:</label><br>
+  <input id="authorityInput" placeholder="Authority Public Key" size="50"><br>
+  <label>Role Type (0=Admin, 1=Minter, 2=Burner, 3=Freezer):</label><br>
+  <input id="roleTypeInput" placeholder="1" size="5">
+  <button onclick="deriveRole()">Derive Role PDA</button>
+  <div id="roleResult" class="result"></div>
+
+  <script>
+    const PROGRAM_ID = new solanaWeb3.PublicKey("J4Z8HDQs2VbmSxs1VURkGY5M51SDmiY8K5a1RVuTN6np");
+
+    function deriveConfig() {
+      try {
+        const mint = new solanaWeb3.PublicKey(document.getElementById("mintInput").value.trim());
+        const [pda, bump] = solanaWeb3.PublicKey.findProgramAddressSync(
+          [Buffer.from("config"), mint.toBuffer()],
+          PROGRAM_ID
+        );
+        document.getElementById("configResult").innerHTML = 
+          `<b>Config PDA:</b> ${pda.toBase58()}<br><b>Bump:</b> ${bump}`;
+      } catch (e) {
+        document.getElementById("configResult").innerHTML = `<b>Error:</b> ${e.message}`;
+      }
+    }
+
+    function deriveRole() {
+      try {
+        const config = new solanaWeb3.PublicKey(document.getElementById("configInput").value.trim());
+        const authority = new solanaWeb3.PublicKey(document.getElementById("authorityInput").value.trim());
+        const roleType = parseInt(document.getElementById("roleTypeInput").value.trim());
+        
+        const [pda, bump] = solanaWeb3.PublicKey.findProgramAddressSync(
+          [Buffer.from("role"), config.toBuffer(), authority.toBuffer(), Buffer.from([roleType])],
+          PROGRAM_ID
+        );
+        document.getElementById("roleResult").innerHTML = 
+          `<b>Role PDA:</b> ${pda.toBase58()}<br><b>Bump:</b> ${bump}`;
+      } catch (e) {
+        document.getElementById("roleResult").innerHTML = `<b>Error:</b> ${e.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

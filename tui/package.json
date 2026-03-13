@@ -1,0 +1,10 @@
+{
+  "name": "sss-admin-tui",
+  "version": "0.1.0",
+  "description": "Admin TUI for Solana Stablecoin Standard",
+  "bin": { "sss-tui": "./dist/index.js" },
+  "scripts": { "build": "tsc", "clean": "rm -rf dist" },
+  "dependencies": { "blessed": "^0.1.81" },
+  "devDependencies": { "@types/blessed": "^0.1.25", "typescript": "^5.7.3" },
+  "license": "MIT"
+}
