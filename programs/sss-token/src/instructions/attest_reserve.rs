@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::errors::SssError;
+use crate::events::AuditLogRecorded;
 use crate::state::*;
 use crate::utils::require_master_authority;
 
@@ -87,6 +88,14 @@ pub fn handler(ctx: Context<AttestReserve>, params: AttestReserveParams) -> Resu
         .checked_add(1)
         .ok_or(SssError::Overflow)?;
     config.updated_at = clock.unix_timestamp;
+
+    emit!(AuditLogRecorded {
+        config: config.key(),
+        index: attestation.index,
+        action: 17, // attest_reserve
+        actor: ctx.accounts.authority.key(),
+        timestamp: clock.unix_timestamp,
+    });
 
     Ok(())
 }
