@@ -1,0 +1,600 @@
+{
+    "address": "451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp",
+    "metadata": {
+        "name": "sss_core",
+        "version": "0.1.0",
+        "spec": "0.1.0",
+        "description": "Solana Stablecoin Standard Base Contract"
+    },
+    "instructions": [
+        {
+            "name": "burn_token",
+            "discriminator": [
+                185,
+                165,
+                216,
+                246,
+                144,
+                31,
+                70,
+                74
+            ],
+            "accounts": [
+                {
+                    "name": "signer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "config",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "token_account",
+                    "writable": true
+                },
+                {
+                    "name": "token_program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "initialize",
+            "discriminator": [
+                175,
+                175,
+                109,
+                31,
+                13,
+                152,
+                155,
+                237
+            ],
+            "accounts": [
+                {
+                    "name": "payer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "config",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "mint",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "transfer_hook_program_id",
+                    "optional": true
+                },
+                {
+                    "name": "token_program"
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": [
+                {
+                    "name": "decimals",
+                    "type": "u8"
+                },
+                {
+                    "name": "enable_permanent_delegate",
+                    "type": "bool"
+                },
+                {
+                    "name": "enable_transfer_hook",
+                    "type": "bool"
+                },
+                {
+                    "name": "enable_confidential_transfers",
+                    "type": "bool"
+                },
+                {
+                    "name": "oracle_feed",
+                    "type": {
+                        "option": "pubkey"
+                    }
+                },
+                {
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "name": "symbol",
+                    "type": "string"
+                },
+                {
+                    "name": "uri",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "mint_token",
+            "discriminator": [
+                172,
+                137,
+                183,
+                14,
+                207,
+                110,
+                234,
+                56
+            ],
+            "accounts": [
+                {
+                    "name": "signer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "config",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "token_account",
+                    "writable": true
+                },
+                {
+                    "name": "oracle_feed_account",
+                    "optional": true
+                },
+                {
+                    "name": "token_program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "seize_tokens",
+            "discriminator": [
+                79,
+                30,
+                69,
+                54,
+                78,
+                1,
+                16,
+                23
+            ],
+            "accounts": [
+                {
+                    "name": "signer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "config",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    111,
+                                    110,
+                                    102,
+                                    105,
+                                    103
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "frozen_account",
+                    "writable": true
+                },
+                {
+                    "name": "treasury_account",
+                    "writable": true
+                },
+                {
+                    "name": "token_program"
+                }
+            ],
+            "args": [
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "update_mock_oracle",
+            "discriminator": [
+                196,
+                202,
+                24,
+                173,
+                225,
+                179,
+                237,
+                168
+            ],
+            "accounts": [
+                {
+                    "name": "admin",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "oracle",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    109,
+                                    111,
+                                    99,
+                                    107,
+                                    95,
+                                    111,
+                                    114,
+                                    97,
+                                    99,
+                                    108,
+                                    101
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": [
+                {
+                    "name": "price",
+                    "type": "u64"
+                },
+                {
+                    "name": "decimals",
+                    "type": "u8"
+                }
+            ]
+        }
+    ],
+    "accounts": [
+        {
+            "name": "MockOracle",
+            "discriminator": [
+                208,
+                74,
+                71,
+                99,
+                160,
+                22,
+                158,
+                240
+            ]
+        },
+        {
+            "name": "StablecoinConfig",
+            "discriminator": [
+                127,
+                25,
+                244,
+                213,
+                1,
+                192,
+                101,
+                6
+            ]
+        }
+    ],
+    "events": [
+        {
+            "name": "BurnEvent",
+            "discriminator": [
+                33,
+                89,
+                47,
+                117,
+                82,
+                124,
+                238,
+                250
+            ]
+        },
+        {
+            "name": "MintEvent",
+            "discriminator": [
+                197,
+                144,
+                146,
+                149,
+                66,
+                164,
+                95,
+                16
+            ]
+        },
+        {
+            "name": "SeizedEvent",
+            "discriminator": [
+                181,
+                141,
+                141,
+                100,
+                201,
+                74,
+                161,
+                191
+            ]
+        },
+        {
+            "name": "StablecoinInitializedEvent",
+            "discriminator": [
+                130,
+                6,
+                78,
+                77,
+                127,
+                253,
+                70,
+                201
+            ]
+        }
+    ],
+    "errors": [
+        {
+            "code": 6000,
+            "name": "Unauthorized",
+            "msg": "Unauthorized access"
+        },
+        {
+            "code": 6001,
+            "name": "ContractPaused",
+            "msg": "Contract is paused"
+        },
+        {
+            "code": 6002,
+            "name": "FeatureNotEnabled",
+            "msg": "Feature not enabled for this stablecoin preset"
+        }
+    ],
+    "types": [
+        {
+            "name": "BurnEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "from",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MintEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "to",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MockOracle",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "price",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "decimals",
+                        "type": "u8"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "SeizedEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "from",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "StablecoinConfig",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "symbol",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "decimals",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "is_paused",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "enable_permanent_delegate",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "enable_transfer_hook",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "enable_confidential_transfers",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "auditor",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "oracle_feed",
+                        "type": {
+                            "option": "pubkey"
+                        }
+                    },
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "minter_authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "burner_authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "freezer_authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "seizer_authority",
+                        "type": "pubkey"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "StablecoinInitializedEvent",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "symbol",
+                        "type": "string"
+                    }
+                ]
+            }
+        }
+    ]
+}

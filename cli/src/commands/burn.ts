@@ -5,15 +5,15 @@ import { getConfig } from "../config";
 import { StablecoinSDK } from "../../../sdk/src/index";
 import { PublicKey } from "@solana/web3.js";
 
-export function registerMintCommand(program: Command) {
+export function registerBurnCommand(program: Command) {
     program
-        .command("mint")
-        .description("Mint tokens to a specific address")
+        .command("burn")
+        .description("Burn tokens from an address")
         .requiredOption("-m, --mint <address>", "The Mint Address of the stablecoin")
-        .requiredOption("-t, --to <address>", "The recipient wallet address")
-        .requiredOption("-a, --amount <number>", "Amount of tokens to mint")
+        .requiredOption("-f, --from <address>", "The wallet address to burn from")
+        .requiredOption("-a, --amount <number>", "Amount of tokens to burn")
         .action(async (options) => {
-            const spinner = ora("Initializing mint process...").start();
+            const spinner = ora("Initializing burn process...").start();
             try {
                 const config = getConfig();
                 const sdk = new StablecoinSDK(
@@ -24,19 +24,17 @@ export function registerMintCommand(program: Command) {
                 );
 
                 const mintAddress = new PublicKey(options.mint);
-                const toAddress = new PublicKey(options.to);
+                const fromAddress = new PublicKey(options.from);
                 const amount = parseFloat(options.amount);
 
-                spinner.text = `Minting ${amount} tokens to ${options.to}...`;
+                spinner.text = `Burning ${amount} tokens from ${options.from}...`;
                 
-                await sdk.mint(mintAddress, toAddress, amount);
+                await sdk.burn(mintAddress, fromAddress, amount);
 
-                spinner.succeed(chalk.green(`Tokens minted successfully!`));
-                console.log(chalk.cyan(`Recipient:`), toAddress.toBase58());
-                console.log(chalk.cyan(`Amount:`), amount.toString());
+                spinner.succeed(chalk.green(`Tokens burned successfully!`));
                 
             } catch (error: any) {
-                spinner.fail(chalk.red("Failed to mint tokens"));
+                spinner.fail(chalk.red("Failed to burn tokens"));
                 console.error(chalk.red(error.message));
             }
         });
