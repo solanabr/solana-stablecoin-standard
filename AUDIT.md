@@ -53,9 +53,9 @@
 
 ---
 
-## SSS-1: Minimal Stablecoin (`tests/sss-1.test.ts`) — 22 tests
+## SSS-1: Minimal Stablecoin (`tests/sss-1.test.ts`) — 24 tests
 
-### Happy Path (10)
+### Happy Path (11)
 
 | # | Test | Verifies |
 |---|------|----------|
@@ -69,8 +69,9 @@
 | 8 | `pauses and unpauses operations` | isPaused toggle |
 | 9 | `removes a minter` | Minter list empty |
 | 10 | `transfers authority` | authority updated |
+| 11 | `mints exactly at supply cap` | 200 token cap, mint succeeds |
 
-### Edge Cases (12)
+### Edge Cases (13)
 
 | # | Test | Error Code |
 |---|------|-----------|
@@ -86,6 +87,7 @@
 | E10 | `rejects initialize with symbol > 10 chars` | `SymbolTooLong` |
 | E11 | `rejects adding minter when max (16) reached` | `MaxMintersReached` |
 | E12 | `rejects adding burner when max (16) reached` | `MaxBurnersReached` |
+| E13 | `rejects mint exceeding supply cap` | `SupplyCapExceeded` |
 
 ---
 
@@ -117,13 +119,43 @@
 
 ---
 
-## SSS-3: Private Stablecoin (`tests/sss-3.test.ts`) — 3 tests
+## SSS-3: Private Stablecoin (`tests/sss-3.test.ts`) — 6 tests
+
+### Happy Path (4)
 
 | # | Test | Verifies |
 |---|------|----------|
-| 1 | `initializes an SSS-3 private stablecoin` | ConfidentialTransferMint extension enabled |
-| 2 | `has ConfidentialTransferMint extension on the mint` | Extension type present in mint data |
-| 3 | `config reflects SSS-3 preset flags` | All SSS-3 flags set |
+| 1 | `initializes an SSS-3 private stablecoin` | ConfidentialTransferMint + PermanentDelegate + TransferHook |
+| 2 | `has ConfidentialTransferMint extension on the mint` | Extension type present in mint TLV data |
+| 3 | `config reflects SSS-3 preset flags` | All SSS-3 flags correctly set |
+| 4 | `has all required extensions on the mint` | CT + PermanentDelegate + TransferHook + MetadataPointer coexistence |
+
+### Functional (2)
+
+| # | Test | Verifies |
+|---|------|----------|
+| 5 | `can mint tokens on a CT-enabled stablecoin` | 500 tokens minted, balance verified |
+| 6 | `tracks total_minted on CT-enabled config` | `totalMinted` = 500_000_000 |
+
+### E2E Script (`scripts/test-ct-e2e.sh`) — 13 checks
+
+Full confidential transfer lifecycle on localnet:
+
+| # | Check | Operation |
+|---|-------|-----------|
+| 1 | Mint created with CT extension | `spl-token create-token --enable-confidential-transfers` |
+| 2 | CT extension verified | `spl-token display` |
+| 3 | Token accounts created | `spl-token create-account` |
+| 4 | 1000 tokens minted | `spl-token mint` |
+| 5 | Sender configured for CT | `spl-token configure-confidential-transfer-account` |
+| 6 | Recipient configured for CT | ElGamal keypair generated |
+| 7 | 500 deposited to confidential | `spl-token deposit-confidential-tokens` |
+| 8 | Pending balance applied | `spl-token apply-pending-balance` |
+| 9 | 200 confidential transfer | ZK range proofs generated + verified |
+| 10 | Recipient pending applied | `spl-token apply-pending-balance` |
+| 11 | 100 withdrawn to public | `spl-token withdraw-confidential-tokens` |
+| 12 | Sender balance = 500 | Public balance verified |
+| 13 | Recipient has tokens | Public balance = 100 |
 
 ---
 
@@ -175,6 +207,7 @@
 | `ReasonTooLong` | ✅ | SSS-2 E2 |
 | `ZeroMintAmount` | ✅ | SSS-1 E7 |
 | `ZeroBurnAmount` | ✅ | SSS-1 E8 |
+| `SupplyCapExceeded` | ✅ | SSS-1 E13 |
 | `InvalidDecimals` | ⚠️ | Internal space calc — can't fail via normal input |
 | `ArithmeticOverflow` | ⚠️ | Requires u64::MAX — CPI fails first |
 
