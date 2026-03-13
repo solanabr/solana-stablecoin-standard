@@ -122,7 +122,7 @@ The fuzz harness asserts that certain transactions fail as expected:
 
    Optional: `trident fuzz run fuzz_0 12345` uses a fixed seed for reproducibility. Enable logging: `TRIDENT_LOG=1 trident fuzz run fuzz_0`.
 
-5. **Implement flows** in the generated `test_fuzz.rs`: build transactions for `initialize_stablecoin`, `mint_tokens`, `burn_tokens`, and add `check()` / invariant assertions for the invariants above. See [Trident docs](https://ackee.xyz/trident/docs/latest/start-fuzzing/writting-fuzz-test/) and `trident-tests/README.md`.
+5. **Implement flows** in the generated `test_fuzz.rs`: build transactions for `initialize_stablecoin`, `mint_tokens`, `burn_tokens`, and add `check()` / invariant assertions for the invariants above. See [Trident docs](https://ackee.xyz/trident/docs/latest/start-fuzzing/writting-fuzz-test/) and [trident-tests/README.md](../trident-tests/README.md).
 
 ## Integration Test Files
 
