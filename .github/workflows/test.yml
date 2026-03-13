@@ -63,6 +63,9 @@ jobs:
       - name: Build programs
         run: anchor build
 
+      - name: Build SDK
+        run: pnpm --filter @stbr/sss-token build
+
       - name: Run tests
         run: anchor test --skip-build
 
