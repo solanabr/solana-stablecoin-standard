@@ -199,7 +199,10 @@ describe("SSS-2: Compliant Stablecoin", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: userAAta,
-        recipientBlacklist: null,
+        recipientBlacklist: PublicKey.findProgramAddressSync(
+          [Buffer.from("blacklist"), configPda.toBuffer(), userA.publicKey.toBuffer()],
+          tokenProgram.programId
+        )[0],
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -403,7 +406,10 @@ describe("SSS-2: Compliant Stablecoin", () => {
           minterInfo: minterInfoPda,
           mint: mint.publicKey,
           recipientTokenAccount: userAAta,
-          recipientBlacklist: null,
+          recipientBlacklist: PublicKey.findProgramAddressSync(
+            [Buffer.from("blacklist"), configPda.toBuffer(), userA.publicKey.toBuffer()],
+            tokenProgram.programId
+          )[0],
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();

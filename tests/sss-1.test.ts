@@ -168,7 +168,10 @@ describe("SSS-1: Minimal Stablecoin", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: recipientAta,
-        recipientBlacklist: null,
+        recipientBlacklist: PublicKey.findProgramAddressSync(
+          [Buffer.from("blacklist"), configPda.toBuffer(), recipient.publicKey.toBuffer()],
+          program.programId
+        )[0],
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -221,7 +224,10 @@ describe("SSS-1: Minimal Stablecoin", () => {
         minterInfo: minterInfoPda,
         mint: mint.publicKey,
         recipientTokenAccount: authorityAta,
-        recipientBlacklist: null,
+        recipientBlacklist: PublicKey.findProgramAddressSync(
+          [Buffer.from("blacklist"), configPda.toBuffer(), authority.publicKey.toBuffer()],
+          program.programId
+        )[0],
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
@@ -324,7 +330,10 @@ describe("SSS-1: Minimal Stablecoin", () => {
           minterInfo: minterInfoPda,
           mint: mint.publicKey,
           recipientTokenAccount: authorityAta,
-          recipientBlacklist: null,
+          recipientBlacklist: PublicKey.findProgramAddressSync(
+            [Buffer.from("blacklist"), configPda.toBuffer(), authority.publicKey.toBuffer()],
+            program.programId
+          )[0],
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
@@ -431,7 +440,10 @@ describe("SSS-1: Minimal Stablecoin", () => {
           minterInfo: minterInfoPda,
           mint: mint.publicKey,
           recipientTokenAccount: authorityAta,
-          recipientBlacklist: null,
+          recipientBlacklist: PublicKey.findProgramAddressSync(
+            [Buffer.from("blacklist"), configPda.toBuffer(), authority.publicKey.toBuffer()],
+            program.programId
+          )[0],
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();
