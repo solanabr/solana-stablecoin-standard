@@ -6273,7 +6273,7 @@ dependencies = [
 
 [[package]]
 name = "sss-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anchor-client",
  "anchor-lang",
@@ -6293,7 +6293,7 @@ dependencies = [
 
 [[package]]
 name = "sss-token"
-version = "1.0.1"
+version = "1.0.3"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -6303,7 +6303,7 @@ dependencies = [
 
 [[package]]
 name = "sss-transfer-hook"
-version = "1.0.1"
+version = "1.0.3"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
