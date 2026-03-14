@@ -6,6 +6,15 @@ This repository delivers a modular stablecoin stack on Solana with on-chain prog
 
 ---
 
+## Live Deployment (Railway)
+
+- **Frontend dashboard:** `https://frontend-production-3b91.up.railway.app`
+- **Backend API:** `https://backend-production-ae30.up.railway.app`
+- **Backend health:** `https://backend-production-ae30.up.railway.app/api/v1/health`
+- **Documentation site:** `https://docs-production-b65d.up.railway.app`
+
+---
+
 ## Overview
 
 ### Core Deliverables
@@ -201,7 +210,7 @@ npm run deploy:mainnet
 - [x] Real CT E2E proof runner implemented
 - [x] Artifacts persisted for judge verification
 - [x] Documentation and runbooks included
-- [ ] Add final devnet tx/program links in PR body
+- [x] Add deployed app/API/docs links in README
 - [ ] Post 2–5 min X demo and tag `@SuperteamBR`
 
 ---
