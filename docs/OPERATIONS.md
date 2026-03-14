@@ -8,12 +8,15 @@ This document covers day-to-day operations for stablecoin operators using the SS
 
 ```bash
 # Install globally
-npm install -g @stbr/sss-token-cli
+npm install -g solana-stablecoin-cli
 
 # Set environment variables
 export SSS_KEYPAIR=/path/to/operator-keypair.json
 export SSS_RPC_URL=https://api.mainnet-beta.solana.com
 export SSS_MINT=<your-mint-address>
+
+# Example Devnet (Helius)
+# export SSS_RPC_URL="https://devnet.helius-rpc.com/?api-key=<YOUR_KEY>"
 
 # Or use a config file at ~/.config/sss-token/config.toml
 rpc_url = "https://api.mainnet-beta.solana.com"
@@ -182,18 +185,25 @@ curl http://localhost:3001/mint/<REQUEST_ID>
 Roles are managed by the master authority only.
 
 ```bash
-# Assign a pauser
-sss-token roles set-pauser <ADDRESS>
+# List all role assignments
+sss-token roles list
 
-# Assign a burner
-sss-token roles set-burner <ADDRESS>
+# Assign roles
+sss-token roles pauser add <ADDRESS>
+sss-token roles freezer add <ADDRESS>
+sss-token roles burner add <ADDRESS>
 
-# SSS-2: Assign blacklister and seizer
-sss-token roles set-blacklister <ADDRESS>
-sss-token roles set-seizer <ADDRESS>
+# SSS-2 roles
+sss-token roles blacklister add <ADDRESS>
+sss-token roles seizer add <ADDRESS>
 
-# Clear a role (set to null)
-sss-token roles set-pauser --clear
+# Clear roles
+sss-token roles pauser remove
+sss-token roles freezer remove
+sss-token roles burner remove
+
+# Check one role only
+sss-token roles freezer list
 ```
 
 ---

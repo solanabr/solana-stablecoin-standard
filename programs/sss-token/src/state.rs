@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Default)]
 pub struct StablecoinState {
-    /// Master authority — can do everything
+    /// Master authority — governance/admin authority (role updates, minter updates, authority transfer)
     pub master_authority: Pubkey,
     /// Pending authority for two-step transfer
     pub pending_authority: Option<Pubkey>,
@@ -33,6 +33,7 @@ pub struct StablecoinState {
 
     // ── Roles ───────────────────────────────────────────────────────────────
     pub pauser: Option<Pubkey>,
+    pub freezer: Option<Pubkey>,
     pub burner: Option<Pubkey>,
     /// SSS-2 only
     pub blacklister: Option<Pubkey>,
@@ -63,6 +64,7 @@ impl StablecoinState {
         + 8  // total_minted
         + 8  // total_burned
         + 1 + 32  // pauser
+        + 1 + 32  // freezer
         + 1 + 32  // burner
         + 1 + 32  // blacklister
         + 1 + 32  // seizer
@@ -78,7 +80,7 @@ pub struct MinterInfo {
     pub minter: Pubkey,
     /// 0 = unlimited
     pub quota: u64,
-    pub minted_this_epoch: u64,
+    pub minted_total: u64,
     pub active: bool,
     pub bump: u8,
 }
@@ -124,6 +126,7 @@ pub struct StablecoinConfig {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct RoleUpdate {
     pub pauser: Option<Pubkey>,
+    pub freezer: Option<Pubkey>,
     pub burner: Option<Pubkey>,
     pub blacklister: Option<Pubkey>,
     pub seizer: Option<Pubkey>,

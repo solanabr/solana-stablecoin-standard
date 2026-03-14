@@ -11,11 +11,18 @@ export default defineConfig({
     }),
   ],
   resolve: {
+    preserveSymlinks: true,
     alias: {
       '@': '/src',
     },
   },
+  optimizeDeps: {
+    include: ['solana-stablecoin-sdk'],
+  },
   build: {
+    commonjsOptions: {
+      include: [/node_modules/, /sdk\/dist/],
+    },
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress circular dependency warnings from node polyfills

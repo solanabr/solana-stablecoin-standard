@@ -51,6 +51,51 @@ pub struct WithdrawToPublicEvent {
     pub timestamp: i64,
 }
 
+/// Emitted when the stablecoin is paused
+#[event]
+pub struct PausedEvent {
+    pub state: Pubkey,
+    pub paused_by: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when the stablecoin is unpaused
+#[event]
+pub struct UnpausedEvent {
+    pub state: Pubkey,
+    pub unpaused_by: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when authority transfer is proposed or accepted
+#[event]
+pub struct AuthorityUpdatedEvent {
+    pub state: Pubkey,
+    pub old_authority: Pubkey,
+    pub new_authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when tokens are minted
+#[event]
+pub struct MintedEvent {
+    pub state: Pubkey,
+    pub recipient: Pubkey,
+    pub amount: u64,
+    pub minted_by: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when tokens are burned
+#[event]
+pub struct BurnedEvent {
+    pub state: Pubkey,
+    pub from: Pubkey,
+    pub amount: u64,
+    pub burned_by: Pubkey,
+    pub timestamp: i64,
+}
+
 /// Emitted when the auditor ElGamal key is updated
 #[event]
 pub struct AuditorUpdatedEvent {

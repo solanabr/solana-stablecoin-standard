@@ -4,14 +4,15 @@ import { PublicKey } from '@solana/web3.js';
 import { useStablecoin } from '../contexts/StablecoinContext';
 import { useToast } from '../contexts/ToastContext';
 import {
-  fetchStablecoinState,
-  fetchHolders,
-  fetchMinters,
-  findStatePDA,
   formatAmount,
   shortenAddress,
   explorerUrl,
 } from '../lib/program';
+import {
+  fetchStablecoinSnapshot,
+  subscribeStablecoinEvents,
+  ParsedEvent,
+} from '../lib/sdkClient';
 import StatCard from '../components/StatCard';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
@@ -30,6 +31,8 @@ import {
   ExternalLink,
   Search,
   ArrowRight,
+  Radio,
+  RefreshCw,
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
@@ -43,56 +46,134 @@ const Dashboard: React.FC = () => {
   const [state, setState] = useState<any>(null);
   const [holders, setHolders] = useState<any[]>([]);
   const [minters, setMinters] = useState<any[]>([]);
+  const [events, setEvents] = useState<ParsedEvent[]>([]);
+  const [realtime, setRealtime] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
 
-  const loadStablecoin = async (mintAddr: string) => {
+  const toBase58Safe = (value: unknown): string => {
+    if (value && typeof value === 'object' && 'toBase58' in (value as Record<string, unknown>)) {
+      try {
+        return (value as { toBase58: () => string }).toBase58();
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  };
+
+  const toBigIntSafe = (value: unknown): bigint => {
+    if (typeof value === 'bigint') return value;
+    if (typeof value === 'number') return BigInt(Math.trunc(value));
+    if (typeof value === 'string') {
+      try {
+        return BigInt(value);
+      } catch {
+        return 0n;
+      }
+    }
+    if (value && typeof value === 'object' && 'toString' in (value as Record<string, unknown>)) {
+      try {
+        return BigInt((value as { toString: () => string }).toString());
+      } catch {
+        return 0n;
+      }
+    }
+    return 0n;
+  };
+
+  const loadStablecoin = async (
+    mintAddr: string,
+    options?: { silent?: boolean; showErrors?: boolean }
+  ) => {
+    const silent = !!options?.silent;
+    const showErrors = options?.showErrors ?? true;
+
     if (!wallet.publicKey) {
-      addToast({ type: 'warning', title: 'Connect your wallet first' });
+      if (showErrors) {
+        addToast({ type: 'warning', title: 'Connect your wallet first' });
+      }
       return;
     }
 
-    setLoading(true);
+    if (silent) {
+      if (hasLoadedOnce) {
+        setBackgroundRefreshing(true);
+      }
+    } else {
+      setLoading(true);
+    }
+
     try {
       const mint = new PublicKey(mintAddr);
-      const stateData = await fetchStablecoinState(connection, wallet, mint);
+      const { state: stateData, mintInfo, minters: minterData, holders: holderData } = await fetchStablecoinSnapshot(connection, mint);
       setState(stateData);
+      setHolders(
+        (Array.isArray(holderData) ? holderData : [])
+          .filter((holder) => holder?.owner)
+          .map((holder) => ({
+            owner: toBase58Safe(holder.owner),
+            uiBalance: formatAmount(holder.balance, Number(mintInfo?.decimals ?? stateData?.decimals ?? 6)),
+          }))
+          .filter((holder) => holder.owner)
+      );
+      setMinters(
+        (Array.isArray(minterData) ? minterData : [])
+          .filter(Boolean)
+          .map((minter) => {
+            const address = toBase58Safe(minter?.address);
+            return {
+              publicKey: address,
+              minter: address,
+              quota: toBigIntSafe(minter?.quota).toString(),
+              mintedTotal: toBigIntSafe(minter?.mintedTotal).toString(),
+              active: !!minter?.active,
+            };
+          })
+          .filter((minter) => minter.publicKey)
+      );
 
-      const [statePDA] = findStatePDA(mint);
-      const [holdersData, mintersData] = await Promise.all([
-        fetchHolders(connection, mint),
-        fetchMinters(connection, wallet, statePDA),
-      ]);
-      setHolders(holdersData);
-      setMinters(mintersData);
-
-      const preset = stateData.permanentDelegateEnabled && stateData.transferHookEnabled
+      const preset = !!stateData?.permanentDelegateEnabled && !!stateData?.transferHookEnabled
         ? 'SSS_2'
-        : !stateData.permanentDelegateEnabled && !stateData.transferHookEnabled
-          ? 'SSS_1'
-          : 'CUSTOM';
+        : 'SSS_1';
+
+      const masterAuthority = toBase58Safe(stateData?.masterAuthority) || mint.toBase58();
 
       setStablecoinInfo({
         mint: mintAddr,
-        name: stateData.name,
-        symbol: stateData.symbol,
-        decimals: stateData.decimals,
+        name: stateData?.name ?? '',
+        symbol: stateData?.symbol ?? '',
+        decimals: Number(stateData?.decimals ?? 6),
         preset,
-        paused: stateData.paused,
-        totalMinted: stateData.totalMinted.toString(),
-        totalBurned: stateData.totalBurned.toString(),
-        masterAuthority: stateData.masterAuthority.toBase58(),
-        enablePermanentDelegate: stateData.permanentDelegateEnabled,
-        enableTransferHook: stateData.transferHookEnabled,
-        defaultAccountFrozen: stateData.defaultAccountFrozen,
+        paused: !!stateData?.paused,
+        totalMinted: toBigIntSafe(stateData?.totalMinted).toString(),
+        totalBurned: toBigIntSafe(stateData?.totalBurned).toString(),
+        masterAuthority,
+        enablePermanentDelegate: !!stateData?.permanentDelegateEnabled,
+        enableTransferHook: !!stateData?.transferHookEnabled,
+        defaultAccountFrozen: !!stateData?.defaultAccountFrozen,
       });
 
       setCurrentMint(mintAddr);
       addRecentMint(mintAddr);
-      addToast({ type: 'success', title: `Loaded ${stateData.symbol}` });
+      setHasLoadedOnce(true);
+      setLastUpdatedAt(Date.now());
+
+      if (!silent) {
+        addToast({ type: 'success', title: `Loaded ${stateData?.symbol ?? 'stablecoin'}` });
+      }
     } catch (err: any) {
-      addToast({ type: 'error', title: 'Failed to load stablecoin', message: err.message });
+      if (showErrors) {
+        addToast({ type: 'error', title: 'Failed to load stablecoin', message: err.message });
+      }
       setState(null);
     } finally {
-      setLoading(false);
+      if (silent) {
+        setBackgroundRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -102,8 +183,39 @@ const Dashboard: React.FC = () => {
     }
   }, [wallet.publicKey]);
 
+  useEffect(() => {
+    if (!currentMint || !realtime) return;
+
+    let subId: number | null = null;
+    const mint = new PublicKey(currentMint);
+
+    subId = subscribeStablecoinEvents(
+      connection,
+      mint,
+      (event) => {
+        setEvents((prev) => [event, ...prev].slice(0, 8));
+        loadStablecoin(currentMint, { silent: true, showErrors: false });
+      },
+      (error) => {
+        addToast({ type: 'error', title: 'Realtime stream error', message: error.message });
+      }
+    );
+
+    return () => {
+      if (subId !== null) {
+        connection.removeOnLogsListener(subId).catch(() => {});
+      }
+    };
+  }, [connection, currentMint, realtime]);
+
+  useEffect(() => {
+    if (!currentMint || !wallet.publicKey) return;
+    const timer = setInterval(() => loadStablecoin(currentMint, { silent: true, showErrors: false }), 30_000);
+    return () => clearInterval(timer);
+  }, [currentMint, wallet.publicKey]);
+
   const totalSupply = state
-    ? BigInt(state.totalMinted.toString()) - BigInt(state.totalBurned.toString())
+    ? toBigIntSafe(state.totalMinted) - toBigIntSafe(state.totalBurned)
     : 0n;
 
   if (!wallet.connected) {
@@ -128,6 +240,25 @@ const Dashboard: React.FC = () => {
         title="Load Stablecoin"
         subtitle="Enter a mint address to load an existing stablecoin"
         icon={<Search size={16} color="var(--accent)" />}
+        actions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {lastUpdatedAt && (
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                Updated {new Date(lastUpdatedAt).toLocaleTimeString()}
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => currentMint && loadStablecoin(currentMint, { silent: true, showErrors: true })}
+              loading={backgroundRefreshing}
+              disabled={!currentMint}
+              icon={<RefreshCw size={14} />}
+            >
+              Refresh
+            </Button>
+          </div>
+        }
       >
         <div style={{ display: 'flex', gap: 10 }}>
           <Input
@@ -162,7 +293,7 @@ const Dashboard: React.FC = () => {
         )}
       </Card>
 
-      {loading && <Spinner label="Loading stablecoin data..." />}
+      {loading && !hasLoadedOnce && <Spinner label="Loading stablecoin data..." />}
 
       {/* ─── Stats Grid ──────────────────────────────────────────── */}
       {state && stablecoinInfo && !loading && (
@@ -177,14 +308,14 @@ const Dashboard: React.FC = () => {
             />
             <StatCard
               label="Total Minted"
-              value={formatAmount(state.totalMinted.toString(), stablecoinInfo.decimals)}
+              value={formatAmount(toBigIntSafe(state.totalMinted), stablecoinInfo.decimals)}
               icon={<TrendingUp size={18} color="var(--green)" />}
               color="var(--green)"
               sub="Lifetime minted"
             />
             <StatCard
               label="Total Burned"
-              value={formatAmount(state.totalBurned.toString(), stablecoinInfo.decimals)}
+              value={formatAmount(toBigIntSafe(state.totalBurned), stablecoinInfo.decimals)}
               icon={<TrendingUp size={18} color="var(--red)" />}
               color="var(--red)"
               sub="Lifetime burned"
@@ -304,6 +435,45 @@ const Dashboard: React.FC = () => {
               </div>
             </Card>
           )}
+
+          <Card
+            title="Live Program Events"
+            subtitle="Decoded sss_token events for this mint"
+            icon={<Radio size={16} color="var(--yellow)" />}
+            accent="var(--yellow)"
+            actions={
+              <Button
+                variant={realtime ? 'success' : 'secondary'}
+                size="sm"
+                onClick={() => setRealtime((v) => !v)}
+              >
+                {realtime ? 'Realtime ON' : 'Realtime OFF'}
+              </Button>
+            }
+          >
+            {events.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '10px 0' }}>
+                No events yet. Perform mint/burn/pause/compliance actions to populate this feed.
+              </div>
+            ) : (
+              <div style={styles.eventList}>
+                {events.map((event, index) => (
+                  <div key={`${event.signature}-${index}`} style={styles.eventRow}>
+                    <span style={styles.eventName}>{event.name}</span>
+                    <span style={styles.eventSummary}>{event.summary}</span>
+                    <a
+                      href={explorerUrl(event.signature)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.eventLink}
+                    >
+                      {shortenAddress(event.signature, 8)}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
         </>
       )}
     </div>
@@ -411,6 +581,37 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 0',
     borderBottom: '1px solid rgba(42, 48, 80, 0.4)',
     alignItems: 'center',
+  },
+  eventList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  eventRow: {
+    display: 'grid',
+    gridTemplateColumns: '180px 1fr 170px',
+    gap: 10,
+    alignItems: 'center',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '10px 12px',
+    background: 'var(--bg-input)',
+  },
+  eventName: {
+    fontSize: 12,
+    color: 'var(--yellow)',
+    fontWeight: 700,
+  },
+  eventSummary: {
+    fontSize: 13,
+    color: 'var(--text-primary)',
+  },
+  eventLink: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: 'var(--text-muted)',
+    textAlign: 'right',
+    textDecoration: 'none',
   },
 };
 

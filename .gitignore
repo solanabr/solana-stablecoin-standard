@@ -27,3 +27,24 @@ test-ledger/
 *.swp
 
 scripts/
+
+# Environment variants (keep examples)
+.env.*
+!.env.example
+
+# TypeScript / JS tool caches
+*.tsbuildinfo
+.eslintcache
+.cache/
+.turbo/
+.nyc_output/
+coverage/
+
+# General logs and temp artifacts
+*.log
+*.tmp
+*.bak
+
+# Trident fuzz artifacts
+trident-tests/.fuzz-artifacts/
+trident-tests/fuzz_tests/

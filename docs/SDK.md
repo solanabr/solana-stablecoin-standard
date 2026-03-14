@@ -1,11 +1,27 @@
 # TypeScript SDK Reference
 
-Package: `@stbr/sss-token`
+Package: `solana-stablecoin-sdk`
 
 ## Installation
 
 ```bash
-npm install @stbr/sss-token
+npm install solana-stablecoin-sdk
+```
+
+## Modular Imports
+
+The root import remains fully backward-compatible:
+
+```typescript
+import { SolanaStablecoin, Preset } from "solana-stablecoin-sdk";
+```
+
+The package now also exposes modular entrypoints for cleaner consumption:
+
+```typescript
+import { SolanaStablecoin } from "solana-stablecoin-sdk/client";
+import { ComplianceModule } from "solana-stablecoin-sdk/modules/compliance";
+import { Preset } from "solana-stablecoin-sdk/presets";
 ```
 
 ## SolanaStablecoin
@@ -60,6 +76,9 @@ await stable.mintTokens({ recipient: PublicKey, amount: bigint, minter: Keypair 
 // Burn tokens
 await stable.burn(from: PublicKey, amount: bigint): Promise<string>
 
+// Transfer tokens
+await stable.transfer({ from: Keypair, to: PublicKey, amount: bigint }): Promise<string>
+
 // Freeze a token account
 await stable.freeze(account: PublicKey): Promise<string>
 
@@ -71,16 +90,37 @@ await stable.pause(): Promise<string>
 await stable.unpause(): Promise<string>
 
 // Minter management
-await stable.addMinter(minter: PublicKey, quota?: bigint, active?: boolean): Promise<string>
+await stable.addMinter(minter: PublicKey, quota?: bigint): Promise<string>
 await stable.removeMinter(minter: PublicKey): Promise<string>
 
 // Role management
 await stable.updateRoles({
   pauser?: PublicKey | null,
+  freezer?: PublicKey | null,
   burner?: PublicKey | null,
   blacklister?: PublicKey | null,   // SSS-2
   seizer?: PublicKey | null,         // SSS-2
 }): Promise<string>
+
+// Convenience role helpers
+await stable.setPauser(address: PublicKey): Promise<string>
+await stable.clearPauser(): Promise<string>
+await stable.setFreezer(address: PublicKey): Promise<string>
+await stable.clearFreezer(): Promise<string>
+await stable.setBurner(address: PublicKey): Promise<string>
+await stable.clearBurner(): Promise<string>
+await stable.setBlacklister(address: PublicKey): Promise<string>
+await stable.clearBlacklister(): Promise<string>
+await stable.setSeizer(address: PublicKey): Promise<string>
+await stable.clearSeizer(): Promise<string>
+await stable.getRoles(): Promise<{
+  master: PublicKey;
+  pauser?: PublicKey;
+  freezer?: PublicKey;
+  burner?: PublicKey;
+  blacklister?: PublicKey;
+  seizer?: PublicKey;
+}>
 
 // Authority transfer (two-step)
 await stable.proposeAuthority(newAuthority: PublicKey): Promise<string>
@@ -103,7 +143,7 @@ await stable.getMintInfo(): Promise<Mint>
 await stable.listMinters(): Promise<Array<{
   address: PublicKey;
   quota: bigint;
-  mintedThisEpoch: bigint;
+  mintedTotal: bigint;
   active: boolean;
 }>>
 
@@ -139,7 +179,7 @@ await stable.compliance.seize(frozenAccount: PublicKey, treasury: PublicKey): Pr
 ## Presets
 
 ```typescript
-import { Preset, Presets } from "@stbr/sss-token";
+import { Preset, Presets } from "solana-stablecoin-sdk";
 
 Preset.SSS_1    // "sss-1"
 Preset.SSS_2    // "sss-2"
@@ -163,7 +203,7 @@ import {
   findBlacklistEntryPDA,
   SSS_TOKEN_PROGRAM_ID,
   TRANSFER_HOOK_PROGRAM_ID,
-} from "@stbr/sss-token";
+} from "solana-stablecoin-sdk";
 
 const [statePDA, bump] = findStatePDA(mintPubkey);
 const [minterInfo] = findMinterInfoPDA(statePDA, minterPubkey);

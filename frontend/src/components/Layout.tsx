@@ -11,6 +11,7 @@ import {
   Users,
   Activity,
   Coins,
+  Snowflake,
   ChevronRight,
   Hexagon,
 } from 'lucide-react';
@@ -22,6 +23,7 @@ const navItems = [
   { path: '/create', label: 'Create Stablecoin', icon: PlusCircle },
   { path: '/manage', label: 'Manage', icon: Settings },
   { path: '/mint-burn', label: 'Mint & Burn', icon: Coins },
+  { path: '/freeze-thaw', label: 'Freeze & Thaw', icon: Snowflake },
   { path: '/compliance', label: 'Compliance', icon: Shield },
   { path: '/holders', label: 'Holders', icon: Users },
   { path: '/activity', label: 'Activity', icon: Activity },
@@ -71,8 +73,7 @@ const Layout: React.FC<{ children: ReactNode }> = ({ children }) => {
           <div style={styles.mintBadge}>
             <div style={styles.mintBadgeLabel}>{stablecoinInfo.symbol}</div>
             <div style={styles.mintBadgePreset}>
-              {stablecoinInfo.preset === 'SSS_1' ? 'SSS-1 Basic' :
-               stablecoinInfo.preset === 'SSS_2' ? 'SSS-2 Compliance' : 'Custom'}
+              {stablecoinInfo.preset === 'SSS_1' ? 'SSS-1 Basic' : 'SSS-2 Compliance'}
             </div>
             <div style={styles.mintBadgeAddr}>
               {stablecoinInfo.mint.slice(0, 8)}...{stablecoinInfo.mint.slice(-4)}

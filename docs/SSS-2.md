@@ -117,7 +117,7 @@ These are indexed by the event-listener service and stored in the compliance ser
 ### Reference Implementation
 
 ```typescript
-import { SolanaStablecoin, Preset } from "@stbr/sss-token";
+import { SolanaStablecoin, Preset } from "solana-stablecoin-sdk";
 
 const stable = await SolanaStablecoin.create({
   connection,

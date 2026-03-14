@@ -8,10 +8,14 @@ skip-lint = false
 [programs.devnet]
 sss_token = "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
 transfer_hook = "C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V"
+sss_3_private = "4ea2tTJiMRW3Nov8K4hEd3JPppiY1oPU2p5zri8JAnkX"
+sss_oracle = "BHWh9mmJMniLpNjoPYrMZfUUes3rLcBY7fJzairkM1zc"
 
 [programs.localnet]
 sss_token = "6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL"
 transfer_hook = "C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V"
+sss_3_private = "4ea2tTJiMRW3Nov8K4hEd3JPppiY1oPU2p5zri8JAnkX"
+sss_oracle = "BHWh9mmJMniLpNjoPYrMZfUUes3rLcBY7fJzairkM1zc"
 
 [registry]
 url = "https://api.apr.dev"
@@ -21,7 +25,7 @@ cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [workspace]
-members = ["programs/sss-token", "programs/transfer-hook"]
+members = ["programs/sss-token", "programs/transfer-hook", "programs/sss-3-private", "oracle"]
 
 [scripts]
 test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

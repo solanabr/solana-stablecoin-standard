@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+#[cfg(not(feature = "trident-fuzz"))]
 use anchor_spl::token_2022::Token2022;
 
 use crate::{
@@ -29,8 +30,16 @@ pub struct Initialize<'info> {
     pub mint: Signer<'info>,
 
     pub system_program: Program<'info, System>,
+    #[cfg(not(feature = "trident-fuzz"))]
     pub token_program: Program<'info, Token2022>,
+    /// CHECK: fuzz-only build does not invoke Token-2022 during initialize
+    #[cfg(feature = "trident-fuzz")]
+    pub token_program: UncheckedAccount<'info>,
+    #[cfg(not(feature = "trident-fuzz"))]
     pub rent: Sysvar<'info, Rent>,
+    /// CHECK: fuzz-only build does not read the explicit rent account directly
+    #[cfg(feature = "trident-fuzz")]
+    pub rent: UncheckedAccount<'info>,
 }
 
 pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()> {
@@ -69,12 +78,14 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     state.total_minted = 0;
     state.total_burned = 0;
     state.pauser = None;
+    state.freezer = None;
     state.burner = None;
     state.blacklister = None;
     state.seizer = None;
     state.transfer_hook_program_id = config.transfer_hook_program_id;
     state.bump = ctx.bumps.state;
 
+    #[cfg(not(feature = "trident-fuzz"))]
     emit!(StablecoinInitialized {
         mint: ctx.accounts.mint.key(),
         master_authority: ctx.accounts.master_authority.key(),

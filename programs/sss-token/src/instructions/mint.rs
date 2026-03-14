@@ -59,7 +59,7 @@ pub fn handler(ctx: Context<MintCtx>, amount: u64) -> Result<()> {
     let minter_info = &mut ctx.accounts.minter_info;
 
     let new_minted = minter_info
-        .minted_this_epoch
+        .minted_total
         .checked_add(amount)
         .ok_or(SssError::Overflow)?;
 
@@ -68,7 +68,7 @@ pub fn handler(ctx: Context<MintCtx>, amount: u64) -> Result<()> {
         require!(new_minted <= minter_info.quota, SssError::QuotaExceeded);
     }
 
-    minter_info.minted_this_epoch = new_minted;
+    minter_info.minted_total = new_minted;
 
     // Mint via PDA authority
     let state_key = ctx.accounts.state.key();

@@ -2,7 +2,7 @@ import express from "express";
 import { Pool } from "pg";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import * as fs from "fs";
-import { SolanaStablecoin } from "@stbr/sss-token";
+import { SolanaStablecoin } from "solana-stablecoin-sdk";
 
 const app = express();
 app.use(express.json());

@@ -61,7 +61,7 @@
     {
       "name": "add_minter",
       "docs": [
-        "Add or update a minter with an optional per-minter quota (0 = unlimited)."
+        "Add or update a minter with a lifetime quota (0 = unlimited)."
       ],
       "discriminator": [
         75,
@@ -246,7 +246,9 @@
     {
       "name": "burn",
       "docs": [
-        "Burn tokens from the caller's token account."
+        "Burn tokens.",
+        "- Token-account owners can always burn from their own account.",
+        "- Burner role can burn from any account when permanent delegate is enabled."
       ],
       "discriminator": [
         116,
@@ -262,7 +264,7 @@
         {
           "name": "authority",
           "docs": [
-            "Must be master, burner, or token account owner burning their own tokens"
+            "Must be burner, or token account owner burning their own tokens"
           ],
           "signer": true
         },
@@ -302,6 +304,43 @@
           "writable": true
         },
         {
+          "name": "permanent_delegate",
+          "docs": [
+            "not the token-account owner."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  97,
+                  110,
+                  101,
+                  110,
+                  116,
+                  95,
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "state"
+              }
+            ]
+          }
+        },
+        {
           "name": "token_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
@@ -316,7 +355,7 @@
     {
       "name": "freeze_account",
       "docs": [
-        "Freeze a token account (prevents transfers). Caller must be Pauser or Master."
+        "Freeze a token account (prevents transfers). Caller must hold Freezer role."
       ],
       "discriminator": [
         253,
@@ -405,6 +444,93 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "increase_minter_quota",
+      "docs": [
+        "Increase an active minter's lifetime quota by `additional_quota`."
+      ],
+      "discriminator": [
+        102,
+        87,
+        42,
+        217,
+        237,
+        250,
+        91,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  99,
+                  111,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "state.mint",
+                "account": "StablecoinState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "minter"
+        },
+        {
+          "name": "minter_info",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "state"
+              },
+              {
+                "kind": "account",
+                "path": "minter"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "additional_quota",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "initialize",
@@ -496,7 +622,7 @@
       "name": "mint",
       "docs": [
         "Mint tokens to a recipient. Caller must hold the Minter role and",
-        "respect their per-minter quota (0 = unlimited)."
+        "respect their lifetime minter quota (0 = unlimited)."
       ],
       "discriminator": [
         51,
@@ -620,7 +746,7 @@
     {
       "name": "pause",
       "docs": [
-        "Pause all minting and burning globally. Only Pauser or Master."
+        "Pause all minting and burning globally. Only Pauser."
       ],
       "discriminator": [
         211,
@@ -1171,7 +1297,7 @@
     {
       "name": "update_roles",
       "docs": [
-        "Update role assignments (pauser, burner, blacklister, seizer)."
+        "Update role assignments (pauser, freezer, burner, blacklister, seizer)."
       ],
       "discriminator": [
         220,
@@ -1483,65 +1609,70 @@
     {
       "code": 6005,
       "name": "QuotaExceeded",
-      "msg": "Minter quota exceeded — request amount is above remaining quota"
+      "msg": "Minter quota exceeded — request amount is above remaining lifetime quota"
     },
     {
       "code": 6006,
+      "name": "CannotIncreaseUnlimitedQuota",
+      "msg": "Cannot increase quota for an unlimited minter"
+    },
+    {
+      "code": 6007,
       "name": "ComplianceNotEnabled",
       "msg": "Compliance module is not enabled on this stablecoin"
     },
     {
-      "code": 6007,
+      "code": 6008,
       "name": "AlreadyBlacklisted",
       "msg": "Address is already on the blacklist"
     },
     {
-      "code": 6008,
+      "code": 6009,
       "name": "NotBlacklisted",
       "msg": "Address is not on the blacklist"
     },
     {
-      "code": 6009,
+      "code": 6010,
       "name": "SeizeRequiresBlacklist",
       "msg": "Cannot seize tokens — account is not blacklisted"
     },
     {
-      "code": 6010,
+      "code": 6011,
       "name": "PermanentDelegateNotEnabled",
       "msg": "Permanent delegate not enabled — seize is unavailable"
     },
     {
-      "code": 6011,
+      "code": 6012,
       "name": "SenderBlacklisted",
       "msg": "Transfer blocked — sender is blacklisted"
     },
     {
-      "code": 6012,
+      "code": 6013,
       "name": "RecipientBlacklisted",
       "msg": "Transfer blocked — recipient is blacklisted"
     },
     {
-      "code": 6013,
+      "code": 6014,
       "name": "ZeroAmount",
       "msg": "Amount must be greater than zero"
     },
     {
-      "code": 6014,
+      "code": 6015,
       "name": "StringTooLong",
       "msg": "String field exceeds maximum length"
     },
     {
-      "code": 6015,
+      "code": 6016,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
     },
     {
-      "code": 6016,
+      "code": 6017,
       "name": "MinterNotFound",
       "msg": "Minter not found"
     },
     {
-      "code": 6017,
+      "code": 6018,
       "name": "MinterAlreadyInactive",
       "msg": "Minter is already inactive"
     }
@@ -1756,7 +1887,7 @@
             "type": "u64"
           },
           {
-            "name": "minted_this_epoch",
+            "name": "minted_total",
             "type": "u64"
           },
           {
@@ -1849,6 +1980,12 @@
         "fields": [
           {
             "name": "pauser",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "freezer",
             "type": {
               "option": "pubkey"
             }
@@ -1980,7 +2117,7 @@
           {
             "name": "master_authority",
             "docs": [
-              "Master authority — can do everything"
+              "Master authority — governance/admin authority (role updates, minter updates, authority transfer)"
             ],
             "type": "pubkey"
           },
@@ -2058,6 +2195,12 @@
           },
           {
             "name": "pauser",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "freezer",
             "type": {
               "option": "pubkey"
             }

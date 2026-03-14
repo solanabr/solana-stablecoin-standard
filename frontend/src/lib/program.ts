@@ -1,7 +1,7 @@
 import { Connection, PublicKey, Keypair } from '@solana/web3.js';
 import { Program, AnchorProvider, BN, Idl } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
-import idlJson from '../../../target/idl/sss_token.json';
+import idlJson from 'solana-stablecoin-sdk/dist/idl/sss_token.json';
 
 export const SSS_TOKEN_PROGRAM_ID = new PublicKey('6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL');
 export const TRANSFER_HOOK_PROGRAM_ID = new PublicKey('C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V');
@@ -57,7 +57,14 @@ export function getProgram(connection: Connection, wallet: any): Program {
   return new Program(getIDL(), provider);
 }
 
-export function formatAmount(raw: string | bigint | BN, decimals: number = 6): string {
+export function formatAmount(raw: string | bigint | BN | number | null | undefined, decimals: number = 6): string {
+  if (raw === null || raw === undefined) {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: decimals,
+    }).format(0);
+  }
+
   const str = raw.toString().padStart(decimals + 1, '0');
   const intPart = str.slice(0, str.length - decimals) || '0';
   const decPart = str.slice(str.length - decimals);
@@ -115,11 +122,13 @@ export async function fetchMinters(connection: Connection, wallet: any, statePDA
   const accounts = await (program.account as any).minterInfo.all([
     { memcmp: { offset: 8, bytes: statePDA.toBase58() } },
   ]);
-  return accounts.map((a: any) => ({
-    publicKey: a.publicKey.toBase58(),
-    minter: a.account.minter.toBase58(),
-    quota: a.account.quota.toString(),
-    mintedThisEpoch: a.account.mintedThisEpoch.toString(),
-    active: a.account.active,
-  }));
+  return accounts
+    .map((a: any) => ({
+      publicKey: a?.publicKey?.toBase58?.() ?? '',
+      minter: a?.account?.minter?.toBase58?.() ?? '',
+      quota: String(a?.account?.quota ?? 0),
+      mintedTotal: String(a?.account?.mintedTotal ?? 0),
+      active: !!a?.account?.active,
+    }))
+    .filter((entry: { publicKey: string; minter: string }) => entry.publicKey && entry.minter);
 }

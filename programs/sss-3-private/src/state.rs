@@ -47,6 +47,8 @@ pub struct PrivateStablecoinState {
     pub has_permanent_delegate: bool,
     /// Whether transfer hook is enabled (SSS-2)
     pub has_transfer_hook: bool,
+    /// Pending authority for two-step authority transfer (None if no transfer in progress)
+    pub pending_authority: Option<Pubkey>,
     /// Bump seed for PDA derivation
     pub bump: u8,
 }
@@ -70,6 +72,7 @@ impl PrivateStablecoinState {
         + 8                       // total_burned
         + 1                       // has_permanent_delegate
         + 1                       // has_transfer_hook
+        + 1 + 32                  // pending_authority (Option<Pubkey>)
         + 1;                      // bump
 }
 

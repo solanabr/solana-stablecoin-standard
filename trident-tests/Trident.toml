@@ -10,5 +10,5 @@
 [fuzz]
 fuzzing_with_stats = true
 allow_duplicate_txs = false
-programs_data = ["programs/sss-token"]
+programs_data = []
 accounts_data = []

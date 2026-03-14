@@ -7,12 +7,15 @@ import chalk from "chalk";
 
 dotenv.config();
 
+export const DEFAULT_RPC_URL = "https://api.devnet.solana.com";
+
 export interface CliConfig {
   connection: Connection;
   keypair: Keypair;
   currentMint?: PublicKey;
   mints: Map<string, string>; // alias -> mint address
   cluster: string;
+  rpcUrl: string;
 }
 
 const DEFAULT_CONFIG_PATH = path.join(
@@ -29,36 +32,113 @@ interface ConfigFile {
   mints?: Record<string, string>; // alias -> mint address
 }
 
+export function getConfigPath(): string {
+  return process.env.SSS_CONFIG || DEFAULT_CONFIG_PATH;
+}
+
+function readConfigFileUnsafe(configPath: string): ConfigFile {
+  if (!fs.existsSync(configPath)) {
+    return {};
+  }
+
+  try {
+    return toml.parse(fs.readFileSync(configPath, "utf-8"));
+  } catch {
+    return {};
+  }
+}
+
+function writeConfigFile(configPath: string, existing: ConfigFile): void {
+  const content: string[] = [];
+
+  content.push(`rpc_url = "${existing.rpc_url || DEFAULT_RPC_URL}"`);
+  if (existing.keypair) content.push(`keypair = "${existing.keypair}"`);
+  if (existing.default_mint) content.push(`default_mint = "${existing.default_mint}"`);
+
+  content.push("\n[mints]");
+  Object.entries(existing.mints || {}).forEach(([alias, address]) => {
+    content.push(`${alias} = "${address}"`);
+  });
+
+  fs.writeFileSync(configPath, content.join("\n") + "\n");
+}
+
+export function ensureConfigFile(): string {
+  const configPath = getConfigPath();
+  const configDir = path.dirname(configPath);
+
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
+
+  const existing = readConfigFileUnsafe(configPath);
+  const needsWrite =
+    !fs.existsSync(configPath) ||
+    !existing.rpc_url ||
+    existing.mints === undefined;
+
+  if (needsWrite) {
+    writeConfigFile(configPath, {
+      ...existing,
+      rpc_url: existing.rpc_url || DEFAULT_RPC_URL,
+      mints: existing.mints || {},
+    });
+  }
+
+  return configPath;
+}
+
+export function getStoredConfig(): { rpcUrl: string; defaultMint?: string } {
+  const configPath = ensureConfigFile();
+  const existing = readConfigFileUnsafe(configPath);
+
+  return {
+    rpcUrl: existing.rpc_url || DEFAULT_RPC_URL,
+    defaultMint: existing.default_mint,
+  };
+}
+
+export function setRpcUrl(rpcUrl: string): void {
+  try {
+    const parsed = new URL(rpcUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("RPC URL must start with http:// or https://");
+    }
+  } catch {
+    console.error(chalk.red(`Invalid RPC URL: ${rpcUrl}`));
+    process.exit(1);
+  }
+
+  const configPath = ensureConfigFile();
+  const existing = readConfigFileUnsafe(configPath);
+  writeConfigFile(configPath, {
+    ...existing,
+    rpc_url: rpcUrl,
+    mints: existing.mints || {},
+  });
+}
+
 export function loadConfig(overrides: {
   keypair?: string;
   url?: string;
   mint?: string;
 } = {}): CliConfig {
-  // Load config file if it exists
-  let fileConfig: ConfigFile = {};
-  const configPath = process.env.SSS_CONFIG || DEFAULT_CONFIG_PATH;
-  if (fs.existsSync(configPath)) {
-    try {
-      fileConfig = toml.parse(fs.readFileSync(configPath, "utf-8"));
-    } catch (_) {
-      // ignore parse errors — env/flags take priority
-    }
-  }
+  const configPath = ensureConfigFile();
+  const fileConfig = readConfigFileUnsafe(configPath);
 
-  // Resolve cluster/RPC URL
-  const clusterUrl =
+  const rpcUrl =
     overrides.url ||
     process.env.SSS_RPC_URL ||
     fileConfig.rpc_url ||
-    "https://api.devnet.solana.com";
+    DEFAULT_RPC_URL;
 
-  const cluster = clusterUrl.includes("mainnet")
+  const cluster = rpcUrl.includes("mainnet")
     ? "mainnet-beta"
-    : clusterUrl.includes("devnet")
+    : rpcUrl.includes("devnet")
     ? "devnet"
     : "localnet";
 
-  const connection = new Connection(clusterUrl, "confirmed");
+  const connection = new Connection(rpcUrl, "confirmed");
 
   // Resolve keypair
   const keypairPath =
@@ -93,7 +173,7 @@ export function loadConfig(overrides: {
     overrides.mint || process.env.SSS_MINT || fileConfig.default_mint;
   const currentMint = mintStr ? new PublicKey(mintStr) : undefined;
 
-  return { connection, keypair, currentMint, mints, cluster };
+  return { connection, keypair, currentMint, mints, cluster, rpcUrl };
 }
 
 export function requireMint(config: CliConfig, mintArg?: string): PublicKey {
@@ -132,61 +212,32 @@ export function requireMint(config: CliConfig, mintArg?: string): PublicKey {
 }
 
 export function saveMintToConfig(mint: PublicKey, alias?: string): void {
-  const configDir = path.dirname(
-    process.env.SSS_CONFIG || DEFAULT_CONFIG_PATH
-  );
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
-  
-  const configPath = process.env.SSS_CONFIG || DEFAULT_CONFIG_PATH;
-  let existing: ConfigFile = {};
-  
-  if (fs.existsSync(configPath)) {
-    try {
-      existing = toml.parse(fs.readFileSync(configPath, "utf-8"));
-    } catch (_) {}
-  }
+  const configPath = ensureConfigFile();
+  const existing = readConfigFileUnsafe(configPath);
 
-  // Initialize mints object if it doesn't exist
   if (!existing.mints) {
     existing.mints = {};
   }
 
-  // Generate alias if not provided
   const mintAlias = alias || `token${Object.keys(existing.mints).length + 1}`;
-  
-  // Add new mint
   existing.mints[mintAlias] = mint.toBase58();
-  
-  // Set as default if it's the first one
+
   if (!existing.default_mint) {
     existing.default_mint = mint.toBase58();
   }
 
-  // Write as TOML
-  const content = [];
-  if (existing.rpc_url) content.push(`rpc_url = "${existing.rpc_url}"`);
-  if (existing.keypair) content.push(`keypair = "${existing.keypair}"`);
-  if (existing.default_mint) content.push(`default_mint = "${existing.default_mint}"`);
-  
-  content.push("\n[mints]");
-  Object.entries(existing.mints).forEach(([alias, address]) => {
-    content.push(`${alias} = "${address}"`);
+  writeConfigFile(configPath, {
+    ...existing,
+    rpc_url: existing.rpc_url || DEFAULT_RPC_URL,
+    mints: existing.mints,
   });
 
-  fs.writeFileSync(configPath, content.join("\n") + "\n");
   console.log(chalk.green(`✓ Saved mint ${mintAlias} (${mint.toBase58()}) to config`));
 }
 
 export function setDefaultMint(aliasOrAddress: string): void {
-  const configPath = process.env.SSS_CONFIG || DEFAULT_CONFIG_PATH;
-  if (!fs.existsSync(configPath)) {
-    console.error(chalk.red("No config file found."));
-    process.exit(1);
-  }
-
-  let existing: ConfigFile = toml.parse(fs.readFileSync(configPath, "utf-8"));
+  const configPath = ensureConfigFile();
+  const existing = readConfigFileUnsafe(configPath);
   
   // Check if it's an alias
   if (existing.mints && existing.mints[aliasOrAddress]) {
@@ -204,18 +255,9 @@ export function setDefaultMint(aliasOrAddress: string): void {
     }
   }
 
-  // Write back to file
-  const content = [];
-  if (existing.rpc_url) content.push(`rpc_url = "${existing.rpc_url}"`);
-  if (existing.keypair) content.push(`keypair = "${existing.keypair}"`);
-  content.push(`default_mint = "${existing.default_mint}"`);
-  
-  if (existing.mints) {
-    content.push("\n[mints]");
-    Object.entries(existing.mints).forEach(([alias, address]) => {
-      content.push(`${alias} = "${address}"`);
-    });
-  }
-
-  fs.writeFileSync(configPath, content.join("\n") + "\n");
+  writeConfigFile(configPath, {
+    ...existing,
+    rpc_url: existing.rpc_url || DEFAULT_RPC_URL,
+    mints: existing.mints || {},
+  });
 }

@@ -1,12 +1,21 @@
 {
-  "name": "@stbr/sss-tui",
-  "version": "0.1.0",
+  "name": "solana-stablecoin-tui",
+  "version": "0.1.1",
   "description": "Interactive terminal UI for Solana Stablecoin Standard admin operations",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "sss-tui": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "start": "npx tsx src/index.ts",
     "dev": "npx tsx watch src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
@@ -14,7 +23,8 @@
     "@solana/web3.js": "^1.98.0",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
-    "chalk": "^4.1.2"
+    "chalk": "^4.1.2",
+    "solana-stablecoin-sdk": "^0.1.2"
   },
   "devDependencies": {
     "@types/blessed": "^0.1.27",

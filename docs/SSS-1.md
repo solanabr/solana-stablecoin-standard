@@ -103,7 +103,7 @@ The metadata URI must point to a JSON document conforming to the Metaplex Token 
 ### Reference Implementation
 
 ```typescript
-import { SolanaStablecoin, Preset } from "@stbr/sss-token";
+import { SolanaStablecoin, Preset } from "solana-stablecoin-sdk";
 
 const stable = await SolanaStablecoin.create({
   connection,

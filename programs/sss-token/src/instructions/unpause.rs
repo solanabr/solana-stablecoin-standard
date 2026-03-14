@@ -18,12 +18,12 @@ pub fn handler(ctx: Context<Unpause>) -> Result<()> {
     let authority_key = ctx.accounts.authority.key();
     let state = &mut ctx.accounts.state;
 
-    let is_authorized = authority_key == state.master_authority
-        || state.pauser.map_or(false, |p| p == authority_key);
+    let is_authorized = state.pauser.map_or(false, |p| p == authority_key);
 
     require!(is_authorized, SssError::Unauthorized);
     state.paused = false;
 
+    #[cfg(not(feature = "trident-fuzz"))]
     emit!(ProtocolUnpaused {
         mint: state.mint,
         pauser: authority_key,

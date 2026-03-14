@@ -84,6 +84,7 @@ pub fn handler(ctx: Context<InitializePrivate>, params: InitPrivateParams) -> Re
     state.total_burned = 0;
     state.has_permanent_delegate = params.enable_permanent_delegate;
     state.has_transfer_hook = params.enable_transfer_hook;
+    state.pending_authority = None;
     state.bump = ctx.bumps.state;
 
     // NOTE: In production, this is where we would:

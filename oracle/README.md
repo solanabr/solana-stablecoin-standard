@@ -2,6 +2,9 @@
 
 > Switchboard-powered price feeds for non-USD stablecoin pegs (EUR, BRL, CPI-indexed)
 
+**Program ID (devnet):** `BHWh9mmJMniLpNjoPYrMZfUUes3rLcBY7fJzairkM1zc`  
+**IDL account:** `CDwaZ1VfnmdVqMYvSMoiVnaLeWBRzcZ9GJ2U7fMFWMBC`
+
 ---
 
 ## Overview
@@ -30,11 +33,14 @@ The Oracle Integration Module provides **real-time price feeds** from [Switchboa
 │  └── enabled: bool                                           │
 │                                                              │
 │  Instructions                                                │
-│  ├── create_oracle_config()  — link feed to stablecoin       │
-│  ├── update_oracle_feed()    — change feed address           │
-│  ├── oracle_gated_mint()     — mint with oracle price check  │
-│  ├── oracle_gated_redeem()   — burn with oracle price check  │
-│  └── read_price()            — view-only price read          │
+  │  ├── create_oracle_config()         — link feed to stablecoin  │
+  │  ├── update_feed()                 — change feed address      │
+  │  ├── toggle_oracle()               — enable / disable oracle  │
+  │  ├── oracle_gated_mint()           — mint at oracle price     │
+  │  ├── oracle_gated_burn()           — burn at oracle price     │
+  │  ├── read_price()                  — view-only price read     │
+  │  ├── propose_oracle_authority()    — initiate authority xfer  │
+  │  └── accept_oracle_authority()     — accept authority xfer    │
 │                                                              │
 │  Switchboard V2 Feed                                         │
 │  ├── EUR/USD aggregator                                      │
@@ -78,40 +84,17 @@ User                 Oracle Module           Switchboard        SSS-1 Program
 
 ---
 
-## SDK Usage
+## Integration Status
 
-```typescript
-import { OracleModule } from '@stbr/sss-token/oracle';
+There is currently **no published TypeScript wrapper** for the oracle module under `solana-stablecoin-sdk/oracle`.
 
-// Create oracle configuration for a EUR-pegged stablecoin
-const oracle = new OracleModule(connection, program);
+Use one of these integration paths instead:
 
-await oracle.createConfig({
-  stablecoinState: statePDA,
-  mint: mintAddress,
-  feedAddress: new PublicKey('GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR'),
-  baseCurrency: 'EUR',
-  maxStaleness: 60, // max 60 seconds old
-  maxConfidence: 100, // max 1% confidence interval (in bps)
-  authority: adminKeypair,
-});
+1. Interact with the on-chain oracle program directly via Anchor `Program`
+2. Generate a lightweight client from the oracle IDL in your app/service
+3. Integrate from Rust using CPI where appropriate
 
-// Mint with oracle price check
-const result = await oracle.oracleGatedMint({
-  baseAmount: 100_000000, // 100 EUR
-  recipient: userPubkey,
-  minter: minterKeypair,
-});
-// result.tokensMinted = 108_000000 (at EUR/USD = 1.08)
-// result.exchangeRate = 1.08
-// result.feedTimestamp = 1704067200
-
-// Read current price
-const price = await oracle.readPrice();
-// price.value = 1.08
-// price.confidence = 0.001
-// price.timestamp = 1704067200
-```
+This keeps the oracle module available on-chain without claiming a JS API that is not yet shipped.
 
 ---
 

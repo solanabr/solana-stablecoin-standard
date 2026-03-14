@@ -23,6 +23,9 @@ pub fn handler(ctx: Context<UpdateRoles>, role_update: RoleUpdate) -> Result<()>
     if let Some(pauser) = role_update.pauser {
         state.pauser = if pauser == Pubkey::default() { None } else { Some(pauser) };
     }
+    if let Some(freezer) = role_update.freezer {
+        state.freezer = if freezer == Pubkey::default() { None } else { Some(freezer) };
+    }
     if let Some(burner) = role_update.burner {
         state.burner = if burner == Pubkey::default() { None } else { Some(burner) };
     }
@@ -37,6 +40,7 @@ pub fn handler(ctx: Context<UpdateRoles>, role_update: RoleUpdate) -> Result<()>
         }
     }
 
+    #[cfg(not(feature = "trident-fuzz"))]
     emit!(RolesUpdated {
         mint: state.mint,
         authority: ctx.accounts.authority.key(),

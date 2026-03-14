@@ -8,7 +8,6 @@ import { useToast } from '../contexts/ToastContext';
 import {
   getIDL,
   findStatePDA,
-  findFreezeAuthorityPDA,
   findBlacklistEntryPDA,
   findPermanentDelegatePDA,
   shortenAddress,
@@ -20,8 +19,6 @@ import Badge from '../components/Badge';
 import {
   Shield,
   ShieldOff,
-  Snowflake,
-  Sun,
   Ban,
   CheckCircle,
   Search,
@@ -34,11 +31,6 @@ const Compliance: React.FC = () => {
   const wallet = useWallet();
   const { currentMint, stablecoinInfo } = useStablecoin();
   const { addToast } = useToast();
-
-  // Freeze/Thaw
-  const [freezeAddr, setFreezeAddr] = useState('');
-  const [freezeLoading, setFreezeLoading] = useState(false);
-  const [thawLoading, setThawLoading] = useState(false);
 
   // Blacklist
   const [blacklistAddr, setBlacklistAddr] = useState('');
@@ -61,67 +53,6 @@ const Compliance: React.FC = () => {
     return new Program(getIDL(), provider);
   };
 
-  const handleFreeze = async () => {
-    if (!currentMint || !freezeAddr.trim()) return;
-    setFreezeLoading(true);
-    try {
-      const program = getProgram();
-      const mint = new PublicKey(currentMint);
-      const [statePDA] = findStatePDA(mint);
-      const [freezeAuthority] = findFreezeAuthorityPDA(statePDA);
-      const target = new PublicKey(freezeAddr.trim());
-      const ata = getAssociatedTokenAddressSync(mint, target, false, TOKEN_2022_PROGRAM_ID);
-
-      const sig = await program.methods
-        .freezeAccount()
-        .accounts({
-          authority: wallet.publicKey!,
-          state: statePDA,
-          mint,
-          tokenAccount: ata,
-          freezeAuthority,
-          tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .rpc();
-
-      addToast({ type: 'success', title: `Frozen: ${shortenAddress(freezeAddr.trim())}`, txSig: sig });
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Freeze failed', message: err.message });
-    } finally {
-      setFreezeLoading(false);
-    }
-  };
-
-  const handleThaw = async () => {
-    if (!currentMint || !freezeAddr.trim()) return;
-    setThawLoading(true);
-    try {
-      const program = getProgram();
-      const mint = new PublicKey(currentMint);
-      const [statePDA] = findStatePDA(mint);
-      const [freezeAuthority] = findFreezeAuthorityPDA(statePDA);
-      const target = new PublicKey(freezeAddr.trim());
-      const ata = getAssociatedTokenAddressSync(mint, target, false, TOKEN_2022_PROGRAM_ID);
-
-      const sig = await program.methods
-        .thawAccount()
-        .accounts({
-          authority: wallet.publicKey!,
-          state: statePDA,
-          mint,
-          tokenAccount: ata,
-          freezeAuthority,
-          tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .rpc();
-
-      addToast({ type: 'success', title: `Thawed: ${shortenAddress(freezeAddr.trim())}`, txSig: sig });
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Thaw failed', message: err.message });
-    } finally {
-      setThawLoading(false);
-    }
-  };
 
   const handleBlacklistAdd = async () => {
     if (!currentMint || !blacklistAddr.trim()) return;
@@ -253,42 +184,6 @@ const Compliance: React.FC = () => {
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 800 }}>
-      {/* Freeze / Thaw */}
-      <Card
-        title="Freeze & Thaw Accounts"
-        subtitle="Freeze or thaw individual token accounts"
-        icon={<Snowflake size={16} color="var(--cyan)" />}
-        accent="var(--cyan)"
-      >
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Input
-            placeholder="Wallet address to freeze/thaw"
-            value={freezeAddr}
-            onChange={(e) => setFreezeAddr(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <Button
-            onClick={handleFreeze}
-            loading={freezeLoading}
-            disabled={!freezeAddr.trim()}
-            icon={<Snowflake size={14} />}
-            size="sm"
-          >
-            Freeze
-          </Button>
-          <Button
-            variant="success"
-            onClick={handleThaw}
-            loading={thawLoading}
-            disabled={!freezeAddr.trim()}
-            icon={<Sun size={14} />}
-            size="sm"
-          >
-            Thaw
-          </Button>
-        </div>
-      </Card>
-
       {/* SSS-2 Compliance Section */}
       {isSS2 ? (
         <>

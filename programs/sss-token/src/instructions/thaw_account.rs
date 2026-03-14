@@ -43,9 +43,7 @@ pub fn handler(ctx: Context<ThawAccount>) -> Result<()> {
     let authority_key = ctx.accounts.authority.key();
     let state = &ctx.accounts.state;
 
-    let is_authorized = authority_key == state.master_authority
-        || state.pauser.map_or(false, |p| p == authority_key)
-        || state.blacklister.map_or(false, |b| b == authority_key);
+    let is_authorized = state.freezer.map_or(false, |f| f == authority_key);
 
     require!(is_authorized, SssError::Unauthorized);
 

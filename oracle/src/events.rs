@@ -63,3 +63,12 @@ pub struct OracleToggledEvent {
     pub toggled_by: Pubkey,
     pub timestamp: i64,
 }
+
+/// Emitted when oracle authority is proposed or accepted
+#[event]
+pub struct OracleAuthorityUpdatedEvent {
+    pub config: Pubkey,
+    pub old_authority: Pubkey,
+    pub new_authority: Pubkey,
+    pub timestamp: i64,
+}

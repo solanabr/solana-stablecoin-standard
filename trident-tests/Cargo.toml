@@ -1,0 +1,20 @@
+[workspace]
+
+[package]
+name = "fuzz_tests"
+version = "0.1.0"
+description = "Created with Trident"
+edition = "2021"
+
+[dependencies]
+borsh = "1.5.3"
+sss_token_program = { package = "sss-token", path = "../programs/sss-token", features = ["trident-fuzz"] }
+spl-token-2022 = { version = "8.0.1", features = ["no-entrypoint"] }
+
+[dependencies.trident-fuzz]
+version = "0.13.0-rc.2"
+features = ["syscall-v2"]
+
+[[bin]]
+name = "fuzz_sss_token"
+path = "fuzz_sss_token/test_fuzz.rs"

@@ -1,73 +1,85 @@
-# React + TypeScript + Vite
+# SSS Frontend Admin
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite admin interface for Solana Stablecoin Standard.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Wallet adapter integration
+- Stablecoin load + background refresh dashboard
+- Create stablecoin (SSS-1 / SSS-2)
+- Manage minters and operational roles
+- Mint & burn operations
+- Freeze & thaw operations
+- Compliance operations (blacklist/check/seize)
+- Holders view with CSV export
+- Activity/event stream
+- Custom RPC endpoint support from UI
 
-## React Compiler
+## Local Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Default app URL: `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run preview
 ```
+
+## Runtime Requirements
+
+- Browser wallet (Phantom/Solflare/etc.)
+- Access to a Solana RPC endpoint (devnet/mainnet/custom)
+- `solana-stablecoin-sdk` available (workspace `file:../sdk` during local dev)
+
+## Deploy on Vercel
+
+### Option A — Vercel CLI
+
+```bash
+cd frontend
+npm i -g vercel
+vercel
+```
+
+When prompted:
+- Framework: `Vite`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+For production:
+
+```bash
+vercel --prod
+```
+
+### Option B — GitHub import in Vercel dashboard
+
+1. Import the repository.
+2. Set root directory to `frontend`.
+3. Set build command to `npm run build`.
+4. Set output directory to `dist`.
+5. Deploy.
+
+### Recommended Environment Variables
+
+If you want a fixed default RPC endpoint at deploy time, define:
+
+- `VITE_DEFAULT_RPC_URL`
+- `VITE_DEFAULT_NETWORK`
+
+(If not set, users can still choose network/RPC in-app.)
+
+## Post-Deploy Smoke Checklist
+
+- Connect wallet
+- Load a known mint from dashboard
+- Verify stats refresh updates without blocking UI
+- Run one low-risk action (e.g., holders refresh)
+- Verify explorer links open correctly

@@ -34,6 +34,8 @@ pub struct OracleConfig {
     pub total_oracle_mints: u64,
     /// Total number of oracle-gated burns
     pub total_oracle_burns: u64,
+    /// Pending authority for two-step authority transfer
+    pub pending_authority: Option<Pubkey>,
     /// Bump seed
     pub bump: u8,
 }
@@ -53,6 +55,7 @@ impl OracleConfig {
         + 8                        // last_read_at
         + 8                        // total_oracle_mints
         + 8                        // total_oracle_burns
+        + 1 + 32                   // pending_authority (Option<Pubkey>)
         + 1;                       // bump
 }
 

@@ -61,4 +61,12 @@ pub enum SSSPrivateError {
     /// 6014 — Confidential Transfer extension not available
     #[msg("Confidential Transfer extension is not yet available in this environment")]
     ConfidentialTransferUnavailable,
+
+    /// 6015 — Already paused
+    #[msg("Stablecoin is already paused")]
+    AlreadyPaused,
+
+    /// 6016 — Not paused
+    #[msg("Stablecoin is not currently paused")]
+    NotPaused,
 }

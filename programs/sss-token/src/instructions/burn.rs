@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct BurnCtx<'info> {
-    /// Must be master, burner, or token account owner burning their own tokens
+    /// Must be burner, or token account owner burning their own tokens
     pub authority: Signer<'info>,
 
     #[account(
@@ -35,6 +35,14 @@ pub struct BurnCtx<'info> {
     )]
     pub from_token_account: InterfaceAccount<'info, TokenAccount>,
 
+    /// CHECK: Permanent delegate PDA used for role-based burns when caller is
+    /// not the token-account owner.
+    #[account(
+        seeds = [b"permanent_delegate", state.key().as_ref()],
+        bump,
+    )]
+    pub permanent_delegate: UncheckedAccount<'info>,
+
     pub token_program: Program<'info, Token2022>,
 }
 
@@ -45,24 +53,48 @@ pub fn handler(ctx: Context<BurnCtx>, amount: u64) -> Result<()> {
     let authority_key = ctx.accounts.authority.key();
     let state = &ctx.accounts.state;
 
-    // Allowed: master authority, designated burner, or the token owner themselves
-    let is_authorized = authority_key == state.master_authority
-        || state.burner.map_or(false, |b| b == authority_key)
-        || authority_key == ctx.accounts.from_token_account.owner;
+    let is_owner = authority_key == ctx.accounts.from_token_account.owner;
+    let is_role_burner = state.burner.map_or(false, |b| b == authority_key);
+
+    let is_authorized = is_owner || is_role_burner;
 
     require!(is_authorized, SssError::Unauthorized);
 
-    spl_burn(
-        CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            Burn {
-                mint: ctx.accounts.mint.to_account_info(),
-                from: ctx.accounts.from_token_account.to_account_info(),
-                authority: ctx.accounts.authority.to_account_info(),
-            },
-        ),
-        amount,
-    )?;
+    if is_owner {
+        spl_burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Burn {
+                    mint: ctx.accounts.mint.to_account_info(),
+                    from: ctx.accounts.from_token_account.to_account_info(),
+                    authority: ctx.accounts.authority.to_account_info(),
+                },
+            ),
+            amount,
+        )?;
+    } else {
+        require!(state.permanent_delegate_enabled, SssError::PermanentDelegateNotEnabled);
+
+        let state_key = ctx.accounts.state.key();
+        let delegate_seeds = &[
+            b"permanent_delegate",
+            state_key.as_ref(),
+            &[ctx.bumps.permanent_delegate],
+        ];
+
+        spl_burn(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Burn {
+                    mint: ctx.accounts.mint.to_account_info(),
+                    from: ctx.accounts.from_token_account.to_account_info(),
+                    authority: ctx.accounts.permanent_delegate.to_account_info(),
+                },
+                &[delegate_seeds],
+            ),
+            amount,
+        )?;
+    }
 
     let state = &mut ctx.accounts.state;
     state.total_burned = state.total_burned.checked_add(amount).ok_or(SssError::Overflow)?;

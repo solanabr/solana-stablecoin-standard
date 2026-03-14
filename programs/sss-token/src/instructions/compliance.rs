@@ -55,8 +55,7 @@ pub fn add_to_blacklist_handler(ctx: Context<AddToBlacklist>, reason: String) ->
     let authority_key = ctx.accounts.authority.key();
     let state = &ctx.accounts.state;
 
-    let is_authorized = authority_key == state.master_authority
-        || state.blacklister.map_or(false, |b| b == authority_key);
+    let is_authorized = state.blacklister.map_or(false, |b| b == authority_key);
     require!(is_authorized, SssError::Unauthorized);
 
     let entry = &mut ctx.accounts.blacklist_entry;
@@ -119,8 +118,7 @@ pub fn remove_from_blacklist_handler(
     let authority_key = ctx.accounts.authority.key();
     let state = &ctx.accounts.state;
 
-    let is_authorized = authority_key == state.master_authority
-        || state.blacklister.map_or(false, |b| b == authority_key);
+    let is_authorized = state.blacklister.map_or(false, |b| b == authority_key);
     require!(is_authorized, SssError::Unauthorized);
 
     emit!(AddressUnblacklisted {
@@ -190,8 +188,7 @@ pub fn seize_handler<'info>(ctx: Context<'_, '_, 'info, 'info, Seize<'info>>) ->
     let authority_key = ctx.accounts.authority.key();
     let state = &ctx.accounts.state;
 
-    let is_authorized = authority_key == state.master_authority
-        || state.seizer.map_or(false, |s| s == authority_key);
+    let is_authorized = state.seizer.map_or(false, |s| s == authority_key);
     require!(is_authorized, SssError::Unauthorized);
 
     let amount = ctx.accounts.from_token_account.amount;

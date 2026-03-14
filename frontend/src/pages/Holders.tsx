@@ -3,7 +3,8 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { useStablecoin } from '../contexts/StablecoinContext';
 import { useToast } from '../contexts/ToastContext';
-import { fetchHolders, shortenAddress, explorerUrl } from '../lib/program';
+import { formatAmount, shortenAddress, explorerUrl } from '../lib/program';
+import { fetchStablecoinSnapshot } from '../lib/sdkClient';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -19,18 +20,33 @@ const Holders: React.FC = () => {
 
   const [holders, setHolders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const [search, setSearch] = useState('');
 
-  const loadHolders = async () => {
+  const loadHolders = async (silent = false) => {
     if (!currentMint) return;
-    setLoading(true);
+    if (silent && holders.length > 0) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
-      const data = await fetchHolders(connection, new PublicKey(currentMint));
-      setHolders(data);
+      const mint = new PublicKey(currentMint);
+      const { holders: holderData, mintInfo } = await fetchStablecoinSnapshot(connection, mint);
+      setHolders(
+        holderData.map((holder) => ({
+          owner: holder.owner.toBase58(),
+          address: holder.owner.toBase58(),
+          uiBalance: formatAmount(holder.balance, mintInfo.decimals),
+        }))
+      );
+      setLastUpdatedAt(Date.now());
     } catch (err: any) {
       addToast({ type: 'error', title: 'Failed to load holders', message: err.message });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -96,12 +112,23 @@ const Holders: React.FC = () => {
         accent="var(--cyan)"
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="ghost" size="sm" onClick={loadHolders} icon={<RefreshCw size={14} />}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => loadHolders(true)}
+              loading={refreshing}
+              icon={<RefreshCw size={14} />}
+            >
               Refresh
             </Button>
             <Button variant="secondary" size="sm" onClick={handleExportCSV} icon={<Download size={14} />}>
               Export CSV
             </Button>
+            {lastUpdatedAt && (
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', alignSelf: 'center' }}>
+                Updated {new Date(lastUpdatedAt).toLocaleTimeString()}
+              </span>
+            )}
           </div>
         }
         style={{ marginTop: 16 }}
@@ -114,7 +141,7 @@ const Holders: React.FC = () => {
           />
         </div>
 
-        {loading ? (
+        {loading && holders.length === 0 ? (
           <Spinner label="Loading holders..." />
         ) : filtered.length === 0 ? (
           <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -130,6 +157,11 @@ const Holders: React.FC = () => {
               <span style={{ width: 80, textAlign: 'right' }}>Share</span>
               <span style={{ width: 50 }}></span>
             </div>
+            {refreshing && (
+              <div style={{ padding: '8px 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                Refreshing balances in background...
+              </div>
+            )}
             {filtered.map((h: any, i: number) => {
               const share = totalBalance > 0 ? (parseFloat(h.uiBalance || '0') / totalBalance) * 100 : 0;
               return (

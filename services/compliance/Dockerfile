@@ -25,8 +25,8 @@ FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /app/services/compliance/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/sdk/dist ./node_modules/@stbr/sss-token/dist
-COPY --from=builder /app/sdk/package.json ./node_modules/@stbr/sss-token/package.json
+COPY --from=builder /app/sdk/dist ./node_modules/solana-stablecoin-sdk/dist
+COPY --from=builder /app/sdk/package.json ./node_modules/solana-stablecoin-sdk/package.json
 COPY services/compliance/package.json ./
 
 ENV NODE_ENV=production

@@ -67,7 +67,7 @@ export type SssToken = {
     {
       "name": "addMinter",
       "docs": [
-        "Add or update a minter with an optional per-minter quota (0 = unlimited)."
+        "Add or update a minter with a lifetime quota (0 = unlimited)."
       ],
       "discriminator": [
         75,
@@ -252,7 +252,9 @@ export type SssToken = {
     {
       "name": "burn",
       "docs": [
-        "Burn tokens from the caller's token account."
+        "Burn tokens.",
+        "- Token-account owners can always burn from their own account.",
+        "- Burner role can burn from any account when permanent delegate is enabled."
       ],
       "discriminator": [
         116,
@@ -268,7 +270,7 @@ export type SssToken = {
         {
           "name": "authority",
           "docs": [
-            "Must be master, burner, or token account owner burning their own tokens"
+            "Must be burner, or token account owner burning their own tokens"
           ],
           "signer": true
         },
@@ -308,6 +310,43 @@ export type SssToken = {
           "writable": true
         },
         {
+          "name": "permanentDelegate",
+          "docs": [
+            "not the token-account owner."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  97,
+                  110,
+                  101,
+                  110,
+                  116,
+                  95,
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "state"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
@@ -322,7 +361,7 @@ export type SssToken = {
     {
       "name": "freezeAccount",
       "docs": [
-        "Freeze a token account (prevents transfers). Caller must be Pauser or Master."
+        "Freeze a token account (prevents transfers). Caller must hold Freezer role."
       ],
       "discriminator": [
         253,
@@ -411,6 +450,93 @@ export type SssToken = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "increaseMinterQuota",
+      "docs": [
+        "Increase an active minter's lifetime quota by `additional_quota`."
+      ],
+      "discriminator": [
+        102,
+        87,
+        42,
+        217,
+        237,
+        250,
+        91,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  99,
+                  111,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "state.mint",
+                "account": "stablecoinState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "minter"
+        },
+        {
+          "name": "minterInfo",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "state"
+              },
+              {
+                "kind": "account",
+                "path": "minter"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "additionalQuota",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "initialize",
@@ -502,7 +628,7 @@ export type SssToken = {
       "name": "mint",
       "docs": [
         "Mint tokens to a recipient. Caller must hold the Minter role and",
-        "respect their per-minter quota (0 = unlimited)."
+        "respect their lifetime minter quota (0 = unlimited)."
       ],
       "discriminator": [
         51,
@@ -626,7 +752,7 @@ export type SssToken = {
     {
       "name": "pause",
       "docs": [
-        "Pause all minting and burning globally. Only Pauser or Master."
+        "Pause all minting and burning globally. Only Pauser."
       ],
       "discriminator": [
         211,
@@ -1177,7 +1303,7 @@ export type SssToken = {
     {
       "name": "updateRoles",
       "docs": [
-        "Update role assignments (pauser, burner, blacklister, seizer)."
+        "Update role assignments (pauser, freezer, burner, blacklister, seizer)."
       ],
       "discriminator": [
         220,
@@ -1489,65 +1615,70 @@ export type SssToken = {
     {
       "code": 6005,
       "name": "quotaExceeded",
-      "msg": "Minter quota exceeded — request amount is above remaining quota"
+      "msg": "Minter quota exceeded — request amount is above remaining lifetime quota"
     },
     {
       "code": 6006,
+      "name": "cannotIncreaseUnlimitedQuota",
+      "msg": "Cannot increase quota for an unlimited minter"
+    },
+    {
+      "code": 6007,
       "name": "complianceNotEnabled",
       "msg": "Compliance module is not enabled on this stablecoin"
     },
     {
-      "code": 6007,
+      "code": 6008,
       "name": "alreadyBlacklisted",
       "msg": "Address is already on the blacklist"
     },
     {
-      "code": 6008,
+      "code": 6009,
       "name": "notBlacklisted",
       "msg": "Address is not on the blacklist"
     },
     {
-      "code": 6009,
+      "code": 6010,
       "name": "seizeRequiresBlacklist",
       "msg": "Cannot seize tokens — account is not blacklisted"
     },
     {
-      "code": 6010,
+      "code": 6011,
       "name": "permanentDelegateNotEnabled",
       "msg": "Permanent delegate not enabled — seize is unavailable"
     },
     {
-      "code": 6011,
+      "code": 6012,
       "name": "senderBlacklisted",
       "msg": "Transfer blocked — sender is blacklisted"
     },
     {
-      "code": 6012,
+      "code": 6013,
       "name": "recipientBlacklisted",
       "msg": "Transfer blocked — recipient is blacklisted"
     },
     {
-      "code": 6013,
+      "code": 6014,
       "name": "zeroAmount",
       "msg": "Amount must be greater than zero"
     },
     {
-      "code": 6014,
+      "code": 6015,
       "name": "stringTooLong",
       "msg": "String field exceeds maximum length"
     },
     {
-      "code": 6015,
+      "code": 6016,
       "name": "overflow",
       "msg": "Arithmetic overflow"
     },
     {
-      "code": 6016,
+      "code": 6017,
       "name": "minterNotFound",
       "msg": "Minter not found"
     },
     {
-      "code": 6017,
+      "code": 6018,
       "name": "minterAlreadyInactive",
       "msg": "Minter is already inactive"
     }
@@ -1762,7 +1893,7 @@ export type SssToken = {
             "type": "u64"
           },
           {
-            "name": "mintedThisEpoch",
+            "name": "mintedTotal",
             "type": "u64"
           },
           {
@@ -1855,6 +1986,12 @@ export type SssToken = {
         "fields": [
           {
             "name": "pauser",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "freezer",
             "type": {
               "option": "pubkey"
             }
@@ -1986,7 +2123,7 @@ export type SssToken = {
           {
             "name": "masterAuthority",
             "docs": [
-              "Master authority — can do everything"
+              "Master authority — governance/admin authority (role updates, minter updates, authority transfer)"
             ],
             "type": "pubkey"
           },
@@ -2064,6 +2201,12 @@ export type SssToken = {
           },
           {
             "name": "pauser",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "freezer",
             "type": {
               "option": "pubkey"
             }

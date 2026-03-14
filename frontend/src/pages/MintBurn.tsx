@@ -15,8 +15,8 @@ import {
   findStatePDA,
   findMintAuthorityPDA,
   findMinterInfoPDA,
+  findPermanentDelegatePDA,
   parseAmount,
-  formatAmount,
 } from '../lib/program';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -111,6 +111,7 @@ const MintBurn: React.FC = () => {
       const program = getProgram();
       const mint = new PublicKey(currentMint);
       const [statePDA] = findStatePDA(mint);
+      const [permanentDelegate] = findPermanentDelegatePDA(statePDA);
 
       const from = new PublicKey(burnFrom.trim());
       const fromAta = getAssociatedTokenAddressSync(mint, from, false, TOKEN_2022_PROGRAM_ID);
@@ -123,6 +124,7 @@ const MintBurn: React.FC = () => {
           state: statePDA,
           mint,
           fromTokenAccount: fromAta,
+          permanentDelegate,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .rpc();

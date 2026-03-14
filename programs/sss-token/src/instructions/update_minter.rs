@@ -45,16 +45,13 @@ pub fn add_minter_handler(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
     if minter_info.stablecoin == Pubkey::default() {
         minter_info.stablecoin = ctx.accounts.state.key();
         minter_info.minter = ctx.accounts.minter.key();
-        minter_info.minted_this_epoch = 0;
+        minter_info.minted_total = 0;
         minter_info.bump = ctx.bumps.minter_info;
     }
 
     // Set active to true and update quota
     minter_info.quota = quota;
     minter_info.active = true;
-
-    // Reset counter if this was a reactivation
-    minter_info.minted_this_epoch = 0;
 
     emit!(MinterUpdated {
         mint: ctx.accounts.state.mint,
@@ -115,6 +112,63 @@ pub fn remove_minter_handler(ctx: Context<RemoveMinter>) -> Result<()> {
         minter: ctx.accounts.minter.key(),
         quota: minter_info.quota,
         active: false,
+        authority: ctx.accounts.authority.key(),
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+// ─── Increase Minter Quota ──────────────────────────────────────────────────
+
+#[derive(Accounts)]
+pub struct IncreaseMinterQuota<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"stablecoin", state.mint.as_ref()],
+        bump = state.bump,
+    )]
+    pub state: Account<'info, StablecoinState>,
+
+    ///CHECK: We only need the minter's pubkey
+    pub minter: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"minter",
+            state.key().as_ref(),
+            minter.key().as_ref(),
+        ],
+        bump = minter_info.bump,
+        constraint = minter_info.active @ SssError::MinterInactive,
+    )]
+    pub minter_info: Account<'info, MinterInfo>,
+}
+
+pub fn increase_minter_quota_handler(ctx: Context<IncreaseMinterQuota>, additional_quota: u64) -> Result<()> {
+    require!(ctx.accounts.authority.key() == ctx.accounts.state.master_authority, SssError::Unauthorized);
+    require!(additional_quota > 0, SssError::ZeroAmount);
+
+    let minter_info = &mut ctx.accounts.minter_info;
+    require!(minter_info.stablecoin != Pubkey::default(), SssError::MinterNotFound);
+
+    // Unlimited quotas (0) cannot be increased further.
+    require!(minter_info.quota > 0, SssError::CannotIncreaseUnlimitedQuota);
+
+    minter_info.quota = minter_info
+        .quota
+        .checked_add(additional_quota)
+        .ok_or(SssError::Overflow)?;
+
+    emit!(MinterUpdated {
+        mint: ctx.accounts.state.mint,
+        minter: ctx.accounts.minter.key(),
+        quota: minter_info.quota,
+        active: minter_info.active,
         authority: ctx.accounts.authority.key(),
         timestamp: Clock::get()?.unix_timestamp,
     });

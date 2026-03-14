@@ -53,6 +53,27 @@ npm install
 npx tsx src/index.ts --cluster devnet --mint 6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL
 ```
 
+## npm Package Status
+
+- Package name: `solana-stablecoin-tui`
+- Local version: `0.1.1`
+- npm status (2026-03-14): not yet published
+
+After publish, usage will be:
+
+```bash
+npm i -g solana-stablecoin-tui
+sss-tui --cluster devnet --mint <MINT_ADDRESS>
+```
+
+or without global install:
+
+```bash
+npx solana-stablecoin-tui --cluster devnet --mint <MINT_ADDRESS>
+```
+
+See root publishing guide: [docs/PUBLISHING.md](../docs/PUBLISHING.md)
+
 ### Options
 
 | Flag | Description | Default |

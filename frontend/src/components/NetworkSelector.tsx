@@ -10,6 +10,8 @@ const NETWORKS = [
 const NetworkSelector: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [network, setNetwork] = useState(localStorage.getItem('sss-network') || 'devnet');
+  const [customRpc, setCustomRpc] = useState(localStorage.getItem('sss-rpc-url') || '');
+  const [rpcInput, setRpcInput] = useState(localStorage.getItem('sss-rpc-url') || '');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,12 +31,35 @@ const NetworkSelector: React.FC = () => {
     window.location.reload();
   };
 
+  const handleSaveCustomRpc = () => {
+    const next = rpcInput.trim();
+    if (!next) return;
+
+    const valid = /^https?:\/\//i.test(next);
+    if (!valid) {
+      return;
+    }
+
+    localStorage.setItem('sss-rpc-url', next);
+    setCustomRpc(next);
+    setOpen(false);
+    window.location.reload();
+  };
+
+  const handleClearCustomRpc = () => {
+    localStorage.removeItem('sss-rpc-url');
+    setCustomRpc('');
+    setRpcInput('');
+    setOpen(false);
+    window.location.reload();
+  };
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button onClick={() => setOpen(!open)} style={styles.trigger}>
         <span style={{ ...styles.dot, background: current.color }} />
         <Globe size={14} />
-        <span>{current.label}</span>
+        <span>{customRpc ? 'Custom RPC' : current.label}</span>
       </button>
 
       {open && (
@@ -52,6 +77,26 @@ const NetworkSelector: React.FC = () => {
               {n.label}
             </button>
           ))}
+
+          <div style={styles.rpcSection}>
+            <div style={styles.rpcLabel}>Custom RPC URL</div>
+            <input
+              value={rpcInput}
+              onChange={(e) => setRpcInput(e.target.value)}
+              placeholder="https://your-rpc-endpoint"
+              style={styles.rpcInput}
+            />
+            <div style={styles.rpcActions}>
+              <button onClick={handleSaveCustomRpc} style={styles.rpcSaveBtn}>Save</button>
+              <button
+                onClick={handleClearCustomRpc}
+                style={styles.rpcClearBtn}
+                disabled={!customRpc}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -91,6 +136,54 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 140,
     zIndex: 100,
     boxShadow: 'var(--shadow-lg)',
+  },
+  rpcSection: {
+    marginTop: 6,
+    borderTop: '1px solid var(--border)',
+    paddingTop: 8,
+  },
+  rpcLabel: {
+    fontSize: 11,
+    color: 'var(--text-muted)',
+    marginBottom: 6,
+    padding: '0 6px',
+  },
+  rpcInput: {
+    width: '100%',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border)',
+    borderRadius: 6,
+    color: 'var(--text-primary)',
+    fontSize: 12,
+    padding: '7px 8px',
+    outline: 'none',
+    fontFamily: 'inherit',
+  },
+  rpcActions: {
+    display: 'flex',
+    gap: 6,
+    marginTop: 8,
+  },
+  rpcSaveBtn: {
+    flex: 1,
+    background: 'var(--accent-bg)',
+    border: '1px solid var(--accent)',
+    color: 'var(--accent)',
+    fontSize: 12,
+    fontWeight: 600,
+    borderRadius: 6,
+    padding: '6px 8px',
+    cursor: 'pointer',
+  },
+  rpcClearBtn: {
+    flex: 1,
+    background: 'transparent',
+    border: '1px solid var(--border)',
+    color: 'var(--text-secondary)',
+    fontSize: 12,
+    borderRadius: 6,
+    padding: '6px 8px',
+    cursor: 'pointer',
   },
   option: {
     display: 'flex',

@@ -8,13 +8,12 @@ import { useToast } from '../contexts/ToastContext';
 import {
   getIDL,
   findStatePDA,
-  findMintAuthorityPDA,
-  findFreezeAuthorityPDA,
   findMinterInfoPDA,
   formatAmount,
   parseAmount,
   shortenAddress,
   fetchMinters,
+  fetchStablecoinState,
 } from '../lib/program';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -48,6 +47,7 @@ const Manage: React.FC = () => {
 
   // Roles form
   const [rolesPauser, setRolesPauser] = useState('');
+  const [rolesFreezer, setRolesFreezer] = useState('');
   const [rolesBurner, setRolesBurner] = useState('');
   const [rolesLoading, setRolesLoading] = useState(false);
 
@@ -70,8 +70,34 @@ const Manage: React.FC = () => {
     }
   };
 
+  const roleToString = (value: unknown): string => {
+    if (value && typeof value === 'object' && 'toBase58' in (value as Record<string, unknown>)) {
+      try {
+        return (value as { toBase58: () => string }).toBase58();
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  };
+
+  const loadRoles = async () => {
+    if (!currentMint || !wallet.publicKey) return;
+    try {
+      const state = await fetchStablecoinState(connection, wallet, new PublicKey(currentMint));
+      setRolesPauser(roleToString((state as any)?.pauser));
+      setRolesFreezer(roleToString((state as any)?.freezer));
+      setRolesBurner(roleToString((state as any)?.burner));
+    } catch {
+      setRolesPauser('');
+      setRolesFreezer('');
+      setRolesBurner('');
+    }
+  };
+
   useEffect(() => {
     loadMinters();
+    loadRoles();
   }, [currentMint, wallet.publicKey]);
 
   const handlePauseToggle = async () => {
@@ -167,6 +193,7 @@ const Manage: React.FC = () => {
       const sig = await program.methods
         .updateRoles({
           pauser: rolesPauser ? new PublicKey(rolesPauser) : null,
+          freezer: rolesFreezer ? new PublicKey(rolesFreezer) : null,
           burner: rolesBurner ? new PublicKey(rolesBurner) : null,
           blacklister: null,
           seizer: null,
@@ -285,7 +312,7 @@ const Manage: React.FC = () => {
                   {m.quota === '0' ? '∞' : formatAmount(m.quota, stablecoinInfo?.decimals || 6)}
                 </span>
                 <span style={{ flex: 1, textAlign: 'right', fontSize: 13 }}>
-                  {formatAmount(m.mintedThisEpoch, stablecoinInfo?.decimals || 6)}
+                  {formatAmount(m.mintedTotal, stablecoinInfo?.decimals || 6)}
                 </span>
                 <span style={{ width: 80, textAlign: 'center' }}>
                   <Badge
@@ -316,7 +343,7 @@ const Manage: React.FC = () => {
       {/* Role Management */}
       <Card
         title="Role Management"
-        subtitle="Assign specialized roles (pauser, burner)"
+        subtitle="Assign specialized roles (pauser, freezer, burner)"
         icon={<Settings size={16} color="var(--yellow)" />}
         accent="var(--yellow)"
       >
@@ -334,6 +361,13 @@ const Manage: React.FC = () => {
             value={rolesBurner}
             onChange={(e) => setRolesBurner(e.target.value)}
             hint="Can burn tokens from any account"
+          />
+          <Input
+            label="Freeze Authority"
+            placeholder="Wallet address of the freezer role"
+            value={rolesFreezer}
+            onChange={(e) => setRolesFreezer(e.target.value)}
+            hint="Can freeze and thaw token accounts"
           />
           <Button
             onClick={handleUpdateRoles}

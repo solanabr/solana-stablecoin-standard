@@ -85,7 +85,7 @@ sss-token init --custom config.toml
 ### TypeScript SDK
 
 ```typescript
-import { SolanaStablecoin, Preset } from "@stbr/sss-token";
+import { SolanaStablecoin, Preset } from "solana-stablecoin-sdk";
 
 // SSS-1
 const stable = await SolanaStablecoin.create({
@@ -150,6 +150,42 @@ Both programs are deployed and verified on Solana Devnet:
 | **Anchor Version** | 0.32.1 |
 
 > Deploy your own instance: `anchor deploy --provider.cluster devnet`
+
+### Recent Verified Transactions
+
+Latest finalized signatures observed on devnet (via Helius RPC):
+
+#### sss-token program (`6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL`)
+
+- [3UAhFJpHqt9TqC7vTwanMgjoSM7LQFJuKDF4V6fhr5jn6CR6XZPV15iC1pitLdyvFEwTovW5hDEoxq4R9MHTAU1r](https://explorer.solana.com/tx/3UAhFJpHqt9TqC7vTwanMgjoSM7LQFJuKDF4V6fhr5jn6CR6XZPV15iC1pitLdyvFEwTovW5hDEoxq4R9MHTAU1r?cluster=devnet)
+- [53QaC2pngXjpKRDxzV4Xdatrn5B2Pnphh94znZE6WqPmh9wbaKvXBLzivBo2ceY7qFwthHuEtBT9bNyLdfRPKjBj](https://explorer.solana.com/tx/53QaC2pngXjpKRDxzV4Xdatrn5B2Pnphh94znZE6WqPmh9wbaKvXBLzivBo2ceY7qFwthHuEtBT9bNyLdfRPKjBj?cluster=devnet)
+- [5TyuyK7hBBJLj116K63JCMVwac26DLanDJdUrGdZcLARmtxuv31HNPNxQD72W2ejEwXWR9u6VseN2Ee1pJasS3ZT](https://explorer.solana.com/tx/5TyuyK7hBBJLj116K63JCMVwac26DLanDJdUrGdZcLARmtxuv31HNPNxQD72W2ejEwXWR9u6VseN2Ee1pJasS3ZT?cluster=devnet)
+
+#### transfer-hook program (`C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V`)
+
+- [5ondWcbZ9CW5FUCRkeBUG55PhLfNE8y96HAbJsMMwWBeFUoHNEwZWWv7ytHZrscevawHmGvzxdvGdsYZHnEmEjTM](https://explorer.solana.com/tx/5ondWcbZ9CW5FUCRkeBUG55PhLfNE8y96HAbJsMMwWBeFUoHNEwZWWv7ytHZrscevawHmGvzxdvGdsYZHnEmEjTM?cluster=devnet)
+- [2WDmP8BnWLmkRxNKuZmZpQ877WxrzdiEehhNEDTQXDgXcnrDJYy4vRH36Xw2f5uzhQirkJG3NJsWPtZgYNVB3CwP](https://explorer.solana.com/tx/2WDmP8BnWLmkRxNKuZmZpQ877WxrzdiEehhNEDTQXDgXcnrDJYy4vRH36Xw2f5uzhQirkJG3NJsWPtZgYNVB3CwP?cluster=devnet)
+- [hbKQSiqABmMTqJw3VUxN1Ye9L38WPtLLy4d6fxq5GWm3XSS8SAc95dXrDtdSkvhPqEuqCkyTkPhmYKtKwLqcbsD](https://explorer.solana.com/tx/hbKQSiqABmMTqJw3VUxN1Ye9L38WPtLLy4d6fxq5GWm3XSS8SAc95dXrDtdSkvhPqEuqCkyTkPhmYKtKwLqcbsD?cluster=devnet)
+
+See [PROOF.md](./docs/PROOF.md) for verification commands and test evidence.
+
+---
+
+## Published Packages
+
+| Package | Latest Version | Install | Status |
+|---|---|---|---|
+| `solana-stablecoin-sdk` | `0.1.2` (next) | `npm i solana-stablecoin-sdk` | `0.1.1` live on npm, republish pending |
+| `solana-stablecoin-cli` | `0.1.4` (next) | `npm i -g solana-stablecoin-cli` | `0.1.3` live on npm, republish pending |
+| `solana-stablecoin-tui` | `0.1.1` (next) | `npm i -g solana-stablecoin-tui` | First npm publish pending |
+
+Version checks:
+
+```bash
+npm view solana-stablecoin-sdk version
+npm view solana-stablecoin-cli version
+npm view solana-stablecoin-tui version
+```
 
 ---
 
@@ -226,7 +262,7 @@ npm install
 npm run dev     # http://localhost:5173
 ```
 
-**Pages**: Dashboard with stats · Create Stablecoin (SSS-1/SSS-2/Custom) · Manage (pause, minters, roles) · Mint & Burn · Compliance (freeze/thaw/blacklist/seize) · Holders (search, CSV export) · Activity log
+**Pages**: Dashboard with live stats · Create Stablecoin (SSS-1/SSS-2) · Manage (pause, minters, roles incl. freezer) · Mint & Burn · Freeze & Thaw · Compliance (blacklist/check/seize) · Holders (search, CSV export) · Activity log
 
 ### 🔒 SSS-3 Private Stablecoin (Proof of Concept)
 
@@ -270,6 +306,9 @@ Features: supply chart, event log, operations panel (mint/burn/pause/freeze), ho
 - [SSS-3.md](./docs/SSS-3.md) — Private stablecoin standard spec (PoC)
 - [COMPLIANCE.md](./docs/COMPLIANCE.md) — Regulatory considerations
 - [API.md](./docs/API.md) — Backend service API reference
+- [DEPLOYMENT.md](./docs/DEPLOYMENT.md) — Frontend Vercel + backend deployment guide
+- [PUBLISHING.md](./docs/PUBLISHING.md) — npm release guide for SDK/CLI/TUI
+- [PROOF.md](./docs/PROOF.md) — Submission evidence (tests + devnet proofs)
 
 ---
 
@@ -282,7 +321,7 @@ solana-stablecoin-standard/
 │   ├── transfer-hook/      # SSS-2 transfer hook program
 │   └── sss-3-private/      # SSS-3 confidential transfer PoC
 ├── oracle/                 # Switchboard oracle integration module
-├── sdk/                    # @stbr/sss-token TypeScript SDK
+├── sdk/                    # solana-stablecoin-sdk TypeScript SDK
 ├── cli/                    # sss-token CLI
 ├── frontend/               # React admin dashboard (Vite + TypeScript)
 ├── tui/                    # Interactive terminal admin UI (blessed)
@@ -318,6 +357,15 @@ curl http://localhost:3002/health   # event-listener
 curl http://localhost:3003/health   # compliance (SSS-2)
 curl http://localhost:3004/health   # webhook
 ```
+
+---
+
+## Deploy & Release
+
+- Frontend (Vercel): see [frontend/README.md](./frontend/README.md) and [DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- Backend services (Docker): see [DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- npm package publishing (SDK/CLI/TUI): see [PUBLISHING.md](./docs/PUBLISHING.md)
+- Submission evidence bundle (tests + tx proofs): see [PROOF.md](./docs/PROOF.md)
 
 ---
 

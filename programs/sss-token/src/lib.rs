@@ -23,17 +23,19 @@ pub mod sss_token {
     }
 
     /// Mint tokens to a recipient. Caller must hold the Minter role and
-    /// respect their per-minter quota (0 = unlimited).
+    /// respect their lifetime minter quota (0 = unlimited).
     pub fn mint(ctx: Context<MintCtx>, amount: u64) -> Result<()> {
         instructions::mint::handler(ctx, amount)
     }
 
-    /// Burn tokens from the caller's token account.
+    /// Burn tokens.
+    /// - Token-account owners can always burn from their own account.
+    /// - Burner role can burn from any account when permanent delegate is enabled.
     pub fn burn(ctx: Context<BurnCtx>, amount: u64) -> Result<()> {
         instructions::burn::handler(ctx, amount)
     }
 
-    /// Freeze a token account (prevents transfers). Caller must be Pauser or Master.
+    /// Freeze a token account (prevents transfers). Caller must hold Freezer role.
     pub fn freeze_account(ctx: Context<FreezeAccount>) -> Result<()> {
         instructions::freeze_account::handler(ctx)
     }
@@ -43,7 +45,7 @@ pub mod sss_token {
         instructions::thaw_account::handler(ctx)
     }
 
-    /// Pause all minting and burning globally. Only Pauser or Master.
+    /// Pause all minting and burning globally. Only Pauser.
     pub fn pause(ctx: Context<Pause>) -> Result<()> {
         instructions::pause::handler(ctx)
     }
@@ -53,12 +55,7 @@ pub mod sss_token {
         instructions::unpause::handler(ctx)
     }
 
-    /// Add or update a minter with an optional per-minter quota (0 = unlimited).
-    // pub fn update_minter(ctx: Context<UpdateMinter>, quota: u64, active: bool) -> Result<()> {
-    //     instructions::update_minter::handler(ctx, quota, active)
-    // }
-
-    // Replace the old update_minter with:
+    /// Add or update a minter with a lifetime quota (0 = unlimited).
     pub fn add_minter(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
         instructions::update_minter::add_minter_handler(ctx, quota)
     }
@@ -67,7 +64,12 @@ pub mod sss_token {
         instructions::update_minter::remove_minter_handler(ctx)
     }
 
-    /// Update role assignments (pauser, burner, blacklister, seizer).
+    /// Increase an active minter's lifetime quota by `additional_quota`.
+    pub fn increase_minter_quota(ctx: Context<IncreaseMinterQuota>, additional_quota: u64) -> Result<()> {
+        instructions::update_minter::increase_minter_quota_handler(ctx, additional_quota)
+    }
+
+    /// Update role assignments (pauser, freezer, burner, blacklister, seizer).
     pub fn update_roles(ctx: Context<UpdateRoles>, role_update: RoleUpdate) -> Result<()> {
         instructions::update_roles::handler(ctx, role_update)
     }

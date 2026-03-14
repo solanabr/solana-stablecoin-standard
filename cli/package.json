@@ -1,6 +1,6 @@
 {
-  "name": "@stbr/sss-token-cli",
-  "version": "0.1.0",
+  "name": "solana-stablecoin-cli",
+  "version": "0.1.4",
   "description": "Solana Stablecoin Standard — Admin CLI",
   "bin": {
     "sss-token": "./dist/index.js"
@@ -8,6 +8,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "postinstall": "node -e \"const fs=require('fs'); if (fs.existsSync('./dist/setup-config.js')) require('./dist/setup-config.js');\"",
     "dev": "ts-node src/index.ts",
     "test:help": "node dist/index.js --help",
     "test:local": "ts-node test-local.ts",
@@ -16,17 +17,20 @@
     "lint": "eslint src --ext .ts"
   },
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "dependencies": {
-    "@coral-xyz/anchor": "^0.30.1",
+    "@coral-xyz/anchor": "^0.32.1",
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.95.3",
-    "@stbr/sss-token": "*",
     "@types/ini": "^4.1.1",
     "chalk": "^4.1.2",
     "commander": "^12.0.0",
     "dotenv": "^16.0.0",
     "ini": "^6.0.0",
     "ora": "^5.4.1",
+    "solana-stablecoin-sdk": "^0.1.2",
     "table": "^6.8.0",
     "toml": "^3.0.0"
   },

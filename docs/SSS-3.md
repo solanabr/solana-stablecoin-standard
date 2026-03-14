@@ -1,6 +1,7 @@
 # SSS-3: Private Stablecoin Standard — Proof of Concept
 
-> **Status**: Experimental / Proof of Concept  
+> **Status**: Experimental / Proof of Concept — Deployed on Devnet  
+> **Program ID**: `4ea2tTJiMRW3Nov8K4hEd3JPppiY1oPU2p5zri8JAnkX`  
 > **Depends on**: Solana Token-2022 Confidential Transfer extension  
 > **Tooling maturity**: Early — SPL Confidential Transfer APIs are stabilizing
 
@@ -40,12 +41,17 @@ SSS-3 extends SSS-1/SSS-2 with **confidential transfers** and **scoped allowlist
 │  └── ConfidentialTransferFeeConfig (optional)                │
 │                                                              │
 │  On-chain Program (sss-3-private)                            │
-│  ├── initialize_private()  — init mint with CT extension     │
-│  ├── approve_allowlist()   — approve address for CT          │
-│  ├── revoke_allowlist()    — revoke CT approval              │
-│  ├── deposit_to_private()  — move public → confidential      │
-│  ├── withdraw_to_public()  — move confidential → public      │
-│  └── update_auditor()      — rotate auditor ElGamal key      │
+  │  ├── initialize_private()   — init state + register mint     │
+  │  ├── approve_allowlist()    — approve address for CT          │
+  │  ├── revoke_allowlist()     — revoke CT approval              │
+  │  ├── deposit_to_private()   — move public → confidential      │
+  │  ├── withdraw_to_public()   — move confidential → public      │
+  │  ├── update_auditor()       — rotate auditor ElGamal key      │
+  │  ├── mint_tokens()          — mint to allowlisted address     │
+  │  ├── burn_tokens()          — self-burn or authority burn     │
+  │  ├── pause() / unpause()    — emergency circuit breaker       │
+  │  ├── propose_authority()    — initiate authority transfer     │
+  │  └── accept_authority()     — complete authority transfer     │
 │                                                              │
 │  Allowlist PDA                                               │
 │  ├── state (PublicKey)                                       │
@@ -60,6 +66,21 @@ SSS-3 extends SSS-1/SSS-2 with **confidential transfers** and **scoped allowlist
 ---
 
 ## Instruction Reference
+
+| Instruction | Authority | Description |
+|---|---|---|
+| `initialize_private` | Signer | Create state PDA; register PrivateStablecoinState |
+| `approve_allowlist` | Authority | Create AllowlistEntry PDA for a KYC'd address |
+| `revoke_allowlist` | Authority | Mark AllowlistEntry as revoked |
+| `deposit_to_confidential` | Token owner | Move public balance → encrypted balance |
+| `withdraw_to_public` | Token owner + ZK proof | Move encrypted balance → public balance |
+| `update_auditor` | Authority | Rotate auditor ElGamal public key |
+| `mint_tokens` | Authority | Mint to allowlisted address (CPI Token-2022 `mint_to`) |
+| `burn_tokens` | Owner or Authority | Burn tokens (owner self-burn or authority force-burn) |
+| `pause` | Authority | Halt all confidential operations |
+| `unpause` | Authority | Resume operations |
+| `propose_authority` | Authority | Propose new authority (step 1 of two-step transfer) |
+| `accept_authority` | Pending authority | Accept authority transfer (step 2) |
 
 ### `initialize_private`
 
@@ -162,6 +183,32 @@ pub fn withdraw_to_public(
 }
 ```
 
+### `mint_tokens`
+
+Mints tokens to an allowlisted recipient via CPI to Token-2022 `mint_to`. The state PDA signs as mint authority.
+
+```rust
+pub fn mint_tokens(ctx: Context<MintTokensPrivate>, amount: u64) -> Result<()>
+// Requires: authority, recipient on allowlist, !paused
+```
+
+### `burn_tokens`
+
+Burns tokens from a token account. Owner can self-burn; authority can force-burn (permanent delegate path).
+
+```rust
+pub fn burn_tokens(ctx: Context<BurnTokensPrivate>, amount: u64) -> Result<()>
+// Requires: is_owner || is_authority, !paused
+```
+
+### `pause` / `unpause`
+
+Emergency circuit breaker. Authority-only. Blocks `deposit_to_confidential`, `withdraw_to_public`, and `mint_tokens`.
+
+### `propose_authority` / `accept_authority`
+
+Two-step authority transfer to prevent accidental lockouts. Current authority proposes a new key; the new key must sign `accept_authority` to complete the transfer.
+
 ---
 
 ## Account State
@@ -199,6 +246,8 @@ pub struct PrivateStablecoinState {
     pub allowlist_count: u64,
     /// Whether auto-approve is enabled (false = manual KYC required)
     pub auto_approve: bool,
+    /// Pending authority for two-step authority transfer
+    pub pending_authority: Option<Pubkey>,
 }
 ```
 
@@ -207,7 +256,7 @@ pub struct PrivateStablecoinState {
 ## SDK Usage (Planned)
 
 ```typescript
-import { SolanaStablecoin, Preset } from '@stbr/sss-token';
+import { SolanaStablecoin, Preset } from 'solana-stablecoin-sdk';
 
 // Create SSS-3 private stablecoin
 const stablecoin = await SolanaStablecoin.create({
@@ -265,8 +314,9 @@ SSS-3 maintains full regulatory compliance through:
 
 ## Roadmap
 
-- [ ] Implement on-chain program with Anchor 0.32
-- [ ] Integrate `solana-zk-sdk` for client-side proof generation
+- [x] Implement on-chain program with Anchor 0.32 (deployed devnet: `4ea2tTJiMRW3Nov8K4hEd3JPppiY1oPU2p5zri8JAnkX`)
+- [x] Full instruction set: initialize, allowlist, mint, burn, pause, authority transfer
+- [ ] Integrate `solana-zk-sdk` for actual ConfidentialTransferMint extension initialization
 - [ ] Build SDK module (`stablecoin.privacy.*`)
 - [ ] Add browser-compatible WASM proof generation
 - [ ] Integration tests with localnet

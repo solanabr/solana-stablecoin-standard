@@ -73,6 +73,8 @@ Two Anchor programs work together:
 |---|---|---|
 | **sss-token** | `6NMdvUa2n4WSLPx9yz7V9edFx9VQqWr5KUDZQGPK3GDL` | Core stablecoin logic (SSS-1 & SSS-2) |
 | **transfer-hook** | `C6psRvWLQ4PyiRcx7KZw5giAhNFtTMLn2foBaToJ36V` | On-transfer blacklist enforcement (SSS-2) |
+| **sss-3-private** | `4ea2tTJiMRW3Nov8K4hEd3JPppiY1oPU2p5zri8JAnkX` | Confidential transfers + scoped allowlists (PoC) |
+| **sss-oracle** | `BHWh9mmJMniLpNjoPYrMZfUUes3rLcBY7fJzairkM1zc` | Switchboard price feeds for non-USD pegs |
 
 The `sss-token` program supports both presets via initialization parameters. The `transfer-hook` program is a standalone enforcer that reads blacklist PDAs owned by `sss-token` and gates every Token-2022 `transfer_checked` call.
 
@@ -334,14 +336,10 @@ The `ComplianceModule` throws immediately (client-side, before hitting the netwo
 ```
 solana-stablecoin-standard/
 ├── programs/
-│   ├── sss-token/           # Main Anchor program
-│   │   └── src/
-│   │       ├── lib.rs        # Entrypoint + instruction dispatch
-│   │       ├── state.rs      # Account structs + StablecoinConfig
-│   │       ├── errors.rs     # SssError enum
-│   │       ├── events.rs     # Anchor events
-│   │       └── instructions/ # One file per instruction group
-│   └── transfer-hook/       # SSS-2 transfer hook program
+│   ├── sss-token/           # Main Anchor program (SSS-1 + SSS-2)
+│   ├── transfer-hook/       # SSS-2 transfer hook program
+│   └── sss-3-private/       # SSS-3 PoC (confidential transfers + allowlists)
+├── oracle/                  # Oracle integration module (Switchboard price feeds)
 ├── sdk/src/
 │   ├── index.ts             # SolanaStablecoin + ComplianceModule
 │   ├── presets/index.ts     # SSS-1/SSS-2 preset configs

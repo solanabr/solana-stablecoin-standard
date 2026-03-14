@@ -2,6 +2,8 @@
 members = [
     "programs/sss-token",
     "programs/transfer-hook",
+    "programs/sss-3-private",
+    "oracle",
 ]
 resolver = "2"
 

@@ -1,9 +1,37 @@
 {
-  "name": "@stbr/sss-token",
-  "version": "0.1.0",
+  "name": "solana-stablecoin-sdk",
+  "version": "0.1.2",
   "description": "Solana Stablecoin Standard — TypeScript SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./modules/compliance": {
+      "types": "./dist/modules/compliance.d.ts",
+      "default": "./dist/modules/compliance.js"
+    },
+    "./options": {
+      "types": "./dist/options.d.ts",
+      "default": "./dist/options.js"
+    },
+    "./presets": {
+      "types": "./dist/presets/index.d.ts",
+      "default": "./dist/presets/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "default": "./dist/utils/index.js"
+    },
+    "./idl/*": "./dist/idl/*",
+    "./dist/idl/*": "./dist/idl/*"
+  },
   "files": ["dist"],
   "scripts": {
     "build": "tsc && cp -r src/idl dist/idl",
@@ -14,7 +42,7 @@
   "keywords": ["solana", "stablecoin", "token-2022", "anchor"],
   "license": "MIT",
   "dependencies": {
-    "@coral-xyz/anchor": "^0.30.1",
+    "@coral-xyz/anchor": "^0.32.1",
     "@solana/web3.js": "^1.95.3",
     "@solana/spl-token": "^0.4.9",
     "bs58": "^6.0.0"

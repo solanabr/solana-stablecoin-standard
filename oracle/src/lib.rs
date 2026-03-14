@@ -7,7 +7,7 @@ pub mod instructions;
 
 use instructions::*;
 
-declare_id!("SSSorac1e11111111111111111111111111111111111");
+declare_id!("BHWh9mmJMniLpNjoPYrMZfUUes3rLcBY7fJzairkM1zc");
 
 /// Oracle Integration Module for Solana Stablecoin Standard
 ///
@@ -78,5 +78,18 @@ pub mod sss_oracle {
         token_amount: u64,
     ) -> Result<()> {
         instructions::price::oracle_burn_handler(ctx, token_amount)
+    }
+
+    /// Propose a new authority for the oracle config (step 1).
+    pub fn propose_oracle_authority(
+        ctx: Context<ProposeOracleAuthority>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
+        instructions::config::propose_oracle_authority_handler(ctx, new_authority)
+    }
+
+    /// Accept the pending oracle authority transfer (step 2).
+    pub fn accept_oracle_authority(ctx: Context<AcceptOracleAuthority>) -> Result<()> {
+        instructions::config::accept_oracle_authority_handler(ctx)
     }
 }

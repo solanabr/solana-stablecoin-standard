@@ -19,8 +19,11 @@ pub enum SssError {
     #[msg("Minter is inactive or has been removed")]
     MinterInactive,
 
-    #[msg("Minter quota exceeded — request amount is above remaining quota")]
+    #[msg("Minter quota exceeded — request amount is above remaining lifetime quota")]
     QuotaExceeded,
+
+    #[msg("Cannot increase quota for an unlimited minter")]
+    CannotIncreaseUnlimitedQuota,
 
     // ── SSS-2 Compliance ────────────────────────────────────────────────────
     #[msg("Compliance module is not enabled on this stablecoin")]

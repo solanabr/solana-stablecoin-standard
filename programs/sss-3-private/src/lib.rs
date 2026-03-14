@@ -7,7 +7,7 @@ pub mod instructions;
 
 use instructions::*;
 
-declare_id!("SSS3priv11111111111111111111111111111111111");
+declare_id!("4ea2tTJiMRW3Nov8K4hEd3JPppiY1oPU2p5zri8JAnkX");
 
 /// SSS-3 Private Stablecoin Standard — Proof of Concept
 ///
@@ -35,9 +35,6 @@ pub mod sss_3_private {
     use super::*;
 
     /// Initialize a new SSS-3 private stablecoin mint.
-    ///
-    /// Creates a Token-2022 mint with ConfidentialTransferMint extension
-    /// and initializes the on-chain PrivateStablecoinState.
     pub fn initialize_private(
         ctx: Context<InitializePrivate>,
         params: InitPrivateParams,
@@ -46,9 +43,6 @@ pub mod sss_3_private {
     }
 
     /// Approve an address for confidential transfers (KYC allowlist).
-    ///
-    /// Only the authority can call this. Creates an AllowlistEntry PDA
-    /// marking the address as approved for confidential operations.
     pub fn approve_allowlist(
         ctx: Context<ApproveAllowlist>,
         kyc_provider: String,
@@ -57,9 +51,6 @@ pub mod sss_3_private {
     }
 
     /// Revoke an address from the confidential transfer allowlist.
-    ///
-    /// Marks the AllowlistEntry as revoked. The address can no longer
-    /// deposit to or transfer from confidential balance.
     pub fn revoke_allowlist(
         ctx: Context<RevokeAllowlist>,
         reason: String,
@@ -68,9 +59,6 @@ pub mod sss_3_private {
     }
 
     /// Deposit public token balance into confidential (encrypted) balance.
-    ///
-    /// Requires the sender to be on the allowlist. Moves tokens from
-    /// the public balance to the confidential balance on the same ATA.
     pub fn deposit_to_confidential(
         ctx: Context<DepositToConfidential>,
         amount: u64,
@@ -79,9 +67,6 @@ pub mod sss_3_private {
     }
 
     /// Withdraw from confidential balance back to public balance.
-    ///
-    /// Requires a zero-knowledge proof that the confidential balance is
-    /// sufficient. The proof is verified on-chain.
     pub fn withdraw_to_public(
         ctx: Context<WithdrawToPublic>,
         amount: u64,
@@ -91,13 +76,54 @@ pub mod sss_3_private {
     }
 
     /// Rotate the auditor ElGamal public key.
-    ///
-    /// Only the authority can update the auditor key. The new auditor
-    /// will be able to decrypt future transfer amounts.
     pub fn update_auditor(
         ctx: Context<UpdateAuditor>,
         new_auditor_elgamal_pubkey: [u8; 32],
     ) -> Result<()> {
         instructions::admin::update_auditor_handler(ctx, new_auditor_elgamal_pubkey)
+    }
+
+    /// Pause the stablecoin — halts all deposits, withdrawals, and mints.
+    pub fn pause(ctx: Context<PausePrivate>) -> Result<()> {
+        instructions::admin::pause_handler(ctx)
+    }
+
+    /// Unpause the stablecoin.
+    pub fn unpause(ctx: Context<UnpausePrivate>) -> Result<()> {
+        instructions::admin::unpause_handler(ctx)
+    }
+
+    /// Propose a new authority (step 1 of two-step transfer).
+    pub fn propose_authority(
+        ctx: Context<ProposeAuthority>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
+        instructions::admin::propose_authority_handler(ctx, new_authority)
+    }
+
+    /// Accept a pending authority transfer (step 2 of two-step transfer).
+    pub fn accept_authority(ctx: Context<AcceptAuthority>) -> Result<()> {
+        instructions::admin::accept_authority_handler(ctx)
+    }
+
+    /// Mint tokens to an allowlisted recipient.
+    ///
+    /// Only the authority can mint in SSS-3 (PoC). In production, a
+    /// dedicated minter role with quotas would be added (like SSS-1).
+    pub fn mint_tokens(
+        ctx: Context<MintTokensPrivate>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::admin::mint_tokens_handler(ctx, amount)
+    }
+
+    /// Burn tokens from a token account.
+    ///
+    /// Owner can self-burn; authority can force-burn via permanent delegate.
+    pub fn burn_tokens(
+        ctx: Context<BurnTokensPrivate>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::admin::burn_tokens_handler(ctx, amount)
     }
 }

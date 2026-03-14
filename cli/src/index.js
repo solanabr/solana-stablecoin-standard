@@ -44,7 +44,7 @@ const table_1 = require("table");
 const web3_js_1 = require("@solana/web3.js");
 const fs = __importStar(require("fs"));
 const toml = __importStar(require("toml"));
-const sss_token_1 = require("@stbr/sss-token");
+const sss_token_1 = require("solana-stablecoin-sdk");
 const config_1 = require("./config");
 const program = new commander_1.Command();
 program

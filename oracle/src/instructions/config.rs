@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use crate::state::OracleConfig;
 use crate::errors::OracleError;
-use crate::events::{OracleConfigCreatedEvent, OracleFeedUpdatedEvent, OracleToggledEvent};
+use crate::events::{OracleConfigCreatedEvent, OracleFeedUpdatedEvent, OracleToggledEvent, OracleAuthorityUpdatedEvent};
 
 // ─── Create Oracle Config ────────────────────────────────────────────────────
 
@@ -62,6 +62,7 @@ pub fn create_handler(ctx: Context<CreateOracleConfig>, params: CreateOraclePara
     config.last_read_at = 0;
     config.total_oracle_mints = 0;
     config.total_oracle_burns = 0;
+    config.pending_authority = None;
     config.bump = ctx.bumps.oracle_config;
 
     msg!(
@@ -145,5 +146,58 @@ pub fn toggle_handler(ctx: Context<ToggleOracle>, enabled: bool) -> Result<()> {
         timestamp: clock.unix_timestamp,
     });
 
+    Ok(())
+}
+
+// ─── Update Oracle Authority ───────────────────────────────────────────────────
+
+#[derive(Accounts)]
+pub struct ProposeOracleAuthority<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        has_one = authority @ OracleError::Unauthorized,
+    )]
+    pub oracle_config: Account<'info, OracleConfig>,
+}
+
+pub fn propose_oracle_authority_handler(
+    ctx: Context<ProposeOracleAuthority>,
+    new_authority: Pubkey,
+) -> Result<()> {
+    ctx.accounts.oracle_config.pending_authority = Some(new_authority);
+
+    msg!("Oracle: Authority transfer proposed to {}", new_authority);
+
+    emit!(OracleAuthorityUpdatedEvent {
+        config: ctx.accounts.oracle_config.key(),
+        old_authority: ctx.accounts.authority.key(),
+        new_authority,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct AcceptOracleAuthority<'info> {
+    #[account(mut)]
+    pub new_authority: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = oracle_config.pending_authority == Some(new_authority.key()) @ OracleError::Unauthorized,
+    )]
+    pub oracle_config: Account<'info, OracleConfig>,
+}
+
+pub fn accept_oracle_authority_handler(ctx: Context<AcceptOracleAuthority>) -> Result<()> {
+    let config = &mut ctx.accounts.oracle_config;
+    config.authority = ctx.accounts.new_authority.key();
+    config.pending_authority = None;
+
+    msg!("Oracle: Authority accepted by {}", config.authority);
     Ok(())
 }

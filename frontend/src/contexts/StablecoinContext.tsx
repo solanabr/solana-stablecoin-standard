@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { PublicKey } from '@solana/web3.js';
 
-export type PresetType = 'SSS_1' | 'SSS_2' | 'CUSTOM';
+export type PresetType = 'SSS_1' | 'SSS_2';
 
 export interface StablecoinInfo {
   mint: string;
