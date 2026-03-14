@@ -14,7 +14,7 @@ import {
     createTransferCheckedInstruction,
 } from "@solana/spl-token";
 import idl from './idl.json';
-import hookIdl from '../../target/idl/transfer_hook.json';
+import hookIdl from './transfer_hook_idl.json';
 
 // --- ПРЕСЕТЫ СТАНДАРТОВ ---
 export const Presets = {
