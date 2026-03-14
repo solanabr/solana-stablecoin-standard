@@ -1,13 +1,11 @@
+use crate::error::StablecoinError;
 use anchor_lang::prelude::*;
 use instructions::*;
-use crate::state::MockOracle;
 
-pub mod state;
 pub mod error;
 pub mod events;
 pub mod instructions;
-
-
+pub mod state;
 
 declare_id!("451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp");
 
@@ -15,6 +13,7 @@ declare_id!("451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp");
 pub mod sss_core {
     use super::*;
 
+    #[access_control(validate_initialize(&ctx, decimals, &name, &symbol, &uri))]
     pub fn initialize(
         ctx: Context<Initialize>,
         decimals: u8,
@@ -26,28 +25,74 @@ pub mod sss_core {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        process_initialize(ctx, decimals, enable_permanent_delegate, enable_transfer_hook, enable_confidential_transfers, oracle_feed, name, symbol, uri)
+        process_initialize(
+            ctx,
+            decimals,
+            enable_permanent_delegate,
+            enable_transfer_hook,
+            enable_confidential_transfers,
+            oracle_feed,
+            name,
+            symbol,
+            uri,
+        )
     }
 
+    #[access_control(validate_positive_amount(amount))]
     pub fn mint_token(ctx: Context<MintToken>, amount: u64) -> Result<()> {
         process_mint(ctx, amount)
     }
 
+    #[access_control(validate_positive_amount(amount))]
     pub fn burn_token(ctx: Context<BurnToken>, amount: u64) -> Result<()> {
         process_burn(ctx, amount)
     }
 
-    pub fn seize_tokens<'info>(ctx: Context<'_, '_, '_, 'info, SeizeTokens<'info>>, amount: u64) -> Result<()> {
+    #[access_control(validate_positive_amount(amount))]
+    pub fn seize_tokens<'info>(
+        ctx: Context<'_, '_, '_, 'info, SeizeTokens<'info>>,
+        amount: u64,
+    ) -> Result<()> {
         process_seize(ctx, amount)
     }
 
-    pub fn update_mock_oracle(ctx: Context<UpdateMockOracle>, price: u64, decimals: u8) -> Result<()> {
+    #[access_control(validate_oracle_price(price))]
+    pub fn update_mock_oracle(
+        ctx: Context<UpdateMockOracle>,
+        price: u64,
+        decimals: u8,
+    ) -> Result<()> {
         let oracle = &mut ctx.accounts.oracle;
         oracle.price = price;
         oracle.decimals = decimals;
         msg!("Mock Oracle updated! Price: {}", price);
         Ok(())
     }
+}
+
+fn validate_positive_amount(amount: u64) -> Result<()> {
+    require!(amount > 0, StablecoinError::MathOverflow);
+    Ok(())
+}
+
+fn validate_oracle_price(price: u64) -> Result<()> {
+    require!(price > 0, StablecoinError::InvalidOraclePrice);
+    Ok(())
+}
+
+fn validate_initialize(
+    _ctx: &Context<Initialize>,
+    decimals: u8,
+    name: &str,
+    symbol: &str,
+    uri: &str,
+) -> Result<()> {
+    require!(decimals <= 18, StablecoinError::MathOverflow);
+    require!(
+        !name.is_empty() && !symbol.is_empty() && !uri.is_empty(),
+        StablecoinError::InvalidInput
+    );
+    Ok(())
 }
 
 #[derive(Accounts)]

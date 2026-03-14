@@ -16,6 +16,8 @@ You can run the entire infrastructure (Solana Validator + Compliance API) with a
 docker-compose up -d --build
 ```
 
+Run backend: docker-compose up -d
+
 The services will be available at:
 - **Solana localnet RPC**: http://localhost:8899 
 - **Compliance API**: http://localhost:3000/api/audit
@@ -33,3 +35,6 @@ npx tsx scripts/test_basic.ts
 # Run the Oracle Peg test
 npx tsx scripts/test_oracle.ts
 ```
+
+## Documentation
+See `docs/README.md` for architecture, operations, security audit notes, and SSS-1/SSS-2 specifications.
