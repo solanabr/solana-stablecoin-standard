@@ -1,26 +1,38 @@
 version: '3.8'
 
 services:
-  # Наш API сервис для комплаенса и аудита
-  compliance-api:
-    build: 
-      context: ./backend/compliance-api
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - RPC_URL=http://solana-test-validator:8899 # Обращаемся к контейнеру валидатора
-      - PROGRAM_ID=451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp
-    depends_on:
-      - solana-test-validator
-
-  # Локальный валидатор Solana прямо в Docker!
   solana-test-validator:
     image: solanalabs/solana:v1.18.17
+    container_name: sss-svm
+    command: >
+      solana-test-validator
+      --reset
+      --rpc-bind-address 0.0.0.0
+      --ledger /solana/ledger
     ports:
       - "8899:8899"
       - "8900:8900"
-    command: >
-      solana-test-validator 
-      --reset 
-      --rpc-bind-address 0.0.0.0
+    volumes:
+      - solana-ledger:/solana/ledger
+    healthcheck:
+      test: ["CMD-SHELL", "solana cluster-version --url http://127.0.0.1:8899 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  compliance-api:
+    build:
+      context: ./backend/compliance-api
+    container_name: sss-compliance-api
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      RPC_URL: "http://solana-test-validator:8899"
+      PROGRAM_ID: "451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp"
+    depends_on:
+      solana-test-validator:
+        condition: service_healthy
+
+volumes:
+  solana-ledger:
