@@ -5,6 +5,7 @@ import { AnchorProvider, BN, Program } from "@coral-xyz/anchor/dist/browser/inde
 import type { Idl, Wallet as AnchorWallet } from "@coral-xyz/anchor";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
+  Keypair,
   ParsedAccountData,
   PublicKey,
   SYSVAR_RENT_PUBKEY,
@@ -196,6 +197,15 @@ export function StablecoinDashboard() {
     [provider],
   );
 
+  const readOnlyProgram = useMemo(() => {
+    const dummyWallet = Keypair.generate() as unknown as AnchorWallet;
+    const readOnlyProvider = new AnchorProvider(connection, dummyWallet, {
+      commitment: "confirmed",
+      preflightCommitment: "confirmed",
+    });
+    return new Program(IDL, readOnlyProvider);
+  }, [connection]);
+
   const [config, setConfig] = useState<StablecoinConfigData | null>(null);
   const [supply, setSupply] = useState<bigint>(0n);
   const [roles, setRoles] = useState<RoleState | null>(null);
@@ -222,11 +232,12 @@ export function StablecoinDashboard() {
   const [notificationDetail, setNotificationDetail] = useState<NotificationItem | null>(null);
 
   const loadDashboard = useCallback(async () => {
-    if (!program || !mintAddress) return;
+    const programToUse = program ?? readOnlyProgram;
+    if (!programToUse || !mintAddress) return;
     setLoading(true);
     setError(null);
     try {
-      const accountApi = program.account as unknown as {
+      const accountApi = programToUse.account as unknown as {
         stablecoinConfig: {
           fetch: (pubkey: PublicKey) => Promise<RawConfig>;
         };
@@ -237,7 +248,7 @@ export function StablecoinDashboard() {
           all: (filters: unknown[]) => Promise<RawBlacklistedEntry[]>;
         };
       };
-      const coderAccounts = program.coder.accounts as unknown as {
+      const coderAccounts = programToUse.coder.accounts as unknown as {
         decode: (name: "MinterAccount", data: Buffer | Uint8Array) => RawMinterAccount;
       };
 
@@ -353,7 +364,7 @@ export function StablecoinDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [connection, mintAddress, program, wallet.publicKey]);
+  }, [connection, mintAddress, program, readOnlyProgram, wallet.publicKey]);
 
   useEffect(() => {
     void loadDashboard();
@@ -606,24 +617,6 @@ export function StablecoinDashboard() {
     );
   }
 
-  if (!wallet.connected) {
-    return (
-      <main className="mx-auto flex min-h-screen max-w-5xl items-center justify-center p-6">
-        <Card className="w-full max-w-xl">
-          <CardHeader>
-            <CardTitle>Connect admin wallet</CardTitle>
-            <CardDescription>
-              The connected wallet is treated as the acting admin identity.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <WalletButton />
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
-
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -633,7 +626,12 @@ export function StablecoinDashboard() {
           </h1>
           <p className="text-sm text-slate-500">Mint: {mintAddress.toBase58()}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!wallet.connected && (
+            <p className="text-sm text-slate-600">
+              Connect your wallet to perform actions (mint, pause, roles, blacklist).
+            </p>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" onClick={notifications.markAllRead}>
@@ -773,6 +771,17 @@ export function StablecoinDashboard() {
         </TabsList>
 
         <TabsContent value="controls" className="grid gap-6 lg:grid-cols-2">
+          {!wallet.connected && (
+            <Card className="lg:col-span-2">
+              <CardContent className="flex flex-col items-center justify-center gap-3 py-8">
+                <p className="text-sm text-slate-600">
+                  Connect your wallet to perform actions. If your wallet has minter or pauser role,
+                  controls will appear here.
+                </p>
+                <WalletButton />
+              </CardContent>
+            </Card>
+          )}
           {(roles?.isMinter || roles?.isMaster) && (
             <Card>
               <CardHeader>
