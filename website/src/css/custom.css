@@ -1,0 +1,133 @@
+:root {
+  --ifm-color-primary: #14F195;
+  --ifm-color-primary-dark: #0dd885;
+  --ifm-color-primary-darker: #0ccc7e;
+  --ifm-color-primary-darkest: #0aa868;
+  --ifm-color-primary-light: #2cf7a3;
+  --ifm-color-primary-lighter: #3df8aa;
+  --ifm-color-primary-lightest: #67fab9;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #14F195;
+  --ifm-color-primary-dark: #0dd885;
+  --ifm-color-primary-darker: #0ccc7e;
+  --ifm-color-primary-darkest: #0aa868;
+  --ifm-color-primary-light: #2cf7a3;
+  --ifm-color-primary-lighter: #3df8aa;
+  --ifm-color-primary-lightest: #67fab9;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Custom styles for SSS documentation */
+.hero {
+  background: linear-gradient(135deg, #0D0D0D 0%, #1A1A2E 100%);
+}
+
+.hero__title {
+  font-size: 3rem;
+  background: linear-gradient(90deg, #14F195, #9945FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero__subtitle {
+  color: #E0E0E0;
+}
+
+/* Badge styles for presets */
+.badge--sss1 {
+  background-color: #14F195;
+  color: #000;
+}
+
+.badge--sss2 {
+  background-color: #9945FF;
+  color: #fff;
+}
+
+.badge--sss3 {
+  background-color: #00C2FF;
+  color: #000;
+}
+
+/* Code block enhancements */
+.prism-code {
+  border-radius: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--ifm-card-background-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(20, 241, 149, 0.15);
+}
+
+/* Architecture diagrams */
+.architecture-diagram {
+  background: #1A1A2E;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 1rem 0;
+}
+
+/* API reference tables */
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.api-table th {
+  background: var(--ifm-color-primary);
+  color: #000;
+  padding: 0.75rem;
+}
+
+.api-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--ifm-table-border-color);
+}
+
+/* Status indicators */
+.status-active {
+  color: #14F195;
+}
+
+.status-paused {
+  color: #FFD700;
+}
+
+.status-blacklisted {
+  color: #FF4444;
+}
+
+/* Callout boxes */
+.callout {
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.callout-info {
+  background: rgba(20, 241, 149, 0.1);
+  border-left: 4px solid #14F195;
+}
+
+.callout-warning {
+  background: rgba(255, 215, 0, 0.1);
+  border-left: 4px solid #FFD700;
+}
+
+.callout-danger {
+  background: rgba(255, 68, 68, 0.1);
+  border-left: 4px solid #FF4444;
+}

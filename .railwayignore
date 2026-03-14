@@ -1,0 +1,27 @@
+.anchor/
+.git/
+*.sock
+*.socket
+target/
+
+# All node_modules (monorepo)
+node_modules/
+**/node_modules/
+sdk/node_modules/
+cli/node_modules/
+backend/node_modules/
+frontend/node_modules/
+website/node_modules/
+
+# Build artifacts
+cli/dist/
+backend/dist/
+frontend/.next/
+website/build/
+website/.docusaurus/
+frontend/out/
+**/.cache/
+
+# Misc
+*.log
+.DS_Store

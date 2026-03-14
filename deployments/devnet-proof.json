@@ -1,0 +1,27 @@
+{
+  "network": "devnet",
+  "deployedAt": "2026-03-12T00:00:00Z",
+  "programs": {
+    "sss_token": {
+      "programId": "2L6rZHyqhJ9VJqXhbgW7vyP3uerrw7Vzpp3qtqAq1FZj",
+      "status": "deployed",
+      "deployTx": "2imuzksaBeT2fwQrKFtXG4SvufuRecu7g1y777jCKZHtbKTd86771XNfwWLPzQLfcND8P8ogmyYkdHz57hz87yAd",
+      "explorer": "https://explorer.solana.com/address/2L6rZHyqhJ9VJqXhbgW7vyP3uerrw7Vzpp3qtqAq1FZj?cluster=devnet",
+      "solscan": "https://solscan.io/account/2L6rZHyqhJ9VJqXhbgW7vyP3uerrw7Vzpp3qtqAq1FZj?cluster=devnet",
+      "binarySize": "568KB"
+    },
+    "sss_transfer_hook": {
+      "programId": "E3pPcPAU4Un7WMaHyMnG6L3SJ8dNu4gjZGU6ExqvhRzS",
+      "status": "deployed",
+      "deployTx": "3G992spao7CxncUdhTpJB6Y47Ma4VHqMLhG5YmxKUf8E3a1U3waMZawxCnTtpv89QXbTXBUVieagFk1on3juhXgw",
+      "explorer": "https://explorer.solana.com/address/E3pPcPAU4Un7WMaHyMnG6L3SJ8dNu4gjZGU6ExqvhRzS?cluster=devnet",
+      "solscan": "https://solscan.io/account/E3pPcPAU4Un7WMaHyMnG6L3SJ8dNu4gjZGU6ExqvhRzS?cluster=devnet",
+      "binarySize": "196KB"
+    }
+  },
+  "upgradeAuthority": "9Bs5TCnQcbr85Qsi6NuJr6yXgiCR8QbYr2nSt2GNjPeY",
+  "verificationCommands": {
+    "sss_token": "solana program show 2L6rZHyqhJ9VJqXhbgW7vyP3uerrw7Vzpp3qtqAq1FZj --url devnet",
+    "sss_transfer_hook": "solana program show E3pPcPAU4Un7WMaHyMnG6L3SJ8dNu4gjZGU6ExqvhRzS --url devnet"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@sss/sdk",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run test:smoke",
+    "test:smoke": "npm run build && node --test tests/smoke.test.cjs",
+    "test:all": "npm run build && node --test tests/**/*.test.cjs",
+    "test:devnet": "npm run build && node --test tests/integration.devnet.test.cjs",
+    "test:devnet:nohook": "SSS_ENABLE_HOOK=false npm run test:devnet",
+    "test:devnet:hook": "SSS_ENABLE_HOOK=true npm run test:devnet",
+    "validate": "node scripts/validate-sdk.cjs",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": ["solana", "stablecoin", "token-2022", "sss"],
+  "author": "SSS Team",
+  "license": "MIT",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.98.0",
+    "@solana/spl-token": "^0.4.14"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@coral-xyz/anchor": "^0.31.0",
+    "@solana/web3.js": "^1.90.0"
+  }
+}

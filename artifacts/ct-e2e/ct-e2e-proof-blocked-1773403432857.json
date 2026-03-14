@@ -1,0 +1,75 @@
+{
+  "status": "blocked",
+  "blockedReason": "Devnet zk-elgamal-proof program temporarily disabled",
+  "error": "Command failed: spl-token --config /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/configs/alice.yml --program-2022 -u devnet configure-confidential-transfer-account 55ZdHydodRaPNuXuUm6SkuPvyJnzkp6dXCxkrLhBNJBd --fee-payer /Users/kyto/.config/solana/id.json --output json\nError: Client(Error { request: Some(SendTransaction), kind: RpcError(RpcResponseError { code: -32002, message: \"Transaction simulation failed: Error processing Instruction 1: invalid instruction data\", data: SendTransactionPreflightFailure(RpcSimulateTransactionResult { err: Some(UiTransactionError(InstructionError(1, InvalidInstructionData))), logs: Some([\"Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb invoke [1]\", \"Program log: ConfidentialTransferInstruction::ConfigureAccount\", \"Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb consumed 2350 of 2350 compute units\", \"Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb success\", \"Program ZkE1Gama1Proof11111111111111111111111111111 invoke [1]\", \"zk-elgamal-proof program is temporarily disabled\", \"Program ZkE1Gama1Proof11111111111111111111111111111 failed: invalid instruction data\"]), accounts: None, units_consumed: Some(2350), loaded_accounts_data_size: Some(712287), return_data: None, inner_instructions: None, replacement_blockhash: None, fee: Some(10000), pre_balances: None, post_balances: None, pre_token_balances: None, post_token_balances: None, loaded_addresses: None }) }) })\n",
+  "cluster": "devnet",
+  "mint": "55ZdHydodRaPNuXuUm6SkuPvyJnzkp6dXCxkrLhBNJBd",
+  "accounts": {
+    "authority": "9Bs5TCnQcbr85Qsi6NuJr6yXgiCR8QbYr2nSt2GNjPeY",
+    "aliceWallet": "RjUnj511aTTUqGDp43cHLoYjvzQXR4HTRCCEfACj4pe",
+    "bobWallet": "D9PjCSQyDR1jJqnHnKKhPmThEi89mDPGu6tQJ3STD6oi",
+    "aliceTokenAccount": "AhYqaXHKfhDzcGk9LPdMzPpt7WxWYJvuGXB2umsA67QY",
+    "bobTokenAccount": "GdUW6nLS8WmZkprYGNDAt22bcx3tQEnCMKUKxGcqpfWh"
+  },
+  "amounts": {
+    "mintToAlice": 10000,
+    "depositToConfidential": 5000,
+    "confidentialTransfer": 2000,
+    "withdrawToPublic": 1000
+  },
+  "signatures": {},
+  "explorerLinks": {},
+  "commandLog": [
+    {
+      "step": "Generate alice keypair",
+      "command": "solana-keygen new --no-bip39-passphrase --silent --force -o /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/keys/alice.json",
+      "output": "Wrote new keypair to /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/keys/alice.json"
+    },
+    {
+      "step": "Generate bob keypair",
+      "command": "solana-keygen new --no-bip39-passphrase --silent --force -o /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/keys/bob.json",
+      "output": "Wrote new keypair to /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/keys/bob.json"
+    },
+    {
+      "step": "Read authority pubkey",
+      "command": "solana-keygen pubkey /Users/kyto/.config/solana/id.json",
+      "output": "9Bs5TCnQcbr85Qsi6NuJr6yXgiCR8QbYr2nSt2GNjPeY"
+    },
+    {
+      "step": "Read alice pubkey",
+      "command": "solana-keygen pubkey /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/keys/alice.json",
+      "output": "RjUnj511aTTUqGDp43cHLoYjvzQXR4HTRCCEfACj4pe"
+    },
+    {
+      "step": "Read bob pubkey",
+      "command": "solana-keygen pubkey /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/keys/bob.json",
+      "output": "D9PjCSQyDR1jJqnHnKKhPmThEi89mDPGu6tQJ3STD6oi"
+    },
+    {
+      "step": "Create Token-2022 mint with confidential transfers",
+      "command": "spl-token --config /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/configs/authority.yml --program-2022 -u devnet create-token --decimals 6 --enable-confidential-transfers auto --enable-freeze --mint-authority /Users/kyto/.config/solana/id.json --fee-payer /Users/kyto/.config/solana/id.json --output json",
+      "output": "{\n  \"commandName\": \"CreateToken\",\n  \"commandOutput\": {\n    \"address\": \"55ZdHydodRaPNuXuUm6SkuPvyJnzkp6dXCxkrLhBNJBd\",\n    \"decimals\": 6,\n    \"transactionData\": {\n      \"signature\": \"U9ZPJ92uDgunk8h1TmTQjqarRhGmMdUC5kdkMFZJdMZ8SbZnaBfqac7T22ZmCuZ6frVSpXyPqWsDC5XyQCic63v\"\n    }\n  }\n}"
+    },
+    {
+      "step": "Create alice token account",
+      "command": "spl-token --config /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/configs/alice.yml --program-2022 -u devnet create-account 55ZdHydodRaPNuXuUm6SkuPvyJnzkp6dXCxkrLhBNJBd --fee-payer /Users/kyto/.config/solana/id.json --output json",
+      "output": "{\n  \"signature\": \"4Zu76G6YKqHH1YgAX6pyHmgX8g7WYtxjuFeGPPyEWinNnAJJd25FxqXUeTKhcyjAM8cuU6LYYmokUZJAZheQ3MUx\"\n}"
+    },
+    {
+      "step": "Create bob token account",
+      "command": "spl-token --config /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/configs/bob.yml --program-2022 -u devnet create-account 55ZdHydodRaPNuXuUm6SkuPvyJnzkp6dXCxkrLhBNJBd --fee-payer /Users/kyto/.config/solana/id.json --output json",
+      "output": "{\n  \"signature\": \"3WELEpWL6G774gjTGGbBaytqHs5AHk7m8eq2KPQ9u1BL8QeShTLc4qCsH9K9nZoJk2c4oFSb5VyZfk7D2wJhf1uw\"\n}"
+    },
+    {
+      "step": "Mint public tokens to alice",
+      "command": "spl-token --config /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/configs/authority.yml --program-2022 -u devnet mint 55ZdHydodRaPNuXuUm6SkuPvyJnzkp6dXCxkrLhBNJBd 10000 AhYqaXHKfhDzcGk9LPdMzPpt7WxWYJvuGXB2umsA67QY --mint-authority /Users/kyto/.config/solana/id.json --fee-payer /Users/kyto/.config/solana/id.json --output json",
+      "output": "{\n  \"signature\": \"3BTXdTkDyijUWdzEZVBg1gT8FYXh6bkVuy2mj9n1Jyr9VJ31RQ6rzhoDR2coQpFfLaBZLroNup4uPjTLe4ubqTNw\"\n}"
+    },
+    {
+      "step": "Configure alice confidential transfer account",
+      "command": "spl-token --config /Users/kyto/3/solana-stablecoin-standard/artifacts/ct-e2e/configs/alice.yml --program-2022 -u devnet configure-confidential-transfer-account 55ZdHydodRaPNuXuUm6SkuPvyJnzkp6dXCxkrLhBNJBd --fee-payer /Users/kyto/.config/solana/id.json --output json",
+      "output": "Error: Client(Error { request: Some(SendTransaction), kind: RpcError(RpcResponseError { code: -32002, message: \"Transaction simulation failed: Error processing Instruction 1: invalid instruction data\", data: SendTransactionPreflightFailure(RpcSimulateTransactionResult { err: Some(UiTransactionError(InstructionError(1, InvalidInstructionData))), logs: Some([\"Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb invoke [1]\", \"Program log: ConfidentialTransferInstruction::ConfigureAccount\", \"Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb consumed 2350 of 2350 compute units\", \"Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb success\", \"Program ZkE1Gama1Proof11111111111111111111111111111 invoke [1]\", \"zk-elgamal-proof program is temporarily disabled\", \"Program ZkE1Gama1Proof11111111111111111111111111111 failed: invalid instruction data\"]), accounts: None, units_consumed: Some(2350), loaded_accounts_data_size: Some(712287), return_data: None, inner_instructions: None, replacement_blockhash: None, fee: Some(10000), pre_balances: None, post_balances: None, pre_token_balances: None, post_token_balances: None, loaded_addresses: None }) }) })"
+    }
+  ],
+  "generatedAt": "2026-03-13T12:03:52.856Z"
+}

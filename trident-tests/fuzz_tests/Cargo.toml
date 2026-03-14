@@ -1,0 +1,74 @@
+[package]
+name = "fuzz_tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# Trident fuzzing framework
+trident-client = "0.6.0"
+trident-derive-accounts-snapshots = "0.6.0"
+
+# Anchor
+anchor-lang = "0.31.1"
+anchor-spl = { version = "0.31.1", features = ["token-2022"] }
+
+# Solana
+solana-sdk = "2.0.0"
+solana-program = "2.0.0"
+solana-program-test = "2.0.0"
+
+# Program dependencies
+sss-token = { path = "../../programs/sss-token" }
+sss-transfer-hook = { path = "../../programs/sss-transfer-hook" }
+
+# Arbitrary for fuzz inputs
+arbitrary = { version = "1.3", features = ["derive"] }
+
+# Utils
+rand = "0.8.5"
+tokio = { version = "1.0", features = ["full"] }
+
+[[bin]]
+name = "fuzz_sss_token"
+path = "fuzz_targets/fuzz_sss_token.rs"
+
+[[bin]]
+name = "fuzz_mint_overflow"
+path = "fuzz_targets/fuzz_mint_overflow.rs"
+
+[[bin]]
+name = "fuzz_burn_underflow"
+path = "fuzz_targets/fuzz_burn_underflow.rs"
+
+[[bin]]
+name = "fuzz_blacklist_isolation"
+path = "fuzz_targets/fuzz_blacklist_isolation.rs"
+
+[[bin]]
+name = "fuzz_role_escalation"
+path = "fuzz_targets/fuzz_role_escalation.rs"
+
+[[bin]]
+name = "fuzz_quota_bypass"
+path = "fuzz_targets/fuzz_quota_bypass.rs"
+
+[[bin]]
+name = "fuzz_pause_bypass"
+path = "fuzz_targets/fuzz_pause_bypass.rs"
+
+[[bin]]
+name = "fuzz_authority_transfer"
+path = "fuzz_targets/fuzz_authority_transfer.rs"
+
+[[bin]]
+name = "fuzz_confidential_transfer"
+path = "fuzz_targets/fuzz_confidential_transfer.rs"
+
+[[bin]]
+name = "fuzz_sss_comprehensive"
+path = "fuzz_targets/fuzz_sss_comprehensive.rs"
+
+[profile.release]
+opt-level = 3
+lto = true

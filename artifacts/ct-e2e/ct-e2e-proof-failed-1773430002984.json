@@ -1,0 +1,23 @@
+{
+  "status": "failed",
+  "error": "Local validator is not reachable at http://localhost:8899. Start it with: solana-test-validator --reset",
+  "cluster": "localhost",
+  "mint": "",
+  "accounts": {
+    "authority": "",
+    "aliceWallet": "",
+    "bobWallet": "",
+    "aliceTokenAccount": "",
+    "bobTokenAccount": ""
+  },
+  "amounts": {
+    "mintToAlice": 10000,
+    "depositToConfidential": 5000,
+    "confidentialTransfer": 2000,
+    "withdrawToPublic": 1000
+  },
+  "signatures": {},
+  "explorerLinks": {},
+  "commandLog": [],
+  "generatedAt": "2026-03-13T19:26:42.983Z"
+}

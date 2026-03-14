@@ -1,0 +1,283 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+  SOLANA_VERSION: 1.18.22
+  ANCHOR_VERSION: 0.31.1
+  NODE_VERSION: 18
+
+jobs:
+  # =============================================================================
+  # RUST BUILD & LINT
+  # =============================================================================
+  build-programs:
+    name: Build Anchor Programs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
+
+      - name: Build programs
+        run: anchor build
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: program-artifacts
+          path: |
+            target/deploy/*.so
+            target/idl/*.json
+            target/types/*.ts
+
+  # =============================================================================
+  # ANCHOR TESTS
+  # =============================================================================
+  anchor-test:
+    name: Anchor Integration Tests
+    runs-on: ubuntu-latest
+    needs: build-programs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: program-artifacts
+          path: target/
+
+      - name: Generate keypair
+        run: solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json
+
+      - name: Run Anchor tests
+        run: anchor test --skip-build
+
+  # =============================================================================
+  # SDK TESTS
+  # =============================================================================
+  sdk-test:
+    name: TypeScript SDK Tests
+    runs-on: ubuntu-latest
+    needs: build-programs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: program-artifacts
+          path: target/
+
+      - name: Lint SDK
+        run: yarn workspace @sss/sdk lint
+
+      - name: Type check SDK
+        run: yarn workspace @sss/sdk tsc --noEmit
+
+      - name: Run SDK tests
+        run: yarn workspace @sss/sdk test
+
+  # =============================================================================
+  # CLI TESTS
+  # =============================================================================
+  cli-test:
+    name: CLI Tests
+    runs-on: ubuntu-latest
+    needs: build-programs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint CLI
+        run: yarn workspace @sss/cli lint
+
+      - name: Type check CLI
+        run: yarn workspace @sss/cli tsc --noEmit
+
+      - name: Build CLI
+        run: yarn workspace @sss/cli build
+
+  # =============================================================================
+  # FUZZ TESTS
+  # =============================================================================
+  fuzz-test:
+    name: Fuzz Tests
+    runs-on: ubuntu-latest
+    needs: build-programs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-action@nightly
+        with:
+          components: rustfmt
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run fuzz unit tests
+        working-directory: trident-tests/fuzz_tests
+        run: |
+          # Run property tests
+          cargo test --release
+
+  # =============================================================================
+  # SECURITY AUDIT
+  # =============================================================================
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run security audit
+        run: cargo audit
+
+  # =============================================================================
+  # DOCUMENTATION
+  # =============================================================================
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Check documentation links
+        run: |
+          # Check for broken links in markdown
+          npx markdown-link-check docs/*.md docs/**/*.md --quiet
+
+      - name: Generate Rust docs
+        run: cargo doc --no-deps
+
+  # =============================================================================
+  # COVERAGE (Optional)
+  # =============================================================================
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: [anchor-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install grcov
+        run: cargo install grcov
+
+      - name: Run tests with coverage
+        env:
+          RUSTFLAGS: '-Cinstrument-coverage'
+          LLVM_PROFILE_FILE: 'coverage-%p-%m.profraw'
+        run: cargo test
+
+      - name: Generate coverage report
+        run: |
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o coverage.lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.lcov
+          fail_ci_if_error: false

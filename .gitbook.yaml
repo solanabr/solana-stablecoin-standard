@@ -1,0 +1,14 @@
+# GitBook Configuration for SSS Documentation
+# Deploy with: gitbook-cli or connect to GitBook.com
+
+root: ./docs/
+
+# Structure definition
+structure:
+  readme: README.md
+  summary: SUMMARY.md
+
+# Redirects for moved pages
+redirects:
+  getting-started: README.md
+  quickstart: README.md
