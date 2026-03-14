@@ -7,10 +7,12 @@ skip-lint = false
 [programs.localnet]
 sss_core = "G3jadBDzaF2HbTY2at5auYYQQ94zhhWaocMuWDgUy2vL"
 sss_transfer_hook = "EAzHNW2cjpYdBjLBJ9RVLoGryXQJE98dpHTdyPiE6389"
+sss_oracle = "2i38q2b16owfBgqfKS2SB4AZX2aNUpbPVCx1ngSJtf6f"
 
 [programs.devnet]
 sss_core = "G3jadBDzaF2HbTY2at5auYYQQ94zhhWaocMuWDgUy2vL"
 sss_transfer_hook = "EAzHNW2cjpYdBjLBJ9RVLoGryXQJE98dpHTdyPiE6389"
+sss_oracle = "2i38q2b16owfBgqfKS2SB4AZX2aNUpbPVCx1ngSJtf6f"
 
 [provider]
 cluster = "localnet"

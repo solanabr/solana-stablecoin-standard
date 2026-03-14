@@ -1,0 +1,24 @@
+{
+  "name": "@stbr/sss-tui",
+  "version": "0.1.0",
+  "description": "Terminal dashboard for the Solana Stablecoin Standard",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "@solana/web3.js": "^1.98.0",
+    "@coral-xyz/anchor": "^0.31.1",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/blessed": "^0.1.25",
+    "@types/node": "^22.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

@@ -6,6 +6,7 @@ use spl_token_2022::instruction::initialize_mint2;
 use spl_token_2022::extension::metadata_pointer::instruction::initialize as init_metadata_pointer;
 use spl_token_2022::extension::transfer_hook::instruction::initialize as init_transfer_hook;
 use spl_token_2022::extension::default_account_state::instruction::initialize_default_account_state;
+use spl_token_2022::extension::confidential_transfer::instruction::initialize_mint as init_confidential_transfer_mint;
 use spl_token_2022::state::AccountState;
 
 
@@ -66,6 +67,11 @@ pub fn handler(ctx: Context<Initialize>, input: StablecoinConfigInput) -> Result
         extensions.push(ExtensionType::PermanentDelegate);
         extensions.push(ExtensionType::TransferHook);
         extensions.push(ExtensionType::DefaultAccountState);
+    }
+
+    // SSS-3: Add ConfidentialTransferMint extension for privacy-enabled stablecoins
+    if input.enable_allowlist {
+        extensions.push(ExtensionType::ConfidentialTransferMint);
     }
 
     // Calculate space needed for mint + extensions + metadata
@@ -167,6 +173,22 @@ pub fn handler(ctx: Context<Initialize>, input: StablecoinConfigInput) -> Result
     } else {
         Pubkey::default()
     };
+
+    // Initialize ConfidentialTransferMint extension for SSS-3 privacy
+    if input.enable_allowlist {
+        let init_ct_ix = init_confidential_transfer_mint(
+            &anchor_spl::token_2022::ID,
+            &mint_key,
+            Some(config_key),    // CT authority = config PDA
+            true,                // auto_approve_new_accounts
+            None,                // no auditor ElGamal pubkey
+        )?;
+        invoke_signed(
+            &init_ct_ix,
+            &[ctx.accounts.mint.to_account_info()],
+            &[],
+        )?;
+    }
 
     // Initialize the mint (config PDA is mint authority + freeze authority)
     let init_mint_ix = initialize_mint2(

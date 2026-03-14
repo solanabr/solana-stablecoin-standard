@@ -2753,6 +2753,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sss-oracle-program"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+]
+
+[[package]]
 name = "sss-privacy"
 version = "0.1.0"
 dependencies = [
