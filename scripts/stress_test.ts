@@ -4,31 +4,41 @@ import { Presets, StablecoinSDK } from "../sdk/src/index";
 import * as fs from "fs";
 import * as os from "os";
 
-async function main() {
-  const rpcUrl = process.env.DEVNET_RPC || "https://api.devnet.solana.com";
-  const connection = new Connection(rpcUrl, "confirmed");
+function loadAdminKeypair(): Keypair {
+  const configuredPath = process.env.SOLANA_KEYPAIR_PATH;
+  const defaultPath = `${os.homedir()}/.config/solana/id.json`;
+  const keypairPath = configuredPath || defaultPath;
 
-  const keypairPath = `${os.homedir()}/.config/solana/id.json`;
-  const adminKeypair = Keypair.fromSecretKey(
-    Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, "utf8")))
-  );
+  if (fs.existsSync(keypairPath)) {
+    return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, "utf8"))));
+  }
+
+  console.warn(`Keypair file not found at ${keypairPath}. Using ephemeral keypair for this run.`);
+  return Keypair.generate();
+}
+
+async function ensurePayerBalance(connection: Connection, payer: Keypair, minimumSol = 4) {
+  const lamports = await connection.getBalance(payer.publicKey, "confirmed");
+  if (lamports >= minimumSol * LAMPORTS_PER_SOL) return;
+
+  const airdropSig = await connection.requestAirdrop(payer.publicKey, minimumSol * LAMPORTS_PER_SOL - lamports);
+  await connection.confirmTransaction(airdropSig, "confirmed");
+}
+
+async function main() {
+  const rpcUrl = process.env.DEVNET_RPC || process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
+  const connection = new Connection(rpcUrl, "confirmed");
+  const adminKeypair = loadAdminKeypair();
 
   const programId = process.env.SSS_PROGRAM_ID || "451UiDzutoMvqZkEj94PSNQTZELV4JqWRdiSoiJB9bxp";
-  const hookProgramId = new PublicKey(
-    process.env.HOOK_PROGRAM_ID || "5cs7VzZny1XMj4TAJy2xVqo2tCHM8Vwe9bNbL6uRmbxk"
-  );
+  const hookProgramId = new PublicKey(process.env.HOOK_PROGRAM_ID || "5cs7VzZny1XMj4TAJy2xVqo2tCHM8Vwe9bNbL6uRmbxk");
 
   const sdk = new StablecoinSDK(connection, adminKeypair, programId, hookProgramId.toBase58());
 
+  await ensurePayerBalance(connection, adminKeypair);
+
   console.log(`Running stress test on ${rpcUrl} ...`);
-  const mint = await sdk.create(
-    "Stress USD",
-    "sUSD",
-    "https://example.com/stress.json",
-    6,
-    Presets.SSS_2,
-    hookProgramId
-  );
+  const mint = await sdk.create("Stress USD", "sUSD", "https://example.com/stress.json", 6, Presets.SSS_2, hookProgramId);
   await sdk.initializeExtraAccountMetaList(mint);
 
   const senders = Array.from({ length: 50 }, () => Keypair.generate());
@@ -40,7 +50,6 @@ async function main() {
     await sdk.mint(mint, sender.publicKey, 10);
   }
 
-  // blacklist every 5th sender
   const blacklisted = new Set<string>();
   for (let i = 0; i < senders.length; i += 5) {
     await sdk.compliance.blacklistAdd(senders[i].publicKey, hookProgramId);
@@ -57,6 +66,7 @@ async function main() {
         const blocked = (logs || []).some((l) => l.includes("WalletBlacklisted") || l.includes("TRANSFER BLOCKED"));
         return { success: false, blocked };
       }
+
       const blocked = String(error?.message || "").includes("WalletBlacklisted");
       return { success: false, blocked };
     }
