@@ -1,0 +1,12 @@
+[package]
+name = "sss-compliance"
+version = "0.1.0"
+edition = "2021"
+description = "Shared compliance helpers for the Solana Stablecoin Standard"
+
+[lib]
+name = "sss_compliance"
+
+[dependencies]
+anchor-lang = { workspace = true }
+

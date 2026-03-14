@@ -1,0 +1,12 @@
+[package]
+name = "sss-trident-tests"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fuzz_0"
+path = "fuzz_0/test_fuzz.rs"
+
+[dependencies]
+sss-core = { path = "../programs/sss-core", features = ["no-entrypoint"] }
+anchor-lang = { workspace = true }

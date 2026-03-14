@@ -1,0 +1,174 @@
+{
+  "address": "EAzHNW2cjpYdBjLBJ9RVLoGryXQJE98dpHTdyPiE6389",
+  "metadata": {
+    "name": "sss_transfer_hook",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Solana Stablecoin Standard transfer hook program"
+  },
+  "instructions": [
+    {
+      "name": "execute",
+      "docs": [
+        "Execute hook — called by Token-2022 on every transfer.",
+        "This is the Anchor-discriminator version (for direct calls / testing)."
+      ],
+      "discriminator": [
+        130,
+        221,
+        242,
+        154,
+        13,
+        193,
+        189,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "source"
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "destination"
+        },
+        {
+          "name": "owner"
+        },
+        {
+          "name": "extra_account_metas"
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "sender_blacklist_entry"
+        },
+        {
+          "name": "receiver_blacklist_entry"
+        },
+        {
+          "name": "sender_allowlist_entry"
+        },
+        {
+          "name": "receiver_allowlist_entry"
+        },
+        {
+          "name": "sss_core_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_extra_account_meta_list",
+      "docs": [
+        "Initialize the extra account metas list for a given mint.",
+        "This tells Token-2022 which additional accounts to pass into execute()."
+      ],
+      "discriminator": [
+        92,
+        197,
+        174,
+        197,
+        41,
+        124,
+        19,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "extra_account_metas",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "SenderBlacklisted",
+      "msg": "Sender is blacklisted"
+    },
+    {
+      "code": 6001,
+      "name": "ReceiverBlacklisted",
+      "msg": "Receiver is blacklisted"
+    },
+    {
+      "code": 6002,
+      "name": "StablecoinPaused",
+      "msg": "Stablecoin is paused — all transfers are blocked"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidConfig",
+      "msg": "Invalid config account — cannot verify transfer safety"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidExtraAccountMetas",
+      "msg": "Invalid extra account metas"
+    },
+    {
+      "code": 6005,
+      "name": "SenderNotAllowlisted",
+      "msg": "Sender is not on the allowlist"
+    },
+    {
+      "code": 6006,
+      "name": "ReceiverNotAllowlisted",
+      "msg": "Receiver is not on the allowlist"
+    }
+  ]
+}

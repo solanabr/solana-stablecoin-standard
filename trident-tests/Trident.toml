@@ -1,0 +1,3 @@
+[fuzz.metrics]
+enabled = true
+

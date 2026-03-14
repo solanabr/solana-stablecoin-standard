@@ -1,0 +1,14 @@
+target/
+dist/
+.anchor/
+.DS_Store
+node_modules/
+.pnpm-store/
+coverage/
+test-ledger/
+.env
+.env.local
+*.log
+CLAUDE.md
+.claude/
+

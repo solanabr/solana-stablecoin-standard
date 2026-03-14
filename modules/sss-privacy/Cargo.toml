@@ -1,0 +1,12 @@
+[package]
+name = "sss-privacy"
+version = "0.1.0"
+edition = "2021"
+description = "Shared privacy helpers for the Solana Stablecoin Standard"
+
+[lib]
+name = "sss_privacy"
+
+[dependencies]
+anchor-lang = { workspace = true }
+

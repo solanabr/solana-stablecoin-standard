@@ -1,0 +1,29 @@
+services:
+  mint-burn-service:
+    build: ./mint-burn-service
+    ports:
+      - "8081:8080"
+    environment:
+      - API_KEY=${API_KEY:-}
+  compliance-service:
+    build: ./compliance-service
+    ports:
+      - "8082:8080"
+    environment:
+      - API_KEY=${API_KEY:-}
+      - AUDIT_LOG_PATH=/data/audit.ndjson
+    volumes:
+      - compliance-data:/data
+  webhook-service:
+    build: ./webhook-service
+    ports:
+      - "8084:8080"
+    environment:
+      - API_KEY=${API_KEY:-}
+  indexer:
+    build: ./indexer
+    ports:
+      - "8083:8080"
+
+volumes:
+  compliance-data:

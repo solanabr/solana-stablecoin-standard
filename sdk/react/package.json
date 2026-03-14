@@ -1,0 +1,25 @@
+{
+  "name": "@stbr/sss-react",
+  "version": "0.1.0",
+  "description": "React hooks for the Solana Stablecoin Standard",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@stbr/sss-token": "workspace:*"
+  },
+  "peerDependencies": {
+    "@coral-xyz/anchor": ">=0.31.0",
+    "@solana/web3.js": ">=1.90.0",
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "react": "^18.3.0",
+    "typescript": "^5.7.3"
+  }
+}

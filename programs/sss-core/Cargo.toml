@@ -1,0 +1,26 @@
+[package]
+name = "sss-core"
+version = "0.1.0"
+edition = "2021"
+description = "Solana Stablecoin Standard core issuer program"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_core"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { workspace = true }
+spl-token-2022 = { workspace = true, features = ["no-entrypoint"] }
+spl-token-metadata-interface = { workspace = true }
+spl-pod = { workspace = true }
+spl-type-length-value = { workspace = true }
+solana-security-txt = { workspace = true }

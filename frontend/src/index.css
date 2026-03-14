@@ -1,0 +1,142 @@
+@import "@solana/wallet-adapter-react-ui/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background: #0A0B14;
+    color: #e8e8ed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface-2 border border-border rounded-2xl;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-card-hover {
+    @apply transition-all duration-300;
+  }
+  .glass-card-hover:hover {
+    border-color: rgba(0, 255, 163, 0.15);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), inset 0 0 30px rgba(0, 255, 163, 0.02);
+    transform: translateY(-1px);
+  }
+
+  .glass-input {
+    @apply bg-surface-1 border border-border rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-500;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-400/30 focus:border-brand-400/50;
+    @apply transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden px-5 py-3 rounded-xl text-sm font-semibold;
+    @apply bg-gradient-to-r from-brand-400 to-brand-500 text-surface-0;
+    @apply hover:shadow-glow active:scale-[0.98] transition-all duration-200;
+    @apply disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100;
+  }
+
+  .btn-secondary {
+    @apply px-5 py-3 rounded-xl text-sm font-medium;
+    @apply bg-surface-3 border border-border text-slate-300;
+    @apply hover:bg-surface-4 hover:border-border-light hover:text-white;
+    @apply active:scale-[0.98] transition-all duration-200;
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply px-5 py-3 rounded-xl text-sm font-semibold;
+    @apply bg-red-500/10 border border-red-500/20 text-red-400;
+    @apply hover:bg-red-500/20 hover:border-red-500/30;
+    @apply active:scale-[0.98] transition-all duration-200;
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  .status-dot-active {
+    @apply bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)];
+  }
+  .status-dot-paused {
+    @apply bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)] animate-pulse;
+  }
+  .status-dot-error {
+    @apply bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)] animate-pulse;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+  .badge-success {
+    @apply bg-emerald-400/10 text-emerald-400 border border-emerald-400/20;
+  }
+  .badge-danger {
+    @apply bg-red-400/10 text-red-400 border border-red-400/20;
+  }
+  .badge-warning {
+    @apply bg-amber-400/10 text-amber-400 border border-amber-400/20;
+  }
+  .badge-info {
+    @apply bg-blue-400/10 text-blue-400 border border-blue-400/20;
+  }
+  .badge-neutral {
+    @apply bg-slate-400/10 text-slate-400 border border-slate-400/20;
+  }
+
+  .table-header {
+    @apply px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider;
+  }
+  .table-cell {
+    @apply px-5 py-3.5 text-sm;
+  }
+  .table-row {
+    @apply border-b border-border/50 transition-colors hover:bg-surface-3/50;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold text-white tracking-tight;
+  }
+  .page-title {
+    @apply text-2xl font-bold text-white tracking-tight;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A2D42;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #353854;
+}
+
+/* Wallet adapter overrides */
+.wallet-adapter-button {
+  font-family: "Inter", system-ui, sans-serif !important;
+  border-radius: 12px !important;
+}
+.wallet-adapter-modal-wrapper {
+  font-family: "Inter", system-ui, sans-serif !important;
+}
+
+/* Selection */
+::selection {
+  background: rgba(0, 255, 163, 0.2);
+  color: #fff;
+}

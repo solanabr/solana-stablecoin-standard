@@ -1,0 +1,25 @@
+[workspace]
+members = ["programs/*", "modules/*", "trident-tests"]
+resolver = "2"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
+incremental = false
+codegen-units = 1
+
+[workspace.dependencies]
+anchor-lang = "0.31.1"
+anchor-spl = "0.31.1"
+spl-transfer-hook-interface = "0.10.0"
+spl-tlv-account-resolution = "0.10.0"
+spl-token-2022 = "6.0.0"
+spl-token-metadata-interface = "0.5.1"
+spl-pod = "0.5.1"
+spl-type-length-value = "0.8.0"
+spl-discriminator = "0.4.0"
+solana-security-txt = "1.1.1"

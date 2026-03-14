@@ -1,0 +1,11 @@
+[package]
+name = "sss-oracle"
+version = "0.1.0"
+edition = "2021"
+description = "Oracle price feed integration for non-USD pegged stablecoins in the Solana Stablecoin Standard"
+
+[lib]
+name = "sss_oracle"
+
+[dependencies]
+anchor-lang = { workspace = true }
