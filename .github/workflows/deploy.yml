@@ -1,0 +1,244 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        default: 'devnet'
+        type: choice
+        options:
+          - devnet
+          - mainnet
+
+env:
+  SOLANA_VERSION: 1.18.22
+  ANCHOR_VERSION: 0.31.1
+
+jobs:
+  # =============================================================================
+  # BUILD
+  # =============================================================================
+  build:
+    name: Build Programs
+    runs-on: ubuntu-latest
+    outputs:
+      sss_token_hash: ${{ steps.hash.outputs.sss_token }}
+      sss_transfer_hook_hash: ${{ steps.hash.outputs.sss_transfer_hook }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
+
+      - name: Build programs (verifiable)
+        run: anchor build --verifiable
+
+      - name: Calculate program hashes
+        id: hash
+        run: |
+          echo "sss_token=$(sha256sum target/deploy/sss_token.so | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "sss_transfer_hook=$(sha256sum target/deploy/sss_transfer_hook.so | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-artifacts
+          path: |
+            target/deploy/*.so
+            target/idl/*.json
+
+  # =============================================================================
+  # DEPLOY TO DEVNET
+  # =============================================================================
+  deploy-devnet:
+    name: Deploy to Devnet
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.network == 'devnet' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    environment: devnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-artifacts
+          path: target/
+
+      - name: Setup deployer wallet
+        run: |
+          echo "${{ secrets.DEVNET_DEPLOYER_KEYPAIR }}" > deployer.json
+          solana config set --url devnet
+          solana config set --keypair deployer.json
+
+      - name: Check balance
+        run: |
+          BALANCE=$(solana balance | awk '{print $1}')
+          echo "Deployer balance: $BALANCE SOL"
+          if (( $(echo "$BALANCE < 5" | bc -l) )); then
+            echo "::warning::Low deployer balance!"
+          fi
+
+      - name: Deploy sss-token
+        id: deploy-token
+        run: |
+          TX=$(solana program deploy target/deploy/sss_token.so --output json | jq -r '.programId')
+          echo "program_id=$TX" >> $GITHUB_OUTPUT
+          echo "SSS Token deployed: $TX"
+
+      - name: Deploy sss-transfer-hook
+        id: deploy-hook
+        run: |
+          TX=$(solana program deploy target/deploy/sss_transfer_hook.so --output json | jq -r '.programId')
+          echo "program_id=$TX" >> $GITHUB_OUTPUT
+          echo "SSS Transfer Hook deployed: $TX"
+
+      - name: Upload IDL
+        run: |
+          anchor idl init --filepath target/idl/sss_token.json ${{ steps.deploy-token.outputs.program_id }}
+          anchor idl init --filepath target/idl/sss_transfer_hook.json ${{ steps.deploy-hook.outputs.program_id }}
+
+      - name: Create deployment summary
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## Devnet Deployment Summary
+          
+          | Program | Address | Hash |
+          |---------|---------|------|
+          | sss-token | \`${{ steps.deploy-token.outputs.program_id }}\` | \`${{ needs.build.outputs.sss_token_hash }}\` |
+          | sss-transfer-hook | \`${{ steps.deploy-hook.outputs.program_id }}\` | \`${{ needs.build.outputs.sss_transfer_hook_hash }}\` |
+          
+          **Network:** Devnet
+          **Deployed at:** $(date -u)
+          **Commit:** ${{ github.sha }}
+          EOF
+
+      - name: Cleanup
+        if: always()
+        run: rm -f deployer.json
+
+  # =============================================================================
+  # VERIFY DEPLOYMENT
+  # =============================================================================
+  verify-devnet:
+    name: Verify Devnet Deployment
+    runs-on: ubuntu-latest
+    needs: deploy-devnet
+    steps:
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Verify programs
+        run: |
+          solana config set --url devnet
+          
+          # Check sss-token
+          echo "Checking sss-token..."
+          solana program show ${{ needs.deploy-devnet.outputs.sss_token_id }} || echo "::warning::sss-token not found"
+          
+          # Check sss-transfer-hook
+          echo "Checking sss-transfer-hook..."
+          solana program show ${{ needs.deploy-devnet.outputs.sss_transfer_hook_id }} || echo "::warning::sss-transfer-hook not found"
+
+  # =============================================================================
+  # DEPLOY TO MAINNET (Manual trigger only)
+  # =============================================================================
+  deploy-mainnet:
+    name: Deploy to Mainnet
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.network == 'mainnet'
+    environment: mainnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-artifacts
+          path: target/
+
+      - name: Setup deployer wallet
+        run: |
+          echo "${{ secrets.MAINNET_DEPLOYER_KEYPAIR }}" > deployer.json
+          solana config set --url mainnet-beta
+          solana config set --keypair deployer.json
+
+      - name: Check balance
+        run: |
+          BALANCE=$(solana balance | awk '{print $1}')
+          echo "Deployer balance: $BALANCE SOL"
+          if (( $(echo "$BALANCE < 10" | bc -l) )); then
+            echo "::error::Insufficient balance for mainnet deployment!"
+            exit 1
+          fi
+
+      - name: Deploy sss-token
+        id: deploy-token
+        run: |
+          TX=$(solana program deploy target/deploy/sss_token.so --output json | jq -r '.programId')
+          echo "program_id=$TX" >> $GITHUB_OUTPUT
+
+      - name: Deploy sss-transfer-hook
+        id: deploy-hook
+        run: |
+          TX=$(solana program deploy target/deploy/sss_transfer_hook.so --output json | jq -r '.programId')
+          echo "program_id=$TX" >> $GITHUB_OUTPUT
+
+      - name: Create deployment summary
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## 🚀 Mainnet Deployment Summary
+          
+          | Program | Address | Hash |
+          |---------|---------|------|
+          | sss-token | \`${{ steps.deploy-token.outputs.program_id }}\` | \`${{ needs.build.outputs.sss_token_hash }}\` |
+          | sss-transfer-hook | \`${{ steps.deploy-hook.outputs.program_id }}\` | \`${{ needs.build.outputs.sss_transfer_hook_hash }}\` |
+          
+          **Network:** Mainnet-Beta
+          **Deployed at:** $(date -u)
+          **Commit:** ${{ github.sha }}
+          
+          ⚠️ **Remember to update Anchor.toml with these program IDs!**
+          EOF
+
+      - name: Cleanup
+        if: always()
+        run: rm -f deployer.json

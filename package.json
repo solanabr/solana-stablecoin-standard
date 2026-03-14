@@ -1,26 +1,87 @@
 {
   "name": "solana-stablecoin-standard",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Token-2022 Native Framework for Regulated, Compliant Digital Currencies on Solana",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install:all": "npm ci && npm --prefix sdk ci && npm --prefix cli ci && npm --prefix backend ci && npm --prefix frontend ci && npm --prefix website ci",
+    "build": "anchor build",
+    "build:all": "npm run build && npm run build:sdk && npm run build:cli && npm run build:backend && npm run build:frontend && npm run build:docs",
+    "build:sdk": "cd sdk && npm run build",
+    "build:cli": "cd cli && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:docs": "cd website && npm run build",
+    "test": "anchor test",
+    "test:sdk": "cd sdk && npm test",
+    "test:cli": "cd cli && npm run build && node dist/index.js --help",
+    "test:backend": "cd backend && npm test",
+    "test:ct": "npx ts-node scripts/ct-e2e-test.ts",
+    "test:ct:devnet": "ANCHOR_PROVIDER_URL=https://api.devnet.solana.com npx ts-node scripts/ct-e2e-test.ts",
+    "test:fuzz": "cd trident-tests/fuzz_tests && cargo test --release",
+    "test:all": "npm test && npm run test:sdk && npm run test:cli && npm run test:backend && npm run test:ct",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:docs": "cd website && npm run start",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:docs\"",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "start:docs": "cd website && npm run serve",
+    "start:all": "concurrently \"npm run start:backend\" \"npm run start:frontend\" \"npm run start:docs\"",
+    "cli": "cd cli && npm run start --",
+    "cli:ask": "cd cli && npm run start -- ask",
+    "cli:chat": "cd cli && npm run start -- chat",
+    "deploy:devnet": "anchor deploy --provider.cluster devnet",
+    "deploy:mainnet": "anchor deploy --provider.cluster mainnet",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "clean": "anchor clean && rm -rf node_modules",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "validator": "solana-test-validator --reset --bpf-program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb target/deploy/spl_token_2022.so"
   },
+  "workspaces": [
+    "sdk",
+    "cli",
+    "backend",
+    "frontend",
+    "website"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rahul-Prasad-07/solana-stablecoin-standard.git"
+    "url": "git+https://github.com/your-org/solana-stablecoin-standard.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "solana",
+    "stablecoin",
+    "token-2022",
+    "defi",
+    "anchor",
+    "compliance"
+  ],
+  "author": "SSS Team",
+  "license": "Apache-2.0",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Rahul-Prasad-07/solana-stablecoin-standard/issues"
   },
   "homepage": "https://github.com/Rahul-Prasad-07/solana-stablecoin-standard#readme",
   "dependencies": {
+    "@metaplex-foundation/mpl-token-metadata": "^2.2.0"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
-    "@metaplex-foundation/mpl-token-metadata": "^2.2.0"
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.4.0",
+    "chai": "^6.2.2",
+    "concurrently": "^9.2.1",
+    "mocha": "^11.7.5",
+    "ts-mocha": "^11.1.0",
+    "typescript": "^5.9.3"
   }
 }

@@ -20,6 +20,15 @@ Thumbs.db
 # Build output
 dist/
 build/
+.next/
+target/
+.anchor/
+website/build/
+website/.docusaurus/
+frontend/.next/
+backend/dist/
+cli/dist/
+sdk/dist/
 
 # Misc
 *.local

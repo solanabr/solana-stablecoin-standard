@@ -1,0 +1,85 @@
+services:
+  # ==========================================================================
+  # Backend API Service
+  # ==========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SOLANA_RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - SOLANA_NETWORK=${CLUSTER:-devnet}
+      - SSS_PROGRAM_ID=${SSS_PROGRAM_ID:-2L6rZHyqhJ9VJqXhbgW7vyP3uerrw7Vzpp3qtqAq1FZj}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/api/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - sss-network
+
+  # ==========================================================================
+  # Frontend Dashboard
+  # ==========================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        - NEXT_PUBLIC_RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+        - NEXT_PUBLIC_SSS_PROGRAM_ID=${SSS_PROGRAM_ID:-2L6rZHyqhJ9VJqXhbgW7vyP3uerrw7Vzpp3qtqAq1FZj}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - sss-network
+
+  # ==========================================================================
+  # Documentation Website
+  # ==========================================================================
+  docs:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3000"
+    restart: unless-stopped
+    networks:
+      - sss-network
+
+  # ==========================================================================
+  # CLI Service (for container-based CLI usage)
+  # ==========================================================================
+  cli:
+    build:
+      context: ./cli
+      dockerfile: Dockerfile
+    profiles:
+      - tools
+    environment:
+      - CLUSTER=${CLUSTER:-devnet}
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+    volumes:
+      - ~/.config/solana:/root/.config/solana:ro
+    stdin_open: true
+    tty: true
+    networks:
+      - sss-network
+
+networks:
+  sss-network:
+    driver: bridge
+
+volumes:
+  solana-config:
