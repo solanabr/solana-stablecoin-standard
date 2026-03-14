@@ -16,7 +16,7 @@
     "test:anchor": "anchor test",
     "test:sdk": "yarn workspace @stbr/sss-token test",
     "test:cli": "cargo test -p sss-token --test cli_tests",
-    "fuzz:trident": "trident run --manifest-path trident-tests/Trident.toml",
+    "fuzz:trident": "cd trident-tests && trident fuzz run fuzz_0",
     "sdk:build": "yarn workspace @stbr/sss-token build",
     "sdk:clean": "yarn workspace @stbr/sss-token clean",
     "services:build": "yarn workspaces foreach --topological-dev --include '@sss/*' run build",
