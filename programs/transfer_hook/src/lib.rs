@@ -6,7 +6,7 @@ use spl_tlv_account_resolution::{
 use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
 use sss::state::{StablecoinConfig, BlacklistRegistry};
 
-declare_id!("3J9p2UafzvtLMWRao29D9DEbMqyUG6GS6GS8QCQakGA3");
+declare_id!("4pf4aBSu8VS4qVsrwC9T1GvsCJatiD3D6fw2qFPYgZjG");
 
 #[program]
 pub mod transfer_hook {

@@ -3,14 +3,14 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-sss = "HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM"
-transfer_hook = "3J9p2UafzvtLMWRao29D9DEbMqyUG6GS6GS8QCQakGA3"
-oracle_module = "BzKd12nujUa9hejZJVSKXF8QHivBJu2XoqfXqMF5Ls3P"
+sss = "88tCFqhg7EFqGcYoV2Gb19g781KT6LbbH3sprGt5p5XC"
+transfer_hook = "4pf4aBSu8VS4qVsrwC9T1GvsCJatiD3D6fw2qFPYgZjG"
+oracle_module = "BqXApTus5EWmrMAgDhLg8rmbq6fnW7XV4CbaCmUBMSTQ"
 
 [programs.devnet]
-sss = "HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM"
-transfer_hook = "3J9p2UafzvtLMWRao29D9DEbMqyUG6GS6GS8QCQakGA3"
-# oracle_module = "BzKd12nujUa9hejZJVSKXF8QHivBJu2XoqfXqMF5Ls3P"
+sss = "88tCFqhg7EFqGcYoV2Gb19g781KT6LbbH3sprGt5p5XC"
+transfer_hook = "4pf4aBSu8VS4qVsrwC9T1GvsCJatiD3D6fw2qFPYgZjG"
+# oracle_module = "BqXApTus5EWmrMAgDhLg8rmbq6fnW7XV4CbaCmUBMSTQ"
 
 [registry]
 url = "https://api.apr.dev"

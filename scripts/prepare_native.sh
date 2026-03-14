@@ -3,7 +3,7 @@ set -e
 
 # Configuration
 SOLANA_VERSION="v1.18.15"
-ANCHOR_VERSION="0.29.0"
+ANCHOR_VERSION="0.30.0"
 PROJECT_ROOT=$(pwd)
 BIN_DIR="$PROJECT_ROOT/.bin"
 
@@ -58,9 +58,15 @@ if [[ -f "Cargo.lock" ]]; then
     sed -i.bak 's/version = 4/version = 3/g' Cargo.lock || true
 fi
 
-# 5. Build the programs
+# 5. Generate deployment keypair if missing
+if [[ ! -f "id.json" ]]; then
+    echo "🔑 Generating deployment keypair..."
+    "$SOLANA_CLI"-keygen new --no-passphrase -so id.json
+fi
+
+# 6. Build the programs
 export PATH="$BIN_DIR:$PATH"
 echo "🛠️  Building Solana programs natively on host using $ANCHOR_CLI..."
-"$ANCHOR_CLI" build
+"$ANCHOR_CLI" build --no-idl
 
 echo "✨ Native build complete! Programs are ready for Docker deployment."

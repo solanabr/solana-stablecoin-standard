@@ -46,11 +46,12 @@ services:
       solana:
         condition: service_healthy
     command: >
-      bash -c "solana config set --url http://solana:8899 && 
-               solana-keygen new --no-passphrase -so id.json --force && 
-               solana program deploy target/deploy/sss.so --program-id HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM --keypair id.json && 
-               solana program deploy target/deploy/transfer_hook.so --program-id 3J9p2UafzvtLMWRao29D9DEbMqyUG6GS6GS8QCQakGA3 --keypair id.json &&
-               solana program deploy target/deploy/oracle_module.so --program-id BzKd12nujUa9hejZJVSKXF8QHivBJu2XoqfXqMF5Ls3P --keypair id.json &&
+      bash -c "export SOLANA='/workspace/bin/solana' &&
+               $$SOLANA config set --url http://solana:8899 && 
+               $$SOLANA airdrop 10 id.json &&
+               $$SOLANA program deploy target/deploy/sss.so --program-id target/deploy/sss-keypair.json --keypair id.json && 
+               $$SOLANA program deploy target/deploy/transfer_hook.so --program-id target/deploy/transfer_hook-keypair.json --keypair id.json &&
+               $$SOLANA program deploy target/deploy/oracle_module.so --program-id target/deploy/oracle_module-keypair.json --keypair id.json &&
                echo 'Programs Deployed Successfully'"
 
   indexer:
@@ -60,7 +61,7 @@ services:
     environment:
       - RPC_URL=http://solana:8899
       - DATABASE_URL=postgres://user:pass@database:5432/sss
-      - STABLECOIN_PROGRAM_ID=HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM
+      - STABLECOIN_PROGRAM_ID=88tCFqhg7EFqGcYoV2Gb19g781KT6LbbH3sprGt5p5XC
     depends_on:
       builder:
         condition: service_completed_successfully

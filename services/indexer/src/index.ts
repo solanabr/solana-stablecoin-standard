@@ -17,10 +17,10 @@ const IDL_PLACEHOLDER = {
     metadata: { name: "sss", version: "0.1.0", spec: "0.1.0" },
     instructions: [], accounts: [], types: [], 
     events: [
-        { name: "MintEvent", fields: [{ name: "amount", type: "u64", index: false }] },
-        { name: "BurnEvent", fields: [{ name: "amount", type: "u64", index: false }] },
-        { name: "BlacklistAddEvent", fields: [{ name: "account", type: "publicKey", index: false }, { name: "reason", type: "string", index: false }] },
-        { name: "SeizeEvent", fields: [{ name: "amount", type: "u64", index: false }] }
+        { name: "MintEvent", discriminator: [183, 103, 126, 172, 19, 218, 59, 137], fields: [{ name: "amount", type: "u64", index: false }] },
+        { name: "BurnEvent", discriminator: [217, 17, 196, 68, 50, 194, 212, 114], fields: [{ name: "amount", type: "u64", index: false }] },
+        { name: "BlacklistAddEvent", discriminator: [213, 23, 115, 69, 114, 237, 240, 105], fields: [{ name: "account", type: "publicKey", index: false }, { name: "reason", type: "string", index: false }] },
+        { name: "SeizeEvent", discriminator: [224, 76, 124, 185, 235, 128, 50, 247], fields: [{ name: "amount", type: "u64", index: false }] }
     ], 
     errors: [],
 };

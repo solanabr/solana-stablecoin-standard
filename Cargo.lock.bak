@@ -78,9 +78,8 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "anchor-attribute-access-control"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47fe28365b33e8334dd70ae2f34a43892363012fe239cf37d2ee91693575b1f8"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-syn",
  "proc-macro2",
@@ -90,9 +89,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-attribute-account"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c288d496168268d198d9b53ee9f4f9d260a55ba4df9877ea1d4486ad6109e0f"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-syn",
  "bs58 0.5.1",
@@ -103,9 +101,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-attribute-constant"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49b77b6948d0eeaaa129ce79eea5bbbb9937375a9241d909ca8fb9e006bb6e90"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-syn",
  "quote",
@@ -114,9 +111,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-attribute-error"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d20bb569c5a557c86101b944721d865e1fd0a4c67c381d31a44a84f07f84828"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-syn",
  "quote",
@@ -125,9 +121,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-attribute-event"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cebd8d0671a3a9dc3160c48598d652c34c77de6be4d44345b8b514323284d57"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-syn",
  "proc-macro2",
@@ -137,9 +132,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-attribute-program"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efb2a5eb0860e661ab31aff7bb5e0288357b176380e985bade4ccb395981b42d"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-lang-idl",
  "anchor-syn",
@@ -154,9 +148,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-derive-accounts"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04368b5abef4266250ca8d1d12f4dff860242681e4ec22b885dcfe354fd35aa1"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-syn",
  "quote",
@@ -165,9 +158,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-derive-serde"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0bb0e0911ad4a70cab880cdd6287fe1e880a1a9d8e4e6defa8e9044b9796a6c"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-syn",
  "borsh-derive-internal 0.10.4",
@@ -178,9 +170,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-derive-space"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ef415ff156dc82e9ecb943189b0cb241b3a6bfc26a180234dc21bd3ef3ce0cb"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -189,9 +180,8 @@ dependencies = [
 
 [[package]]
 name = "anchor-lang"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6620c9486d9d36a4389cab5e37dc34a42ed0bfaa62e6a75a2999ce98f8f2e373"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-attribute-access-control",
  "anchor-attribute-account",
@@ -202,7 +192,6 @@ dependencies = [
  "anchor-derive-accounts",
  "anchor-derive-serde",
  "anchor-derive-space",
- "anchor-lang-idl",
  "arrayref",
  "base64 0.21.7",
  "bincode",
@@ -215,34 +204,18 @@ dependencies = [
 
 [[package]]
 name = "anchor-lang-idl"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32e8599d21995f68e296265aa5ab0c3cef582fd58afec014d01bd0bce18a4418"
+version = "0.1.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
- "anchor-lang-idl-spec",
  "anyhow",
- "heck",
- "regex",
  "serde",
  "serde_json",
- "sha2 0.10.9",
-]
-
-[[package]]
-name = "anchor-lang-idl-spec"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bdf143115440fe621bdac3a29a1f7472e09f6cd82b2aa569429a0c13f103838"
-dependencies = [
- "anyhow",
- "serde",
 ]
 
 [[package]]
 name = "anchor-spl"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04bd077c34449319a1e4e0bc21cea572960c9ae0d0fefda0dd7c52fcc3c647a3"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anchor-lang",
  "spl-associated-token-account",
@@ -255,13 +228,11 @@ dependencies = [
 
 [[package]]
 name = "anchor-syn"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f99daacb53b55cfd37ce14d6c9905929721137fd4c67bbab44a19802aecb622f"
+version = "0.30.0"
+source = "git+https://github.com/coral-xyz/anchor.git?tag=v0.30.0#852fcc77beb6302474a11e0f8e6f1e688021be36"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
- "cargo_toml",
  "heck",
  "proc-macro2",
  "quote",
@@ -472,8 +443,7 @@ dependencies = [
 [[package]]
 name = "blake3"
 version = "1.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8ee0c1824c4dea5b5f81736aff91bae041d2c07ee1192bec91054e10e3e601e"
+source = "git+https://github.com/BLAKE3-team/BLAKE3.git?tag=1.5.5#81f772a4cd70dc0325047a6a737d2f6f4b92180e"
 dependencies = [
  "arrayref",
  "arrayvec",
@@ -571,7 +541,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdd1d3c0c2f5833f22386f252fe8ed005c7f59fdcddeef025c01b4c3b9fd9ac3"
 dependencies = [
  "once_cell",
- "proc-macro-crate 3.1.0",
+ "proc-macro-crate 3.2.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -679,16 +649,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
-name = "cargo_toml"
-version = "0.19.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a98356df42a2eb1bd8f1793ae4ee4de48e384dd974ce5eac8eee802edb7492be"
-dependencies = [
- "serde",
- "toml 0.8.2",
-]
-
-[[package]]
 name = "cc"
 version = "1.2.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -753,8 +713,7 @@ dependencies = [
 [[package]]
 name = "constant_time_eq"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
+source = "git+https://github.com/cesarb/constant_time_eq.git?tag=0.3.1#bea93a336b65dee32f1ed871ea1eecdf47977bb2"
 
 [[package]]
 name = "cpufeatures"
@@ -1387,7 +1346,7 @@ version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff32365de1b6743cb203b710788263c44a03de03802daf96092f2da4fe6ba4d7"
 dependencies = [
- "proc-macro-crate 3.1.0",
+ "proc-macro-crate 3.2.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -1494,16 +1453,26 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d6ea3c4595b96363c13943497db34af4460fb474a95c43f4446ad341b8c9785"
 dependencies = [
- "toml 0.5.11",
+ "toml",
 ]
 
 [[package]]
 name = "proc-macro-crate"
-version = "3.1.0"
+version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d37c51ca738a55da99dc0c4a34860fd675453b8b36209178c2249bb13651284"
+checksum = "7f4c021e1093a56626774e81216a4ce732a735e5bad4868a03f3ed65ca0c3919"
 dependencies = [
- "toml_edit 0.21.1",
+ "once_cell",
+ "toml_edit 0.19.15",
+]
+
+[[package]]
+name = "proc-macro-crate"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ecf48c7ca261d60b74ab1a7b20da18bede46776b2e55535cb958eb595c5fa7b"
+dependencies = [
+ "toml_edit 0.22.20",
 ]
 
 [[package]]
@@ -1772,15 +1741,6 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
-]
-
-[[package]]
-name = "serde_spanned"
-version = "0.6.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -2307,6 +2267,9 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "borsh 1.5.1",
+ "indexmap",
+ "proc-macro-crate 1.3.1",
  "solana-program",
 ]
 
@@ -2417,48 +2380,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "185d8ab0dfbb35cf1399a6344d8484209c088f75f8f68230da55d48d95d43e3d"
-dependencies = [
- "serde",
- "serde_spanned",
- "toml_datetime",
- "toml_edit 0.20.7",
-]
-
-[[package]]
 name = "toml_datetime"
 version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c"
+
+[[package]]
+name = "toml_edit"
+version = "0.19.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b5bb770da30e5cbfde35a2d7b9b8a2c4b8ef89548a7a6aeab5c9a576e3e7421"
 dependencies = [
- "serde",
+ "indexmap",
+ "toml_datetime",
+ "winnow 0.5.40",
 ]
 
 [[package]]
 name = "toml_edit"
-version = "0.20.7"
+version = "0.22.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70f427fce4d84c72b5b732388bf4a9f4531b53f74e2887e3ecb2481f68f66d81"
-dependencies = [
- "indexmap",
- "serde",
- "serde_spanned",
- "toml_datetime",
- "winnow",
-]
-
-[[package]]
-name = "toml_edit"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8534fd7f78b5405e860340ad6575217ce99f38d4d5c8f2442cb5ecb50090e1"
+checksum = "583c44c02ad26b0c3f3066fe629275e50627026c51ac2e595cca4c230ce1ce1d"
 dependencies = [
  "indexmap",
  "toml_datetime",
- "winnow",
+ "winnow 0.6.26",
 ]
 
 [[package]]
@@ -2658,6 +2604,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "winnow"
+version = "0.6.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e90edd2ac1aa278a5c4599b1d89cf03074b610800f866d4026dc199d7929a28"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "wit-bindgen"
 version = "0.51.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2708,3 +2663,38 @@ name = "zmij"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
+
+[[patch.unused]]
+name = "borsh"
+version = "1.2.1"
+source = "git+https://github.com/near/borsh-rs.git?tag=borsh-v1.2.1#2b1f6c93f3087ab7c987b0654fae75a26bc67723"
+
+[[patch.unused]]
+name = "borsh-derive"
+version = "1.2.1"
+source = "git+https://github.com/near/borsh-rs.git?tag=borsh-v1.2.1#2b1f6c93f3087ab7c987b0654fae75a26bc67723"
+
+[[patch.unused]]
+name = "proc-macro-crate"
+version = "1.3.0"
+source = "git+https://github.com/bkchr/proc-macro-crate?tag=v1.3.0#0ec934ad4fc0a25b1158fd5a9573ae06924e7dad"
+
+[[patch.unused]]
+name = "toml"
+version = "0.8.2"
+source = "git+https://github.com/toml-rs/toml.git?tag=toml-v0.8.2#fe65b2bfa2021b939a0fc71e8b008609ea21f6fe"
+
+[[patch.unused]]
+name = "toml_datetime"
+version = "0.6.3"
+source = "git+https://github.com/toml-rs/toml.git?tag=toml_datetime-v0.6.3#22fb58e20d2de3dcc76af7cfb9592400e7ba1623"
+
+[[patch.unused]]
+name = "toml_edit"
+version = "0.21.1"
+source = "git+https://github.com/toml-rs/toml.git?tag=v0.21.1#f5c6f4b473f71ff02bfd41202c13059e9eb12fb9"
+
+[[patch.unused]]
+name = "toml_parser"
+version = "1.0.8+spec-1.1.0"
+source = "git+https://github.com/toml-rs/toml.git?tag=toml_parser-v1.0.8#767747fe1afad1236d60b0db3fe4c90bf17c14eb"

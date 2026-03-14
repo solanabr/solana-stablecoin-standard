@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("BzKd12nujUa9hejZJVSKXF8QHivBJu2XoqfXqMF5Ls3P");
+declare_id!("BqXApTus5EWmrMAgDhLg8rmbq6fnW7XV4CbaCmUBMSTQ");
 
 /// SSS Oracle Integration Module (Experimental)
 /// Demonstrates how an external Switchboard feed can control Minting pricing equations.

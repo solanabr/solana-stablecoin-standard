@@ -7,7 +7,7 @@ pub mod events;
 
 use instructions::*;
 
-declare_id!("HCzhfNz2Kc2wBfacsWzLsM5EdyUEeypFHRzbpDeMb9RM");
+declare_id!("88tCFqhg7EFqGcYoV2Gb19g781KT6LbbH3sprGt5p5XC");
 
 #[program]
 pub mod sss {
