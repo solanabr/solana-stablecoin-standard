@@ -1,0 +1,22 @@
+{
+  "name": "@stbr/sss-token-cli",
+  "version": "0.1.0",
+  "description": "Admin CLI for Solana Stablecoin Standard",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "sss-token": "dist/index.cjs"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.12",
+    "@solana/web3.js": "^1.98.0",
+    "@stbr/sss-token": "workspace:*",
+    "commander": "^13.1.0",
+    "toml": "^3.0.0"
+  }
+}

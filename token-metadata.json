@@ -1,0 +1,30 @@
+{
+  "name": "Demo USD",
+  "symbol": "dUSD",
+  "description": "Demo stablecoin metadata for the Solana Stablecoin Standard grant submission.",
+  "image": "https://placehold.co/512x512/png?text=dUSD",
+  "external_url": "https://github.com/grkhmz23/SSS",
+  "attributes": [
+    {
+      "trait_type": "standard",
+      "value": "SSS-2"
+    },
+    {
+      "trait_type": "network",
+      "value": "Solana Devnet"
+    },
+    {
+      "trait_type": "category",
+      "value": "Stablecoin"
+    }
+  ],
+  "properties": {
+    "category": "image",
+    "files": [
+      {
+        "uri": "https://placehold.co/512x512/png?text=dUSD",
+        "type": "image/png"
+      }
+    ]
+  }
+}

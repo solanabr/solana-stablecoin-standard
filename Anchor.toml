@@ -1,0 +1,25 @@
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+sss_stablecoin = "5C7LHvieTag3oioHsni4SgTVDeCYMLTchix5obimXkEL"
+sss_transfer_hook = "CHfiQPpbATb9qDbYMA8sRKPxRu3sYHdMW4s4JG4xJt1H"
+
+[programs.devnet]
+sss_stablecoin = "5C7LHvieTag3oioHsni4SgTVDeCYMLTchix5obimXkEL"
+sss_transfer_hook = "CHfiQPpbATb9qDbYMA8sRKPxRu3sYHdMW4s4JG4xJt1H"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "pnpm tsx tests/run-anchor-tests.ts"
+
+[toolchain]
+anchor_version = "0.32.1"
+solana_version = "3.0.6"

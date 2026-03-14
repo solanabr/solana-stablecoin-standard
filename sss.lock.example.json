@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "rpcUrl": "https://api.devnet.solana.com",
+  "stablecoinProgramId": "5C7LHvieTag3oioHsni4SgTVDeCYMLTchix5obimXkEL",
+  "transferHookProgramId": "CHfiQPpbATb9qDbYMA8sRKPxRu3sYHdMW4s4JG4xJt1H",
+  "mint": "6CBFMTU42axuudfRXDga5weTxQqujD1ocYr1WhVENVDU",
+  "config": "Cs5enMrLzjfxKN9fTgv5u2nEAhSsKt5Cgen8TcJnhvC9",
+  "masterMinterRole": "48RzJCLLic3B1GbtajMd3tabHNkQBjQDMvjQy3oztVqc",
+  "transferHookConfig": "FcFJsa4GPkffXF6tooZBw31rrGRvgCDr1dHeSSHhwgSj",
+  "extraAccountMetaList": "8UR1J7qsrwbCAXzeMi3HRFa5Kc41BzaWuNcatrqCxEPH",
+  "createdAt": "2026-03-13T20:34:00.000Z"
+}

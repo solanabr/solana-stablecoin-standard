@@ -1,0 +1,30 @@
+{
+  "name": "sss-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard reference implementation",
+  "packageManager": "pnpm@10.6.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "anchor:build": "anchor build",
+    "anchor:test": "anchor test",
+    "frontend:dev": "pnpm --filter @stbr/sss-frontend dev",
+    "frontend:build": "pnpm --filter @stbr/sss-frontend build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@typescript-eslint/eslint-plugin": "^8.25.0",
+    "@typescript-eslint/parser": "^8.25.0",
+    "eslint": "^9.22.0",
+    "eslint-config-prettier": "^10.1.1",
+    "prettier": "^3.5.3",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  }
+}

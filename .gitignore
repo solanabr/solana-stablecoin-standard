@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+*.log
+.DS_Store
+target
+.anchor
+.ledger
+solana-ledger
+test-ledger
+sss.lock.json

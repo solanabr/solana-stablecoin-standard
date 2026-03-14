@@ -1,0 +1,18 @@
+{
+  "name": "@stbr/backend-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "pino": "^9.6.0",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2"
+  }
+}

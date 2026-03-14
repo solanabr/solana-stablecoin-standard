@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  RUST_VERSION: 1.85.0
+  SOLANA_VERSION: 3.0.6
+  ANCHOR_VERSION: 0.32.1
+
+jobs:
+  rust-anchor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          components: rustfmt, clippy
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install JS deps
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libudev-dev
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked --force
+
+      - name: Verify toolchain
+        run: |
+          rustc --version
+          cargo --version
+          solana --version
+          cargo-build-sbf --version
+          anchor --version
+
+      - name: Setup local test wallet
+        run: |
+          mkdir -p ~/.config/solana
+          solana-keygen new --no-bip39-passphrase --silent --force -o ~/.config/solana/id.json
+
+      - name: Rust fmt
+        run: cargo fmt --check
+
+      - name: Anchor build
+        run: |
+          anchor build
+
+      - name: Anchor test
+        run: |
+          RUN_ANCHOR_TESTS=1 anchor test --skip-build
+
+  js-sdk-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install JS deps
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Lint
+        run: pnpm -r lint
+
+      - name: Tests
+        run: pnpm -r test
+
+  backend-compose-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker compose build
+        working-directory: backend
+        run: docker compose build

@@ -1,0 +1,21 @@
+{
+  "name": "@stbr/integration-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"**/*.ts\"",
+    "test": "vitest run",
+    "test:anchor": "vitest run integration"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.12",
+    "@solana/web3.js": "^1.98.0",
+    "chai": "^5.2.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.9"
+  }
+}

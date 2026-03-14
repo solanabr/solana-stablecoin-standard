@@ -1,0 +1,20 @@
+{
+  "name": "@stbr/indexer-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs",
+    "dev": "tsx src/index.ts",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.0",
+    "@stbr/backend-shared": "workspace:*",
+    "express": "^4.21.2",
+    "pg": "^8.13.3"
+  }
+}

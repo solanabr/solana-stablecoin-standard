@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-[#07090b] text-zinc-50 font-sans antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.45);
+}
+
+.wallet-adapter-button {
+  background: linear-gradient(180deg, rgba(74, 222, 128, 0.95), rgba(5, 150, 105, 0.95)) !important;
+  border: 1px solid rgba(167, 243, 208, 0.5) !important;
+  border-radius: 0.9rem !important;
+  color: white !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 0.875rem !important;
+  height: 2.75rem !important;
+}
+
+.wallet-adapter-button-trigger:hover {
+  filter: brightness(1.05);
+}
