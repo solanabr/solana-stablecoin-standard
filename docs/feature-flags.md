@@ -1,7 +1,7 @@
 # SSS — Feature Flags Reference
 
 > **SDK class:** `FeatureFlagsModule` (`sdk/src/FeatureFlagsModule.ts`)
-> **Added:** SSS-059 | **Updated:** SSS-060 (FLAG_SPEND_POLICY — SSS-063), SSS-065 (FLAG_DAO_COMMITTEE — SSS-067), SSS-074 (FLAG_YIELD_COLLATERAL — SSS-072), SSS-077 (FLAG_ZK_COMPLIANCE — SSS-076)
+> **Added:** SSS-059 | **Updated:** SSS-060 (FLAG_SPEND_POLICY — SSS-063), SSS-065 (FLAG_DAO_COMMITTEE — SSS-067), SSS-070 (FLAG_YIELD_COLLATERAL), SSS-075 (FLAG_ZK_COMPLIANCE)
 
 ---
 
@@ -23,8 +23,8 @@ corresponding behaviour; clearing it deactivates it.
 | `FLAG_CIRCUIT_BREAKER` | 0 | `0x01` | Halts all mint and burn operations for the token until cleared. |
 | `FLAG_SPEND_POLICY` | 1 | `0x02` | Enforces a per-transaction transfer cap (`max_transfer_amount`). Enabled atomically by `set_spend_limit`. |
 | `FLAG_DAO_COMMITTEE` | 2 | `0x04` | Gates privileged admin operations behind on-chain proposals that require committee quorum approval. Enabled atomically by `init_dao_committee`. |
-| `FLAG_YIELD_COLLATERAL` | 3 | `0x08` | Allows yield-bearing SPL token mints (stSOL, mSOL, jitoSOL, etc.) to be deposited as CDP collateral. Enabled atomically by `init_yield_collateral`. |
-| `FLAG_ZK_COMPLIANCE` | 4 | `0x10` | Requires users to hold a valid on-chain ZK compliance proof before performing compliance-gated operations. Enabled atomically by `init_zk_compliance`. |
+| `FLAG_YIELD_COLLATERAL` | 3 | `0x08` | Enables yield-bearing SPL tokens (e.g. stSOL, mSOL) as CDP collateral. Enabled atomically by `init_yield_collateral`. SSS-3 only. |
+| `FLAG_ZK_COMPLIANCE` | 4 | `0x10` | Enforces zero-knowledge proof verification on transfers: sender must hold a valid, non-expired `VerificationRecord` PDA. Enabled atomically by `init_zk_compliance`. SSS-2 only. |
 
 > **Reserved bits:** bits 5–63 are reserved for future protocol flags.
 > Do not set them directly.
@@ -146,6 +146,53 @@ require multi-party approval for sensitive protocol operations.
 
 ---
 
+### `FLAG_YIELD_COLLATERAL`
+
+```typescript
+export const FLAG_YIELD_COLLATERAL = 1n << 3n; // 0x08
+```
+
+**Anchor constant:**
+```rust
+pub const FLAG_YIELD_COLLATERAL: u64 = 1 << 3; // 0x08
+```
+
+When `FLAG_YIELD_COLLATERAL` is set in `StablecoinConfig.feature_flags`:
+
+- Yield-bearing SPL token mints (e.g. stSOL, mSOL) listed in the
+  `YieldCollateralConfig` PDA are accepted as CDP collateral deposits.
+- Only valid for **SSS-3** (reserve-backed) stablecoins.
+- The flag is enabled atomically by `init_yield_collateral`.
+- Whitelisted mints are managed via `add_yield_collateral_mint` (authority only; max 8 mints).
+
+**Use case:** allow stablecoin CDPs to accept liquid staking tokens and other
+yield-bearing assets as collateral, enabling yield to accrue inside the vault.
+
+> **Note:** `FLAG_YIELD_COLLATERAL` is managed via the dedicated
+> `init_yield_collateral` / `add_yield_collateral_mint` instructions,
+> not via `set_feature_flag` / `clear_feature_flag`.
+
+#### `YieldCollateralConfig` PDA
+
+Seeds: `["yield-collateral", mint]`
+
+| Field | Type | Description |
+|---|---|---|
+| `sss_mint` | `Pubkey` | The stablecoin mint this config governs. |
+| `whitelisted_mints` | `Vec<Pubkey>` (max 8) | Accepted yield-bearing collateral mint addresses. |
+| `bump` | `u8` | PDA bump. |
+
+#### Yield Collateral Error Codes
+
+| Error | Description |
+|---|---|
+| `SssError::YieldCollateralNotEnabled` | `add_yield_collateral_mint` called before `FLAG_YIELD_COLLATERAL` is set. |
+| `SssError::WhitelistFull` | Whitelist already contains 8 mints; cannot add more. |
+| `SssError::MintAlreadyWhitelisted` | Collateral mint is already in the whitelist. |
+| `SssError::InvalidPreset` | `init_yield_collateral` called on a non-SSS-3 stablecoin. |
+
+---
+
 ### `FLAG_ZK_COMPLIANCE`
 
 ```typescript
@@ -159,38 +206,112 @@ pub const FLAG_ZK_COMPLIANCE: u64 = 1 << 4; // 0x10
 
 When `FLAG_ZK_COMPLIANCE` is set in `StablecoinConfig.feature_flags`:
 
-- Users must hold a valid `ZkVerificationRecord` PDA (written by the on-chain
-  verifier after a successful `submit_zk_proof` call) before performing
-  compliance-gated operations.
-- Records expire after `ZkComplianceConfig.proof_expiry_seconds` from the time
-  of proof submission; users must re-submit a fresh proof after expiry.
-- The flag is enabled atomically by `init_zk_compliance`, which also creates
-  the `ZkComplianceConfig` PDA (stores verifier key + expiry window).
-- Disabling via `clear_feature_flag` (or `disableZkCompliance`) preserves the
-  `ZkComplianceConfig` PDA for re-activation.
+- Every transfer via the transfer-hook checks that the sender holds a valid
+  `VerificationRecord` PDA that has not expired.
+- Users obtain or refresh a record by calling `submit_zk_proof`.
+- Records expire after `ZkComplianceConfig.ttl_slots` (default 1500 slots ≈ ~10 minutes).
+- Authority may reclaim rent from expired records via `close_verification_record`.
+- Only valid for **SSS-2** (compliant) stablecoins — requires a transfer hook.
 
-**Use case:** on-chain KYC/AML or accredited-investor gating using a ZK proof
-system (Groth16, Plonk, etc.) so user identity is never exposed on-chain.
+**Use case:** enforce zero-knowledge proof-based identity/compliance verification on
+every token transfer, ensuring all participants have recent valid ZK attestations.
 
-> **Note:** `FLAG_ZK_COMPLIANCE` is managed via the dedicated instructions
-> `init_zk_compliance` and `submit_zk_proof` (SSS-075/076).  Admin can also
-> call `set_feature_flag` / `clear_feature_flag` directly to toggle the flag
-> without touching the `ZkComplianceConfig` PDA after initial setup.
+> **Note:** `FLAG_ZK_COMPLIANCE` is managed via the dedicated
+> `init_zk_compliance`, `submit_zk_proof`, and `close_verification_record`
+> instructions. In production, off-chain compliance oracles verify ZK proofs
+> before calling `submit_zk_proof` on behalf of users.
 
-#### ZkCompliance PDAs
+#### Transfer-hook integration
 
-| PDA | Seeds | Description |
+The transfer-hook validates ZK compliance at index 7 of extra account metas:
+
+- Extra account meta index 7: `VerificationRecord` PDA — seeds `["zk-verification", mint(1), owner(3)]`
+- Rejects with `HookError::ZkRecordMissing` if the record PDA does not exist.
+- Rejects with `HookError::ZkRecordExpired` if `Clock::slot >= record.expires_at_slot`.
+
+#### `ZkComplianceConfig` PDA
+
+Seeds: `["zk-compliance-config", mint]`
+
+| Field | Type | Description |
 |---|---|---|
-| `ZkComplianceConfig` | `["zk-compliance", sss_mint]` | Stores verifier key and proof expiry window. |
-| `ZkVerificationRecord` | `["zk-verification", sss_mint, user]` | Per-user proof acceptance record with expiry timestamp. |
+| `sss_mint` | `Pubkey` | The stablecoin mint this config governs. |
+| `ttl_slots` | `u64` | Validity window for `VerificationRecord`s (default 1500 slots). |
+| `bump` | `u8` | PDA bump. |
 
-#### ZkCompliance Error Codes
+#### `VerificationRecord` PDA
+
+Seeds: `["zk-verification", mint, user]`
+
+| Field | Type | Description |
+|---|---|---|
+| `sss_mint` | `Pubkey` | The stablecoin mint. |
+| `user` | `Pubkey` | The wallet whose ZK compliance is attested. |
+| `expires_at_slot` | `u64` | Slot at which this record expires (`submit_slot + ttl_slots`). |
+| `bump` | `u8` | PDA bump. |
+
+#### ZK Compliance Error Codes
 
 | Error | Description |
 |---|---|
-| `SssError::ZkComplianceAlreadyInitialised` | `init_zk_compliance` called when PDA already exists. |
-| `SssError::ZkComplianceNotEnabled` | `submit_zk_proof` called without `FLAG_ZK_COMPLIANCE` set. |
-| `SssError::InvalidZkProof` | Submitted proof failed on-chain verification. |
+| `SssError::ZkComplianceNotEnabled` | `submit_zk_proof` called when `FLAG_ZK_COMPLIANCE` is not set. |
+| `SssError::VerificationExpired` | Transfer attempted with an expired `VerificationRecord`. |
+| `SssError::VerificationRecordNotExpired` | `close_verification_record` called before the record has expired. |
+| `SssError::VerificationRecordMissing` | Transfer attempted with no `VerificationRecord` PDA present. |
+| `SssError::InvalidPreset` | `init_zk_compliance` called on a non-SSS-2 stablecoin. |
+
+#### ZK Compliance Workflow
+
+```typescript
+import { Program } from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
+
+const program = new Program(idl, provider);
+const [config] = PublicKey.findProgramAddressSync(
+  [Buffer.from('stablecoin-config'), mint.toBuffer()],
+  programId
+);
+const [zkConfig] = PublicKey.findProgramAddressSync(
+  [Buffer.from('zk-compliance-config'), mint.toBuffer()],
+  programId
+);
+
+// 1. Initialize ZK compliance (SSS-2 stablecoins; authority only)
+// ttl_slots = 0 uses the default of 1500 slots
+await program.methods
+  .initZkCompliance(new BN(0))
+  .accounts({ authority: provider.wallet.publicKey, mint, config, zkComplianceConfig: zkConfig })
+  .rpc({ commitment: 'confirmed' });
+
+// 2. User (or oracle on their behalf) submits ZK proof
+const [record] = PublicKey.findProgramAddressSync(
+  [Buffer.from('zk-verification'), mint.toBuffer(), userWallet.publicKey.toBuffer()],
+  programId
+);
+await program.methods
+  .submitZkProof()
+  .accounts({
+    user: userWallet.publicKey,
+    config,
+    mint,
+    zkComplianceConfig: zkConfig,
+    verificationRecord: record,
+  })
+  .signers([userWallet])
+  .rpc({ commitment: 'confirmed' });
+
+// 3. Authority closes an expired record (rent reclaim)
+await program.methods
+  .closeVerificationRecord()
+  .accounts({
+    authority: provider.wallet.publicKey,
+    config,
+    mint,
+    recordOwner: userWallet.publicKey,
+    verificationRecord: record,
+  })
+  .rpc({ commitment: 'confirmed' });
+```
 
 ---
 
@@ -201,9 +322,13 @@ system (Groth16, Plonk, etc.) so user identity is never exposed on-chain.
 | `SssError::CircuitBreakerActive` | — | Returned on `mintTo` / `burnFrom` when `FLAG_CIRCUIT_BREAKER` is set. |
 | `SssError::SpendLimitExceeded` | — | Returned by transfer-hook when transfer amount > `max_transfer_amount`. |
 | `SssError::SpendPolicyNotConfigured` | — | Returned by `set_spend_limit` when `max_amount` is 0. |
-| `SssError::ZkComplianceAlreadyInitialised` | — | Returned by `init_zk_compliance` when `ZkComplianceConfig` PDA already exists. |
-| `SssError::ZkComplianceNotEnabled` | — | Returned by `submit_zk_proof` when `FLAG_ZK_COMPLIANCE` is not set. |
-| `SssError::InvalidZkProof` | — | Returned by `submit_zk_proof` when on-chain proof verification fails. |
+| `SssError::YieldCollateralNotEnabled` | — | `add_yield_collateral_mint` called before flag is active. |
+| `SssError::WhitelistFull` | — | Yield collateral whitelist is at max capacity (8). |
+| `SssError::MintAlreadyWhitelisted` | — | Collateral mint is already in the whitelist. |
+| `SssError::ZkComplianceNotEnabled` | — | `submit_zk_proof` called when flag is not active. |
+| `SssError::VerificationExpired` | — | Returned by transfer-hook when `VerificationRecord` is expired. |
+| `SssError::VerificationRecordNotExpired` | — | `close_verification_record` called before expiry. |
+| `SssError::VerificationRecordMissing` | — | Transfer attempted with no `VerificationRecord` PDA. |
 | `SssError::Unauthorized` | — | Signer is not the admin authority for any flag write. |
 
 ---
@@ -216,6 +341,7 @@ import {
   FLAG_CIRCUIT_BREAKER,
   FLAG_SPEND_POLICY,
   FLAG_DAO_COMMITTEE,
+  FLAG_YIELD_COLLATERAL,
   FLAG_ZK_COMPLIANCE,
 } from '@stbr/sss-token';
 // or, from the SDK source directly:
@@ -224,14 +350,14 @@ import {
   FLAG_CIRCUIT_BREAKER,
   FLAG_SPEND_POLICY,
   FLAG_DAO_COMMITTEE,
+  FLAG_YIELD_COLLATERAL,
   FLAG_ZK_COMPLIANCE,
 } from '@sss/sdk';
 ```
 
-> **Note:** `FLAG_DAO_COMMITTEE` is exported from `@stbr/sss-token` but the
-> DAO committee instructions (`init_dao_committee`, `propose_action`,
-> `vote_action`, `execute_action`) are called directly via the Anchor
-> `Program` object (no SDK module wrapper in this release).
+> **Note:** `FLAG_DAO_COMMITTEE`, `FLAG_YIELD_COLLATERAL`, and `FLAG_ZK_COMPLIANCE`
+> are exported from `@stbr/sss-token` but their management instructions are called
+> directly via the Anchor `Program` object (no SDK module wrapper in this release).
 
 ---
 
@@ -473,20 +599,22 @@ const spendPolicyActive = await ff.isFeatureFlagSet(mint, FLAG_SPEND_POLICY);
 console.assert(spendPolicyActive === false);
 ```
 
-### Checking both flags
+### Checking all flags
 
 ```typescript
 const flags = await ff.getFeatureFlags(mint);
-const circuitBreakerOn = (flags & FLAG_CIRCUIT_BREAKER) !== 0n;
-const spendPolicyOn    = (flags & FLAG_SPEND_POLICY) !== 0n;
-const daoCommitteeOn   = (flags & FLAG_DAO_COMMITTEE) !== 0n;
-const zkComplianceOn   = (flags & FLAG_ZK_COMPLIANCE) !== 0n;
+const circuitBreakerOn    = (flags & FLAG_CIRCUIT_BREAKER)    !== 0n;
+const spendPolicyOn       = (flags & FLAG_SPEND_POLICY)       !== 0n;
+const daoCommitteeOn      = (flags & FLAG_DAO_COMMITTEE)      !== 0n;
+const yieldCollateralOn   = (flags & FLAG_YIELD_COLLATERAL)   !== 0n;
+const zkComplianceOn      = (flags & FLAG_ZK_COMPLIANCE)      !== 0n;
 
-console.log(`Circuit breaker: ${circuitBreakerOn}`);
-console.log(`Spend policy:    ${spendPolicyOn}`);
-console.log(`DAO committee:   ${daoCommitteeOn}`);
-console.log(`ZK compliance:   ${zkComplianceOn}`);
-console.log(`Raw bitmask:     0x${flags.toString(16).padStart(16, '0')}`);
+console.log(`Circuit breaker:   ${circuitBreakerOn}`);
+console.log(`Spend policy:      ${spendPolicyOn}`);
+console.log(`DAO committee:     ${daoCommitteeOn}`);
+console.log(`Yield collateral:  ${yieldCollateralOn}`);
+console.log(`ZK compliance:     ${zkComplianceOn}`);
+console.log(`Raw bitmask:       0x${flags.toString(16).padStart(16, '0')}`);
 ```
 
 ---
@@ -665,7 +793,7 @@ sss-cli spend-policy clear \
 
 - [on-chain-sdk-admin.md](./on-chain-sdk-admin.md) — pause/unpause, minter management, authority transfer
 - [on-chain-sdk-core.md](./on-chain-sdk-core.md) — mintTo, burnFrom, freeze/thaw
-- [on-chain-sdk-yield.md](./on-chain-sdk-yield.md) — yield-bearing collateral (FLAG_YIELD_COLLATERAL)
-- [on-chain-sdk-dao.md](./on-chain-sdk-dao.md) — DAO committee governance (FLAG_DAO_COMMITTEE)
-- [on-chain-sdk-zk.md](./on-chain-sdk-zk.md) — ZK compliance module (FLAG_ZK_COMPLIANCE)
+- [on-chain-sdk-cdp.md](./on-chain-sdk-cdp.md) — CDP collateral deposits (FLAG_YIELD_COLLATERAL integration)
+- [transfer-hook.md](./transfer-hook.md) — transfer-hook extra account metas (FLAG_ZK_COMPLIANCE index 7)
+- [compliance-module.md](./compliance-module.md) — compliance authority, ZK oracle patterns
 - [SSS-3.md](./SSS-3.md) — protocol specification
