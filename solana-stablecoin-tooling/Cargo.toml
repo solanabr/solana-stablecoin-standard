@@ -1,0 +1,24 @@
+[workspace]
+members = [
+    "programs/stablecoin",
+    "programs/transfer-hook",
+    "programs/oracle-pricing",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = { version = "0.30.1", features = ["token_2022"] }
+spl-token-2022 = { version = "3.0.4", features = ["no-entrypoint"] }
+spl-transfer-hook-interface = "0.6.5"
+spl-tlv-account-resolution = "0.6.4"
+spl-token-metadata-interface = "0.3.5"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
+incremental = false

@@ -1,0 +1,21 @@
+{
+  "name": "sss-tui",
+  "version": "1.0.0",
+  "description": "Interactive terminal UI for SSS stablecoin administration",
+  "type": "module",
+  "bin": {
+    "sss-tui": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js --mint GPXDvDTpDnCxWrkKXYkfFedKWhsvbmLj2FpXNQM3EV7y"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.6",
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0"
+  }
+}

@@ -1,0 +1,960 @@
+{
+  "address": "GPXDvDTpDnCxWrkKXYkfFedKWhsvbmLj2FpXNQM3EV7y",
+  "metadata": {
+    "name": "solana_stablecoin",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authorityRole",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram"
+        },
+        {
+          "name": "rent"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "InitializeParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "mintTokens",
+      "discriminator": [
+        59,
+        132,
+        24,
+        246,
+        122,
+        39,
+        8,
+        243
+      ],
+      "accounts": [
+        {
+          "name": "minter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "roleAssignment",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "burnTokens",
+      "discriminator": [
+        76,
+        15,
+        51,
+        254,
+        229,
+        215,
+        121,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "burner",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "roleAssignment"
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "source",
+          "writable": true
+        },
+        {
+          "name": "sourceAuthority"
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "freezeAccount",
+      "discriminator": [
+        253,
+        75,
+        82,
+        133,
+        167,
+        238,
+        43,
+        130
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "roleAssignment"
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "tokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "thawAccount",
+      "discriminator": [
+        115,
+        152,
+        79,
+        213,
+        213,
+        169,
+        184,
+        35
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "roleAssignment"
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "tokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "pause",
+      "discriminator": [
+        211,
+        22,
+        221,
+        251,
+        74,
+        121,
+        193,
+        47
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "roleAssignment"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "unpause",
+      "discriminator": [
+        169,
+        144,
+        4,
+        38,
+        10,
+        141,
+        188,
+        255
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "manageRole",
+      "discriminator": [
+        68,
+        229,
+        110,
+        160,
+        95,
+        156,
+        7,
+        235
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "roleHolder"
+        },
+        {
+          "name": "roleAssignment",
+          "writable": true
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "ManageRoleParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "transferAuthority",
+      "discriminator": [
+        48,
+        169,
+        76,
+        72,
+        229,
+        180,
+        55,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "newAuthority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "addToBlacklist",
+      "discriminator": [
+        90,
+        115,
+        98,
+        231,
+        173,
+        119,
+        117,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "blacklister",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "roleAssignment"
+        },
+        {
+          "name": "blacklistEntry",
+          "writable": true
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "address",
+          "type": "pubkey"
+        },
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "removeFromBlacklist",
+      "discriminator": [
+        47,
+        105,
+        20,
+        10,
+        165,
+        168,
+        203,
+        219
+      ],
+      "accounts": [
+        {
+          "name": "blacklister",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "roleAssignment"
+        },
+        {
+          "name": "blacklistEntry",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "address",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "seize",
+      "discriminator": [
+        129,
+        159,
+        143,
+        31,
+        161,
+        224,
+        241,
+        84
+      ],
+      "accounts": [
+        {
+          "name": "seizer",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "roleAssignment"
+        },
+        {
+          "name": "blacklistEntry"
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "source",
+          "writable": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "StablecoinConfig",
+      "discriminator": [
+        127,
+        25,
+        244,
+        213,
+        1,
+        192,
+        101,
+        6
+      ]
+    },
+    {
+      "name": "RoleAssignment",
+      "discriminator": [
+        205,
+        130,
+        191,
+        231,
+        211,
+        225,
+        155,
+        246
+      ]
+    },
+    {
+      "name": "BlacklistEntry",
+      "discriminator": [
+        218,
+        179,
+        231,
+        40,
+        141,
+        25,
+        168,
+        189
+      ]
+    }
+  ],
+  "types": [
+    {
+      "name": "StablecoinConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "preset",
+            "type": {
+              "defined": {
+                "name": "Preset"
+              }
+            }
+          },
+          {
+            "name": "features",
+            "type": {
+              "defined": {
+                "name": "FeatureFlags"
+              }
+            }
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "defaultAccountFrozen",
+            "type": "bool"
+          },
+          {
+            "name": "totalMinted",
+            "type": "u64"
+          },
+          {
+            "name": "totalBurned",
+            "type": "u64"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "symbol",
+            "type": {
+              "array": [
+                "u8",
+                10
+              ]
+            }
+          },
+          {
+            "name": "transferHookProgram",
+            "type": "pubkey"
+          },
+          {
+            "name": "createdAt",
+            "type": "u64"
+          },
+          {
+            "name": "updatedAt",
+            "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RoleAssignment",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "config",
+            "type": "pubkey"
+          },
+          {
+            "name": "holder",
+            "type": "pubkey"
+          },
+          {
+            "name": "roleMask",
+            "type": "u8"
+          },
+          {
+            "name": "mintQuota",
+            "type": "u64"
+          },
+          {
+            "name": "mintedAmount",
+            "type": "u64"
+          },
+          {
+            "name": "updatedAt",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BlacklistEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "address",
+            "type": "pubkey"
+          },
+          {
+            "name": "createdAt",
+            "type": "u64"
+          },
+          {
+            "name": "addedBy",
+            "type": "pubkey"
+          },
+          {
+            "name": "reason",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Preset",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "SSS1"
+          },
+          {
+            "name": "SSS2"
+          },
+          {
+            "name": "Custom"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeatureFlags",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "freezeAuthority",
+            "type": "bool"
+          },
+          {
+            "name": "permanentDelegate",
+            "type": "bool"
+          },
+          {
+            "name": "transferHook",
+            "type": "bool"
+          },
+          {
+            "name": "confidentialTransfers",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Role",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Minter"
+          },
+          {
+            "name": "Burner"
+          },
+          {
+            "name": "Pauser"
+          },
+          {
+            "name": "Blacklister"
+          },
+          {
+            "name": "Seizer"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RoleAction",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Grant"
+          },
+          {
+            "name": "Revoke"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitializeParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "preset",
+            "type": {
+              "defined": {
+                "name": "Preset"
+              }
+            }
+          },
+          {
+            "name": "customFeatures",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "FeatureFlags"
+                }
+              }
+            }
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          },
+          {
+            "name": "transferHookProgram",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "defaultAccountFrozen",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ManageRoleParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "role",
+            "type": {
+              "defined": {
+                "name": "Role"
+              }
+            }
+          },
+          {
+            "name": "action",
+            "type": {
+              "defined": {
+                "name": "RoleAction"
+              }
+            }
+          },
+          {
+            "name": "mintQuota",
+            "type": {
+              "option": "u64"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: caller does not have the required role"
+    },
+    {
+      "code": 6001,
+      "name": "NotMasterAuthority",
+      "msg": "Only the master authority can perform this action"
+    },
+    {
+      "code": 6002,
+      "name": "Paused",
+      "msg": "Token operations are currently paused"
+    },
+    {
+      "code": 6003,
+      "name": "NotPaused",
+      "msg": "Token operations are not paused"
+    },
+    {
+      "code": 6004,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientBalance",
+      "msg": "Burn amount exceeds account balance"
+    },
+    {
+      "code": 6006,
+      "name": "MintQuotaExceeded",
+      "msg": "Minter has exceeded their mint quota"
+    },
+    {
+      "code": 6007,
+      "name": "ComplianceNotEnabled",
+      "msg": "Compliance features not enabled (requires SSS-2)"
+    },
+    {
+      "code": 6008,
+      "name": "AlreadyBlacklisted",
+      "msg": "Address is already blacklisted"
+    },
+    {
+      "code": 6009,
+      "name": "NotBlacklisted",
+      "msg": "Address is not blacklisted"
+    },
+    {
+      "code": 6010,
+      "name": "SeizeRequiresBlacklist",
+      "msg": "Cannot seize from non-blacklisted account"
+    },
+    {
+      "code": 6011,
+      "name": "NoPermanentDelegate",
+      "msg": "Permanent delegate not configured"
+    },
+    {
+      "code": 6012,
+      "name": "SourceOwnerMismatch",
+      "msg": "Source token account owner does not match blacklisted address"
+    },
+    {
+      "code": 6013,
+      "name": "ReasonTooLong",
+      "msg": "Reason exceeds 64 bytes"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidPreset",
+      "msg": "Invalid preset configuration"
+    },
+    {
+      "code": 6015,
+      "name": "NameTooLong",
+      "msg": "Name exceeds 32 bytes"
+    },
+    {
+      "code": 6016,
+      "name": "SymbolTooLong",
+      "msg": "Symbol exceeds 10 bytes"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidDecimals",
+      "msg": "Invalid decimals (must be 0-18)"
+    },
+    {
+      "code": 6018,
+      "name": "TransferHookRequired",
+      "msg": "Transfer hook program required for SSS-2"
+    },
+    {
+      "code": 6019,
+      "name": "AlreadyFrozen",
+      "msg": "Account is already frozen"
+    },
+    {
+      "code": 6020,
+      "name": "NotFrozen",
+      "msg": "Account is not frozen"
+    },
+    {
+      "code": 6021,
+      "name": "Overflow",
+      "msg": "Arithmetic overflow"
+    }
+  ]
+}

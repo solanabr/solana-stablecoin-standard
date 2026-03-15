@@ -1,0 +1,6 @@
+{
+  "freeze_authority": true,
+  "permanent_delegate": true,
+  "transfer_hook": false,
+  "confidential_transfers": false
+}

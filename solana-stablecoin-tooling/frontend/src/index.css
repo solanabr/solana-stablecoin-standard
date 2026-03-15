@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #030712;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(20, 184, 166, 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(20, 184, 166, 0.04), transparent);
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-gray-900/60 backdrop-blur-sm border border-gray-800/60 rounded-xl;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-300 hover:border-sol-700/40 hover:shadow-lg hover:shadow-sol-900/10;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2.5 bg-sol-600 hover:bg-sol-500 text-white font-medium rounded-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium rounded-lg border border-gray-700 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2.5 bg-red-900/60 hover:bg-red-800/60 text-red-200 font-medium rounded-lg border border-red-800/40 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .input-field {
+    @apply w-full px-3.5 py-2.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-sol-600/60 focus:ring-1 focus:ring-sol-600/30 transition-all duration-200 font-mono text-sm;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-900/40 text-emerald-400 border border-emerald-800/30;
+  }
+
+  .badge-red {
+    @apply badge bg-red-900/40 text-red-400 border border-red-800/30;
+  }
+
+  .badge-yellow {
+    @apply badge bg-amber-900/40 text-amber-400 border border-amber-800/30;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-900/40 text-blue-400 border border-blue-800/30;
+  }
+}
+
+/* Wallet adapter overrides */
+.wallet-adapter-button {
+  font-family: 'DM Sans', sans-serif !important;
+  background-color: rgb(13 148 136) !important;
+  border-radius: 0.5rem !important;
+  height: 40px !important;
+  font-size: 0.875rem !important;
+}
+.wallet-adapter-button:hover {
+  background-color: rgb(20 184 166) !important;
+}
+.wallet-adapter-modal-wrapper {
+  font-family: 'DM Sans', sans-serif !important;
+}

@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  mint-burn:
+    build:
+      context: .
+      dockerfile: services/mint-burn/Dockerfile
+    ports:
+      - "3001:3001"
+    env_file: config/.env
+    environment:
+      - SERVICE_NAME=mint-burn
+      - PORT=3001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  indexer:
+    build:
+      context: .
+      dockerfile: services/indexer/Dockerfile
+    ports:
+      - "3002:3002"
+    env_file: config/.env
+    environment:
+      - SERVICE_NAME=indexer
+      - PORT=3002
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  compliance:
+    build:
+      context: .
+      dockerfile: services/compliance/Dockerfile
+    ports:
+      - "3003:3003"
+    env_file: config/.env
+    environment:
+      - SERVICE_NAME=compliance
+      - PORT=3003
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  webhook:
+    build:
+      context: .
+      dockerfile: services/webhook/Dockerfile
+    ports:
+      - "3004:3004"
+    env_file: config/.env
+    environment:
+      - SERVICE_NAME=webhook
+      - PORT=3004
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
