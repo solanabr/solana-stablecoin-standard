@@ -21,11 +21,13 @@ pub struct Seize<'info> {
     pub roles: Account<'info, RoleConfig>,
 
     /// The stablecoin configuration.
+    /// Note: seize is intentionally allowed while paused — it is an emergency enforcement
+    /// action (OFAC compliance, incident response) that must remain available even when
+    /// normal operations are halted.
     #[account(
         mut,
         seeds = [StablecoinConfig::SEED_PREFIX, mint.key().as_ref()],
         bump = config.bump,
-        constraint = !config.is_paused @ StablecoinError::Paused,
         constraint = config.is_compliance_enabled() @ StablecoinError::ComplianceNotEnabled,
     )]
     pub config: Box<Account<'info, StablecoinConfig>>,

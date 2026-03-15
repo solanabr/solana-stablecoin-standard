@@ -820,8 +820,9 @@ describe("Edge Cases: Edge cases and security", () => {
       }
     });
 
-    it("Cannot seize when stablecoin is paused", async () => {
-      // Pause the stablecoin
+    it("Can seize when stablecoin is paused (emergency enforcement)", async () => {
+      // Pause the stablecoin — seize must remain available for incident response
+      // and OFAC compliance even while normal operations are halted.
       await stablecoinProgram.methods
         .pause()
         .accounts({
@@ -831,23 +832,19 @@ describe("Edge Cases: Edge cases and security", () => {
         })
         .rpc();
 
-      try {
-        await stablecoinProgram.methods
-          .seize(new BN(100_000_000))
-          .accounts({
-            seizer: authority.publicKey,
-            roles: sss2RolesPda,
-            config: sss2ConfigPda,
-            mint: sss2MintKeypair.publicKey,
-            fromTokenAccount: userAAta,
-            toTokenAccount: userBAta,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-          })
-          .rpc();
-        expect.fail("Should have thrown - Paused");
-      } catch (e: any) {
-        expect(e.error.errorCode.code).to.equal("Paused");
-      }
+      // Seize should succeed while paused
+      await stablecoinProgram.methods
+        .seize(new BN(100_000_000))
+        .accounts({
+          seizer: authority.publicKey,
+          roles: sss2RolesPda,
+          config: sss2ConfigPda,
+          mint: sss2MintKeypair.publicKey,
+          fromTokenAccount: userAAta,
+          toTokenAccount: userBAta,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .rpc();
 
       // Unpause for cleanup
       await stablecoinProgram.methods

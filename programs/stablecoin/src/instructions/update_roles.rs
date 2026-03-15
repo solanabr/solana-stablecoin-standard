@@ -53,6 +53,10 @@ pub fn handler(ctx: Context<UpdateRoles>, params: UpdateRolesParams) -> Result<(
     emit!(RolesUpdated {
         config: ctx.accounts.config.key(),
         updated_by: ctx.accounts.authority.key(),
+        new_pauser: params.pauser,
+        new_freezer: params.freezer,
+        new_blacklister: params.blacklister,
+        new_seizer: params.seizer,
         timestamp: Clock::get()?.unix_timestamp,
     });
 

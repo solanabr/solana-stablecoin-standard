@@ -74,6 +74,14 @@ pub struct MinterUpdated {
 pub struct RolesUpdated {
     pub config: Pubkey,
     pub updated_by: Pubkey,
+    /// New pauser address, if changed.
+    pub new_pauser: Option<Pubkey>,
+    /// New freezer address, if changed.
+    pub new_freezer: Option<Pubkey>,
+    /// New blacklister address, if changed.
+    pub new_blacklister: Option<Pubkey>,
+    /// New seizer address, if changed.
+    pub new_seizer: Option<Pubkey>,
     pub timestamp: i64,
 }
 
