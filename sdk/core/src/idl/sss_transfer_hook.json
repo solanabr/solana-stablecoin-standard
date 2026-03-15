@@ -1,5 +1,5 @@
 {
-  "address": "SSTHkzZPrXCdkTMbkn4sCf6EQjsHdXqVGAV8aPQyXYE",
+  "address": "9bFjVjyZ3vVmNBFaVVKmjVrzcwwzRNuwWqYpqeM2pzF7",
   "metadata": {
     "name": "sss_transfer_hook",
     "version": "0.1.0",
@@ -118,8 +118,11 @@
         {
           "name": "destination_blacklist_entry",
           "docs": [
-            "Blacklist entry for the destination token account — CHECK: may not exist",
-            "seeds: [BLACKLIST_SEED, mint, destination_token_account]"
+            "Blacklist entry for the destination token account owner — CHECK: may not exist",
+            "seeds: [BLACKLIST_SEED, mint, destination_owner]",
+            "We derive from the token account's owner (wallet), not the token account",
+            "address, so that blacklisted wallets cannot bypass enforcement by creating",
+            "new ATAs."
           ],
           "pda": {
             "seeds": [
@@ -143,7 +146,7 @@
               },
               {
                 "kind": "account",
-                "path": "destination_token_account"
+                "path": "destination_token_account.owner"
               }
             ]
           }

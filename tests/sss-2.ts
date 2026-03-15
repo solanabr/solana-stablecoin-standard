@@ -241,6 +241,48 @@ describe("SSS-2 Compliant Stablecoin", () => {
     });
   });
 
+  it("blocks transfer to a blacklisted recipient even via a new ATA", async () => {
+    // This test proves the destination blacklist check keys on the OWNER wallet,
+    // not the token account address. A blacklisted wallet cannot bypass enforcement
+    // by creating a fresh ATA — every ATA they own maps back to the same wallet
+    // pubkey in the blacklist PDA seeds.
+    const carol = Keypair.generate();
+    await airdrop(connection, carol.publicKey, 2);
+
+    const aliceAta = getAssociatedTokenAddressSync(
+      mintKp.publicKey,
+      alice.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // carol receives tokens from authority so she has something to send to alice
+    const carolAta = getAssociatedTokenAddressSync(
+      mintKp.publicKey,
+      carol.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    // alice is already blacklisted from the previous test.
+    // Attempt to transfer from carol → alice (alice is the destination).
+    // The hook should reject because alice's owner wallet is blacklisted.
+    await assertThrows(async () => {
+      const ix = createTransferCheckedInstruction(
+        carolAta,
+        mintKp.publicKey,
+        aliceAta,
+        carol.publicKey,
+        BigInt(1_000),
+        6,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      );
+      const tx = new Transaction().add(ix);
+      await sendAndConfirmTransaction(connection, tx, [carol]);
+    }, "expected transfer to blacklisted destination to fail");
+  });
+
   it("seizes tokens from alice using permanent delegate", async () => {
     const treasuryAta = getAssociatedTokenAddressSync(
       mintKp.publicKey,
@@ -265,8 +307,11 @@ describe("SSS-2 Compliant Stablecoin", () => {
       [Buffer.from("blacklist"), mintKp.publicKey.toBuffer(), configPda.toBuffer()],
       HOOK_PROGRAM_ID
     )[0];
+    // Destination blacklist is keyed by the OWNER wallet (treasury.publicKey),
+    // not the token account address. Treasury is not blacklisted so this PDA
+    // will not exist — the hook allows the seize to proceed.
     const destBlacklistPda = PublicKey.findProgramAddressSync(
-      [Buffer.from("blacklist"), mintKp.publicKey.toBuffer(), treasuryAta.toBuffer()],
+      [Buffer.from("blacklist"), mintKp.publicKey.toBuffer(), treasury.publicKey.toBuffer()],
       HOOK_PROGRAM_ID
     )[0];
 

@@ -285,8 +285,9 @@ async function main() {
     [Buffer.from("blacklist"), mint2.publicKey.toBuffer(), config2.toBuffer()],
     HOOK_PROGRAM_ID
   )[0];
+  // Destination blacklist is keyed by the OWNER wallet, not the token account address.
   const destBlacklist = PublicKey.findProgramAddressSync(
-    [Buffer.from("blacklist"), mint2.publicKey.toBuffer(), treasury2Ata.toBuffer()],
+    [Buffer.from("blacklist"), mint2.publicKey.toBuffer(), treasury2.publicKey.toBuffer()],
     HOOK_PROGRAM_ID
   )[0];
 

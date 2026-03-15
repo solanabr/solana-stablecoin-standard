@@ -33,60 +33,71 @@ pub fn handler(ctx: Context<InitializeExtraAccountMetaList>) -> Result<()> {
     let mint_key = ctx.accounts.mint.key();
 
     // We register two extra accounts the execute hook needs:
-    //   1. Blacklist PDA for the source token account owner
+    //   1. Blacklist PDA for the source token account owner (wallet)
     //      seeds: [BLACKLIST_SEED, mint, source_owner]
-    //      The source owner is account index 3 in the transfer instruction
+    //      The source owner is account index 3 in the transfer instruction.
     //      (source_account=0, mint=1, destination_account=2, source_owner=3)
-    //   2. Blacklist PDA for the destination token account owner
+    //   2. Blacklist PDA for the destination token account owner (wallet)
     //      seeds: [BLACKLIST_SEED, mint, destination_owner]
-    //      We need to pass the destination owner as an extra account since
-    //      Token-2022 doesn't pass it by default.
+    //      Token-2022 does not pass the destination owner as a separate account.
+    //      We extract it from the destination token account data using
+    //      Seed::AccountData (offset 32, 32 bytes = owner field in TokenAccount).
+    //      This correctly maps any ATA back to the owning wallet so that
+    //      blacklisted wallets cannot bypass enforcement by creating new ATAs.
     //
-    // For simplicity in this version we pass the source_owner (index 3) and
-    // the destination_token_account (index 2) and derive the blacklist PDAs
-    // from their pubkeys. We check both accounts for blacklisting in execute.
-    //
-    // The extra accounts layout for the transfer instruction:
+    // Transfer instruction account layout:
     //   0: source_token_account
     //   1: mint
     //   2: destination_token_account
     //   3: owner/authority (source token account owner)
-    //   4: extra_account_meta_list (this PDA, always included by Token-2022)
-    //   Extra accounts start at index 5:
-    //   5: blacklist_entry for source owner  (PDA, derived in execute)
-    //   6: blacklist_entry for destination owner (PDA, derived in execute)
-    //      We'll use the destination token account key as the "address" for now
-    //      and look up the owner in execute. To properly check destination owner
-    //      we pass it as extra account index 6.
+    //   4: extra_account_meta_list (always included by Token-2022)
+    // Extra accounts (index 5+):
+    //   5: blacklist_entry for source owner  — seeds derived from index 3
+    //   6: blacklist_entry for destination owner — seeds derived from data of index 2
 
     // Register the two blacklist PDA derivations using seed references:
     // Seed::AccountKey { index } references the account at that position in the
     // transfer instruction accounts array.
 
     // source blacklist PDA: seeds = [BLACKLIST_SEED, mint(idx 1), source_owner(idx 3)]
+    // The source owner is the wallet that owns the source token account (passed at index 3).
     let source_blacklist_meta = ExtraAccountMeta::new_with_seeds(
         &[
             Seed::Literal {
                 bytes: BLACKLIST_SEED.to_vec(),
             },
             Seed::AccountKey { index: 1 }, // mint
-            Seed::AccountKey { index: 3 }, // source owner
+            Seed::AccountKey { index: 3 }, // source owner (wallet)
         ],
         false, // is_signer
         false, // is_writable
     )?;
 
-    // destination blacklist PDA: seeds = [BLACKLIST_SEED, mint(idx 1), destination_token_account(idx 2)]
-    // Note: we use the destination token account key here; in execute we check
-    // if there's a blacklist entry for this key (wallets are checked by their token account's
-    // owner, so we also pass an extra "destination owner" if available)
+    // destination blacklist PDA: seeds = [BLACKLIST_SEED, mint(idx 1), destination_owner]
+    //
+    // The destination owner is NOT a separate account in the transfer instruction.
+    // We read it from the token account data at account index 2 (destination_token_account).
+    //
+    // Token-2022 token account layout:
+    //   offset  0..32 — mint  (Pubkey)
+    //   offset 32..64 — owner (Pubkey)  <-- we read this
+    //   offset 64..72 — amount (u64)
+    //
+    // Using Seed::AccountData extracts 32 bytes starting at offset 32 from the
+    // destination token account, giving us the owner wallet pubkey. This ensures
+    // that blacklisted wallets cannot bypass enforcement by creating new ATAs —
+    // every ATA they own maps to the same wallet pubkey in the blacklist.
     let dest_blacklist_meta = ExtraAccountMeta::new_with_seeds(
         &[
             Seed::Literal {
                 bytes: BLACKLIST_SEED.to_vec(),
             },
             Seed::AccountKey { index: 1 }, // mint
-            Seed::AccountKey { index: 2 }, // destination token account (proxy for owner)
+            Seed::AccountData {
+                account_index: 2, // destination_token_account
+                data_index: 32,   // offset of owner field in TokenAccount layout
+                length: 32,       // size of Pubkey
+            },
         ],
         false,
         false,

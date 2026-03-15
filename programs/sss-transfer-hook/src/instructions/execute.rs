@@ -51,14 +51,17 @@ pub struct Execute<'info> {
     )]
     pub source_blacklist_entry: UncheckedAccount<'info>,
 
-    /// Blacklist entry for the destination token account — CHECK: may not exist
-    /// seeds: [BLACKLIST_SEED, mint, destination_token_account]
-    /// CHECK: we only check if this account has data
+    /// Blacklist entry for the destination token account owner — CHECK: may not exist
+    /// seeds: [BLACKLIST_SEED, mint, destination_owner]
+    /// We derive from the token account's owner (wallet), not the token account
+    /// address, so that blacklisted wallets cannot bypass enforcement by creating
+    /// new ATAs.
+    /// CHECK: we only check if this account has data (exists = blacklisted)
     #[account(
         seeds = [
             BLACKLIST_SEED,
             mint.key().as_ref(),
-            destination_token_account.key().as_ref(),
+            destination_token_account.owner.as_ref(),
         ],
         bump,
     )]

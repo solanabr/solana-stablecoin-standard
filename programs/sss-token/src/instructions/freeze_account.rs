@@ -12,7 +12,8 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct FreezeTokenAccount<'info> {
-    /// Authority or pauser can freeze individual accounts
+    /// Only master authority can freeze individual accounts.
+    /// Freezing is a targeted enforcement action — more invasive than pausing.
     pub authority: Signer<'info>,
 
     #[account(
