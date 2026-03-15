@@ -18,6 +18,11 @@ vi.mock('./idl/sss_token.json', () => ({
   },
 }));
 
+// Shared mock fns — referenced by tests below
+const mockDecodeFn = vi.fn();
+const mockCdpPositionFetch = vi.fn();
+const mockCollateralVaultFetch = vi.fn();
+
 // Mock @coral-xyz/anchor Program
 vi.mock('@coral-xyz/anchor', async (importOriginal) => {
   const actual = (await importOriginal()) as any;
@@ -43,10 +48,20 @@ vi.mock('@coral-xyz/anchor', async (importOriginal) => {
       },
       account: {
         cdpPosition: {
-          fetch: vi.fn(),
+          fetch: mockCdpPositionFetch,
         },
         collateralVault: {
-          fetch: vi.fn(),
+          fetch: mockCollateralVaultFetch,
+          coder: {
+            accounts: {
+              decode: mockDecodeFn,
+            },
+          },
+        },
+      },
+      coder: {
+        accounts: {
+          decode: mockDecodeFn,
         },
       },
     })),
@@ -54,7 +69,13 @@ vi.mock('@coral-xyz/anchor', async (importOriginal) => {
   };
 });
 
-import { CdpModule, CdpPosition, CollateralEntry } from './CdpModule';
+// Mock @pythnetwork/client parsePriceData
+vi.mock('@pythnetwork/client', () => ({
+  parsePriceData: vi.fn(),
+}));
+
+import { CdpModule, CdpPosition, CollateralEntry, CollateralType } from './CdpModule';
+import { parsePriceData } from '@pythnetwork/client';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -438,5 +459,331 @@ describe('CdpPosition type shape', () => {
       vaultTokenAccount: PublicKey.unique(),
     };
     expect(entry).toBeDefined();
+  });
+
+  it('CollateralType has all required fields', () => {
+    const ct: CollateralType = {
+      mint: PublicKey.unique(),
+      activeVaults: 3,
+      totalDeposited: 5_000_000n,
+      usdPrice: 1.0,
+      pythPriceFeed: PublicKey.unique(),
+    };
+    expect(ct.mint).toBeInstanceOf(PublicKey);
+    expect(ct.activeVaults).toBe(3);
+    expect(ct.totalDeposited).toBe(5_000_000n);
+    expect(ct.usdPrice).toBe(1.0);
+    expect(ct.pythPriceFeed).toBeInstanceOf(PublicKey);
+  });
+
+  it('CollateralType optional fields can be omitted', () => {
+    const ct: CollateralType = {
+      mint: PublicKey.unique(),
+      activeVaults: 0,
+      totalDeposited: 0n,
+    };
+    expect(ct.usdPrice).toBeUndefined();
+    expect(ct.pythPriceFeed).toBeUndefined();
+  });
+});
+
+// ─── fetchCdpPosition ─────────────────────────────────────────────────────────
+
+describe('CdpModule — fetchCdpPosition', () => {
+  const mockConn = {
+    getProgramAccounts: vi.fn().mockResolvedValue([]),
+    getMultipleAccountsInfo: vi.fn().mockResolvedValue([]),
+  } as unknown as Connection;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (mockConn.getProgramAccounts as any).mockResolvedValue([]);
+    (mockConn.getMultipleAccountsInfo as any).mockResolvedValue([]);
+  });
+
+  it('returns empty position when CdpPosition PDA does not exist', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    mockCdpPositionFetch.mockRejectedValue(new Error('not found'));
+
+    const pos = await cdp.fetchCdpPosition(MOCK_USER, mockConn);
+    expect(pos.debtUsdc).toBe(0);
+    expect(pos.ratio).toBe(Infinity);
+    expect(pos.healthFactor).toBe(Infinity);
+    expect(pos.collateral).toHaveLength(0);
+  });
+
+  it('returns zero-debt position when debt is zero', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    mockCdpPositionFetch.mockResolvedValue({
+      debtAmount: { toString: () => '0' },
+      collateralMint: PublicKey.default,
+    });
+
+    const pos = await cdp.fetchCdpPosition(MOCK_USER, mockConn);
+    expect(pos.debtUsdc).toBe(0);
+    expect(pos.healthFactor).toBe(Infinity);
+  });
+
+  it('computes health metrics when Pyth prices are provided', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    mockCdpPositionFetch.mockResolvedValue({
+      debtAmount: { toString: () => '1000000' }, // 1 SSS
+      collateralMint: MOCK_COLLATERAL_MINT,
+    });
+
+    // Return one vault account from getProgramAccounts
+    const vaultData = {
+      collateralMint: MOCK_COLLATERAL_MINT,
+      depositedAmount: { toString: () => '2000000' }, // 2 units collateral
+      vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+    };
+    mockDecodeFn.mockReturnValue(vaultData);
+    (mockConn.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+
+    // Pyth price: $1.50 per unit
+    (parsePriceData as any).mockReturnValue({ price: 1.5 });
+    (mockConn.getMultipleAccountsInfo as any).mockResolvedValue([
+      { data: Buffer.alloc(32) },
+    ]);
+
+    const pythFeeds = new Map([[MOCK_COLLATERAL_MINT.toBase58(), MOCK_PYTH_FEED]]);
+    const pos = await cdp.fetchCdpPosition(MOCK_USER, mockConn, pythFeeds);
+
+    // collateral: 2 units @ $1.50 = $3.00; debt: $1.00
+    expect(pos.debtUsdc).toBeCloseTo(1.0, 5);
+    expect(pos.ratio).toBeCloseTo(3.0, 5);
+    expect(pos.healthFactor).toBeCloseTo(3.0 / 1.2, 3);
+  });
+
+  it('returns zero ratio when no Pyth feeds provided', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    mockCdpPositionFetch.mockResolvedValue({
+      debtAmount: { toString: () => '500000' },
+      collateralMint: MOCK_COLLATERAL_MINT,
+    });
+    (mockConn.getProgramAccounts as any).mockResolvedValue([]);
+
+    const pos = await cdp.fetchCdpPosition(MOCK_USER, mockConn);
+    expect(pos.debtUsdc).toBeCloseTo(0.5, 5);
+    expect(pos.ratio).toBe(0);
+  });
+
+  it('computes liquidation price from first collateral entry', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    mockCdpPositionFetch.mockResolvedValue({
+      debtAmount: { toString: () => '1000000' }, // $1 debt
+      collateralMint: MOCK_COLLATERAL_MINT,
+    });
+
+    const vaultData = {
+      collateralMint: MOCK_COLLATERAL_MINT,
+      depositedAmount: { toString: () => '2000000' }, // 2 units
+      vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+    };
+    mockDecodeFn.mockReturnValue(vaultData);
+    (mockConn.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+    (parsePriceData as any).mockReturnValue({ price: 2.0 });
+    (mockConn.getMultipleAccountsInfo as any).mockResolvedValue([
+      { data: Buffer.alloc(32) },
+    ]);
+
+    const pythFeeds = new Map([[MOCK_COLLATERAL_MINT.toBase58(), MOCK_PYTH_FEED]]);
+    const pos = await cdp.fetchCdpPosition(MOCK_USER, mockConn, pythFeeds);
+    // liquidationPrice = (debt * 1.2) / deposited = (1.0 * 1.2) / 2 = 0.6
+    expect(pos.liquidationPrice).toBeCloseTo(0.6, 5);
+  });
+
+  it('handles failed Pyth price parse gracefully', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    mockCdpPositionFetch.mockResolvedValue({
+      debtAmount: { toString: () => '1000000' },
+      collateralMint: MOCK_COLLATERAL_MINT,
+    });
+    (mockConn.getProgramAccounts as any).mockResolvedValue([]);
+    (parsePriceData as any).mockImplementation(() => { throw new Error('bad data'); });
+    (mockConn.getMultipleAccountsInfo as any).mockResolvedValue([{ data: Buffer.alloc(32) }]);
+
+    const pythFeeds = new Map([[MOCK_COLLATERAL_MINT.toBase58(), MOCK_PYTH_FEED]]);
+    const pos = await cdp.fetchCdpPosition(MOCK_USER, mockConn, pythFeeds);
+    // Should not throw; ratio is 0 since price parse failed
+    expect(pos).toBeDefined();
+    expect(pos.ratio).toBe(0);
+  });
+});
+
+// ─── fetchCollateralTypes ─────────────────────────────────────────────────────
+
+describe('CdpModule — fetchCollateralTypes', () => {
+  const mockConn2 = {
+    getProgramAccounts: vi.fn().mockResolvedValue([]),
+    getMultipleAccountsInfo: vi.fn().mockResolvedValue([]),
+  } as unknown as Connection;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([]);
+    (mockConn2.getMultipleAccountsInfo as any).mockResolvedValue([]);
+  });
+
+  it('returns empty array when no CollateralVault accounts exist', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([]);
+
+    const types = await cdp.fetchCollateralTypes(mockConn2);
+    expect(types).toHaveLength(0);
+  });
+
+  it('aggregates vaults by mint', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    const mint1 = MOCK_COLLATERAL_MINT;
+    const mint2 = MOCK_COLLATERAL_MINT_2;
+
+    // Two vaults for mint1, one for mint2
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+
+    let callCount = 0;
+    mockDecodeFn.mockImplementation(() => {
+      callCount++;
+      const mint = callCount <= 2 ? mint1 : mint2;
+      return {
+        collateralMint: mint,
+        depositedAmount: { toString: () => '1000000' },
+        vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+      };
+    });
+
+    const types = await cdp.fetchCollateralTypes(mockConn2);
+    expect(types).toHaveLength(2);
+
+    const t1 = types.find((t) => t.mint.equals(mint1))!;
+    const t2 = types.find((t) => t.mint.equals(mint2))!;
+    expect(t1.activeVaults).toBe(2);
+    expect(t1.totalDeposited).toBe(2_000_000n);
+    expect(t2.activeVaults).toBe(1);
+    expect(t2.totalDeposited).toBe(1_000_000n);
+  });
+
+  it('attaches Pyth prices when feeds are provided', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+    mockDecodeFn.mockReturnValue({
+      collateralMint: MOCK_COLLATERAL_MINT,
+      depositedAmount: { toString: () => '2000000' },
+      vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+    });
+    (parsePriceData as any).mockReturnValue({ price: 2.5 });
+    (mockConn2.getMultipleAccountsInfo as any).mockResolvedValue([{ data: Buffer.alloc(32) }]);
+
+    const pythFeeds = new Map([[MOCK_COLLATERAL_MINT.toBase58(), MOCK_PYTH_FEED]]);
+    const types = await cdp.fetchCollateralTypes(mockConn2, pythFeeds);
+
+    expect(types).toHaveLength(1);
+    expect(types[0].usdPrice).toBe(2.5);
+    expect(types[0].pythPriceFeed?.equals(MOCK_PYTH_FEED)).toBe(true);
+  });
+
+  it('omits usdPrice when no feeds provided', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+    mockDecodeFn.mockReturnValue({
+      collateralMint: MOCK_COLLATERAL_MINT,
+      depositedAmount: { toString: () => '500000' },
+      vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+    });
+
+    const types = await cdp.fetchCollateralTypes(mockConn2);
+    expect(types).toHaveLength(1);
+    expect(types[0].usdPrice).toBeUndefined();
+  });
+
+  it('skips malformed vault accounts gracefully', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+
+    let call = 0;
+    mockDecodeFn.mockImplementation(() => {
+      call++;
+      if (call === 1) throw new Error('decode failed');
+      return {
+        collateralMint: MOCK_COLLATERAL_MINT,
+        depositedAmount: { toString: () => '1000000' },
+        vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+      };
+    });
+
+    const types = await cdp.fetchCollateralTypes(mockConn2);
+    expect(types).toHaveLength(1); // Only the valid one
+  });
+
+  it('handles failed Pyth price fetch gracefully', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+    mockDecodeFn.mockReturnValue({
+      collateralMint: MOCK_COLLATERAL_MINT,
+      depositedAmount: { toString: () => '1000000' },
+      vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+    });
+    (parsePriceData as any).mockImplementation(() => { throw new Error('bad feed'); });
+    (mockConn2.getMultipleAccountsInfo as any).mockResolvedValue([{ data: Buffer.alloc(32) }]);
+
+    const pythFeeds = new Map([[MOCK_COLLATERAL_MINT.toBase58(), MOCK_PYTH_FEED]]);
+    const types = await cdp.fetchCollateralTypes(mockConn2, pythFeeds);
+    expect(types).toHaveLength(1);
+    expect(types[0].usdPrice).toBeUndefined(); // price parse failed, no price
+  });
+
+  it('handles missing Pyth account gracefully', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+    mockDecodeFn.mockReturnValue({
+      collateralMint: MOCK_COLLATERAL_MINT,
+      depositedAmount: { toString: () => '1000000' },
+      vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+    });
+    (mockConn2.getMultipleAccountsInfo as any).mockResolvedValue([null]); // account not found
+
+    const pythFeeds = new Map([[MOCK_COLLATERAL_MINT.toBase58(), MOCK_PYTH_FEED]]);
+    const types = await cdp.fetchCollateralTypes(mockConn2, pythFeeds);
+    expect(types).toHaveLength(1);
+    expect(types[0].usdPrice).toBeUndefined();
+  });
+
+  it('returns correct totalDeposited summed across vaults', async () => {
+    const cdp = new CdpModule(makeProvider(), MOCK_SSS_MINT, MOCK_PROGRAM_ID);
+    (mockConn2.getProgramAccounts as any).mockResolvedValue([
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+      { pubkey: PublicKey.unique(), account: { data: Buffer.alloc(100) } },
+    ]);
+    mockDecodeFn.mockReturnValue({
+      collateralMint: MOCK_COLLATERAL_MINT,
+      depositedAmount: { toString: () => '3000000' },
+      vaultTokenAccount: MOCK_VAULT_TOKEN_ACCOUNT,
+    });
+
+    const types = await cdp.fetchCollateralTypes(mockConn2);
+    expect(types).toHaveLength(1);
+    expect(types[0].activeVaults).toBe(3);
+    expect(types[0].totalDeposited).toBe(9_000_000n);
   });
 });

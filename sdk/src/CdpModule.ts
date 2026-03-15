@@ -8,6 +8,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { parsePriceData } from '@pythnetwork/client';
 
 import { SSS_TOKEN_PROGRAM_ID } from './SolanaStablecoin';
 
@@ -59,6 +60,23 @@ export interface CdpPosition {
    * `0` when no collateral or debt is 0.
    */
   liquidationPrice: number;
+}
+
+/**
+ * Describes a collateral type accepted by the CDP system.
+ * Returned by `fetchCollateralTypes`.
+ */
+export interface CollateralType {
+  /** SPL token mint address for this collateral */
+  mint: PublicKey;
+  /** Number of active CollateralVault PDAs using this mint */
+  activeVaults: number;
+  /** Total collateral deposited across all vaults for this mint (native units) */
+  totalDeposited: bigint;
+  /** Current USD price per native unit, if a Pyth feed account was provided */
+  usdPrice?: number;
+  /** Pyth price feed account for this collateral type, if known */
+  pythPriceFeed?: PublicKey;
 }
 
 export interface DepositCollateralParams {
@@ -416,6 +434,258 @@ export class CdpModule {
       healthFactor,
       liquidationPrice,
     };
+  }
+
+  // ─── fetchCdpPosition ────────────────────────────────────────────────────
+
+  /**
+   * Fetch a wallet's CDP position, reading live Pyth oracle prices for each
+   * collateral type to compute accurate health metrics.
+   *
+   * Automatically discovers all collateral vaults for the wallet by scanning
+   * on-chain `CollateralVault` PDAs. Pyth prices are fetched for each vault's
+   * collateral mint when `pythFeeds` is supplied.
+   *
+   * @param wallet       - The wallet to query
+   * @param connection   - Solana connection
+   * @param pythFeeds    - Optional map of collateral mint → Pyth price feed PublicKey
+   */
+  async fetchCdpPosition(
+    wallet: PublicKey,
+    connection: Connection,
+    pythFeeds?: Map<string, PublicKey>,
+  ): Promise<CdpPosition> {
+    const program = await this._loadProgram();
+    const cdpPositionPda = getCdpPositionPda(this.sssMint, wallet, this.programId);
+
+    // 1. Try to fetch on-chain CdpPosition
+    let debtAmount = 0n;
+    let lockedCollateralMint: PublicKey | null = null;
+    try {
+      const positionAccount = await program.account.cdpPosition.fetch(cdpPositionPda);
+      debtAmount = BigInt(positionAccount.debtAmount.toString());
+      if (positionAccount.collateralMint && !positionAccount.collateralMint.equals(PublicKey.default)) {
+        lockedCollateralMint = positionAccount.collateralMint as PublicKey;
+      }
+    } catch {
+      return {
+        owner: wallet,
+        collateral: [],
+        debtUsdc: 0,
+        ratio: Infinity,
+        healthFactor: Infinity,
+        liquidationPrice: 0,
+      };
+    }
+
+    // 2. Discover collateral vaults for this wallet via getProgramAccounts
+    const COLLATERAL_VAULT_DISCRIMINATOR = Buffer.from([
+      0xdd, 0xf0, 0xee, 0x06, 0xf8, 0x78, 0x4c, 0x5e,
+    ]);
+    const vaultAccounts = await connection.getProgramAccounts(this.programId, {
+      filters: [
+        { memcmp: { offset: 0, bytes: COLLATERAL_VAULT_DISCRIMINATOR.toString('base64') } },
+        { memcmp: { offset: 8, bytes: wallet.toBase58() } }, // owner field
+      ],
+    });
+
+    const collateralEntries: CollateralEntry[] = [];
+    const collateralUsdPrices = new Map<string, number>();
+
+    // 3. Fetch Pyth prices for known feeds
+    if (pythFeeds && pythFeeds.size > 0) {
+      const feedKeys = Array.from(pythFeeds.values());
+      const feedAccounts = await connection.getMultipleAccountsInfo(feedKeys);
+      let i = 0;
+      for (const [mintKey, feedPubkey] of pythFeeds.entries()) {
+        const accountInfo = feedAccounts[i++];
+        if (!accountInfo) continue;
+        try {
+          const priceData = parsePriceData(accountInfo.data);
+          if (priceData.price !== undefined && priceData.price > 0) {
+            collateralUsdPrices.set(mintKey, priceData.price);
+          }
+        } catch {
+          // Price feed parse failed — skip
+        }
+      }
+    }
+
+    // 4. Parse vault accounts
+    for (const { account } of vaultAccounts) {
+      try {
+        const vaultData = await program.account.collateralVault.coder.accounts.decode(
+          'CollateralVault',
+          account.data,
+        );
+        const vaultPda = getCollateralVaultPda(
+          this.sssMint,
+          wallet,
+          vaultData.collateralMint as PublicKey,
+          this.programId,
+        );
+        collateralEntries.push({
+          mint: vaultData.collateralMint as PublicKey,
+          deposited: BigInt(vaultData.depositedAmount.toString()),
+          vaultPda,
+          vaultTokenAccount: vaultData.vaultTokenAccount as PublicKey,
+        });
+      } catch {
+        // Decode failed — skip
+      }
+    }
+
+    // Fallback: if single-collateral position and no vaults found via scan, derive directly
+    if (collateralEntries.length === 0 && lockedCollateralMint) {
+      const vaultPda = getCollateralVaultPda(this.sssMint, wallet, lockedCollateralMint, this.programId);
+      try {
+        const vaultAccount = await program.account.collateralVault.fetch(vaultPda);
+        collateralEntries.push({
+          mint: lockedCollateralMint,
+          deposited: BigInt(vaultAccount.depositedAmount.toString()),
+          vaultPda,
+          vaultTokenAccount: vaultAccount.vaultTokenAccount as PublicKey,
+        });
+      } catch { /* vault not found */ }
+    }
+
+    // 5. Compute health metrics
+    const debtUsdc = Number(debtAmount) / 1e6;
+
+    if (debtAmount === 0n) {
+      return {
+        owner: wallet,
+        collateral: collateralEntries,
+        debtUsdc: 0,
+        ratio: Infinity,
+        healthFactor: Infinity,
+        liquidationPrice: 0,
+      };
+    }
+
+    let totalCollateralUsd = 0;
+    for (const entry of collateralEntries) {
+      const price = collateralUsdPrices.get(entry.mint.toBase58()) ?? 0;
+      totalCollateralUsd += (Number(entry.deposited) / 1e6) * price;
+    }
+
+    const ratio = totalCollateralUsd > 0 ? totalCollateralUsd / debtUsdc : 0;
+    const liquidationRatio = LIQUIDATION_THRESHOLD_BPS / 10_000; // 1.2
+    const healthFactor =
+      totalCollateralUsd > 0 ? totalCollateralUsd / (debtUsdc * liquidationRatio) : 0;
+
+    let liquidationPrice = 0;
+    if (collateralEntries.length > 0 && debtAmount > 0n) {
+      const firstEntry = collateralEntries[0];
+      const depositedUnits = Number(firstEntry.deposited) / 1e6;
+      if (depositedUnits > 0) {
+        liquidationPrice = (debtUsdc * liquidationRatio) / depositedUnits;
+      }
+    }
+
+    return {
+      owner: wallet,
+      collateral: collateralEntries,
+      debtUsdc,
+      ratio,
+      healthFactor,
+      liquidationPrice,
+    };
+  }
+
+  // ─── fetchCollateralTypes ─────────────────────────────────────────────────
+
+  /**
+   * Enumerate all distinct collateral types currently in use across all CDP
+   * positions for this SSS mint, by scanning on-chain `CollateralVault` PDAs.
+   *
+   * Optionally fetches live Pyth prices for each collateral type.
+   *
+   * @param connection    - Solana connection
+   * @param pythFeeds     - Optional map of collateral mint → Pyth price feed PublicKey
+   */
+  async fetchCollateralTypes(
+    connection: Connection,
+    pythFeeds?: Map<string, PublicKey>,
+  ): Promise<CollateralType[]> {
+    const program = await this._loadProgram();
+
+    // Fetch all CollateralVault PDAs for this program
+    // Discriminator filter: first 8 bytes of sha256("account:CollateralVault")
+    const COLLATERAL_VAULT_DISCRIMINATOR = Buffer.from([
+      0xdd, 0xf0, 0xee, 0x06, 0xf8, 0x78, 0x4c, 0x5e,
+    ]);
+
+    const vaultAccounts = await connection.getProgramAccounts(this.programId, {
+      filters: [
+        {
+          memcmp: {
+            offset: 0,
+            bytes: COLLATERAL_VAULT_DISCRIMINATOR.toString('base64'),
+          },
+        },
+      ],
+    });
+
+    // Aggregate by collateral mint
+    const mintStats = new Map<
+      string,
+      { mint: PublicKey; activeVaults: number; totalDeposited: bigint }
+    >();
+
+    for (const { account } of vaultAccounts) {
+      try {
+        const vaultData = program.coder.accounts.decode('CollateralVault', account.data);
+        const mint = vaultData.collateralMint as PublicKey;
+        const mintKey = mint.toBase58();
+        const existing = mintStats.get(mintKey);
+        const deposited = BigInt(vaultData.depositedAmount.toString());
+        if (existing) {
+          existing.activeVaults += 1;
+          existing.totalDeposited += deposited;
+        } else {
+          mintStats.set(mintKey, { mint, activeVaults: 1, totalDeposited: deposited });
+        }
+      } catch {
+        // Skip malformed accounts
+      }
+    }
+
+    // Fetch Pyth prices if feeds are provided
+    const priceMap = new Map<string, number>();
+    if (pythFeeds && pythFeeds.size > 0) {
+      const mintKeys = Array.from(pythFeeds.keys());
+      const feedPubkeys = mintKeys.map((k) => pythFeeds.get(k)!);
+      const feedAccounts = await connection.getMultipleAccountsInfo(feedPubkeys);
+
+      for (let i = 0; i < mintKeys.length; i++) {
+        const accountInfo = feedAccounts[i];
+        if (!accountInfo) continue;
+        try {
+          const priceData = parsePriceData(accountInfo.data);
+          if (priceData.price !== undefined && priceData.price > 0) {
+            priceMap.set(mintKeys[i], priceData.price);
+          }
+        } catch {
+          // Malformed price feed — skip
+        }
+      }
+    }
+
+    // Build result
+    const result: CollateralType[] = [];
+    for (const [mintKey, stats] of mintStats.entries()) {
+      const pythPriceFeed = pythFeeds?.get(mintKey);
+      result.push({
+        mint: stats.mint,
+        activeVaults: stats.activeVaults,
+        totalDeposited: stats.totalDeposited,
+        usdPrice: priceMap.get(mintKey),
+        pythPriceFeed,
+      });
+    }
+
+    return result;
   }
 
   // ─── PDA utilities ───────────────────────────────────────────────────────
