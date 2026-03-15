@@ -1,0 +1,30 @@
+[package]
+name = "sss-cli"
+version = "0.1.1"
+description = "CLI for the Solana Stablecoin Standard (SSS)"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/solanabr/solana-stablecoin-standard"
+homepage = "https://stablecoinstandard.dev"
+keywords = ["solana", "stablecoin", "cli", "token-2022", "spl"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "sss-token"
+path = "src/main.rs"
+
+[dependencies]
+sss-token = { path = "../programs/sss-token", features = ["cpi"] }
+sss-transfer-hook = { path = "../programs/sss-transfer-hook", features = ["cpi"] }
+anchor-lang = "0.31.1"
+anchor-client = "0.31.1"
+solana-sdk = "2.1"
+solana-client = "2.1"
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+colored = "2"
+bs58 = "0.5"
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
