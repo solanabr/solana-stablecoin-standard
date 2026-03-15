@@ -1,0 +1,27 @@
+{
+  "id": "intro",
+  "title": "What Is SSS?",
+  "description": "Solana Stablecoin Standard is a Token-2022 framework for issuing stablecoins with role-based controls, reserve attestations, and optional transfer-hook enforcement.",
+  "source": "@site/docs/intro.md",
+  "sourceDirName": ".",
+  "slug": "/",
+  "permalink": "/solana-stablecoin-standard-pre/",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/intro.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "id": "intro",
+    "title": "What Is SSS?",
+    "slug": "/",
+    "sidebar_position": 1,
+    "description": "Solana Stablecoin Standard is a Token-2022 framework for issuing stablecoins with role-based controls, reserve attestations, and optional transfer-hook enforcement."
+  },
+  "sidebar": "docsSidebar",
+  "next": {
+    "title": "Quickstart",
+    "permalink": "/solana-stablecoin-standard-pre/quickstart"
+  }
+}

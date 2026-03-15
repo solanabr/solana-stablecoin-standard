@@ -1,0 +1,27 @@
+{
+  "id": "guides/transfer-hook",
+  "title": "Transfer Hook",
+  "description": "How SSS-2 transfer-hook enforcement works and why the ExtraAccountMetaList is required.",
+  "source": "@site/docs/guides/transfer-hook.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/transfer-hook",
+  "permalink": "/solana-stablecoin-standard-pre/guides/transfer-hook",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/guides/transfer-hook.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Transfer Hook",
+    "description": "How SSS-2 transfer-hook enforcement works and why the ExtraAccountMetaList is required."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Reserve Attestations",
+    "permalink": "/solana-stablecoin-standard-pre/guides/attestations"
+  },
+  "next": {
+    "title": "Agent Guide",
+    "permalink": "/solana-stablecoin-standard-pre/llm/agent-guide"
+  }
+}

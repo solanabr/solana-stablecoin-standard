@@ -1,0 +1,27 @@
+{
+  "id": "sdk/presets",
+  "title": "Presets",
+  "description": "Preset configurations for SSS-1, SSS-2, SSS-3, and custom feature flags.",
+  "source": "@site/docs/sdk/presets.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/presets",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/presets",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/presets.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Presets",
+    "description": "Preset configurations for SSS-1, SSS-2, SSS-3, and custom feature flags."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "PDA Helpers",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/pda"
+  },
+  "next": {
+    "title": "Errors",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/errors"
+  }
+}

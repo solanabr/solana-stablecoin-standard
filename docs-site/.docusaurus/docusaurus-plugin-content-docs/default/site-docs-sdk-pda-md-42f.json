@@ -1,0 +1,27 @@
+{
+  "id": "sdk/pda",
+  "title": "PDA Helpers",
+  "description": "PDA derivation helpers, seeds, and examples for SSS config, roles, minters, blacklist entries, attestations, and hook metadata.",
+  "source": "@site/docs/sdk/pda.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/pda",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/pda",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/pda.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "PDA Helpers",
+    "description": "PDA derivation helpers, seeds, and examples for SSS config, roles, minters, blacklist entries, attestations, and hook metadata."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "SDK Types",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/types"
+  },
+  "next": {
+    "title": "Presets",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/presets"
+  }
+}

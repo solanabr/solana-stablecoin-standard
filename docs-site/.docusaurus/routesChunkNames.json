@@ -1,0 +1,95 @@
+{
+  "/solana-stablecoin-standard-pre/-05a": {
+    "__comp": "5e95c892",
+    "__context": {
+      "plugin": "aba21aa0"
+    }
+  },
+  "/solana-stablecoin-standard-pre/-7f5": {
+    "__comp": "a7bd4aaa",
+    "__props": "e42e1ce1"
+  },
+  "/solana-stablecoin-standard-pre/-269": {
+    "__comp": "a94703ab"
+  },
+  "/solana-stablecoin-standard-pre/architecture/compliance-c8e": {
+    "__comp": "17896441",
+    "content": "1b66bbcd"
+  },
+  "/solana-stablecoin-standard-pre/architecture/instructions-998": {
+    "__comp": "17896441",
+    "content": "37a3d749"
+  },
+  "/solana-stablecoin-standard-pre/architecture/overview-e11": {
+    "__comp": "17896441",
+    "content": "0b1ac180"
+  },
+  "/solana-stablecoin-standard-pre/guides/attestations-6b8": {
+    "__comp": "17896441",
+    "content": "ae085e20"
+  },
+  "/solana-stablecoin-standard-pre/guides/blacklist-b3f": {
+    "__comp": "17896441",
+    "content": "1a8ca859"
+  },
+  "/solana-stablecoin-standard-pre/guides/mint-burn-868": {
+    "__comp": "17896441",
+    "content": "7664b628"
+  },
+  "/solana-stablecoin-standard-pre/guides/roles-937": {
+    "__comp": "17896441",
+    "content": "009b8384"
+  },
+  "/solana-stablecoin-standard-pre/guides/transfer-hook-07c": {
+    "__comp": "17896441",
+    "content": "696a36aa"
+  },
+  "/solana-stablecoin-standard-pre/installation-d88": {
+    "__comp": "17896441",
+    "content": "3b8c55ea"
+  },
+  "/solana-stablecoin-standard-pre/llm/agent-guide-041": {
+    "__comp": "17896441",
+    "content": "0b0b48d8"
+  },
+  "/solana-stablecoin-standard-pre/quickstart-67d": {
+    "__comp": "17896441",
+    "content": "8070e160"
+  },
+  "/solana-stablecoin-standard-pre/sdk/client-75a": {
+    "__comp": "17896441",
+    "content": "a00d66bd"
+  },
+  "/solana-stablecoin-standard-pre/sdk/constants-ee1": {
+    "__comp": "17896441",
+    "content": "921a5819"
+  },
+  "/solana-stablecoin-standard-pre/sdk/errors-47e": {
+    "__comp": "17896441",
+    "content": "4ab59106"
+  },
+  "/solana-stablecoin-standard-pre/sdk/events-2e4": {
+    "__comp": "17896441",
+    "content": "85913596"
+  },
+  "/solana-stablecoin-standard-pre/sdk/oracle-263": {
+    "__comp": "17896441",
+    "content": "d36491f5"
+  },
+  "/solana-stablecoin-standard-pre/sdk/pda-592": {
+    "__comp": "17896441",
+    "content": "42f4fb56"
+  },
+  "/solana-stablecoin-standard-pre/sdk/presets-12c": {
+    "__comp": "17896441",
+    "content": "5e02a6af"
+  },
+  "/solana-stablecoin-standard-pre/sdk/types-c58": {
+    "__comp": "17896441",
+    "content": "f7918850"
+  },
+  "/solana-stablecoin-standard-pre/-aab": {
+    "__comp": "17896441",
+    "content": "0e384e19"
+  }
+}

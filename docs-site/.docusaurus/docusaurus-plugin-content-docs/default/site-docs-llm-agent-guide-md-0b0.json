@@ -1,0 +1,23 @@
+{
+  "id": "llm/agent-guide",
+  "title": "Agent Guide",
+  "description": "Compact, copy-paste-first reference for LLM agents integrating the Solana Stablecoin Standard SDK.",
+  "source": "@site/docs/llm/agent-guide.md",
+  "sourceDirName": "llm",
+  "slug": "/llm/agent-guide",
+  "permalink": "/solana-stablecoin-standard-pre/llm/agent-guide",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/llm/agent-guide.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Agent Guide",
+    "description": "Compact, copy-paste-first reference for LLM agents integrating the Solana Stablecoin Standard SDK."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Transfer Hook",
+    "permalink": "/solana-stablecoin-standard-pre/guides/transfer-hook"
+  }
+}

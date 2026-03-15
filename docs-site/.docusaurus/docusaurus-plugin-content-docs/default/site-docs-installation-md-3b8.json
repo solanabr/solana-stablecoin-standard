@@ -1,0 +1,29 @@
+{
+  "id": "installation",
+  "title": "Installation",
+  "description": "Package installation, dependency alignment, and environment expectations for the SSS SDK.",
+  "source": "@site/docs/installation.md",
+  "sourceDirName": ".",
+  "slug": "/installation",
+  "permalink": "/solana-stablecoin-standard-pre/installation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/installation.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "title": "Installation",
+    "sidebar_position": 3,
+    "description": "Package installation, dependency alignment, and environment expectations for the SSS SDK."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Quickstart",
+    "permalink": "/solana-stablecoin-standard-pre/quickstart"
+  },
+  "next": {
+    "title": "SDK Client",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/client"
+  }
+}

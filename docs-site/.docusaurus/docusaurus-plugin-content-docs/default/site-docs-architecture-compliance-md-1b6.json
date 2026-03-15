@@ -1,0 +1,27 @@
+{
+  "id": "architecture/compliance",
+  "title": "Compliance Features",
+  "description": "How SSS maps to reserve attestation, sanctions controls, role separation, and issuer operations commonly discussed in U.S. stablecoin proposals.",
+  "source": "@site/docs/architecture/compliance.md",
+  "sourceDirName": "architecture",
+  "slug": "/architecture/compliance",
+  "permalink": "/solana-stablecoin-standard-pre/architecture/compliance",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/architecture/compliance.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Compliance Features",
+    "description": "How SSS maps to reserve attestation, sanctions controls, role separation, and issuer operations commonly discussed in U.S. stablecoin proposals."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Instructions",
+    "permalink": "/solana-stablecoin-standard-pre/architecture/instructions"
+  },
+  "next": {
+    "title": "Mint And Burn",
+    "permalink": "/solana-stablecoin-standard-pre/guides/mint-burn"
+  }
+}

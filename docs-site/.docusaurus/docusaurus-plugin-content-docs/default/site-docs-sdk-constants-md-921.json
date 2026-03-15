@@ -1,0 +1,27 @@
+{
+  "id": "sdk/constants",
+  "title": "Constants",
+  "description": "Program IDs, token program IDs, and PDA seed constants exported by the SDK.",
+  "source": "@site/docs/sdk/constants.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/constants",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/constants",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/constants.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Constants",
+    "description": "Program IDs, token program IDs, and PDA seed constants exported by the SDK."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Oracle And Attestations",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/oracle"
+  },
+  "next": {
+    "title": "Architecture Overview",
+    "permalink": "/solana-stablecoin-standard-pre/architecture/overview"
+  }
+}

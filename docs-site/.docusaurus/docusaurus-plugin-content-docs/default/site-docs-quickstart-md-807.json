@@ -1,0 +1,29 @@
+{
+  "id": "quickstart",
+  "title": "Quickstart",
+  "description": "Install the SDK, connect to Solana devnet, and initialize an SSS stablecoin with the real API.",
+  "source": "@site/docs/quickstart.md",
+  "sourceDirName": ".",
+  "slug": "/quickstart",
+  "permalink": "/solana-stablecoin-standard-pre/quickstart",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/quickstart.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "title": "Quickstart",
+    "sidebar_position": 2,
+    "description": "Install the SDK, connect to Solana devnet, and initialize an SSS stablecoin with the real API."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "What Is SSS?",
+    "permalink": "/solana-stablecoin-standard-pre/"
+  },
+  "next": {
+    "title": "Installation",
+    "permalink": "/solana-stablecoin-standard-pre/installation"
+  }
+}

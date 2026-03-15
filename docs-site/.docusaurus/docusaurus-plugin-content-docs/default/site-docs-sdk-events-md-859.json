@@ -1,0 +1,27 @@
+{
+  "id": "sdk/events",
+  "title": "Events",
+  "description": "On-chain event types and log parsing helpers exported by the SSS SDK.",
+  "source": "@site/docs/sdk/events.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/events",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/events",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/events.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Events",
+    "description": "On-chain event types and log parsing helpers exported by the SSS SDK."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Errors",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/errors"
+  },
+  "next": {
+    "title": "Oracle And Attestations",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/oracle"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "guides/roles",
+  "title": "Roles And Authority",
+  "description": "Role-based access control, role updates, and authority rotation for SSS issuers.",
+  "source": "@site/docs/guides/roles.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/roles",
+  "permalink": "/solana-stablecoin-standard-pre/guides/roles",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/guides/roles.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Roles And Authority",
+    "description": "Role-based access control, role updates, and authority rotation for SSS issuers."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Blacklisting And Seizure",
+    "permalink": "/solana-stablecoin-standard-pre/guides/blacklist"
+  },
+  "next": {
+    "title": "Reserve Attestations",
+    "permalink": "/solana-stablecoin-standard-pre/guides/attestations"
+  }
+}

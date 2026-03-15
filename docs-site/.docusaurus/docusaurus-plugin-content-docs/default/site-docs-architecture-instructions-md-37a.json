@@ -1,0 +1,27 @@
+{
+  "id": "architecture/instructions",
+  "title": "Instructions",
+  "description": "All on-chain instructions, accounts, arguments, and role requirements for sss-token and sss-transfer-hook.",
+  "source": "@site/docs/architecture/instructions.md",
+  "sourceDirName": "architecture",
+  "slug": "/architecture/instructions",
+  "permalink": "/solana-stablecoin-standard-pre/architecture/instructions",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/architecture/instructions.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Instructions",
+    "description": "All on-chain instructions, accounts, arguments, and role requirements for sss-token and sss-transfer-hook."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Architecture Overview",
+    "permalink": "/solana-stablecoin-standard-pre/architecture/overview"
+  },
+  "next": {
+    "title": "Compliance Features",
+    "permalink": "/solana-stablecoin-standard-pre/architecture/compliance"
+  }
+}

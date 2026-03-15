@@ -1,0 +1,128 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/solana-stablecoin-standard-pre/",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/solana-stablecoin-standard-pre/",
+          "mainDocId": "intro",
+          "docs": [
+            {
+              "id": "architecture/compliance",
+              "path": "/solana-stablecoin-standard-pre/architecture/compliance",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "architecture/instructions",
+              "path": "/solana-stablecoin-standard-pre/architecture/instructions",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "architecture/overview",
+              "path": "/solana-stablecoin-standard-pre/architecture/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "guides/attestations",
+              "path": "/solana-stablecoin-standard-pre/guides/attestations",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "guides/blacklist",
+              "path": "/solana-stablecoin-standard-pre/guides/blacklist",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "guides/mint-burn",
+              "path": "/solana-stablecoin-standard-pre/guides/mint-burn",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "guides/roles",
+              "path": "/solana-stablecoin-standard-pre/guides/roles",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "guides/transfer-hook",
+              "path": "/solana-stablecoin-standard-pre/guides/transfer-hook",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "installation",
+              "path": "/solana-stablecoin-standard-pre/installation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "intro",
+              "path": "/solana-stablecoin-standard-pre/",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "llm/agent-guide",
+              "path": "/solana-stablecoin-standard-pre/llm/agent-guide",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "quickstart",
+              "path": "/solana-stablecoin-standard-pre/quickstart",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/client",
+              "path": "/solana-stablecoin-standard-pre/sdk/client",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/constants",
+              "path": "/solana-stablecoin-standard-pre/sdk/constants",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/errors",
+              "path": "/solana-stablecoin-standard-pre/sdk/errors",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/events",
+              "path": "/solana-stablecoin-standard-pre/sdk/events",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/oracle",
+              "path": "/solana-stablecoin-standard-pre/sdk/oracle",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/pda",
+              "path": "/solana-stablecoin-standard-pre/sdk/pda",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/presets",
+              "path": "/solana-stablecoin-standard-pre/sdk/presets",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "sdk/types",
+              "path": "/solana-stablecoin-standard-pre/sdk/types",
+              "sidebar": "docsSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "docsSidebar": {
+              "link": {
+                "path": "/solana-stablecoin-standard-pre/",
+                "label": "intro"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

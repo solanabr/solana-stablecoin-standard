@@ -1,0 +1,27 @@
+{
+  "id": "guides/blacklist",
+  "title": "Blacklisting And Seizure",
+  "description": "How to blacklist wallets, freeze accounts, seize funds, and remove blacklist entries with SSS.",
+  "source": "@site/docs/guides/blacklist.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/blacklist",
+  "permalink": "/solana-stablecoin-standard-pre/guides/blacklist",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/guides/blacklist.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Blacklisting And Seizure",
+    "description": "How to blacklist wallets, freeze accounts, seize funds, and remove blacklist entries with SSS."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Mint And Burn",
+    "permalink": "/solana-stablecoin-standard-pre/guides/mint-burn"
+  },
+  "next": {
+    "title": "Roles And Authority",
+    "permalink": "/solana-stablecoin-standard-pre/guides/roles"
+  }
+}

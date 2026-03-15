@@ -1,0 +1,379 @@
+{
+  "entrypoints": [
+    "main"
+  ],
+  "origins": {
+    "237": [
+      237
+    ],
+    "17896441": [
+      869,
+      401
+    ],
+    "85913596": [
+      933
+    ],
+    "main": [
+      354,
+      869,
+      792
+    ],
+    "runtime~main": [
+      792,
+      869,
+      354
+    ],
+    "009b8384": [
+      673
+    ],
+    "0b0b48d8": [
+      615
+    ],
+    "0b1ac180": [
+      863
+    ],
+    "0e384e19": [
+      976
+    ],
+    "1a8ca859": [
+      475
+    ],
+    "1b66bbcd": [
+      439
+    ],
+    "37a3d749": [
+      207
+    ],
+    "3b8c55ea": [
+      803
+    ],
+    "42f4fb56": [
+      350
+    ],
+    "4ab59106": [
+      249
+    ],
+    "5e02a6af": [
+      184
+    ],
+    "5e95c892": [
+      647
+    ],
+    "696a36aa": [
+      194
+    ],
+    "7664b628": [
+      800
+    ],
+    "8070e160": [
+      822
+    ],
+    "921a5819": [
+      989
+    ],
+    "a00d66bd": [
+      62
+    ],
+    "a7bd4aaa": [
+      98
+    ],
+    "a94703ab": [
+      869,
+      48
+    ],
+    "aba21aa0": [
+      742
+    ],
+    "ae085e20": [
+      501
+    ],
+    "d36491f5": [
+      423
+    ],
+    "e42e1ce1": [
+      145
+    ],
+    "f7918850": [
+      943
+    ],
+    "styles": [
+      48,
+      354,
+      401,
+      792,
+      869
+    ]
+  },
+  "assets": {
+    "48": {
+      "js": [
+        {
+          "file": "assets/js/a94703ab.b107cace.js",
+          "hash": "4fc796f75117745b",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/a94703ab.b107cace.js"
+        }
+      ]
+    },
+    "62": {
+      "js": [
+        {
+          "file": "assets/js/a00d66bd.a80e95de.js",
+          "hash": "98c277fc573a5047",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/a00d66bd.a80e95de.js"
+        }
+      ]
+    },
+    "98": {
+      "js": [
+        {
+          "file": "assets/js/a7bd4aaa.4abb1556.js",
+          "hash": "dd315892caee6d60",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/a7bd4aaa.4abb1556.js"
+        }
+      ]
+    },
+    "145": {
+      "js": [
+        {
+          "file": "assets/js/e42e1ce1.adde8c4f.js",
+          "hash": "8e15802e74fb269f",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/e42e1ce1.adde8c4f.js"
+        }
+      ]
+    },
+    "184": {
+      "js": [
+        {
+          "file": "assets/js/5e02a6af.80fe36ef.js",
+          "hash": "8bdb7820b581b6a8",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/5e02a6af.80fe36ef.js"
+        }
+      ]
+    },
+    "194": {
+      "js": [
+        {
+          "file": "assets/js/696a36aa.ec72adfd.js",
+          "hash": "51d8712a6910ccd7",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/696a36aa.ec72adfd.js"
+        }
+      ]
+    },
+    "207": {
+      "js": [
+        {
+          "file": "assets/js/37a3d749.d77b7e4b.js",
+          "hash": "78cd99e2324501df",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/37a3d749.d77b7e4b.js"
+        }
+      ]
+    },
+    "237": {
+      "js": [
+        {
+          "file": "assets/js/237.1fd544c5.js",
+          "hash": "98543f7a574e6067",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/237.1fd544c5.js"
+        }
+      ]
+    },
+    "249": {
+      "js": [
+        {
+          "file": "assets/js/4ab59106.59e05949.js",
+          "hash": "63b6b86114d453e4",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/4ab59106.59e05949.js"
+        }
+      ]
+    },
+    "350": {
+      "js": [
+        {
+          "file": "assets/js/42f4fb56.343a43c4.js",
+          "hash": "adb424917c75b0f1",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/42f4fb56.343a43c4.js"
+        }
+      ]
+    },
+    "354": {
+      "js": [
+        {
+          "file": "assets/js/runtime~main.682acbdc.js",
+          "hash": "27c2ca5fdc09425f",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/runtime~main.682acbdc.js"
+        }
+      ]
+    },
+    "401": {
+      "js": [
+        {
+          "file": "assets/js/17896441.2978397c.js",
+          "hash": "8dcc0b8d0afce248",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/17896441.2978397c.js"
+        }
+      ]
+    },
+    "423": {
+      "js": [
+        {
+          "file": "assets/js/d36491f5.658ebdda.js",
+          "hash": "140226bc36cae37e",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/d36491f5.658ebdda.js"
+        }
+      ]
+    },
+    "439": {
+      "js": [
+        {
+          "file": "assets/js/1b66bbcd.05fc1658.js",
+          "hash": "ed231e8a6a4adcc8",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/1b66bbcd.05fc1658.js"
+        }
+      ]
+    },
+    "475": {
+      "js": [
+        {
+          "file": "assets/js/1a8ca859.c8db9b17.js",
+          "hash": "757f0683cc01fbc6",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/1a8ca859.c8db9b17.js"
+        }
+      ]
+    },
+    "501": {
+      "js": [
+        {
+          "file": "assets/js/ae085e20.40c69089.js",
+          "hash": "5cca934c178264ed",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/ae085e20.40c69089.js"
+        }
+      ]
+    },
+    "615": {
+      "js": [
+        {
+          "file": "assets/js/0b0b48d8.9f27508f.js",
+          "hash": "68c8ed071f898528",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/0b0b48d8.9f27508f.js"
+        }
+      ]
+    },
+    "647": {
+      "js": [
+        {
+          "file": "assets/js/5e95c892.528777cc.js",
+          "hash": "be50ad4b0baf0190",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/5e95c892.528777cc.js"
+        }
+      ]
+    },
+    "673": {
+      "js": [
+        {
+          "file": "assets/js/009b8384.9d5299a7.js",
+          "hash": "a572c6163b1a4f26",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/009b8384.9d5299a7.js"
+        }
+      ]
+    },
+    "742": {
+      "js": [
+        {
+          "file": "assets/js/aba21aa0.9cea5d56.js",
+          "hash": "b74e46a9eadaebbd",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/aba21aa0.9cea5d56.js"
+        }
+      ]
+    },
+    "792": {
+      "js": [
+        {
+          "file": "assets/js/main.ad664748.js",
+          "hash": "5ea961bbb681abd5",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/main.ad664748.js"
+        }
+      ]
+    },
+    "800": {
+      "js": [
+        {
+          "file": "assets/js/7664b628.c0e6c1d6.js",
+          "hash": "782cd421a696aed0",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/7664b628.c0e6c1d6.js"
+        }
+      ]
+    },
+    "803": {
+      "js": [
+        {
+          "file": "assets/js/3b8c55ea.5c67638f.js",
+          "hash": "9914a04d276896e7",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/3b8c55ea.5c67638f.js"
+        }
+      ]
+    },
+    "822": {
+      "js": [
+        {
+          "file": "assets/js/8070e160.7c7cfed9.js",
+          "hash": "d068c3b341a3ba82",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/8070e160.7c7cfed9.js"
+        }
+      ]
+    },
+    "863": {
+      "js": [
+        {
+          "file": "assets/js/0b1ac180.c72ba4d0.js",
+          "hash": "256962735a180848",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/0b1ac180.c72ba4d0.js"
+        }
+      ]
+    },
+    "869": {
+      "css": [
+        {
+          "file": "assets/css/styles.39432351.css",
+          "hash": "1cd3d86d96d6a704",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/css/styles.39432351.css"
+        }
+      ]
+    },
+    "933": {
+      "js": [
+        {
+          "file": "assets/js/85913596.bc060782.js",
+          "hash": "cec48b0402814059",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/85913596.bc060782.js"
+        }
+      ]
+    },
+    "943": {
+      "js": [
+        {
+          "file": "assets/js/f7918850.f9767bd3.js",
+          "hash": "e35b83d1c3652a70",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/f7918850.f9767bd3.js"
+        }
+      ]
+    },
+    "976": {
+      "js": [
+        {
+          "file": "assets/js/0e384e19.1671c553.js",
+          "hash": "51fd1f7afb798d2b",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/0e384e19.1671c553.js"
+        }
+      ]
+    },
+    "989": {
+      "js": [
+        {
+          "file": "assets/js/921a5819.af00ed0d.js",
+          "hash": "062d6e1e406cd43b",
+          "publicPath": "/solana-stablecoin-standard-pre/assets/js/921a5819.af00ed0d.js"
+        }
+      ]
+    }
+  }
+}

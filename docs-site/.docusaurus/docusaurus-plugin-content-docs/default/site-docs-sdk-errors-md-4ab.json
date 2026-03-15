@@ -1,0 +1,27 @@
+{
+  "id": "sdk/errors",
+  "title": "Errors",
+  "description": "Error tables and handling patterns for SSS token-program and transfer-hook failures.",
+  "source": "@site/docs/sdk/errors.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/errors",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/errors",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/errors.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Errors",
+    "description": "Error tables and handling patterns for SSS token-program and transfer-hook failures."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Presets",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/presets"
+  },
+  "next": {
+    "title": "Events",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/events"
+  }
+}

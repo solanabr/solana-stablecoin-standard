@@ -1,0 +1,27 @@
+{
+  "id": "sdk/client",
+  "title": "SDK Client",
+  "description": "Source-verified reference for SSSClient, including constructor options, methods, params, return types, and practical caveats.",
+  "source": "@site/docs/sdk/client.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/client",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/client",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/client.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "SDK Client",
+    "description": "Source-verified reference for SSSClient, including constructor options, methods, params, return types, and practical caveats."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Installation",
+    "permalink": "/solana-stablecoin-standard-pre/installation"
+  },
+  "next": {
+    "title": "SDK Types",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/types"
+  }
+}

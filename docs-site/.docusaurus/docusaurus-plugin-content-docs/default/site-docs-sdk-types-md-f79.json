@@ -1,0 +1,27 @@
+{
+  "id": "sdk/types",
+  "title": "SDK Types",
+  "description": "Enums, account interfaces, and instruction parameter shapes exported by the SSS SDK.",
+  "source": "@site/docs/sdk/types.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/types",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/types",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/types.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "SDK Types",
+    "description": "Enums, account interfaces, and instruction parameter shapes exported by the SSS SDK."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "SDK Client",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/client"
+  },
+  "next": {
+    "title": "PDA Helpers",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/pda"
+  }
+}

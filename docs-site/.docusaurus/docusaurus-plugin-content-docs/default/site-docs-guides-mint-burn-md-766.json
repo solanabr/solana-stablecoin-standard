@@ -1,0 +1,27 @@
+{
+  "id": "guides/mint-burn",
+  "title": "Mint And Burn",
+  "description": "How to register minters, mint tokens, and burn tokens with the SSS SDK.",
+  "source": "@site/docs/guides/mint-burn.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/mint-burn",
+  "permalink": "/solana-stablecoin-standard-pre/guides/mint-burn",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/guides/mint-burn.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Mint And Burn",
+    "description": "How to register minters, mint tokens, and burn tokens with the SSS SDK."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Compliance Features",
+    "permalink": "/solana-stablecoin-standard-pre/architecture/compliance"
+  },
+  "next": {
+    "title": "Blacklisting And Seizure",
+    "permalink": "/solana-stablecoin-standard-pre/guides/blacklist"
+  }
+}

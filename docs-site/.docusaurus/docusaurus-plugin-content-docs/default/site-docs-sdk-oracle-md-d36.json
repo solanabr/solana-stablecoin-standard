@@ -1,0 +1,27 @@
+{
+  "id": "sdk/oracle",
+  "title": "Oracle And Attestations",
+  "description": "OracleModule reference for price feeds, reserve hashing, amount conversion, and CPI helper data.",
+  "source": "@site/docs/sdk/oracle.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/oracle",
+  "permalink": "/solana-stablecoin-standard-pre/sdk/oracle",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/sdk/oracle.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Oracle And Attestations",
+    "description": "OracleModule reference for price feeds, reserve hashing, amount conversion, and CPI helper data."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Events",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/events"
+  },
+  "next": {
+    "title": "Constants",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/constants"
+  }
+}

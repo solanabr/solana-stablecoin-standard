@@ -1,0 +1,88 @@
+:root {
+  --ifm-color-primary: #D4FF00;
+  --ifm-color-primary-dark: #bfe600;
+  --ifm-color-primary-darker: #b5d900;
+  --ifm-color-primary-darkest: #95b300;
+  --ifm-color-primary-light: #dbff26;
+  --ifm-color-primary-lighter: #deff33;
+  --ifm-color-primary-lightest: #e5ff5c;
+  --ifm-background-color: #030303;
+  --ifm-background-surface-color: #0a0a0a;
+  --ifm-navbar-background-color: rgba(3, 3, 3, 0.88);
+  --ifm-footer-background-color: #020202;
+  --ifm-code-font-size: 92%;
+  --ifm-font-color-base: #e0e0e0;
+  --ifm-heading-color: #f5f5f5;
+  --ifm-link-color: #D4FF00;
+  --ifm-menu-color-active: #D4FF00;
+  --ifm-menu-color-background-active: rgba(212, 255, 0, 0.08);
+  --ifm-toc-border-color: rgba(255, 255, 255, 0.08);
+  --ifm-card-border-radius: 18px;
+}
+
+html[data-theme="dark"] {
+  --ifm-background-color: #030303;
+  --ifm-background-surface-color: #0a0a0a;
+  --ifm-navbar-background-color: rgba(3, 3, 3, 0.88);
+  --ifm-card-background-color: rgba(10, 10, 10, 0.92);
+  --docusaurus-highlighted-code-line-bg: rgba(212, 255, 0, 0.08);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(212, 255, 0, 0.06), transparent 28%),
+    radial-gradient(circle at top right, rgba(212, 255, 0, 0.03), transparent 24%),
+    linear-gradient(180deg, #030303 0%, #050505 100%);
+}
+
+.navbar {
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.theme-doc-markdown {
+  max-width: 860px;
+}
+
+.theme-doc-markdown h1 {
+  letter-spacing: -0.03em;
+}
+
+.theme-doc-markdown h2,
+.theme-doc-markdown h3 {
+  letter-spacing: -0.02em;
+}
+
+.theme-doc-markdown table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.theme-doc-markdown table thead tr {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.theme-doc-markdown table td,
+.theme-doc-markdown table th {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.theme-code-block,
+.prism-code {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22);
+}
+
+.alert {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pagination-nav__link {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}

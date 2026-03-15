@@ -1,0 +1,27 @@
+{
+  "id": "guides/attestations",
+  "title": "Reserve Attestations",
+  "description": "Building reserve data, hashing reports, and writing on-chain reserve attestations with the SSS SDK.",
+  "source": "@site/docs/guides/attestations.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/attestations",
+  "permalink": "/solana-stablecoin-standard-pre/guides/attestations",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/guides/attestations.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Reserve Attestations",
+    "description": "Building reserve data, hashing reports, and writing on-chain reserve attestations with the SSS SDK."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Roles And Authority",
+    "permalink": "/solana-stablecoin-standard-pre/guides/roles"
+  },
+  "next": {
+    "title": "Transfer Hook",
+    "permalink": "/solana-stablecoin-standard-pre/guides/transfer-hook"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "architecture/overview",
+  "title": "Architecture Overview",
+  "description": "Account structure, PDA layout, program roles, and Token-2022 extension usage for the Solana Stablecoin Standard.",
+  "source": "@site/docs/architecture/overview.md",
+  "sourceDirName": "architecture",
+  "slug": "/architecture/overview",
+  "permalink": "/solana-stablecoin-standard-pre/architecture/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/amanhij/solana-stablecoin-standard-pre/tree/main/docs-site/docs/architecture/overview.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "title": "Architecture Overview",
+    "description": "Account structure, PDA layout, program roles, and Token-2022 extension usage for the Solana Stablecoin Standard."
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Constants",
+    "permalink": "/solana-stablecoin-standard-pre/sdk/constants"
+  },
+  "next": {
+    "title": "Instructions",
+    "permalink": "/solana-stablecoin-standard-pre/architecture/instructions"
+  }
+}
