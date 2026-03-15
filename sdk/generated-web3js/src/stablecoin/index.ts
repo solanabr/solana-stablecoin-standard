@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 export const STABLECOIN_PROGRAM_ID = new PublicKey(
-  "2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH",
+  "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC",
 );
 
 export * from "./accounts/blacklistEntry";

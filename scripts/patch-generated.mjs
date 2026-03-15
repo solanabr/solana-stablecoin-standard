@@ -10,6 +10,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
+function loadProgramIds() {
+  const path = resolve(ROOT, "tests/devnet/fixtures/program-ids.json");
+  return JSON.parse(readFileSync(path, "utf8"));
+}
+
 // --- generated-kit: transfer-hook naming conflicts ---
 const kitTransferHookInstructions = resolve(
   ROOT,
@@ -158,6 +163,83 @@ function patchWeb3jsMinterQuota() {
   writeFileSync(web3jsMint, content);
 }
 
+function patchProgramIds() {
+  const ids = loadProgramIds();
+
+  // --- generated-web3js ---
+  const stablecoinIndex = resolve(ROOT, "sdk/generated-web3js/src/stablecoin/index.ts");
+  const transferHookIndex = resolve(ROOT, "sdk/generated-web3js/src/transfer-hook/index.ts");
+
+  let content = readFileSync(stablecoinIndex, "utf8");
+  content = content.replace(
+    /(STABLECOIN_PROGRAM_ID = new PublicKey\(\s*\n\s*)"[^"]+"/,
+    `$1"${ids.stablecoinProgramId}"`,
+  );
+  writeFileSync(stablecoinIndex, content);
+
+  content = readFileSync(transferHookIndex, "utf8");
+  content = content.replace(
+    /(TRANSFERHOOK_PROGRAM_ID = new PublicKey\(\s*\n\s*)"[^"]+"/,
+    `$1"${ids.transferHookProgramId}"`,
+  );
+  writeFileSync(transferHookIndex, content);
+
+  // --- generated-kit ---
+  const kitStablecoinPrograms = resolve(ROOT, "sdk/generated-kit/src/stablecoin/programs/stablecoin.ts");
+  const kitTransferHookPrograms = resolve(ROOT, "sdk/generated-kit/src/transfer-hook/programs/transferHook.ts");
+
+  content = readFileSync(kitStablecoinPrograms, "utf8");
+  content = content.replace(
+    /"2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"/g,
+    `"${ids.stablecoinProgramId}"`,
+  );
+  writeFileSync(kitStablecoinPrograms, content);
+
+  content = readFileSync(kitTransferHookPrograms, "utf8");
+  content = content.replace(
+    /"6mjTtZjRFK8FWA24f2KNEfMVcAvpYLWcpMzLvKiVXyd2"/g,
+    `"${ids.transferHookProgramId}"`,
+  );
+  writeFileSync(kitTransferHookPrograms, content);
+
+  // --- generated-kit seize.ts (hardcoded stablecoin default) ---
+  const kitSeize = resolve(ROOT, "sdk/generated-kit/src/stablecoin/instructions/seize.ts");
+  content = readFileSync(kitSeize, "utf8");
+  content = content.replace(
+    /"2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"/g,
+    `"${ids.stablecoinProgramId}"`,
+  );
+  writeFileSync(kitSeize, content);
+
+  // --- Rust: stablecoin_client, stablecoin_decoder ---
+  const stablecoinClientPrograms = resolve(ROOT, "backend/crates/stablecoin_client/src/generated/programs.rs");
+  const stablecoinDecoder = resolve(ROOT, "backend/crates/stablecoin_decoder/src/lib.rs");
+
+  content = readFileSync(stablecoinClientPrograms, "utf8");
+  content = content.replace(
+    /address!\("2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"\)/,
+    `address!("${ids.stablecoinProgramId}")`,
+  );
+  writeFileSync(stablecoinClientPrograms, content);
+
+  content = readFileSync(stablecoinDecoder, "utf8");
+  content = content.replace(
+    /from_str_const\("2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"\)/,
+    `from_str_const("${ids.stablecoinProgramId}")`,
+  );
+  writeFileSync(stablecoinDecoder, content);
+
+  // --- Rust: stablecoin_client seize instruction default ---
+  const seizeRs = resolve(ROOT, "backend/crates/stablecoin_client/src/generated/instructions/seize.rs");
+  content = readFileSync(seizeRs, "utf8");
+  content = content.replace(
+    /"2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"/g,
+    `"${ids.stablecoinProgramId}"`,
+  );
+  writeFileSync(seizeRs, content);
+}
+
 patchKitTransferHook();
 patchWeb3jsMinterQuota();
+patchProgramIds();
 console.log("Patches applied.");

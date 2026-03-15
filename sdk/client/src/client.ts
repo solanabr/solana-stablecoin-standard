@@ -191,6 +191,13 @@ export class StablecoinClient {
   }
 
   async create(params: CreateParams): Promise<PublicKey> {
+    const { mint } = await this.createAndGetSignature(params);
+    return mint;
+  }
+
+  async createAndGetSignature(
+    params: CreateParams
+  ): Promise<{ mint: PublicKey; signature: string }> {
     if (!this.wallet) {
       throw new Error("Wallet required");
     }
@@ -206,6 +213,6 @@ export class StablecoinClient {
     if (typeof sig !== "string") {
       throw new Error("Expected signature from sendRawTransaction");
     }
-    return mint.publicKey;
+    return { mint: mint.publicKey, signature: sig };
   }
 }

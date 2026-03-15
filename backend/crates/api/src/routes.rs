@@ -7,7 +7,7 @@
 use anyhow::Result;
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{HeaderValue, Method, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -22,6 +22,7 @@ use sss_domain::{
 };
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tracing::info;
 use uuid::Uuid;
 
@@ -94,7 +95,19 @@ fn default_limit() -> i64 {
     100
 }
 
-pub fn build_router(state: AppState) -> Router {
+fn cors_layer(origins: &[String]) -> CorsLayer {
+    let allowed = origins
+        .iter()
+        .filter_map(|origin| HeaderValue::from_str(origin).ok())
+        .collect::<Vec<_>>();
+
+    CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_headers(tower_http::cors::Any)
+        .allow_origin(AllowOrigin::list(allowed))
+}
+
+pub fn build_router(state: AppState, config: &ApiConfig) -> Router {
     Router::new()
         .route("/healthz", get(healthz))
         .route("/readyz", get(readyz))
@@ -106,7 +119,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/v1/operations/{id}/approve", post(approve_operation))
         .route("/v1/operations/{id}/execute", post(execute_operation))
         .route("/v1/webhooks/subscriptions", post(create_webhook_subscription))
-        .layer(ServiceBuilder::new())
+        .layer(ServiceBuilder::new().layer(cors_layer(&config.cors_origins)))
         .with_state(state)
 }
 
@@ -132,7 +145,7 @@ pub async fn run(config: ApiConfig) -> Result<()> {
         });
         info!("workers spawned (SSS_RUN_WORKERS=1)");
     }
-    let app = build_router(AppState { store });
+    let app = build_router(AppState { store }, &config);
     let listener = TcpListener::bind(config.bind_address).await?;
     info!(address = %config.bind_address, "starting sss-api");
     axum::serve(listener, app).await?;

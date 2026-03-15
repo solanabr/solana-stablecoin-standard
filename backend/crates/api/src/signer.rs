@@ -27,8 +27,8 @@ const SEED_EVENT_AUTHORITY: &[u8] = b"__event_authority";
 const TOKEN_2022_PROGRAM_ID: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
 const SPL_ASSOCIATED_TOKEN_PROGRAM_ID: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
-/// Default stablecoin program ID (declare_id! in programs/stablecoin)
-const DEFAULT_STABLECOIN_PROGRAM_ID: &str = "2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH";
+/// Default stablecoin program ID (matches programs/stablecoin declare_id, program-ids.json)
+const DEFAULT_STABLECOIN_PROGRAM_ID: &str = "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC";
 
 fn pubkey_to_address(p: &Pubkey) -> solana_address::Address {
     solana_address::Address::try_from(p.to_bytes().as_slice()).expect("address from pubkey")
@@ -131,20 +131,8 @@ impl AuthorityKeypairSigner {
             .and_then(|a| if a > 0 { Some(a) } else { None })
             .ok_or_else(|| WorkerError::Dependency("mint requires positive amount".to_string()))?;
         let authority = self.keypair.pubkey();
-        let to_token_account = request
-            .token_account
-            .as_ref()
-            .map(|s| Pubkey::from_str(s))
-            .transpose()
-            .map_err(|e| WorkerError::Dependency(format!("invalid token_account: {}", e)))?
-            .unwrap_or_else(|| {
-                let wallet = request
-                    .recipient
-                    .as_ref()
-                    .and_then(|s| Pubkey::from_str(s).ok())
-                    .expect("mint requires recipient or token_account");
-                associated_token_address(&wallet, &mint)
-            });
+        let to_token_account = Pubkey::from_str(&request.token_account)
+            .map_err(|e| WorkerError::Dependency(format!("invalid token_account: {}", e)))?;
 
         let program_addr = self.program_id_address();
         let token_program_addr = solana_address::Address::from_str(TOKEN_2022_PROGRAM_ID)
@@ -173,13 +161,8 @@ impl AuthorityKeypairSigner {
             .and_then(|a| if a > 0 { Some(a) } else { None })
             .ok_or_else(|| WorkerError::Dependency("burn requires positive amount".to_string()))?;
         let authority = self.keypair.pubkey();
-        let from_token_account = request
-            .token_account
-            .as_ref()
-            .map(|s| Pubkey::from_str(s))
-            .transpose()
-            .map_err(|e| WorkerError::Dependency(format!("invalid token_account: {}", e)))?
-            .unwrap_or_else(|| associated_token_address(&authority, &mint));
+        let from_token_account = Pubkey::from_str(&request.token_account)
+            .map_err(|e| WorkerError::Dependency(format!("invalid token_account: {}", e)))?;
 
         let program_addr = self.program_id_address();
         let token_program_addr = solana_address::Address::from_str(TOKEN_2022_PROGRAM_ID)

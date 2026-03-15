@@ -1,0 +1,22 @@
+[package]
+name = "sss-admin-tui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "sss-admin"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+crossterm = "0.28.1"
+ratatui = "0.29.0"
+solana-sdk.workspace = true
+sss-admin-cli = { path = "../sss-admin-cli" }
+sss-domain = { path = "../../backend/crates/domain" }
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -4,8 +4,8 @@ use sss_domain::{EventRecord, LifecycleRequest};
 #[derive(Debug, Deserialize)]
 pub struct CreateLifecycleBody {
     pub mint: String,
-    pub recipient: Option<String>,
-    pub token_account: Option<String>,
+    pub recipient: String,
+    pub token_account: String,
     pub amount: i128,
     pub minter: Option<String>,
     pub reason: Option<String>,

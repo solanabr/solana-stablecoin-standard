@@ -50,11 +50,12 @@ impl LifecycleStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LifecycleRequest {
     pub id: String,
+    #[serde(rename = "type", alias = "type_")]
     pub type_: LifecycleRequestType,
     pub status: LifecycleStatus,
     pub mint: String,
-    pub recipient: Option<String>,
-    pub token_account: Option<String>,
+    pub recipient: String,
+    pub token_account: String,
     pub amount: i128,
     pub minter: Option<String>,
     pub reason: Option<String>,
@@ -71,8 +72,8 @@ pub struct LifecycleRequest {
 pub struct CreateLifecycleRequest {
     pub type_: LifecycleRequestType,
     pub mint: String,
-    pub recipient: Option<String>,
-    pub token_account: Option<String>,
+    pub recipient: String,
+    pub token_account: String,
     pub amount: i128,
     pub minter: Option<String>,
     pub reason: Option<String>,

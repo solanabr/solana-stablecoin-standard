@@ -61,7 +61,7 @@ export type SeizeInstruction<
   TAccountTo extends string | AccountMeta<string> = string,
   TAccountBlacklistEntry extends string | AccountMeta<string> = string,
   TAccountStablecoinProgram extends string | AccountMeta<string> =
-    "2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH",
+    "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC",
   TAccountTransferHookProgram extends string | AccountMeta<string> = string,
   TAccountExtraAccountMetaList extends string | AccountMeta<string> = string,
   TAccountDestinationBlacklist extends string | AccountMeta<string> = string,
@@ -304,7 +304,7 @@ export async function getSeizeInstructionAsync<
   }
   if (!accounts.stablecoinProgram.value) {
     accounts.stablecoinProgram.value =
-      "2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH" as Address<"2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH">;
+      "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC" as Address<"Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC">;
   }
   if (!accounts.extraAccountMetaList.value) {
     accounts.extraAccountMetaList.value = await getProgramDerivedAddress({
@@ -508,7 +508,7 @@ export function getSeizeInstruction<
   // Resolve default values.
   if (!accounts.stablecoinProgram.value) {
     accounts.stablecoinProgram.value =
-      "2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH" as Address<"2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH">;
+      "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC" as Address<"Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC">;
   }
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =

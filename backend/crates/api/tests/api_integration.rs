@@ -264,7 +264,7 @@ async fn api_routes_cover_core_paths() -> Result<()> {
                         serde_json::to_vec(&json!({
                             "mint": "mint-1",
                             "recipient": "wallet-1",
-                            "token_account": null,
+                            "token_account": "ata-wallet-1-mint-1",
                             "amount": 100,
                             "minter": null,
                             "reason": "ops",
@@ -285,8 +285,8 @@ async fn api_routes_cover_core_paths() -> Result<()> {
             &CreateLifecycleRequest {
                 type_: LifecycleRequestType::Mint,
                 mint: "mint-1".to_string(),
-                recipient: Some("wallet-3".to_string()),
-                token_account: Some("ata-3".to_string()),
+                recipient: "wallet-3".to_string(),
+                token_account: "ata-3".to_string(),
                 amount: 500,
                 minter: None,
                 reason: Some("seed".to_string()),
@@ -374,8 +374,8 @@ async fn operation_worker_submits_approved_requests() -> Result<()> {
             &CreateLifecycleRequest {
                 type_: LifecycleRequestType::Mint,
                 mint: "mint-1".to_string(),
-                recipient: Some("wallet-4".to_string()),
-                token_account: Some("ata-4".to_string()),
+                recipient: "wallet-4".to_string(),
+                token_account: "ata-4".to_string(),
                 amount: 100,
                 minter: None,
                 reason: Some("worker".to_string()),
@@ -461,11 +461,12 @@ async fn devnet_e2e_mint_execution() -> Result<()> {
     };
     let _ = std::env::var("SOLANA_RPC_URL").context("SOLANA_RPC_URL required")?;
     let mint_pubkey = std::env::var("SSS_DEVNET_MINT").context("SSS_DEVNET_MINT required")?;
-    let target_ata = std::env::var("SSS_DEVNET_TARGET_ATA").ok();
-    let target_wallet = std::env::var("SSS_DEVNET_TARGET_WALLET").ok();
-    if target_ata.is_none() && target_wallet.is_none() {
-        anyhow::bail!("set SSS_DEVNET_TARGET_ATA or SSS_DEVNET_TARGET_WALLET");
-    }
+    let target_wallet = std::env::var("SSS_DEVNET_TARGET_WALLET")
+        .ok()
+        .context("set SSS_DEVNET_TARGET_WALLET")?;
+    let target_ata = std::env::var("SSS_DEVNET_TARGET_ATA")
+        .ok()
+        .context("set SSS_DEVNET_TARGET_ATA")?;
     let signer = sss_api::AuthorityKeypairSigner::from_env()
         .map_err(|e| anyhow::anyhow!("AuthorityKeypairSigner::from_env: {}", e))?;
 
@@ -479,8 +480,8 @@ async fn devnet_e2e_mint_execution() -> Result<()> {
             &CreateLifecycleRequest {
                 type_: LifecycleRequestType::Mint,
                 mint: mint_pubkey.clone(),
-                recipient: target_wallet.clone(),
-                token_account: target_ata.clone(),
+                recipient: target_wallet,
+                token_account: target_ata,
                 amount: 1_000_000,
                 minter: None,
                 reason: Some("devnet-e2e".to_string()),

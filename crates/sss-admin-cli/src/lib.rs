@@ -1,11 +1,11 @@
-mod backend;
-mod chain;
+pub mod backend;
+pub mod chain;
 mod cli;
-mod config;
+pub mod config;
 mod init;
 
 pub use cli::{Cli, Command};
-pub use config::{InitConfigFile, Preset, PresetDetails, ProfileConfig};
+pub use config::{load_runtime_config, InitConfigFile, Preset, PresetDetails, ProfileConfig};
 
 use anyhow::Result;
 use clap::Parser;
@@ -14,8 +14,6 @@ use stablecoin::instructions::roles::UpdateRolesParams;
 
 use crate::backend::BackendClient;
 use crate::chain::ChainClient;
-use crate::config::load_runtime_config;
-
 pub fn run() -> Result<()> {
     run_with_args(std::env::args_os())
 }
@@ -394,12 +392,20 @@ fn print_lifecycle_request(request: &LifecycleRequest) {
         request.status.as_str(),
         request.mint,
         request.amount,
-        request.recipient.as_deref().unwrap_or("-"),
-        request.token_account.as_deref().unwrap_or("-"),
+        display_or_dash(&request.recipient),
+        display_or_dash(&request.token_account),
         request.requested_by,
         request.approved_by.as_deref().unwrap_or("-"),
         request.tx_signature.as_deref().unwrap_or("-"),
     );
+}
+
+fn display_or_dash(value: &str) -> &str {
+    if value.trim().is_empty() {
+        "-"
+    } else {
+        value
+    }
 }
 
 fn audit_action_name(action: cli::AuditAction) -> String {

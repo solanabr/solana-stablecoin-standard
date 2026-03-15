@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "crates/sss-admin-cli",
+  "crates/sss-admin-tui",
   "backend/crates/api",
   "backend/crates/db",
   "backend/crates/domain",
@@ -54,6 +55,7 @@ tempfile = "3.19.1"
 thiserror = "2.0.12"
 tokio = { version = "1.44.1", features = ["macros", "rt-multi-thread", "signal", "sync", "time"] }
 tower = { version = "0.5.2", features = ["util"] }
+tower-http = { version = "0.6.2", features = ["cors"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt", "json"] }
 uuid = { version = "1.16.0", features = ["serde", "v4"] }

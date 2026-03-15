@@ -4,12 +4,17 @@
   "version": "0.1.0",
   "packageManager": "yarn@1.22.22",
   "workspaces": [
+    "apps/web",
     "sdk/generated-kit",
     "sdk/generated-web3js",
     "sdk/client"
   ],
   "scripts": {
     "bootstrap": "yarn install",
+    "dev:web": "yarn workspace @stbr/sss-web dev",
+    "build:web": "yarn workspace @stbr/sss-web build",
+    "lint:web": "yarn workspace @stbr/sss-web lint",
+    "test:web": "yarn workspace @stbr/sss-web test",
     "generate": "node scripts/generate-sdks.mjs && node scripts/patch-generated.mjs",
     "build": "./scripts/build.sh",
     "build:ts": "tsc -b sdk/generated-kit sdk/generated-web3js sdk/client",

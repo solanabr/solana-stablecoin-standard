@@ -299,7 +299,7 @@ impl SeizeBuilder {
             to: self.to.expect("to is not set"),
             blacklist_entry: self.blacklist_entry.expect("blacklist_entry is not set"),
             stablecoin_program: self.stablecoin_program.unwrap_or(solana_address::address!(
-                "2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"
+                "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC"
             )),
             transfer_hook_program: self
                 .transfer_hook_program

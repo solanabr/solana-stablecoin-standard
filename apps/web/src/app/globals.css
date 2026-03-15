@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --background: oklch(0.14 0.015 240);
+  --foreground: oklch(0.95 0.01 240);
+  --muted: oklch(0.2 0.02 240);
+  --muted-foreground: oklch(0.65 0.02 240);
+  --border: oklch(0.28 0.02 240);
+  --input: oklch(0.2 0.02 240);
+  --card: oklch(0.17 0.02 240);
+  --card-foreground: oklch(0.95 0.01 240);
+  --popover: oklch(0.2 0.02 240);
+  --popover-foreground: oklch(0.95 0.01 240);
+  --primary: oklch(0.72 0.17 165);
+  --primary-foreground: oklch(0.15 0.02 165);
+  --secondary: oklch(0.26 0.02 240);
+  --secondary-foreground: oklch(0.95 0.01 240);
+  --accent: oklch(0.26 0.03 240);
+  --accent-foreground: oklch(0.95 0.01 240);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --ring: oklch(0.65 0.15 165);
+  --success: oklch(0.65 0.18 145);
+  --warning: oklch(0.75 0.15 85);
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: oklch(0.5 0.12 165);
+}
+
+[data-slot="table-container"] {
+  content-visibility: auto;
+}
