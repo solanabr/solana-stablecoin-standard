@@ -1,0 +1,28 @@
+# Trident fuzzing configuration for SSS Token Program
+# https://ackee.xyz/trident/docs/latest/
+
+[fuzz]
+# Fuzzing iterations per test
+fuzzing_with_stats = true
+# Number of iterations before reporting stats
+iterations = 10000
+# Exit on first failure for debugging
+exit_upon_crash = true
+
+[fuzz.env]
+# Program IDs used during fuzzing
+program_id_sss_token = "5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4"
+
+[test]
+# Validator settings for integration testing
+validator_startup_timeout = 30000
+
+[test.validator]
+# Programs to deploy
+[[test.validator.programs]]
+address = "5ZBiFxX4ggWfNR5VhAQDRZauG6CvG84puS4SQiH8BcL4"
+program = "target/deploy/sss_token.so"
+
+[[test.validator.programs]]
+address = "FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy"
+program = "target/deploy/sss_transfer_hook.so"

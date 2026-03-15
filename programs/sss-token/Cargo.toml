@@ -1,0 +1,29 @@
+[package]
+name = "sss-token"
+version = "1.0.3"
+description = "Solana Stablecoin Standard - Token Program with blacklist, seize, freeze, and GENIUS Act compliance"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/solanabr/solana-stablecoin-standard"
+homepage = "https://stablecoinstandard.dev"
+keywords = ["solana", "stablecoin", "token-2022", "spl", "defi"]
+categories = ["cryptography::cryptocurrencies"]
+readme = "README.md"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sss_token"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.31.1", features = ["token_2022"] }
+spl-token-metadata-interface = "0.6.0"
+solana-security-txt = "1.1.1"

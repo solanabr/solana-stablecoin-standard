@@ -1,0 +1,208 @@
+{
+  "address": "FmujD82V5FB6Nus7mbEV2a7cp5HG32gsiHykmtNSRJxy",
+  "metadata": {
+    "name": "sss_transfer_hook",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Solana Stablecoin Standard - Transfer Hook Program"
+  },
+  "instructions": [
+    {
+      "name": "initialize_extra_account_meta_list",
+      "docs": [
+        "Initializes the ExtraAccountMetaList for the transfer hook.",
+        "This declares which additional accounts Token-2022 must resolve and pass",
+        "when invoking the hook on every transfer.",
+        "",
+        "Must be called once after deploying the hook program, before any transfers."
+      ],
+      "discriminator": [
+        92,
+        197,
+        174,
+        197,
+        41,
+        124,
+        19,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
+          "docs": [
+            "The authority that must match the stablecoin's master_authority.",
+            "Prevents unauthorized actors from initializing the meta list."
+          ],
+          "signer": true
+        },
+        {
+          "name": "extra_account_meta_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "transfer_hook",
+      "docs": [
+        "The transfer hook execute handler. Called by Token-2022 on every transfer.",
+        "",
+        "Checks if the source authority or destination owner is blacklisted by",
+        "verifying whether their BlacklistEntry PDA (owned by sss-token) exists.",
+        "If either is blacklisted, the transfer is rejected."
+      ],
+      "discriminator": [
+        220,
+        57,
+        220,
+        152,
+        126,
+        125,
+        97,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "source"
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "destination"
+        },
+        {
+          "name": "authority"
+        },
+        {
+          "name": "extra_account_meta_list",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sss_token_program"
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "source_blacklist",
+          "docs": [
+            "May or may not exist — if it exists, source is blacklisted."
+          ]
+        },
+        {
+          "name": "dest_blacklist",
+          "docs": [
+            "May or may not exist — if it exists, destination is blacklisted."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "_amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "SourceBlacklisted",
+      "msg": "Source address is blacklisted"
+    },
+    {
+      "code": 6001,
+      "name": "DestinationBlacklisted",
+      "msg": "Destination address is blacklisted"
+    },
+    {
+      "code": 6002,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: caller is not the master authority"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidConfig",
+      "msg": "Invalid config account"
+    }
+  ]
+}
