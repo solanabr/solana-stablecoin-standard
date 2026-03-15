@@ -92,24 +92,20 @@ pub mod transfer_hook {
         // not invoked directly by an attacker.
         assert_is_transferring(&ctx)?;
 
-        // Check if stablecoin is paused by reading the config account data.
+        // Deserialize the stablecoin config using Borsh rather than raw byte offsets,
+        // so that any future layout change in StablecoinConfig causes a deserialization
+        // error instead of silently reading the wrong byte.
+        // Skip the 8-byte Anchor discriminator, then deserialize the mirrored struct.
         let config_info = &ctx.accounts.stablecoin_config;
         let config_data = config_info.try_borrow_data()?;
+        let config = state::StablecoinConfigRef::deserialize(&mut &config_data[8..])?;
+        drop(config_data);
 
-        // The is_paused field is at offset: 8 (disc) + 32 (master) + 32 (pending) + 32 (mint) + 1 (decimals) + 1 (perm_delegate) + 1 (transfer_hook) = 107
-        const IS_PAUSED_OFFSET: usize = 8 + 32 + 32 + 32 + 1 + 1 + 1;
-        if config_data.len() > IS_PAUSED_OFFSET && config_data[IS_PAUSED_OFFSET] != 0 {
+        if config.is_paused {
             return err!(TransferHookError::StablecoinPaused);
         }
 
-        // Determine compliance mode from config.
-        // Layout: disc(8)+master(32)+pending(32)+mint(32)+decimals(1)+perm_delegate(1)+
-        //         transfer_hook(1)+is_paused(1)+total_minted(8)+total_burned(8)+bump(1)+
-        //         enable_confidential_transfer(1) = 126 → enable_allowlist is at 126.
-        const ENABLE_ALLOWLIST_OFFSET: usize = 8 + 32 + 32 + 32 + 1 + 1 + 1 + 1 + 8 + 8 + 1 + 1;
-        let is_allowlist_mode = config_data.len() > ENABLE_ALLOWLIST_OFFSET
-            && config_data[ENABLE_ALLOWLIST_OFFSET] != 0;
-        drop(config_data);
+        let is_allowlist_mode = config.enable_allowlist;
 
         if is_allowlist_mode {
             // SSS-3 allowlist mode: the PDA entries at positions 7/8 are allowlist PDAs.
