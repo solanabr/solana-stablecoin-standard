@@ -5,6 +5,33 @@ All assigned tasks complete. Awaiting PR reviews.
 
 ## Completed Work
 
+### SSS-052 — DONE ✅ (2026-03-15)
+- fetchCdpPosition(wallet, connection, pythFeeds?) → CdpPosition
+  - Live Pyth oracle prices via @pythnetwork/client parsePriceData
+  - CollateralVault discovery via getProgramAccounts discriminator filter
+  - Accurate ratio/healthFactor/liquidationPrice; graceful feed failure handling
+- fetchCollateralTypes(connection, pythFeeds?) → CollateralType[]
+  - Program-wide CollateralVault scan, mint aggregation (activeVaults, totalDeposited)
+  - Optional Pyth prices per type; malformed accounts skipped
+- CollateralType interface exported from sdk/src/index.ts
+- @pythnetwork/client added to SDK dependencies
+- 16 new tests; 138/138 total passing
+- PR #122: https://github.com/solanabr/solana-stablecoin-standard/pull/122
+- Branch: feat/sss-052-cdp-module-fetchcollateraltypes
+
+### SSS-054 — DONE ✅ (2026-03-15)
+- Fixed CDP liquidation insolvency bug (SSS-049 follow-up)
+- Root cause: cdp_liquidate zeroed ALL debt but only seized ONE CollateralVault
+- Fix: restrict CDP to single collateral per position (1:1 CollateralVault:CdpPosition)
+- Changes:
+  - CdpPosition gains `collateral_mint: Pubkey` field (locked on first borrow)
+  - cdp_borrow_stable: sets collateral_mint on init; rejects wrong mint with WrongCollateralMint
+  - cdp_liquidate: account constraint enforces vault collateral_mint == position collateral_mint
+  - New SssError::WrongCollateralMint added to error.rs
+- 2 new anchor tests (28/28 total pass)
+- PR #65: https://github.com/dcccrypto/solana-stablecoin-standard/pull/65
+- Branch: fix/sss-054-cdp-single-collateral
+
 ### SSS-051 — DONE ✅ (2026-03-15)
 - CdpModule added to SDK (Direction 2)
 - Functions: depositCollateral, borrowStable, repayStable, getPosition
@@ -46,24 +73,23 @@ All assigned tasks complete. Awaiting PR reviews.
 - Backend API endpoint stubs (5 directions), PR #56
 
 ## Test History
-- **Anchor:** 26/26 — 2026-03-15 04:44 UTC (7 new CDP tests)
+- **Anchor:** 28/28 — 2026-03-15 05:09 UTC (2 new SSS-054 tests)
 - **Backend (cargo):** 35/35 — 2026-03-15 04:14 UTC
-- **SDK (vitest unit):** 122/122 — 2026-03-15 04:48 UTC (20 new CdpModule tests)
+- **SDK (vitest unit):** 138/138 — 2026-03-15 05:16 UTC (16 new SSS-052 tests)
 - **Spikes (vitest):** 82/82 — 2026-03-15 03:24 UTC
 
 ## Open PRs
-- PR #64 — fix(ci): correct backend binary path in sdk-integration job — awaiting review/merge
+- PR #122 — SSS-052 fetchCdpPosition + fetchCollateralTypes — awaiting review
+- PR #65 — SSS-054 CDP single-collateral fix — awaiting review
 
-## Notes: CDP Implementation
-- Branch: feat/sss-049-cdp-multi-collateral
+## CDP Architecture Notes (post SSS-054)
 - CollateralVault PDA seeds: ["cdp-collateral-vault", sss_mint, user, collateral_mint]
 - CdpPosition PDA seeds: ["cdp-position", sss_mint, user]
-- Liquidation: full position (all debt burned, all collateral seized)
+- CdpPosition.collateral_mint: locked on first borrow, immutable thereafter
+- Liquidation: full position (all debt burned, single collateral vault seized)
 - Pyth price expo assumed negative; uses price.expo.unsigned_abs()
 - Borrow limit: floor(collateral_value_usd * 10^sss_decimals * 10000 / 15000 / 10^6)
 
 ## Next
-- Merge PR #64 (CI fix) once CI passes
-- Monitor CI for PR #62, #63 merge runs
-- Follow up on liquidation design flag (zeroes all debt but seizes one vault only — non-blocking MVP)
+- Await PR reviews/merges (PR #122, PR #65)
 - Monitor for new backlog tasks
