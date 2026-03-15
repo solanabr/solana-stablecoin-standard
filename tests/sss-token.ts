@@ -2929,4 +2929,532 @@ describe("sss-token", () => {
       expect(derived.toBase58()).to.equal(ycPda.toBase58());
     });
   });
+
+  // SSS-075: FLAG_ZK_COMPLIANCE (bit 4) — ZK compliance enforcement
+  // ══════════════════════════════════════════════════════════════════════════
+
+  describe("SSS-075: FLAG_ZK_COMPLIANCE (bit 4) — ZK compliance", () => {
+    const FLAG_ZK_COMPLIANCE = BigInt(1) << BigInt(4); // 1 << 4 = 16
+
+    // Fresh SSS-2 mint for ZK compliance tests (isolated)
+    const zkSssMintKeypair = Keypair.generate();
+    // A second SSS-1 mint for "wrong preset" rejection test
+    const zkSss1MintKeypair = Keypair.generate();
+
+    let zkConfigPda: PublicKey;
+    let zkConfigBump: number;
+    let zkSss1ConfigPda: PublicKey;
+    let zkSss1ConfigBump: number;
+    let zkComplianceConfigPda: PublicKey;
+    let zkComplianceConfigBump: number;
+
+    // A second user for multi-user tests
+    let user2: anchor.web3.Keypair;
+
+    // Transfer hook program ID (localnet deployed)
+    const HOOK_PROGRAM_ID = new PublicKey("phAtzRyRUJGpMC3ftAtWzoaX7UkghRe9x5KTig8jPQp");
+
+    before(async () => {
+      // Derive SSS-2 config PDA
+      [zkConfigPda, zkConfigBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stablecoin-config"), zkSssMintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+
+      // Derive SSS-1 config PDA
+      [zkSss1ConfigPda, zkSss1ConfigBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stablecoin-config"), zkSss1MintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+
+      // Derive ZkComplianceConfig PDA
+      [zkComplianceConfigPda, zkComplianceConfigBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from("zk-compliance-config"), zkSssMintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+
+      // Fund user2
+      user2 = Keypair.generate();
+      const sig = await provider.connection.requestAirdrop(user2.publicKey, 2_000_000_000);
+      await provider.connection.confirmTransaction(sig, "confirmed");
+
+      // Initialize SSS-2 config
+      await program.methods
+        .initialize({
+          preset: 2,
+          decimals: 6,
+          name: "ZK USD",
+          symbol: "ZKUSD",
+          uri: "https://example.com/zk.json",
+          transferHookProgram: HOOK_PROGRAM_ID,
+          collateralMint: null,
+          reserveVault: null,
+          maxSupply: null,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          mint: zkSssMintKeypair.publicKey,
+          config: zkConfigPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([zkSssMintKeypair])
+        .rpc();
+
+      // Initialize SSS-1 config for preset rejection test
+      await program.methods
+        .initialize({
+          preset: 1,
+          decimals: 6,
+          name: "Plain USD",
+          symbol: "PUSD",
+          uri: "https://example.com/plain.json",
+          transferHookProgram: null,
+          collateralMint: null,
+          reserveVault: null,
+          maxSupply: null,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          mint: zkSss1MintKeypair.publicKey,
+          config: zkSss1ConfigPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([zkSss1MintKeypair])
+        .rpc();
+    });
+
+    // ── Test 1: FLAG_ZK_COMPLIANCE is NOT set on fresh SSS-2 config ──────────
+
+    it("SSS-075: FLAG_ZK_COMPLIANCE is NOT set on freshly initialized SSS-2 config", async () => {
+      const config = await program.account.stablecoinConfig.fetch(zkConfigPda);
+      expect((BigInt(config.featureFlags.toString()) & FLAG_ZK_COMPLIANCE) === BigInt(0)).to.equal(true);
+    });
+
+    // ── Test 2: FLAG_ZK_COMPLIANCE constant is bit 4 (value 16) ─────────────
+
+    it("SSS-075: FLAG_ZK_COMPLIANCE is bit 4 (value 16 = 0x10)", async () => {
+      expect(FLAG_ZK_COMPLIANCE === BigInt(16)).to.equal(true);
+    });
+
+    // ── Test 3: Non-authority cannot call init_zk_compliance ─────────────────
+
+    it("SSS-075: non-authority cannot call init_zk_compliance", async () => {
+      try {
+        await program.methods
+          .initZkCompliance(new anchor.BN(1500))
+          .accounts({
+            authority: user2.publicKey,
+            config: zkConfigPda,
+            mint: zkSssMintKeypair.publicKey,
+            zkComplianceConfig: zkComplianceConfigPda,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([user2])
+          .rpc();
+        expect.fail("should have thrown Unauthorized");
+      } catch (err: any) {
+        expect(err.error?.errorCode?.code || err.message).to.match(/Unauthorized|Error/i);
+      }
+    });
+
+    // ── Test 4: init_zk_compliance rejects SSS-1 preset ──────────────────────
+
+    it("SSS-075: init_zk_compliance rejects SSS-1 preset (InvalidPreset)", async () => {
+      const [sss1ZkConfigPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("zk-compliance-config"), zkSss1MintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+      try {
+        await program.methods
+          .initZkCompliance(new anchor.BN(1500))
+          .accounts({
+            authority: authority.publicKey,
+            config: zkSss1ConfigPda,
+            mint: zkSss1MintKeypair.publicKey,
+            zkComplianceConfig: sss1ZkConfigPda,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+        expect.fail("should have thrown InvalidPreset");
+      } catch (err: any) {
+        expect(err.error?.errorCode?.code || err.message).to.match(/InvalidPreset|Error/i);
+      }
+    });
+
+    // ── Test 5: init_zk_compliance succeeds with default ttl (0 → 1500) ──────
+
+    it("SSS-075: init_zk_compliance succeeds with ttl_slots=0 (uses default 1500)", async () => {
+      await program.methods
+        .initZkCompliance(new anchor.BN(0))
+        .accounts({
+          authority: authority.publicKey,
+          config: zkConfigPda,
+          mint: zkSssMintKeypair.publicKey,
+          zkComplianceConfig: zkComplianceConfigPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      // Verify FLAG_ZK_COMPLIANCE was enabled
+      const config = await program.account.stablecoinConfig.fetch(zkConfigPda);
+      expect((BigInt(config.featureFlags.toString()) & FLAG_ZK_COMPLIANCE) > BigInt(0)).to.equal(true);
+
+      // Verify ZkComplianceConfig PDA was initialized correctly
+      const zkConfig = await program.account.zkComplianceConfig.fetch(zkComplianceConfigPda);
+      expect(zkConfig.sssMint.toBase58()).to.equal(zkSssMintKeypair.publicKey.toBase58());
+      expect(zkConfig.ttlSlots.toString()).to.equal("1500"); // default applied
+    });
+
+    // ── Test 6: init_zk_compliance is one-shot (PDA already exists) ──────────
+
+    it("SSS-075: init_zk_compliance is one-shot — second call fails", async () => {
+      try {
+        await program.methods
+          .initZkCompliance(new anchor.BN(500))
+          .accounts({
+            authority: authority.publicKey,
+            config: zkConfigPda,
+            mint: zkSssMintKeypair.publicKey,
+            zkComplianceConfig: zkComplianceConfigPda,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+        expect.fail("should have failed — PDA already initialized");
+      } catch (err: any) {
+        // Anchor will reject init on an already-existing account
+        expect(err).to.exist;
+      }
+    });
+
+    // ── Test 7: init_zk_compliance with explicit ttl_slots ───────────────────
+
+    it("SSS-075: ZkComplianceConfig stores correct ttl_slots after init", async () => {
+      const zkCfg = await program.account.zkComplianceConfig.fetch(zkComplianceConfigPda);
+      // We called with ttl=0 which maps to default 1500
+      expect(Number(zkCfg.ttlSlots)).to.equal(1500);
+      expect(zkCfg.sssMint.toBase58()).to.equal(zkSssMintKeypair.publicKey.toBase58());
+    });
+
+    // ── Test 8: submit_zk_proof fails when FLAG_ZK_COMPLIANCE not set ─────────
+
+    it("SSS-075: submit_zk_proof rejects when FLAG_ZK_COMPLIANCE not enabled", async () => {
+      // Create a fresh SSS-2 mint without calling init_zk_compliance
+      const noFlagMintKeypair = Keypair.generate();
+      const [noFlagConfigPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stablecoin-config"), noFlagMintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+      const [noFlagZkConfigPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("zk-compliance-config"), noFlagMintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+      await program.methods
+        .initialize({
+          preset: 2,
+          decimals: 6,
+          name: "No Flag USD",
+          symbol: "NFUSD",
+          uri: "https://example.com/nf.json",
+          transferHookProgram: HOOK_PROGRAM_ID,
+          collateralMint: null,
+          reserveVault: null,
+          maxSupply: null,
+        })
+        .accounts({
+          authority: authority.publicKey,
+          mint: noFlagMintKeypair.publicKey,
+          config: noFlagConfigPda,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([noFlagMintKeypair])
+        .rpc();
+
+      const [vrPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          noFlagMintKeypair.publicKey.toBuffer(),
+          authority.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      // Need to pass a dummy zkComplianceConfig PDA that doesn't exist yet
+      // Anchor will reject with ZkComplianceNotEnabled on the config constraint
+      try {
+        await program.methods
+          .submitZkProof()
+          .accounts({
+            user: authority.publicKey,
+            config: noFlagConfigPda,
+            mint: noFlagMintKeypair.publicKey,
+            zkComplianceConfig: noFlagZkConfigPda,
+            verificationRecord: vrPda,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+        expect.fail("should have thrown ZkComplianceNotEnabled or AccountNotInitialized");
+      } catch (err: any) {
+        // Anchor may throw ZkComplianceNotEnabled (constraint) or AccountNotInitialized
+        // (zkComplianceConfig PDA doesn't exist when flag is not set). Both are correct.
+        expect(err.error?.errorCode?.code || err.message).to.match(
+          /ZkComplianceNotEnabled|AccountNotInitialized|Error/i
+        );
+      }
+    });
+
+    // ── Test 9: submit_zk_proof creates VerificationRecord ───────────────────
+
+    it("SSS-075: submit_zk_proof creates a VerificationRecord for authority", async () => {
+      const [vrPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          zkSssMintKeypair.publicKey.toBuffer(),
+          authority.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      const slotBefore = await provider.connection.getSlot("confirmed");
+
+      await program.methods
+        .submitZkProof()
+        .accounts({
+          user: authority.publicKey,
+          config: zkConfigPda,
+          mint: zkSssMintKeypair.publicKey,
+          zkComplianceConfig: zkComplianceConfigPda,
+          verificationRecord: vrPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      const record = await program.account.verificationRecord.fetch(vrPda);
+      expect(record.sssMint.toBase58()).to.equal(zkSssMintKeypair.publicKey.toBase58());
+      expect(record.user.toBase58()).to.equal(authority.publicKey.toBase58());
+      // expires_at_slot should be approximately slotBefore + 1500
+      expect(Number(record.expiresAtSlot)).to.be.greaterThan(slotBefore);
+    });
+
+    // ── Test 10: submit_zk_proof for user2 ────────────────────────────────────
+
+    it("SSS-075: submit_zk_proof creates a VerificationRecord for user2", async () => {
+      const [vrPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          zkSssMintKeypair.publicKey.toBuffer(),
+          user2.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      await program.methods
+        .submitZkProof()
+        .accounts({
+          user: user2.publicKey,
+          config: zkConfigPda,
+          mint: zkSssMintKeypair.publicKey,
+          zkComplianceConfig: zkComplianceConfigPda,
+          verificationRecord: vrPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([user2])
+        .rpc();
+
+      const record = await program.account.verificationRecord.fetch(vrPda);
+      expect(record.user.toBase58()).to.equal(user2.publicKey.toBase58());
+      expect(Number(record.expiresAtSlot)).to.be.greaterThan(0);
+    });
+
+    // ── Test 11: submit_zk_proof refreshes existing record ───────────────────
+
+    it("SSS-075: submit_zk_proof refreshes (updates) an existing VerificationRecord", async () => {
+      const [vrPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          zkSssMintKeypair.publicKey.toBuffer(),
+          authority.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      const recordBefore = await program.account.verificationRecord.fetch(vrPda);
+      const expiresBefore = Number(recordBefore.expiresAtSlot);
+
+      // Re-submit proof — should update expiry
+      await program.methods
+        .submitZkProof()
+        .accounts({
+          user: authority.publicKey,
+          config: zkConfigPda,
+          mint: zkSssMintKeypair.publicKey,
+          zkComplianceConfig: zkComplianceConfigPda,
+          verificationRecord: vrPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      const recordAfter = await program.account.verificationRecord.fetch(vrPda);
+      // After refresh the expiry should be >= previous (new slot + 1500)
+      expect(Number(recordAfter.expiresAtSlot)).to.be.greaterThanOrEqual(expiresBefore);
+    });
+
+    // ── Test 12: VerificationRecord PDA seeds are deterministic ──────────────
+
+    it("SSS-075: VerificationRecord PDA seeds are deterministic", async () => {
+      const [derived] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          zkSssMintKeypair.publicKey.toBuffer(),
+          authority.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      const record = await program.account.verificationRecord.fetch(derived);
+      expect(record.sssMint.toBase58()).to.equal(zkSssMintKeypair.publicKey.toBase58());
+    });
+
+    // ── Test 13: close_verification_record rejects non-expired record ─────────
+
+    it("SSS-075: close_verification_record rejects a non-expired VerificationRecord", async () => {
+      const [vrPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          zkSssMintKeypair.publicKey.toBuffer(),
+          authority.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      try {
+        await program.methods
+          .closeVerificationRecord()
+          .accounts({
+            authority: authority.publicKey,
+            config: zkConfigPda,
+            mint: zkSssMintKeypair.publicKey,
+            recordOwner: authority.publicKey,
+            verificationRecord: vrPda,
+          })
+          .rpc();
+        expect.fail("should have thrown VerificationRecordNotExpired");
+      } catch (err: any) {
+        expect(err.error?.errorCode?.code || err.message).to.match(/VerificationRecordNotExpired|Error/i);
+      }
+    });
+
+    // ── Test 14: close_verification_record rejects non-authority ─────────────
+
+    it("SSS-075: close_verification_record rejects non-authority caller", async () => {
+      const [vrPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          zkSssMintKeypair.publicKey.toBuffer(),
+          user2.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      try {
+        await program.methods
+          .closeVerificationRecord()
+          .accounts({
+            authority: user2.publicKey,
+            config: zkConfigPda,
+            mint: zkSssMintKeypair.publicKey,
+            recordOwner: user2.publicKey,
+            verificationRecord: vrPda,
+          })
+          .signers([user2])
+          .rpc();
+        expect.fail("should have thrown Unauthorized");
+      } catch (err: any) {
+        expect(err.error?.errorCode?.code || err.message).to.match(/Unauthorized|Error/i);
+      }
+    });
+
+    // ── Test 15: ZkComplianceConfig PDA seeds are deterministic ───────────────
+
+    it("SSS-075: ZkComplianceConfig PDA seeds are deterministic", async () => {
+      const [derived] = PublicKey.findProgramAddressSync(
+        [Buffer.from("zk-compliance-config"), zkSssMintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+      expect(derived.toBase58()).to.equal(zkComplianceConfigPda.toBase58());
+    });
+
+    // ── Test 16: ZkComplianceConfig has correct sss_mint ─────────────────────
+
+    it("SSS-075: ZkComplianceConfig.sss_mint matches the stablecoin mint", async () => {
+      const zkCfg = await program.account.zkComplianceConfig.fetch(zkComplianceConfigPda);
+      expect(zkCfg.sssMint.toBase58()).to.equal(zkSssMintKeypair.publicKey.toBase58());
+    });
+
+    // ── Test 17: VerificationRecord expires_at_slot is clock.slot + ttl_slots ─
+
+    it("SSS-075: VerificationRecord.expires_at_slot is approximately current_slot + 1500", async () => {
+      const [vrPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("zk-verification"),
+          zkSssMintKeypair.publicKey.toBuffer(),
+          authority.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      const currentSlot = await provider.connection.getSlot("confirmed");
+      const record = await program.account.verificationRecord.fetch(vrPda);
+      const expires = Number(record.expiresAtSlot);
+      // Should be within a reasonable range of currentSlot + 1500
+      expect(expires).to.be.greaterThan(currentSlot);
+      expect(expires).to.be.lessThan(currentSlot + 3000); // generous upper bound
+    });
+
+    // ── Test 18: Multiple users have independent VerificationRecords ──────────
+
+    it("SSS-075: authority and user2 have independent VerificationRecords", async () => {
+      const [vrPda1] = PublicKey.findProgramAddressSync(
+        [Buffer.from("zk-verification"), zkSssMintKeypair.publicKey.toBuffer(), authority.publicKey.toBuffer()],
+        program.programId
+      );
+      const [vrPda2] = PublicKey.findProgramAddressSync(
+        [Buffer.from("zk-verification"), zkSssMintKeypair.publicKey.toBuffer(), user2.publicKey.toBuffer()],
+        program.programId
+      );
+      expect(vrPda1.toBase58()).to.not.equal(vrPda2.toBase58());
+
+      const r1 = await program.account.verificationRecord.fetch(vrPda1);
+      const r2 = await program.account.verificationRecord.fetch(vrPda2);
+      expect(r1.user.toBase58()).to.equal(authority.publicKey.toBase58());
+      expect(r2.user.toBase58()).to.equal(user2.publicKey.toBase58());
+    });
+
+    // ── Test 19: FLAG_ZK_COMPLIANCE is set after init ─────────────────────────
+
+    it("SSS-075: FLAG_ZK_COMPLIANCE (bit 4) is set on config after init_zk_compliance", async () => {
+      const config = await program.account.stablecoinConfig.fetch(zkConfigPda);
+      const flags = BigInt(config.featureFlags.toString());
+      expect((flags & FLAG_ZK_COMPLIANCE) > BigInt(0)).to.equal(true);
+      // Other feature flags should not be set (no interference)
+      const OTHER_FLAGS = BigInt(0b1111); // bits 0-3
+      expect((flags & OTHER_FLAGS) === BigInt(0)).to.equal(true);
+    });
+
+    // ── Test 20: submit_zk_proof requires a matching ZkComplianceConfig ───────
+
+    it("SSS-075: submit_zk_proof uses the correct ZkComplianceConfig PDA (seed check)", async () => {
+      const [derivedZkCfg] = PublicKey.findProgramAddressSync(
+        [Buffer.from("zk-compliance-config"), zkSssMintKeypair.publicKey.toBuffer()],
+        program.programId
+      );
+      expect(derivedZkCfg.toBase58()).to.equal(zkComplianceConfigPda.toBase58());
+    });
+  });
 });

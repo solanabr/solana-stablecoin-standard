@@ -1,33 +1,31 @@
-# sss-backend Context
+# SSS Project Context
 
-## Current Status
-- Branch: `feat/sss-076-zk-compliance-sdk` (pushed, rebased on main)
-- **PR #138** open: SSS-072 YieldCollateralModule SDK — awaiting review
-- **PR #139** open: SSS-076 ZkComplianceModule SDK — awaiting review (depends on #138)
-- **PR #137** open: SSS-074 docs (YieldCollateralModule reference)
+## Current Status (2026-03-15T16:25 UTC)
+- **PR #96** (SSS-075 anchor FLAG_ZK_COMPLIANCE): QA approved 266/266 tests — merging now
+- **PR #94** (SSS-076 SDK ZkComplianceModule): CI green, awaiting merge
+- **PR #95** (SSS-077 ZK compliance docs): CI green, awaiting merge
 
-## Last action (2026-03-15T15:13 UTC)
-SSS-070 anchor merged to main (#91). Rebased SSS-072 + SSS-076 branches onto updated main.
-- Re-opened PR #138 (SSS-072 YieldCollateralModule SDK, 248 tests green)
-- Re-opened PR #139 (SSS-076 ZkComplianceModule SDK, 294 tests green)
-- Old PR #93 (SSS-072) and PR #94 (SSS-076) were closed without merge — replaced by #138 and #139
+## Feature flag bit assignments
+| Bit | Constant | Anchor Status | SDK Status |
+|-----|----------|---------------|------------|
+| 0 | FLAG_CIRCUIT_BREAKER | ✅ merged | ✅ merged |
+| 1 | FLAG_SPEND_POLICY | ✅ merged | ✅ merged |
+| 2 | FLAG_DAO_COMMITTEE | ✅ merged #89 | ✅ merged #90 |
+| 3 | FLAG_YIELD_COLLATERAL | ✅ merged #91 | ✅ merged #93 |
+| 4 | FLAG_ZK_COMPLIANCE | 🔄 PR #96 (QA ✅) | 🔄 PR #94 (CI ✅) |
 
-## Previously completed (SDK)
-- **SSS-059** (PR #78, merged): FeatureFlagsModule / FLAG_CIRCUIT_BREAKER (bit 0)
-- **SSS-062** (PR #85, merged): FLAG_SPEND_POLICY (bit 1)
-- **SSS-068** (PR #90, merged): DaoCommitteeModule (FLAG_DAO_COMMITTEE, bit 2, 22 tests)
+## Recently merged
+- **SSS-070** (PR #91): FLAG_YIELD_COLLATERAL anchor — merged
+- **SSS-072** (PR #93): YieldCollateralModule SDK — merged
+- **SSS-067** (PR #89): DAO Committee anchor — merged
+- **SSS-068** (PR #90): DaoCommitteeModule SDK — merged
 
-## Feature flag bit assignments (SDK coverage)
-| Bit | Constant | SDK Module | Status |
-|-----|----------|------------|--------|
-| 0 | FLAG_CIRCUIT_BREAKER | FeatureFlagsModule | ✅ merged |
-| 1 | FLAG_SPEND_POLICY | FeatureFlagsModule | ✅ merged |
-| 2 | FLAG_DAO_COMMITTEE | DaoCommitteeModule | ✅ merged |
-| 3 | FLAG_YIELD_COLLATERAL | YieldCollateralModule | 🔄 PR #138 |
-| 4 | FLAG_ZK_COMPLIANCE | ZkComplianceModule | 🔄 PR #139 |
+## SSS-075 Design (FLAG_ZK_COMPLIANCE bit 4)
+- `VerificationRecord` PDA: seeds [b"zk-verification", mint, user]
+- `init_zk_compliance` — creates ZkComplianceConfig PDA (authority only)
+- `submit_zk_proof` — creates/updates VerificationRecord, expires after TTL_SLOTS (~1500)
+- `close_verification_record` — authority closes expired records (rent reclaim)
+- Transfer hook: adds verification_record as account index 7 via ExtraAccountMeta
+- CU budget: submit_zk_proof = 500K, transfer hook = 52K
 
-## Next tasks (when PRs merge)
-- SSS-075: submit_zk_proof anchor instruction (unblocked once SSS-076 merges)
-- SSS-077: Docs — ZkComplianceModule reference (assigned to sss-docs)
-
-## Heartbeat: 2026-03-15T15:13 UTC
+## Heartbeat: 2026-03-15T16:25 UTC

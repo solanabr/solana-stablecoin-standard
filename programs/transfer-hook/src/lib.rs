@@ -40,6 +40,21 @@ const MAX_TRANSFER_AMOUNT_OFFSET: usize = 306;
 /// FLAG_SPEND_POLICY bit in feature_flags (bit 1 = 1 << 1).
 const FLAG_SPEND_POLICY: u64 = 1 << 1;
 
+/// FLAG_ZK_COMPLIANCE bit in feature_flags (bit 4 = 1 << 4).
+const FLAG_ZK_COMPLIANCE: u64 = 1 << 4;
+
+/// PDA seed for VerificationRecord in the sss-token program.
+const ZK_VERIFICATION_SEED: &[u8] = b"zk-verification";
+
+/// Byte offsets within VerificationRecord account data (Borsh layout):
+///   discriminator          8  @ 0
+///   sss_mint  Pubkey      32  @ 8
+///   user      Pubkey      32  @ 40
+///   expires_at_slot u64    8  @ 72
+///   bump      u8           1  @ 80
+const ZK_RECORD_EXPIRES_OFFSET: usize = 72;
+const ZK_RECORD_MIN_SIZE: usize = 80;
+
 /// PDA seed for StablecoinConfig in the sss-token program.
 const STABLECOIN_CONFIG_SEED: &[u8] = b"stablecoin-config";
 
@@ -151,6 +166,46 @@ pub mod sss_transfer_hook {
                     max_transfer_amount
                 );
             }
+
+            // --- ZK compliance check ---
+            // If FLAG_ZK_COMPLIANCE is set, the sender must have a valid, non-expired
+            // VerificationRecord PDA at seeds [b"zk-verification", mint, src_owner].
+            if feature_flags & FLAG_ZK_COMPLIANCE != 0 {
+                let vr_account = &ctx.accounts.verification_record;
+                // Verify the PDA address
+                let (expected_vr_pda, _bump) = Pubkey::find_program_address(
+                    &[
+                        ZK_VERIFICATION_SEED,
+                        ctx.accounts.mint.key().as_ref(),
+                        src_owner.as_ref(),
+                    ],
+                    &sss_token_program::ID,
+                );
+                require!(
+                    vr_account.key() == expected_vr_pda,
+                    HookError::ZkRecordMissing
+                );
+                let vr_data = vr_account.try_borrow_data()?;
+                require!(
+                    vr_data.len() >= ZK_RECORD_MIN_SIZE,
+                    HookError::ZkRecordMissing
+                );
+                let clock = Clock::get()?;
+                let expires_at = u64::from_le_bytes(
+                    vr_data[ZK_RECORD_EXPIRES_OFFSET..ZK_RECORD_EXPIRES_OFFSET + 8]
+                        .try_into()
+                        .unwrap(),
+                );
+                require!(
+                    clock.slot < expires_at,
+                    HookError::ZkRecordExpired
+                );
+                msg!(
+                    "ZkCompliance OK: sender {} verified until slot {}",
+                    src_owner,
+                    expires_at
+                );
+            }
         }
 
         msg!("Transfer hook: {} tokens OK", amount);
@@ -167,8 +222,9 @@ pub mod sss_transfer_hook {
     /// transfer to know which additional accounts to resolve and forward.
     ///
     /// Extra accounts registered (resolved by Token-2022 at transfer time):
-    ///   5. blacklist_state   — seeds [b"blacklist-state", mint (index 1)]
-    ///   6. stablecoin_config — seeds [b"stablecoin-config", mint (index 1)] (sss-token program)
+    ///   5. blacklist_state        — seeds [b"blacklist-state", mint (index 1)]
+    ///   6. stablecoin_config      — seeds [b"stablecoin-config", mint (index 1)] (sss-token program)
+    ///   7. verification_record    — seeds [b"zk-verification", mint (index 1), owner (index 3)] (sss-token program)
     pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
@@ -201,6 +257,19 @@ pub mod sss_transfer_hook {
                         bytes: b"stablecoin-config".to_vec(),
                     },
                     Seed::AccountKey { index: 1 }, // mint is at index 1
+                ],
+                false, // is_signer
+                false, // is_writable
+            )?,
+            // verification_record PDA: seeds = [b"zk-verification", mint (index 1), owner (index 3)]
+            // owned by sss-token program — only enforced when FLAG_ZK_COMPLIANCE is set
+            ExtraAccountMeta::new_with_seeds(
+                &[
+                    Seed::Literal {
+                        bytes: b"zk-verification".to_vec(),
+                    },
+                    Seed::AccountKey { index: 1 }, // mint is at index 1
+                    Seed::AccountKey { index: 3 }, // owner (source owner) is at index 3
                 ],
                 false, // is_signer
                 false, // is_writable
@@ -288,6 +357,10 @@ pub enum HookError {
     SpendLimitExceeded,
     #[msg("Invalid stablecoin config account (wrong discriminator or size)")]
     InvalidConfig,
+    #[msg("ZK compliance: sender has no valid verification record")]
+    ZkRecordMissing,
+    #[msg("ZK compliance: sender's verification record has expired")]
+    ZkRecordExpired,
 }
 
 /// Blacklist state PDA for a given mint.
@@ -318,8 +391,9 @@ impl BlacklistState {
 ///   2. destination_token_account
 ///   3. owner (source owner/delegate)
 ///   4. extra_account_meta_list (validation account, passed by Token-2022)
-///   5. blacklist_state   — resolved by Token-2022 from extra_account_meta_list
-///   6. stablecoin_config — resolved by Token-2022 from extra_account_meta_list
+///   5. blacklist_state        — resolved by Token-2022 from extra_account_meta_list
+///   6. stablecoin_config      — resolved by Token-2022 from extra_account_meta_list
+///   7. verification_record    — resolved by Token-2022 from extra_account_meta_list
 ///
 /// All of 0-4 are passed and validated by Token-2022 itself; we use
 /// UncheckedAccount + CHECK comments as required by Anchor's safety linter.
@@ -355,6 +429,13 @@ pub struct TransferHook<'info> {
     /// Resolved by Token-2022 from extra_account_meta_list. We manually verify the
     /// PDA address and discriminator in transfer_hook before reading feature_flags.
     pub stablecoin_config: UncheckedAccount<'info>,
+
+    /// CHECK: VerificationRecord PDA from sss-token program —
+    /// seeds [b"zk-verification", mint, source_owner].
+    /// Resolved by Token-2022 from extra_account_meta_list (index 7).
+    /// Only enforced when FLAG_ZK_COMPLIANCE is set; we manually verify PDA
+    /// address and expiry in transfer_hook.
+    pub verification_record: UncheckedAccount<'info>,
 }
 
 /// Accounts for initializing the ExtraAccountMetaList and blacklist state.

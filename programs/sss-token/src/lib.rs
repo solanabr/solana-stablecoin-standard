@@ -245,4 +245,40 @@ pub mod sss_token {
     ) -> Result<()> {
         instructions::yield_collateral::add_yield_collateral_mint_handler(ctx, collateral_mint)
     }
+
+    // ─── SSS-075: ZK Compliance ───────────────────────────────────────────────
+
+    /// Initialize ZK compliance support for a stablecoin config.
+    ///
+    /// Creates the `ZkComplianceConfig` PDA and atomically enables
+    /// `FLAG_ZK_COMPLIANCE`.  Only valid for SSS-2 presets (requires transfer hook).
+    /// Authority only.
+    ///
+    /// `ttl_slots`: proof validity window in slots (0 = use default 1500 slots,
+    /// ~10 minutes at 400ms/slot).
+    pub fn init_zk_compliance(
+        ctx: Context<InitZkCompliance>,
+        ttl_slots: u64,
+    ) -> Result<()> {
+        instructions::zk_compliance::init_zk_compliance_handler(ctx, ttl_slots)
+    }
+
+    /// Submit or refresh a ZK compliance proof for the calling user.
+    ///
+    /// Creates or updates the caller's `VerificationRecord` PDA with an expiry
+    /// of `Clock::slot + ttl_slots` from `ZkComplianceConfig`.
+    ///
+    /// `FLAG_ZK_COMPLIANCE` must already be enabled.  Any user may call this.
+    /// The transfer hook will enforce this record on each transfer.
+    pub fn submit_zk_proof(ctx: Context<SubmitZkProof>) -> Result<()> {
+        instructions::zk_compliance::submit_zk_proof_handler(ctx)
+    }
+
+    /// Close an expired `VerificationRecord` PDA, returning rent to authority.
+    ///
+    /// Fails if the record has not yet expired.  Authority only.
+    /// Users cannot be forcibly de-verified before their record expires.
+    pub fn close_verification_record(ctx: Context<CloseVerificationRecord>) -> Result<()> {
+        instructions::zk_compliance::close_verification_record_handler(ctx)
+    }
 }

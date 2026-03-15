@@ -22,6 +22,12 @@ pub const FLAG_DAO_COMMITTEE: u64 = 1 << 2;
 /// External protocol risk applies — see docs/FEATURE-FLAGS-RESEARCH.md §Feature 2.
 pub const FLAG_YIELD_COLLATERAL: u64 = 1 << 3;
 
+/// ZK compliance flag (bit 4): when set, transfers via the transfer hook require
+/// the sender to hold a valid `VerificationRecord` PDA that has not expired.
+/// Enables `init_zk_compliance` / `submit_zk_proof` / `close_verification_record`.
+/// SSS-2 only.  See docs/FEATURE-FLAGS-RESEARCH.md §Feature 4.
+pub const FLAG_ZK_COMPLIANCE: u64 = 1 << 4;
+
 /// Global stablecoin configuration (one per mint).
 #[account]
 #[derive(InitSpace)]
@@ -338,4 +344,55 @@ pub struct DaoCommitteeConfig {
 impl DaoCommitteeConfig {
     pub const SEED: &'static [u8] = b"dao-committee";
     pub const MAX_MEMBERS: usize = 10;
+}
+
+// ─── SSS-075: ZK Compliance ───────────────────────────────────────────────────
+
+/// ZK-compliance config PDA — one per stablecoin mint.
+/// Seeds: [b"zk-compliance-config", sss_mint]
+///
+/// Stores protocol-wide settings for ZK proof verification.
+/// Created by `init_zk_compliance`; enables FLAG_ZK_COMPLIANCE.
+/// SSS-2 only.
+#[account]
+#[derive(InitSpace)]
+pub struct ZkComplianceConfig {
+    /// The SSS stablecoin mint this config belongs to.
+    pub sss_mint: Pubkey,
+    /// Number of slots a VerificationRecord is valid after submission.
+    /// Default: 1500 slots (~10 minutes at 400ms/slot).
+    pub ttl_slots: u64,
+    pub bump: u8,
+}
+
+impl ZkComplianceConfig {
+    pub const SEED: &'static [u8] = b"zk-compliance-config";
+    /// Default proof validity window: ~10 minutes at 400ms/slot.
+    pub const DEFAULT_TTL_SLOTS: u64 = 1500;
+}
+
+/// Per-user ZK verification record PDA — one per (mint, user).
+/// Seeds: [b"zk-verification", sss_mint, user]
+///
+/// Created or refreshed by `submit_zk_proof`.  The transfer hook checks this
+/// PDA whenever FLAG_ZK_COMPLIANCE is active: if the record is absent or
+/// `expires_at_slot <= Clock::slot`, the transfer is rejected.
+///
+/// Authority may close expired records via `close_verification_record` to
+/// reclaim rent.
+#[account]
+#[derive(InitSpace)]
+pub struct VerificationRecord {
+    /// The SSS stablecoin mint this record is scoped to.
+    pub sss_mint: Pubkey,
+    /// The wallet that submitted the proof.
+    pub user: Pubkey,
+    /// The slot at which this record expires (exclusive).
+    /// Valid while `Clock::get().slot < expires_at_slot`.
+    pub expires_at_slot: u64,
+    pub bump: u8,
+}
+
+impl VerificationRecord {
+    pub const SEED: &'static [u8] = b"zk-verification";
 }
