@@ -7,4 +7,6 @@ target/
 .anchor/
 coverage/
 yarn-error.log
+.env.docker
+
 

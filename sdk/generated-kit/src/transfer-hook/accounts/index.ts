@@ -6,6 +6,4 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./initializeExtraAccountMetaList";
-export * from "./initializeHookConfig";
-export * from "./transferHook";
+export * from "./hookConfig";

@@ -36,8 +36,8 @@ const connection = new Connection("https://api.devnet.solana.com", "confirmed");
 const client = new StablecoinClient({
   connection,
   wallet,
-  stablecoinProgramId: new PublicKey("Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC"),
-  transferHookProgramId: new PublicKey("6QNzPyTwg2MH778GL8idYiU3teFJiuQx6R5L7xdU17KC"),
+  stablecoinProgramId: new PublicKey("C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r"),
+  transferHookProgramId: new PublicKey("YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p"),
 });
 ```
 

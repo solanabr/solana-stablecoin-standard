@@ -64,26 +64,12 @@ function patchKitTransferHook() {
 
   // Use renamed imports (instructions exports *Item to avoid conflict)
   content = content.replace(
-    `import {
-  getInitializeExtraAccountMetaListInstructionAsync,
-  getTransferHookInstructionAsync,
-  parseInitializeExtraAccountMetaListInstruction,
-  parseTransferHookInstruction,
-  type InitializeExtraAccountMetaListAsyncInput,
-  type ParsedInitializeExtraAccountMetaListInstruction,
-  type ParsedTransferHookInstruction,
-  type TransferHookAsyncInput,
-} from "../instructions";`,
-    `import {
-  getInitializeExtraAccountMetaListInstructionAsync,
-  getTransferHookInstructionAsync,
-  parseInitializeExtraAccountMetaListInstruction,
-  parseTransferHookInstructionItem,
-  type InitializeExtraAccountMetaListAsyncInput,
-  type ParsedInitializeExtraAccountMetaListInstruction,
-  type ParsedTransferHookInstructionItem,
-  type TransferHookAsyncInput,
-} from "../instructions";`,
+    /parseTransferHookInstruction,\s*\n\s*type/,
+    "parseTransferHookInstructionItem,\n  type",
+  );
+  content = content.replace(
+    /type ParsedTransferHookInstruction,\s*\n\s*type TransferHookAsyncInput/,
+    "type ParsedTransferHookInstructionItem,\n  type TransferHookAsyncInput",
   );
 
   content = content.replace(
@@ -137,7 +123,10 @@ function patchWeb3jsMinterQuota() {
     "export interface MinterQuotaPdaSeeds {\n  mint: PublicKey;\n  authority: PublicKey;\n}",
     "export interface MinterQuotaPdaSeeds {\n  mint: PublicKey;\n  minter: PublicKey;\n}",
   );
-  content = content.replace("seeds.authority.toBuffer()", "seeds.minter.toBuffer()");
+  content = content.replace(
+    "seeds.authority.toBuffer()",
+    "seeds.minter.toBuffer()",
+  );
   writeFileSync(web3jsMinterQuotaPda, content);
 
   // updateMinter already passes minter - no change needed
@@ -163,12 +152,89 @@ function patchWeb3jsMinterQuota() {
   writeFileSync(web3jsMint, content);
 }
 
+function patchWeb3jsInitializeAccountOrder() {
+  const web3jsInitialize = resolve(
+    ROOT,
+    "sdk/generated-web3js/src/stablecoin/instructions/initialize.ts",
+  );
+  let content = readFileSync(web3jsInitialize, "utf8");
+
+  const oldOrder = `  const keys: AccountMeta[] = [
+    { pubkey: accounts.authority, isSigner: true, isWritable: true },
+    { pubkey: accounts.mint, isSigner: true, isWritable: true },
+    { pubkey: config, isSigner: false, isWritable: true },
+    { pubkey: roleConfig, isSigner: false, isWritable: true },
+    { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
+    { pubkey: accounts.systemProgram, isSigner: false, isWritable: false },
+    { pubkey: accounts.rent, isSigner: false, isWritable: false },
+    { pubkey: eventAuthority, isSigner: false, isWritable: false },
+    { pubkey: accounts.program, isSigner: false, isWritable: false },
+    ...(accounts.extraAccountMetaList
+      ? [
+          {
+            pubkey: accounts.extraAccountMetaList,
+            isSigner: false,
+            isWritable: true,
+          },
+        ]
+      : []),
+    ...(accounts.transferHookProgram
+      ? [
+          {
+            pubkey: accounts.transferHookProgram,
+            isSigner: false,
+            isWritable: false,
+          },
+        ]
+      : []),
+  ];`;
+
+  const newOrder = `  const keys: AccountMeta[] = [
+    { pubkey: accounts.authority, isSigner: true, isWritable: true },
+    { pubkey: accounts.mint, isSigner: true, isWritable: true },
+    { pubkey: config, isSigner: false, isWritable: true },
+    { pubkey: roleConfig, isSigner: false, isWritable: true },
+    ...(accounts.extraAccountMetaList
+      ? [
+          {
+            pubkey: accounts.extraAccountMetaList,
+            isSigner: false,
+            isWritable: true,
+          },
+        ]
+      : []),
+    ...(accounts.transferHookProgram
+      ? [
+          {
+            pubkey: accounts.transferHookProgram,
+            isSigner: false,
+            isWritable: false,
+          },
+        ]
+      : []),
+    { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
+    { pubkey: accounts.systemProgram, isSigner: false, isWritable: false },
+    { pubkey: accounts.rent, isSigner: false, isWritable: false },
+    { pubkey: eventAuthority, isSigner: false, isWritable: false },
+    { pubkey: accounts.program, isSigner: false, isWritable: false },
+  ];`;
+
+  content = content.replace(oldOrder, newOrder);
+  writeFileSync(web3jsInitialize, content);
+}
+
 function patchProgramIds() {
   const ids = loadProgramIds();
 
   // --- generated-web3js ---
-  const stablecoinIndex = resolve(ROOT, "sdk/generated-web3js/src/stablecoin/index.ts");
-  const transferHookIndex = resolve(ROOT, "sdk/generated-web3js/src/transfer-hook/index.ts");
+  const stablecoinIndex = resolve(
+    ROOT,
+    "sdk/generated-web3js/src/stablecoin/index.ts",
+  );
+  const transferHookIndex = resolve(
+    ROOT,
+    "sdk/generated-web3js/src/transfer-hook/index.ts",
+  );
 
   let content = readFileSync(stablecoinIndex, "utf8");
   content = content.replace(
@@ -185,8 +251,14 @@ function patchProgramIds() {
   writeFileSync(transferHookIndex, content);
 
   // --- generated-kit ---
-  const kitStablecoinPrograms = resolve(ROOT, "sdk/generated-kit/src/stablecoin/programs/stablecoin.ts");
-  const kitTransferHookPrograms = resolve(ROOT, "sdk/generated-kit/src/transfer-hook/programs/transferHook.ts");
+  const kitStablecoinPrograms = resolve(
+    ROOT,
+    "sdk/generated-kit/src/stablecoin/programs/stablecoin.ts",
+  );
+  const kitTransferHookPrograms = resolve(
+    ROOT,
+    "sdk/generated-kit/src/transfer-hook/programs/transferHook.ts",
+  );
 
   content = readFileSync(kitStablecoinPrograms, "utf8");
   content = content.replace(
@@ -203,7 +275,10 @@ function patchProgramIds() {
   writeFileSync(kitTransferHookPrograms, content);
 
   // --- generated-kit seize.ts (hardcoded stablecoin default) ---
-  const kitSeize = resolve(ROOT, "sdk/generated-kit/src/stablecoin/instructions/seize.ts");
+  const kitSeize = resolve(
+    ROOT,
+    "sdk/generated-kit/src/stablecoin/instructions/seize.ts",
+  );
   content = readFileSync(kitSeize, "utf8");
   content = content.replace(
     /"2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"/g,
@@ -212,8 +287,14 @@ function patchProgramIds() {
   writeFileSync(kitSeize, content);
 
   // --- Rust: stablecoin_client, stablecoin_decoder ---
-  const stablecoinClientPrograms = resolve(ROOT, "backend/crates/stablecoin_client/src/generated/programs.rs");
-  const stablecoinDecoder = resolve(ROOT, "backend/crates/stablecoin_decoder/src/lib.rs");
+  const stablecoinClientPrograms = resolve(
+    ROOT,
+    "backend/crates/stablecoin_client/src/generated/programs.rs",
+  );
+  const stablecoinDecoder = resolve(
+    ROOT,
+    "backend/crates/stablecoin_decoder/src/lib.rs",
+  );
 
   content = readFileSync(stablecoinClientPrograms, "utf8");
   content = content.replace(
@@ -230,7 +311,10 @@ function patchProgramIds() {
   writeFileSync(stablecoinDecoder, content);
 
   // --- Rust: stablecoin_client seize instruction default ---
-  const seizeRs = resolve(ROOT, "backend/crates/stablecoin_client/src/generated/instructions/seize.rs");
+  const seizeRs = resolve(
+    ROOT,
+    "backend/crates/stablecoin_client/src/generated/instructions/seize.rs",
+  );
   content = readFileSync(seizeRs, "utf8");
   content = content.replace(
     /"2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH"/g,
@@ -241,5 +325,6 @@ function patchProgramIds() {
 
 patchKitTransferHook();
 patchWeb3jsMinterQuota();
+patchWeb3jsInitializeAccountOrder();
 patchProgramIds();
 console.log("Patches applied.");

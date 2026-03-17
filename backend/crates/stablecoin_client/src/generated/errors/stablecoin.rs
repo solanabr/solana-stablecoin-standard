@@ -91,6 +91,15 @@ pub enum StablecoinError {
     /// 6026 - Math overflow
     #[error("Math overflow")]
     Overflow = 0x178A,
+    /// 6027 - Invalid authority: cannot use system program or default pubkey
+    #[error("Invalid authority: cannot use system program or default pubkey")]
+    InvalidAuthority = 0x178B,
+    /// 6028 - Cannot blacklist the treasury (config authority)
+    #[error("Cannot blacklist the treasury (config authority)")]
+    CannotBlacklistTreasury = 0x178C,
+    /// 6029 - Invalid role: cannot use system program or default pubkey
+    #[error("Invalid role: cannot use system program or default pubkey")]
+    InvalidRole = 0x178D,
 }
 
 impl From<StablecoinError> for solana_program_error::ProgramError {

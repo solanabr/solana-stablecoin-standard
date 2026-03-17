@@ -61,8 +61,9 @@ export type SeizeInstruction<
   TAccountTo extends string | AccountMeta<string> = string,
   TAccountBlacklistEntry extends string | AccountMeta<string> = string,
   TAccountStablecoinProgram extends string | AccountMeta<string> =
-    "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC",
+    "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r",
   TAccountTransferHookProgram extends string | AccountMeta<string> = string,
+  TAccountHookConfig extends string | AccountMeta<string> = string,
   TAccountExtraAccountMetaList extends string | AccountMeta<string> = string,
   TAccountDestinationBlacklist extends string | AccountMeta<string> = string,
   TAccountTokenProgram extends string | AccountMeta<string> =
@@ -100,6 +101,9 @@ export type SeizeInstruction<
       TAccountTransferHookProgram extends string
         ? ReadonlyAccount<TAccountTransferHookProgram>
         : TAccountTransferHookProgram,
+      TAccountHookConfig extends string
+        ? ReadonlyAccount<TAccountHookConfig>
+        : TAccountHookConfig,
       TAccountExtraAccountMetaList extends string
         ? ReadonlyAccount<TAccountExtraAccountMetaList>
         : TAccountExtraAccountMetaList,
@@ -163,6 +167,7 @@ export type SeizeAsyncInput<
   TAccountBlacklistEntry extends string = string,
   TAccountStablecoinProgram extends string = string,
   TAccountTransferHookProgram extends string = string,
+  TAccountHookConfig extends string = string,
   TAccountExtraAccountMetaList extends string = string,
   TAccountDestinationBlacklist extends string = string,
   TAccountTokenProgram extends string = string,
@@ -178,6 +183,7 @@ export type SeizeAsyncInput<
   blacklistEntry: Address<TAccountBlacklistEntry>;
   stablecoinProgram?: Address<TAccountStablecoinProgram>;
   transferHookProgram: Address<TAccountTransferHookProgram>;
+  hookConfig: Address<TAccountHookConfig>;
   extraAccountMetaList?: Address<TAccountExtraAccountMetaList>;
   destinationBlacklist: Address<TAccountDestinationBlacklist>;
   tokenProgram?: Address<TAccountTokenProgram>;
@@ -196,6 +202,7 @@ export async function getSeizeInstructionAsync<
   TAccountBlacklistEntry extends string,
   TAccountStablecoinProgram extends string,
   TAccountTransferHookProgram extends string,
+  TAccountHookConfig extends string,
   TAccountExtraAccountMetaList extends string,
   TAccountDestinationBlacklist extends string,
   TAccountTokenProgram extends string,
@@ -213,6 +220,7 @@ export async function getSeizeInstructionAsync<
     TAccountBlacklistEntry,
     TAccountStablecoinProgram,
     TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountExtraAccountMetaList,
     TAccountDestinationBlacklist,
     TAccountTokenProgram,
@@ -232,6 +240,7 @@ export async function getSeizeInstructionAsync<
     TAccountBlacklistEntry,
     TAccountStablecoinProgram,
     TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountExtraAccountMetaList,
     TAccountDestinationBlacklist,
     TAccountTokenProgram,
@@ -259,6 +268,7 @@ export async function getSeizeInstructionAsync<
       value: input.transferHookProgram ?? null,
       isWritable: false,
     },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
     extraAccountMetaList: {
       value: input.extraAccountMetaList ?? null,
       isWritable: false,
@@ -304,7 +314,7 @@ export async function getSeizeInstructionAsync<
   }
   if (!accounts.stablecoinProgram.value) {
     accounts.stablecoinProgram.value =
-      "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC" as Address<"Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC">;
+      "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r" as Address<"C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r">;
   }
   if (!accounts.extraAccountMetaList.value) {
     accounts.extraAccountMetaList.value = await getProgramDerivedAddress({
@@ -352,6 +362,7 @@ export async function getSeizeInstructionAsync<
       getAccountMeta("blacklistEntry", accounts.blacklistEntry),
       getAccountMeta("stablecoinProgram", accounts.stablecoinProgram),
       getAccountMeta("transferHookProgram", accounts.transferHookProgram),
+      getAccountMeta("hookConfig", accounts.hookConfig),
       getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
       getAccountMeta("destinationBlacklist", accounts.destinationBlacklist),
       getAccountMeta("tokenProgram", accounts.tokenProgram),
@@ -373,6 +384,7 @@ export async function getSeizeInstructionAsync<
     TAccountBlacklistEntry,
     TAccountStablecoinProgram,
     TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountExtraAccountMetaList,
     TAccountDestinationBlacklist,
     TAccountTokenProgram,
@@ -391,6 +403,7 @@ export type SeizeInput<
   TAccountBlacklistEntry extends string = string,
   TAccountStablecoinProgram extends string = string,
   TAccountTransferHookProgram extends string = string,
+  TAccountHookConfig extends string = string,
   TAccountExtraAccountMetaList extends string = string,
   TAccountDestinationBlacklist extends string = string,
   TAccountTokenProgram extends string = string,
@@ -406,6 +419,7 @@ export type SeizeInput<
   blacklistEntry: Address<TAccountBlacklistEntry>;
   stablecoinProgram?: Address<TAccountStablecoinProgram>;
   transferHookProgram: Address<TAccountTransferHookProgram>;
+  hookConfig: Address<TAccountHookConfig>;
   extraAccountMetaList: Address<TAccountExtraAccountMetaList>;
   destinationBlacklist: Address<TAccountDestinationBlacklist>;
   tokenProgram?: Address<TAccountTokenProgram>;
@@ -424,6 +438,7 @@ export function getSeizeInstruction<
   TAccountBlacklistEntry extends string,
   TAccountStablecoinProgram extends string,
   TAccountTransferHookProgram extends string,
+  TAccountHookConfig extends string,
   TAccountExtraAccountMetaList extends string,
   TAccountDestinationBlacklist extends string,
   TAccountTokenProgram extends string,
@@ -441,6 +456,7 @@ export function getSeizeInstruction<
     TAccountBlacklistEntry,
     TAccountStablecoinProgram,
     TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountExtraAccountMetaList,
     TAccountDestinationBlacklist,
     TAccountTokenProgram,
@@ -459,6 +475,7 @@ export function getSeizeInstruction<
   TAccountBlacklistEntry,
   TAccountStablecoinProgram,
   TAccountTransferHookProgram,
+  TAccountHookConfig,
   TAccountExtraAccountMetaList,
   TAccountDestinationBlacklist,
   TAccountTokenProgram,
@@ -485,6 +502,7 @@ export function getSeizeInstruction<
       value: input.transferHookProgram ?? null,
       isWritable: false,
     },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
     extraAccountMetaList: {
       value: input.extraAccountMetaList ?? null,
       isWritable: false,
@@ -508,7 +526,7 @@ export function getSeizeInstruction<
   // Resolve default values.
   if (!accounts.stablecoinProgram.value) {
     accounts.stablecoinProgram.value =
-      "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC" as Address<"Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC">;
+      "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r" as Address<"C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r">;
   }
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
@@ -527,6 +545,7 @@ export function getSeizeInstruction<
       getAccountMeta("blacklistEntry", accounts.blacklistEntry),
       getAccountMeta("stablecoinProgram", accounts.stablecoinProgram),
       getAccountMeta("transferHookProgram", accounts.transferHookProgram),
+      getAccountMeta("hookConfig", accounts.hookConfig),
       getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
       getAccountMeta("destinationBlacklist", accounts.destinationBlacklist),
       getAccountMeta("tokenProgram", accounts.tokenProgram),
@@ -548,6 +567,7 @@ export function getSeizeInstruction<
     TAccountBlacklistEntry,
     TAccountStablecoinProgram,
     TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountExtraAccountMetaList,
     TAccountDestinationBlacklist,
     TAccountTokenProgram,
@@ -571,11 +591,12 @@ export type ParsedSeizeInstruction<
     blacklistEntry: TAccountMetas[6];
     stablecoinProgram: TAccountMetas[7];
     transferHookProgram: TAccountMetas[8];
-    extraAccountMetaList: TAccountMetas[9];
-    destinationBlacklist: TAccountMetas[10];
-    tokenProgram: TAccountMetas[11];
-    eventAuthority: TAccountMetas[12];
-    program: TAccountMetas[13];
+    hookConfig: TAccountMetas[9];
+    extraAccountMetaList: TAccountMetas[10];
+    destinationBlacklist: TAccountMetas[11];
+    tokenProgram: TAccountMetas[12];
+    eventAuthority: TAccountMetas[13];
+    program: TAccountMetas[14];
   };
   data: SeizeInstructionData;
 };
@@ -588,12 +609,12 @@ export function parseSeizeInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedSeizeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 14) {
+  if (instruction.accounts.length < 15) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 14,
+        expectedAccountMetas: 15,
       },
     );
   }
@@ -615,6 +636,7 @@ export function parseSeizeInstruction<
       blacklistEntry: getNextAccount(),
       stablecoinProgram: getNextAccount(),
       transferHookProgram: getNextAccount(),
+      hookConfig: getNextAccount(),
       extraAccountMetaList: getNextAccount(),
       destinationBlacklist: getNextAccount(),
       tokenProgram: getNextAccount(),

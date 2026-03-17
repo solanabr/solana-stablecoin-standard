@@ -148,6 +148,10 @@ Optional indexer controls:
 - `SSS_TRANSFER_HOOK_PROGRAM_ID`
 - `SSS_DISABLE_BLOCK_SUBSCRIBE`
 
+### Transfer-hook program (SSS-2)
+
+After deploying the transfer-hook program, call `initialize_hook_config(stablecoin_program_id)` once. That sets the stablecoin program ID this hook will validate against and makes the hook reusable across deployments. Until the hook config is initialized, no mint can use this transfer hook.
+
 ## Incident Notes
 
 - `pause` blocks mint and burn, and also blocks `seize`.

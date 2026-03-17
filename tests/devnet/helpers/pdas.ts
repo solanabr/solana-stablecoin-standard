@@ -5,7 +5,17 @@ const SEED_ROLES = Buffer.from("roles");
 const SEED_MINTER = Buffer.from("minter");
 const SEED_BLACKLIST = Buffer.from("blacklist");
 const SEED_EXTRA_ACCOUNT_METAS = Buffer.from("extra-account-metas");
+const SEED_HOOK_CONFIG = Buffer.from("hook_config");
 const SEED_EVENT_AUTHORITY = Buffer.from("__event_authority");
+
+export function hookConfigPda(
+  transferHookProgramId: PublicKey,
+): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [SEED_HOOK_CONFIG],
+    transferHookProgramId,
+  )[0];
+}
 
 export function configPda(
   stablecoinProgramId: PublicKey,

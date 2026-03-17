@@ -104,6 +104,8 @@ pub struct SeizeTokens<'info> {
     pub stablecoin_program: UncheckedAccount<'info>,
     /// CHECK: Transfer hook program id, validated against the configured SSS-2 deployment.
     pub transfer_hook_program: UncheckedAccount<'info>,
+    /// CHECK: Hook config PDA of the transfer-hook program; required for transfer hook account resolution.
+    pub hook_config: UncheckedAccount<'info>,
     /// CHECK: Validation account PDA used by the transfer hook program during delegate seizure.
     #[account(
         seeds = [SEED_EXTRA_ACCOUNT_METAS, mint.key().as_ref()],
@@ -251,6 +253,7 @@ pub fn seize_handler(ctx: Context<SeizeTokens>, amount: u64) -> Result<()> {
     if ctx.accounts.config.enable_transfer_hook {
         let additional_accounts = [
             ctx.accounts.extra_account_meta_list.to_account_info(),
+            ctx.accounts.hook_config.to_account_info(),
             ctx.accounts.stablecoin_program.to_account_info(),
             ctx.accounts.config.to_account_info(),
             ctx.accounts.blacklist_entry.to_account_info(),

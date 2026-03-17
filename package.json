@@ -23,10 +23,12 @@
     "verify": "./scripts/check.sh",
     "test:devnet:deploy": "./scripts/deploy-devnet.sh",
     "test:devnet": "mocha --require tsx/cjs --file tests/devnet/mocha.setup.ts \"tests/devnet/**/*.spec.ts\"",
-    "test:devnet:stress": "mocha --require tsx/cjs --file tests/devnet/mocha.setup.ts \"tests/devnet/stress.spec.ts\""
+    "test:devnet:stress": "mocha --require tsx/cjs --file tests/devnet/mocha.setup.ts \"tests/devnet/stress.spec.ts\"",
+    "test:litesvm": "cargo test -p sss-litesvm-tests"
   },
   "devDependencies": {
     "@stbr/sss-client": "0.0.0",
+    "@stbr/sss-generated-web3js": "0.0.0",
     "@codama/nodes-from-anchor": "^1.3.9",
     "@codama/renderers-js": "^2.0.3",
     "@codama/renderers-rust": "^3.0.0",

@@ -53,6 +53,8 @@ pub struct Initialize<'info> {
     /// CHECK: Required only when transfer hook is enabled.
     #[account(mut)]
     pub extra_account_meta_list: Option<UncheckedAccount<'info>>,
+    /// CHECK: Required only when transfer hook is enabled. Hook config PDA of the transfer-hook program.
+    pub hook_config: Option<UncheckedAccount<'info>>,
     /// CHECK: Required only when transfer hook is enabled.
     pub transfer_hook_program: Option<UncheckedAccount<'info>>,
     pub token_program: Program<'info, Token2022>,
@@ -84,6 +86,16 @@ pub fn initialize_handler(ctx: Context<Initialize>, params: InitializeParams) ->
         Some(
             ctx.accounts
                 .extra_account_meta_list
+                .as_ref()
+                .ok_or(error!(StablecoinError::MissingExtraAccountMetaList))?,
+        )
+    } else {
+        None
+    };
+    let hook_config = if params.enable_transfer_hook {
+        Some(
+            ctx.accounts
+                .hook_config
                 .as_ref()
                 .ok_or(error!(StablecoinError::MissingExtraAccountMetaList))?,
         )
@@ -216,14 +228,15 @@ pub fn initialize_handler(ctx: Context<Initialize>, params: InitializeParams) ->
     };
     role_config.bump = ctx.bumps.role_config;
 
-    if let (Some(transfer_hook_program), Some(extra_account_meta_list)) =
-        (hook_program, extra_meta_list)
+    if let (Some(transfer_hook_program), Some(extra_account_meta_list), Some(hook_config)) =
+        (hook_program, extra_meta_list, hook_config)
     {
         invoke(
             &Instruction {
                 program_id: transfer_hook_program.key(),
                 accounts: vec![
                     AccountMeta::new(ctx.accounts.authority.key(), true),
+                    AccountMeta::new_readonly(hook_config.key(), false),
                     AccountMeta::new(extra_account_meta_list.key(), false),
                     AccountMeta::new_readonly(ctx.accounts.mint.key(), false),
                     AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
@@ -232,6 +245,7 @@ pub fn initialize_handler(ctx: Context<Initialize>, params: InitializeParams) ->
             },
             &[
                 ctx.accounts.authority.to_account_info(),
+                hook_config.to_account_info(),
                 extra_account_meta_list.to_account_info(),
                 ctx.accounts.mint.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),

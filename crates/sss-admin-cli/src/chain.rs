@@ -370,6 +370,7 @@ fn initialize_ix(authority: Pubkey, mint: Pubkey, config: &InitConfigFile) -> In
         config: config_pda(&mint),
         role_config: roles_pda(&mint),
         extra_account_meta_list: (config.preset == Preset::Sss2).then_some(extra_account_meta_list_pda(&mint)),
+        hook_config: (config.preset == Preset::Sss2).then_some(hook_config_pda()),
         transfer_hook_program: (config.preset == Preset::Sss2).then_some(transfer_hook::ID),
         token_program: spl_token_2022::id(),
         system_program: system_program::ID,
@@ -552,6 +553,7 @@ fn seize_ix_with_amount(
         blacklist_entry: blacklist_pda(&mint, &victim_wallet),
         stablecoin_program: stablecoin::ID,
         transfer_hook_program: transfer_hook::ID,
+        hook_config: hook_config_pda(),
         extra_account_meta_list: extra_account_meta_list_pda(&mint),
         destination_blacklist: blacklist_pda(&mint, &treasury_owner),
         token_program: spl_token_2022::id(),
@@ -608,6 +610,10 @@ fn extra_account_meta_list_pda(mint: &Pubkey) -> Pubkey {
         &transfer_hook::ID,
     )
     .0
+}
+
+fn hook_config_pda() -> Pubkey {
+    Pubkey::find_program_address(&[b"hook_config"], &transfer_hook::ID).0
 }
 
 fn event_authority_pda() -> Pubkey {

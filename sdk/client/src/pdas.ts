@@ -5,6 +5,16 @@ const SEED_CONFIG = Buffer.from("config", "utf8");
 const SEED_ROLES = Buffer.from("roles", "utf8");
 const SEED_MINTER = Buffer.from("minter", "utf8");
 const SEED_EXTRA_ACCOUNT_METAS = Buffer.from("extra-account-metas", "utf8");
+const SEED_HOOK_CONFIG = Buffer.from("hook_config", "utf8");
+
+export function findHookConfigPda(
+  transferHookProgramId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [SEED_HOOK_CONFIG],
+    transferHookProgramId
+  );
+}
 
 export function findBlacklistEntryPda(
   mint: PublicKey,

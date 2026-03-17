@@ -8,16 +8,19 @@ import {
 } from "@solana/spl-token";
 import { Keypair, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 
+import { transferHook } from "@stbr/sss-generated-web3js";
 import { loadPrograms } from "./cluster";
 import {
   blacklistPda,
   configPda,
   eventAuthorityPda,
   extraAccountMetaListPda,
+  hookConfigPda,
   minterQuotaPda,
   rolesPda,
 } from "./pdas";
 import { sendInstructions } from "./transactions";
+import { recordTx } from "./run-report";
 import { fundAuthority, loadPayer } from "./wallet";
 
 export interface PresetContext {
@@ -77,6 +80,25 @@ async function initializePreset(
     programs.transferHookProgramId,
     mint.publicKey,
   );
+  const hookConfig = hookConfigPda(programs.transferHookProgramId);
+
+  if (preset === "SSS-2") {
+    const hookConfigAccount = await programs.connection.getAccountInfo(hookConfig);
+    if (!hookConfigAccount) {
+      const ix = transferHook.createInitializeHookConfigInstruction(
+        {
+          payer: payer.publicKey,
+          hookConfig,
+          systemProgram: SystemProgram.programId,
+        },
+        { stablecoinProgramId: programs.stablecoinProgramId },
+        programs.transferHookProgramId,
+      );
+      const sig = await sendInstructions(programs.connection, payer, [ix]);
+      recordTx("InitializeHookConfig (SSS-2)", sig);
+    }
+    // Extra-account-metas are created after stablecoin initialize (mint must exist first).
+  }
 
   const params = {
     name: preset === "SSS-1" ? "Simple USD" : "Regulated USD",
@@ -91,30 +113,48 @@ async function initializePreset(
     defaultAccountFrozen: preset === "SSS-2",
   };
 
-  const initializeBuilder = programs.stablecoinProgram.methods
-    .initialize(params)
-    .accountsPartial({
+    // Account keys in IDL order. SSS-1 optional accounts use Token-2022 as placeholder so no wrong program id is validated.
+    const stablecoinAccounts: Record<string, PublicKey> = {
       authority: authority.publicKey,
       mint: mint.publicKey,
       config,
       roleConfig,
-      ...stablecoinEventAccounts(programs.stablecoinProgramId),
+      extraAccountMetaList:
+        preset === "SSS-2" ? extraMeta : TOKEN_2022_PROGRAM_ID,
+      hookConfig: preset === "SSS-2" ? hookConfig : TOKEN_2022_PROGRAM_ID,
+      transferHookProgram:
+        preset === "SSS-2"
+          ? programs.transferHookProgramId
+          : TOKEN_2022_PROGRAM_ID,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
       rent: SYSVAR_RENT_PUBKEY,
-      ...(preset === "SSS-2"
-        ? {
-            extraAccountMetaList: extraMeta,
-            transferHookProgram: programs.transferHookProgramId,
-          }
-        : {
-            extraAccountMetaList: null,
-            transferHookProgram: null,
-          }),
-    })
+      ...stablecoinEventAccounts(programs.stablecoinProgramId),
+    };
+
+  const initializeBuilder = programs.stablecoinProgram.methods
+    .initialize(params)
+    .accountsPartial(stablecoinAccounts)
     .signers([authority, mint]);
 
-  await initializeBuilder.rpc();
+  const initSig = await initializeBuilder.rpc();
+  recordTx(`Initialize (${preset})`, initSig);
+
+  if (preset === "SSS-2") {
+    const extraMetaAccount = await programs.connection.getAccountInfo(extraMeta);
+    if (!extraMetaAccount) {
+      const extraSig = await programs.transferHookProgram.methods
+        .initializeExtraAccountMetaList()
+        .accountsPartial({
+          payer: authority.publicKey,
+          mint: mint.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([authority])
+        .rpc();
+      recordTx("InitializeExtraAccountMetaList (SSS-2)", extraSig);
+    }
+  }
 
   const treasuryAta = await createAssociatedTokenAccountIdempotent(
     programs.connection,
@@ -141,7 +181,7 @@ async function initializePreset(
     TOKEN_2022_PROGRAM_ID,
   );
 
-  await programs.stablecoinProgram.methods
+  const updateMinterSig = await programs.stablecoinProgram.methods
     .updateMinter({
       minter: authority.publicKey,
       quota: DEFAULT_MINTER_QUOTA,
@@ -159,6 +199,7 @@ async function initializePreset(
     })
     .signers([authority])
     .rpc();
+  recordTx("UpdateMinter (preset)", updateMinterSig);
 
   const context: PresetContext = {
     preset,
@@ -201,7 +242,7 @@ export async function mintToUser(
   amount: bigint,
   destination: "userA" | "userB" = "userA",
 ): Promise<string> {
-  return ctx.programs.stablecoinProgram.methods
+  const sig = await ctx.programs.stablecoinProgram.methods
     .mint(new anchor.BN(amount.toString()))
     .accountsPartial({
       authority: ctx.authority.publicKey,
@@ -214,6 +255,8 @@ export async function mintToUser(
     })
     .signers([ctx.authority])
     .rpc();
+  recordTx("Mint", sig);
+  return sig;
 }
 
 export async function transferBetweenUsers(
@@ -221,7 +264,7 @@ export async function transferBetweenUsers(
   amount: bigint,
 ): Promise<string> {
   if (ctx.preset === "SSS-2") {
-    return transferCheckedWithTransferHook(
+    const sig = await transferCheckedWithTransferHook(
       ctx.programs.connection,
       ctx.payer,
       ctx.userAAta,
@@ -237,9 +280,11 @@ export async function transferBetweenUsers(
       },
       TOKEN_2022_PROGRAM_ID,
     );
+    recordTx("Transfer (with hook)", sig);
+    return sig;
   }
 
-  return transferChecked(
+  const sig = await transferChecked(
     ctx.programs.connection,
     ctx.payer,
     ctx.userAAta,
@@ -255,13 +300,15 @@ export async function transferBetweenUsers(
     },
     TOKEN_2022_PROGRAM_ID,
   );
+  recordTx("Transfer", sig);
+  return sig;
 }
 
 export async function freezeAccount(
   ctx: PresetContext,
   account: PublicKey,
 ): Promise<string> {
-  return ctx.programs.stablecoinProgram.methods
+  const sig = await ctx.programs.stablecoinProgram.methods
     .freezeAccount()
     .accountsPartial({
       authority: ctx.authority.publicKey,
@@ -274,13 +321,15 @@ export async function freezeAccount(
     })
     .signers([ctx.authority])
     .rpc();
+  recordTx("FreezeAccount", sig);
+  return sig;
 }
 
 export async function thawAccount(
   ctx: PresetContext,
   account: PublicKey,
 ): Promise<string> {
-  return ctx.programs.stablecoinProgram.methods
+  const sig = await ctx.programs.stablecoinProgram.methods
     .thawAccount()
     .accountsPartial({
       authority: ctx.authority.publicKey,
@@ -293,13 +342,15 @@ export async function thawAccount(
     })
     .signers([ctx.authority])
     .rpc();
+  recordTx("ThawAccount", sig);
+  return sig;
 }
 
 export async function blacklistUser(
   ctx: PresetContext,
   reason = "compliance review",
 ): Promise<string> {
-  return ctx.programs.stablecoinProgram.methods
+  const sig = await ctx.programs.stablecoinProgram.methods
     .addToBlacklist(reason)
     .accountsPartial({
       authority: ctx.authority.publicKey,
@@ -312,13 +363,15 @@ export async function blacklistUser(
     })
     .signers([ctx.authority])
     .rpc();
+  recordTx("AddToBlacklist", sig);
+  return sig;
 }
 
 export async function seizeFromBlacklistedAccount(
   ctx: PresetContext,
   amount: bigint,
 ): Promise<string> {
-  return ctx.programs.stablecoinProgram.methods
+  const sig = await ctx.programs.stablecoinProgram.methods
     .seize(new anchor.BN(amount.toString()))
     .accountsPartial({
       authority: ctx.authority.publicKey,
@@ -330,6 +383,7 @@ export async function seizeFromBlacklistedAccount(
       blacklistEntry: ctx.blacklistPda,
       stablecoinProgram: ctx.programs.stablecoinProgramId,
       transferHookProgram: ctx.programs.transferHookProgramId,
+      hookConfig: hookConfigPda(ctx.programs.transferHookProgramId),
       extraAccountMetaList: ctx.extraAccountMetaListPda,
       destinationBlacklist: blacklistPda(
         ctx.programs.stablecoinProgramId,
@@ -341,6 +395,8 @@ export async function seizeFromBlacklistedAccount(
     })
     .signers([ctx.authority])
     .rpc();
+  recordTx("Seize", sig);
+  return sig;
 }
 
 export async function pauseMint(ctx: PresetContext): Promise<string> {

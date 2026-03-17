@@ -8,4 +8,4 @@
 use solana_address::{address, Address};
 
 /// `stablecoin` program ID.
-pub const STABLECOIN_ID: Address = address!("Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC");
+pub const STABLECOIN_ID: Address = address!("C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r");

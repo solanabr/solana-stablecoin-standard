@@ -86,6 +86,10 @@ pub fn blacklist_pda(
     .0
 }
 
+pub fn hook_config_pda() -> solana_sdk::pubkey::Pubkey {
+    solana_sdk::pubkey::Pubkey::find_program_address(&[b"hook_config"], &transfer_hook::ID).0
+}
+
 pub fn extra_account_meta_list_pda(
     mint: &solana_sdk::pubkey::Pubkey,
 ) -> solana_sdk::pubkey::Pubkey {
@@ -98,6 +102,26 @@ pub fn extra_account_meta_list_pda(
 
 pub fn stablecoin_event_authority_pda() -> solana_sdk::pubkey::Pubkey {
     solana_sdk::pubkey::Pubkey::find_program_address(&[b"__event_authority"], &stablecoin::ID).0
+}
+
+pub fn initialize_hook_config_ix(
+    payer: solana_sdk::pubkey::Pubkey,
+    stablecoin_program_id: solana_sdk::pubkey::Pubkey,
+) -> Instruction {
+    let accounts = transfer_hook::accounts::InitializeHookConfig {
+        payer,
+        hook_config: hook_config_pda(),
+        system_program: system_program::ID,
+    };
+
+    Instruction {
+        program_id: transfer_hook::ID,
+        accounts: accounts.to_account_metas(None),
+        data: transfer_hook::instruction::InitializeHookConfig {
+            stablecoin_program_id,
+        }
+        .data(),
+    }
 }
 
 pub fn initialize_ix(
@@ -113,6 +137,7 @@ pub fn initialize_ix(
         extra_account_meta_list: params
             .enable_transfer_hook
             .then_some(extra_account_meta_list_pda(&mint)),
+        hook_config: params.enable_transfer_hook.then_some(hook_config_pda()),
         transfer_hook_program: params.enable_transfer_hook.then_some(transfer_hook::ID),
         token_program: spl_token_2022::id(),
         system_program: system_program::ID,
@@ -335,6 +360,7 @@ pub fn seize_ix(
         blacklist_entry: blacklist_pda(&mint, &victim_wallet),
         stablecoin_program: stablecoin::ID,
         transfer_hook_program: transfer_hook::ID,
+        hook_config: hook_config_pda(),
         extra_account_meta_list: extra_account_meta_list_pda(&mint),
         destination_blacklist: blacklist_pda(&mint, &treasury_owner),
         token_program: spl_token_2022::id(),
@@ -441,11 +467,12 @@ pub fn transfer_checked_with_hook_ix(
     .expect("transfer_checked instruction");
 
     ix.accounts.extend([
+        AccountMeta::new_readonly(extra_account_meta_list_pda(&mint), false),
+        AccountMeta::new_readonly(hook_config_pda(), false),
         AccountMeta::new_readonly(stablecoin::ID, false),
         AccountMeta::new_readonly(config_pda(&mint), false),
         AccountMeta::new_readonly(blacklist_pda(&mint, &source_owner), false),
         AccountMeta::new_readonly(blacklist_pda(&mint, &destination_owner), false),
-        AccountMeta::new_readonly(extra_account_meta_list_pda(&mint), false),
         AccountMeta::new_readonly(transfer_hook::ID, false),
     ]);
 
@@ -458,6 +485,15 @@ pub fn initialize_stablecoin(
     params: InitializeParams,
 ) -> solana_sdk::pubkey::Pubkey {
     let mint = Keypair::new();
+    if params.enable_transfer_hook && svm.get_account(&hook_config_pda()).is_none() {
+        let result = send_tx(
+            svm,
+            authority,
+            &[initialize_hook_config_ix(authority.pubkey(), stablecoin::ID)],
+            &[authority],
+        );
+        assert!(result.is_ok(), "initialize_hook_config should succeed: {result:?}");
+    }
     let result = send_tx(
         svm,
         authority,

@@ -1,14 +1,10 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { env } from "@/lib/env";
-import { ExternalLink, Copy, Check } from "lucide-react";
+import { ExternalLink, Copy, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 function explorerUrl(signature: string): string {
@@ -41,11 +37,17 @@ export function TxSignatureModal({
   const url = explorerUrl(signature);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <DialogPrimitive.Content
+          className={cn(
+            "fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border bg-background p-6 shadow-lg",
+          )}
+        >
+          <DialogPrimitive.Title className="text-lg font-semibold leading-none tracking-tight">
+            {title}
+          </DialogPrimitive.Title>
         <div className="space-y-4">
           <div className="rounded-lg bg-muted p-3 font-mono text-sm break-all">
             {signature}
@@ -67,7 +69,12 @@ export function TxSignatureModal({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+          <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

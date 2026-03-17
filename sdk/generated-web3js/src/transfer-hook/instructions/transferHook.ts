@@ -6,6 +6,7 @@ import {
 } from "@solana/web3.js";
 import { TRANSFERHOOK_PROGRAM_ID } from "..";
 import { findExtraAccountMetaListPda } from "../pdas/extraAccountMetaList";
+import { findHookConfigPda } from "../pdas/hookConfig";
 import { getStructCodec, getU64Codec } from "@solana/codecs";
 
 export interface TransferHookInstructionAccounts {
@@ -14,6 +15,8 @@ export interface TransferHookInstructionAccounts {
   destination: PublicKey;
   authority: PublicKey;
   extraAccountMetaList?: PublicKey;
+  transferHookProgram: PublicKey;
+  hookConfig?: PublicKey;
   stablecoinProgram: PublicKey;
   config: PublicKey;
   sourceBlacklist: PublicKey;
@@ -43,12 +46,23 @@ export function createTransferHookInstruction(
     );
     extraAccountMetaList = derived;
   }
+  let hookConfig = accounts.hookConfig;
+  if (!hookConfig) {
+    const [derived] = findHookConfigPda(programId);
+    hookConfig = derived;
+  }
   const keys: AccountMeta[] = [
     { pubkey: accounts.source, isSigner: false, isWritable: false },
     { pubkey: accounts.mint, isSigner: false, isWritable: false },
     { pubkey: accounts.destination, isSigner: false, isWritable: false },
     { pubkey: accounts.authority, isSigner: false, isWritable: false },
     { pubkey: extraAccountMetaList, isSigner: false, isWritable: false },
+    {
+      pubkey: accounts.transferHookProgram,
+      isSigner: false,
+      isWritable: false,
+    },
+    { pubkey: hookConfig, isSigner: false, isWritable: false },
     { pubkey: accounts.stablecoinProgram, isSigner: false, isWritable: false },
     { pubkey: accounts.config, isSigner: false, isWritable: false },
     { pubkey: accounts.sourceBlacklist, isSigner: false, isWritable: false },

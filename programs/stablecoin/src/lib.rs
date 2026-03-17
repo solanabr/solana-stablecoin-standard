@@ -9,7 +9,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC");
+declare_id!("C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r");
 
 #[program]
 pub mod stablecoin {

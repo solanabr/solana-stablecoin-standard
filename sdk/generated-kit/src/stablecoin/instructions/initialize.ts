@@ -66,6 +66,7 @@ export type InitializeInstruction<
   TAccountConfig extends string | AccountMeta<string> = string,
   TAccountRoleConfig extends string | AccountMeta<string> = string,
   TAccountExtraAccountMetaList extends string | AccountMeta<string> = string,
+  TAccountHookConfig extends string | AccountMeta<string> = string,
   TAccountTransferHookProgram extends string | AccountMeta<string> = string,
   TAccountTokenProgram extends string | AccountMeta<string> =
     "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
@@ -96,6 +97,9 @@ export type InitializeInstruction<
       TAccountExtraAccountMetaList extends string
         ? WritableAccount<TAccountExtraAccountMetaList>
         : TAccountExtraAccountMetaList,
+      TAccountHookConfig extends string
+        ? ReadonlyAccount<TAccountHookConfig>
+        : TAccountHookConfig,
       TAccountTransferHookProgram extends string
         ? ReadonlyAccount<TAccountTransferHookProgram>
         : TAccountTransferHookProgram,
@@ -184,6 +188,7 @@ export type InitializeAsyncInput<
   TAccountConfig extends string = string,
   TAccountRoleConfig extends string = string,
   TAccountExtraAccountMetaList extends string = string,
+  TAccountHookConfig extends string = string,
   TAccountTransferHookProgram extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
@@ -196,6 +201,7 @@ export type InitializeAsyncInput<
   config?: Address<TAccountConfig>;
   roleConfig?: Address<TAccountRoleConfig>;
   extraAccountMetaList?: Address<TAccountExtraAccountMetaList>;
+  hookConfig?: Address<TAccountHookConfig>;
   transferHookProgram?: Address<TAccountTransferHookProgram>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -217,6 +223,7 @@ export async function getInitializeInstructionAsync<
   TAccountConfig extends string,
   TAccountRoleConfig extends string,
   TAccountExtraAccountMetaList extends string,
+  TAccountHookConfig extends string,
   TAccountTransferHookProgram extends string,
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
@@ -231,6 +238,7 @@ export async function getInitializeInstructionAsync<
     TAccountConfig,
     TAccountRoleConfig,
     TAccountExtraAccountMetaList,
+    TAccountHookConfig,
     TAccountTransferHookProgram,
     TAccountTokenProgram,
     TAccountSystemProgram,
@@ -247,6 +255,7 @@ export async function getInitializeInstructionAsync<
     TAccountConfig,
     TAccountRoleConfig,
     TAccountExtraAccountMetaList,
+    TAccountHookConfig,
     TAccountTransferHookProgram,
     TAccountTokenProgram,
     TAccountSystemProgram,
@@ -268,6 +277,7 @@ export async function getInitializeInstructionAsync<
       value: input.extraAccountMetaList ?? null,
       isWritable: true,
     },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
     transferHookProgram: {
       value: input.transferHookProgram ?? null,
       isWritable: false,
@@ -343,6 +353,7 @@ export async function getInitializeInstructionAsync<
       getAccountMeta("config", accounts.config),
       getAccountMeta("roleConfig", accounts.roleConfig),
       getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
+      getAccountMeta("hookConfig", accounts.hookConfig),
       getAccountMeta("transferHookProgram", accounts.transferHookProgram),
       getAccountMeta("tokenProgram", accounts.tokenProgram),
       getAccountMeta("systemProgram", accounts.systemProgram),
@@ -361,6 +372,7 @@ export async function getInitializeInstructionAsync<
     TAccountConfig,
     TAccountRoleConfig,
     TAccountExtraAccountMetaList,
+    TAccountHookConfig,
     TAccountTransferHookProgram,
     TAccountTokenProgram,
     TAccountSystemProgram,
@@ -376,6 +388,7 @@ export type InitializeInput<
   TAccountConfig extends string = string,
   TAccountRoleConfig extends string = string,
   TAccountExtraAccountMetaList extends string = string,
+  TAccountHookConfig extends string = string,
   TAccountTransferHookProgram extends string = string,
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
@@ -388,6 +401,7 @@ export type InitializeInput<
   config: Address<TAccountConfig>;
   roleConfig: Address<TAccountRoleConfig>;
   extraAccountMetaList?: Address<TAccountExtraAccountMetaList>;
+  hookConfig?: Address<TAccountHookConfig>;
   transferHookProgram?: Address<TAccountTransferHookProgram>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
@@ -409,6 +423,7 @@ export function getInitializeInstruction<
   TAccountConfig extends string,
   TAccountRoleConfig extends string,
   TAccountExtraAccountMetaList extends string,
+  TAccountHookConfig extends string,
   TAccountTransferHookProgram extends string,
   TAccountTokenProgram extends string,
   TAccountSystemProgram extends string,
@@ -423,6 +438,7 @@ export function getInitializeInstruction<
     TAccountConfig,
     TAccountRoleConfig,
     TAccountExtraAccountMetaList,
+    TAccountHookConfig,
     TAccountTransferHookProgram,
     TAccountTokenProgram,
     TAccountSystemProgram,
@@ -438,6 +454,7 @@ export function getInitializeInstruction<
   TAccountConfig,
   TAccountRoleConfig,
   TAccountExtraAccountMetaList,
+  TAccountHookConfig,
   TAccountTransferHookProgram,
   TAccountTokenProgram,
   TAccountSystemProgram,
@@ -458,6 +475,7 @@ export function getInitializeInstruction<
       value: input.extraAccountMetaList ?? null,
       isWritable: true,
     },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
     transferHookProgram: {
       value: input.transferHookProgram ?? null,
       isWritable: false,
@@ -498,6 +516,7 @@ export function getInitializeInstruction<
       getAccountMeta("config", accounts.config),
       getAccountMeta("roleConfig", accounts.roleConfig),
       getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
+      getAccountMeta("hookConfig", accounts.hookConfig),
       getAccountMeta("transferHookProgram", accounts.transferHookProgram),
       getAccountMeta("tokenProgram", accounts.tokenProgram),
       getAccountMeta("systemProgram", accounts.systemProgram),
@@ -516,6 +535,7 @@ export function getInitializeInstruction<
     TAccountConfig,
     TAccountRoleConfig,
     TAccountExtraAccountMetaList,
+    TAccountHookConfig,
     TAccountTransferHookProgram,
     TAccountTokenProgram,
     TAccountSystemProgram,
@@ -536,12 +556,13 @@ export type ParsedInitializeInstruction<
     config: TAccountMetas[2];
     roleConfig: TAccountMetas[3];
     extraAccountMetaList?: TAccountMetas[4] | undefined;
-    transferHookProgram?: TAccountMetas[5] | undefined;
-    tokenProgram: TAccountMetas[6];
-    systemProgram: TAccountMetas[7];
-    rent: TAccountMetas[8];
-    eventAuthority: TAccountMetas[9];
-    program: TAccountMetas[10];
+    hookConfig?: TAccountMetas[5] | undefined;
+    transferHookProgram?: TAccountMetas[6] | undefined;
+    tokenProgram: TAccountMetas[7];
+    systemProgram: TAccountMetas[8];
+    rent: TAccountMetas[9];
+    eventAuthority: TAccountMetas[10];
+    program: TAccountMetas[11];
   };
   data: InitializeInstructionData;
 };
@@ -554,12 +575,12 @@ export function parseInitializeInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInitializeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 11) {
+  if (instruction.accounts.length < 12) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 11,
+        expectedAccountMetas: 12,
       },
     );
   }
@@ -583,6 +604,7 @@ export function parseInitializeInstruction<
       config: getNextAccount(),
       roleConfig: getNextAccount(),
       extraAccountMetaList: getNextOptionalAccount(),
+      hookConfig: getNextOptionalAccount(),
       transferHookProgram: getNextOptionalAccount(),
       tokenProgram: getNextAccount(),
       systemProgram: getNextAccount(),

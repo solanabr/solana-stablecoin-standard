@@ -1,8 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
 
 export const TRANSFERHOOK_PROGRAM_ID = new PublicKey(
-  "6QNzPyTwg2MH778GL8idYiU3teFJiuQx6R5L7xdU17KC",
+  "YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p",
 );
 
+export * from "./accounts/hookConfig";
 export * from "./instructions/initializeExtraAccountMetaList";
+export * from "./instructions/initializeHookConfig";
 export * from "./instructions/transferHook";

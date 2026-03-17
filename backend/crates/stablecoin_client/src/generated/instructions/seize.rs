@@ -31,6 +31,8 @@ pub struct Seize {
 
     pub transfer_hook_program: solana_address::Address,
 
+    pub hook_config: solana_address::Address,
+
     pub extra_account_meta_list: solana_address::Address,
 
     pub destination_blacklist: solana_address::Address,
@@ -53,7 +55,7 @@ impl Seize {
         args: SeizeInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(15 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.authority,
             true,
@@ -76,6 +78,10 @@ impl Seize {
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.transfer_hook_program,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.hook_config,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -156,13 +162,14 @@ impl SeizeInstructionArgs {
 ///   4. `[writable]` from
 ///   5. `[writable]` to
 ///   6. `[]` blacklist_entry
-///   7. `[optional]` stablecoin_program (default to `2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH`)
+///   7. `[optional]` stablecoin_program (default to `C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r`)
 ///   8. `[]` transfer_hook_program
-///   9. `[]` extra_account_meta_list
-///   10. `[]` destination_blacklist
-///   11. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   12. `[]` event_authority
-///   13. `[]` program
+///   9. `[]` hook_config
+///   10. `[]` extra_account_meta_list
+///   11. `[]` destination_blacklist
+///   12. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   13. `[]` event_authority
+///   14. `[]` program
 #[derive(Clone, Debug, Default)]
 pub struct SeizeBuilder {
     authority: Option<solana_address::Address>,
@@ -174,6 +181,7 @@ pub struct SeizeBuilder {
     blacklist_entry: Option<solana_address::Address>,
     stablecoin_program: Option<solana_address::Address>,
     transfer_hook_program: Option<solana_address::Address>,
+    hook_config: Option<solana_address::Address>,
     extra_account_meta_list: Option<solana_address::Address>,
     destination_blacklist: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
@@ -222,7 +230,7 @@ impl SeizeBuilder {
         self.blacklist_entry = Some(blacklist_entry);
         self
     }
-    /// `[optional account, default to '2MKyZ3ugkGyfConZAsqm3hwRoY6c2k7zwZaX1XCSHsJH']`
+    /// `[optional account, default to 'C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r']`
     #[inline(always)]
     pub fn stablecoin_program(&mut self, stablecoin_program: solana_address::Address) -> &mut Self {
         self.stablecoin_program = Some(stablecoin_program);
@@ -234,6 +242,11 @@ impl SeizeBuilder {
         transfer_hook_program: solana_address::Address,
     ) -> &mut Self {
         self.transfer_hook_program = Some(transfer_hook_program);
+        self
+    }
+    #[inline(always)]
+    pub fn hook_config(&mut self, hook_config: solana_address::Address) -> &mut Self {
+        self.hook_config = Some(hook_config);
         self
     }
     #[inline(always)]
@@ -299,11 +312,12 @@ impl SeizeBuilder {
             to: self.to.expect("to is not set"),
             blacklist_entry: self.blacklist_entry.expect("blacklist_entry is not set"),
             stablecoin_program: self.stablecoin_program.unwrap_or(solana_address::address!(
-                "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC"
+                "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r"
             )),
             transfer_hook_program: self
                 .transfer_hook_program
                 .expect("transfer_hook_program is not set"),
+            hook_config: self.hook_config.expect("hook_config is not set"),
             extra_account_meta_list: self
                 .extra_account_meta_list
                 .expect("extra_account_meta_list is not set"),
@@ -344,6 +358,8 @@ pub struct SeizeCpiAccounts<'a, 'b> {
 
     pub transfer_hook_program: &'b solana_account_info::AccountInfo<'a>,
 
+    pub hook_config: &'b solana_account_info::AccountInfo<'a>,
+
     pub extra_account_meta_list: &'b solana_account_info::AccountInfo<'a>,
 
     pub destination_blacklist: &'b solana_account_info::AccountInfo<'a>,
@@ -378,6 +394,8 @@ pub struct SeizeCpi<'a, 'b> {
 
     pub transfer_hook_program: &'b solana_account_info::AccountInfo<'a>,
 
+    pub hook_config: &'b solana_account_info::AccountInfo<'a>,
+
     pub extra_account_meta_list: &'b solana_account_info::AccountInfo<'a>,
 
     pub destination_blacklist: &'b solana_account_info::AccountInfo<'a>,
@@ -408,6 +426,7 @@ impl<'a, 'b> SeizeCpi<'a, 'b> {
             blacklist_entry: accounts.blacklist_entry,
             stablecoin_program: accounts.stablecoin_program,
             transfer_hook_program: accounts.transfer_hook_program,
+            hook_config: accounts.hook_config,
             extra_account_meta_list: accounts.extra_account_meta_list,
             destination_blacklist: accounts.destination_blacklist,
             token_program: accounts.token_program,
@@ -439,7 +458,7 @@ impl<'a, 'b> SeizeCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(15 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.authority.key,
             true,
@@ -465,6 +484,10 @@ impl<'a, 'b> SeizeCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.transfer_hook_program.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.hook_config.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -503,7 +526,7 @@ impl<'a, 'b> SeizeCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(15 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(16 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.authority.clone());
         account_infos.push(self.config.clone());
@@ -514,6 +537,7 @@ impl<'a, 'b> SeizeCpi<'a, 'b> {
         account_infos.push(self.blacklist_entry.clone());
         account_infos.push(self.stablecoin_program.clone());
         account_infos.push(self.transfer_hook_program.clone());
+        account_infos.push(self.hook_config.clone());
         account_infos.push(self.extra_account_meta_list.clone());
         account_infos.push(self.destination_blacklist.clone());
         account_infos.push(self.token_program.clone());
@@ -544,11 +568,12 @@ impl<'a, 'b> SeizeCpi<'a, 'b> {
 ///   6. `[]` blacklist_entry
 ///   7. `[]` stablecoin_program
 ///   8. `[]` transfer_hook_program
-///   9. `[]` extra_account_meta_list
-///   10. `[]` destination_blacklist
-///   11. `[]` token_program
-///   12. `[]` event_authority
-///   13. `[]` program
+///   9. `[]` hook_config
+///   10. `[]` extra_account_meta_list
+///   11. `[]` destination_blacklist
+///   12. `[]` token_program
+///   13. `[]` event_authority
+///   14. `[]` program
 #[derive(Clone, Debug)]
 pub struct SeizeCpiBuilder<'a, 'b> {
     instruction: Box<SeizeCpiBuilderInstruction<'a, 'b>>,
@@ -567,6 +592,7 @@ impl<'a, 'b> SeizeCpiBuilder<'a, 'b> {
             blacklist_entry: None,
             stablecoin_program: None,
             transfer_hook_program: None,
+            hook_config: None,
             extra_account_meta_list: None,
             destination_blacklist: None,
             token_program: None,
@@ -632,6 +658,14 @@ impl<'a, 'b> SeizeCpiBuilder<'a, 'b> {
         transfer_hook_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.transfer_hook_program = Some(transfer_hook_program);
+        self
+    }
+    #[inline(always)]
+    pub fn hook_config(
+        &mut self,
+        hook_config: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.hook_config = Some(hook_config);
         self
     }
     #[inline(always)]
@@ -746,6 +780,11 @@ impl<'a, 'b> SeizeCpiBuilder<'a, 'b> {
                 .transfer_hook_program
                 .expect("transfer_hook_program is not set"),
 
+            hook_config: self
+                .instruction
+                .hook_config
+                .expect("hook_config is not set"),
+
             extra_account_meta_list: self
                 .instruction
                 .extra_account_meta_list
@@ -788,6 +827,7 @@ struct SeizeCpiBuilderInstruction<'a, 'b> {
     blacklist_entry: Option<&'b solana_account_info::AccountInfo<'a>>,
     stablecoin_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     transfer_hook_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    hook_config: Option<&'b solana_account_info::AccountInfo<'a>>,
     extra_account_meta_list: Option<&'b solana_account_info::AccountInfo<'a>>,
     destination_blacklist: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,

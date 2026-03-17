@@ -21,6 +21,7 @@ export interface SeizeInstructionAccounts {
   blacklistEntry: PublicKey;
   stablecoinProgram: PublicKey;
   transferHookProgram: PublicKey;
+  hookConfig: PublicKey;
   extraAccountMetaList?: PublicKey;
   destinationBlacklist: PublicKey;
   tokenProgram: PublicKey;
@@ -88,6 +89,7 @@ export function createSeizeInstruction(
       isSigner: false,
       isWritable: false,
     },
+    { pubkey: accounts.hookConfig, isSigner: false, isWritable: false },
     { pubkey: extraAccountMetaList, isSigner: false, isWritable: false },
     {
       pubkey: accounts.destinationBlacklist,

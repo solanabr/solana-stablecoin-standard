@@ -68,15 +68,24 @@ export const STABLECOIN_ERROR__MISSING_EXTRA_ACCOUNT_META_LIST = 0x1788; // 6024
 export const STABLECOIN_ERROR__INVALID_TRANSFER_HOOK_PROGRAM = 0x1789; // 6025
 /** Overflow: Math overflow */
 export const STABLECOIN_ERROR__OVERFLOW = 0x178a; // 6026
+/** InvalidAuthority: Invalid authority: cannot use system program or default pubkey */
+export const STABLECOIN_ERROR__INVALID_AUTHORITY = 0x178b; // 6027
+/** CannotBlacklistTreasury: Cannot blacklist the treasury (config authority) */
+export const STABLECOIN_ERROR__CANNOT_BLACKLIST_TREASURY = 0x178c; // 6028
+/** InvalidRole: Invalid role: cannot use system program or default pubkey */
+export const STABLECOIN_ERROR__INVALID_ROLE = 0x178d; // 6029
 
 export type StablecoinError =
   | typeof STABLECOIN_ERROR__ALREADY_BLACKLISTED
+  | typeof STABLECOIN_ERROR__CANNOT_BLACKLIST_TREASURY
   | typeof STABLECOIN_ERROR__COMPLIANCE_NOT_ENABLED
+  | typeof STABLECOIN_ERROR__INVALID_AUTHORITY
   | typeof STABLECOIN_ERROR__INVALID_BLACKLIST_TARGET
   | typeof STABLECOIN_ERROR__INVALID_DECIMALS
   | typeof STABLECOIN_ERROR__INVALID_MINT
   | typeof STABLECOIN_ERROR__INVALID_NAME
   | typeof STABLECOIN_ERROR__INVALID_PRESET_CONFIGURATION
+  | typeof STABLECOIN_ERROR__INVALID_ROLE
   | typeof STABLECOIN_ERROR__INVALID_SYMBOL
   | typeof STABLECOIN_ERROR__INVALID_TRANSFER_HOOK_PROGRAM
   | typeof STABLECOIN_ERROR__INVALID_TREASURY_ACCOUNT
@@ -102,12 +111,15 @@ let stablecoinErrorMessages: Record<StablecoinError, string> | undefined;
 if (process.env.NODE_ENV !== "production") {
   stablecoinErrorMessages = {
     [STABLECOIN_ERROR__ALREADY_BLACKLISTED]: `Blacklist entry already exists`,
+    [STABLECOIN_ERROR__CANNOT_BLACKLIST_TREASURY]: `Cannot blacklist the treasury (config authority)`,
     [STABLECOIN_ERROR__COMPLIANCE_NOT_ENABLED]: `Compliance features are not enabled for this mint`,
+    [STABLECOIN_ERROR__INVALID_AUTHORITY]: `Invalid authority: cannot use system program or default pubkey`,
     [STABLECOIN_ERROR__INVALID_BLACKLIST_TARGET]: `Source token account owner does not match the blacklist entry`,
     [STABLECOIN_ERROR__INVALID_DECIMALS]: `Invalid decimal precision`,
     [STABLECOIN_ERROR__INVALID_MINT]: `Mint account does not match configuration`,
     [STABLECOIN_ERROR__INVALID_NAME]: `Invalid stablecoin name`,
     [STABLECOIN_ERROR__INVALID_PRESET_CONFIGURATION]: `Transfer hook requires permanent delegate`,
+    [STABLECOIN_ERROR__INVALID_ROLE]: `Invalid role: cannot use system program or default pubkey`,
     [STABLECOIN_ERROR__INVALID_SYMBOL]: `Invalid stablecoin symbol`,
     [STABLECOIN_ERROR__INVALID_TRANSFER_HOOK_PROGRAM]: `Provided transfer hook program does not match the expected program`,
     [STABLECOIN_ERROR__INVALID_TREASURY_ACCOUNT]: `Destination treasury account must be owned by the current authority`,

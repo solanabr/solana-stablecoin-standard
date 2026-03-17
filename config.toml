@@ -1,14 +1,14 @@
-name = "Regulated USD"
-symbol = "RUSD"
+name = "Cedar Dollar"
+symbol = "CDR"
 decimals = 6
-uri = "https://example.com/sss2.json"
-preset = "sss-2"
+uri = "https://example.com/cedar-dollar.json"
+preset = "sss-1"
 authority_keypair = "/Users/pratik/.config/solana/id.json"
 rpc_url = "https://devnet.helius-rpc.com/?api-key=ff17a075-ee9d-4796-b9d5-3d0a054f017c"
 api_url = "http://127.0.0.1:8080"
-mint = "9D8zcQUBFjW6J3ot3YfsegfyjeLDNAPHJj72jezcm9MY"
+mint = "8GmaV5AWnwWaTNoG9bebYstx2PkQEirW7rhzEdcpvCUH"
 
 [features]
-enable_permanent_delegate = true
-enable_transfer_hook = true
-default_account_frozen = true
+enable_permanent_delegate = false
+enable_transfer_hook = false
+default_account_frozen = false

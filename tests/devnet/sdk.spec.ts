@@ -8,11 +8,12 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 
 import { Presets, StablecoinClient } from "@stbr/sss-client";
 import { loadProgramIds } from "./config";
+import { devnetConnection } from "./helpers/cluster";
 import {
   createSss1Preset,
   createSss2Preset,
 } from "./helpers/presets";
-import { devnetConnection } from "./helpers/cluster";
+import { recordTx } from "./helpers/run-report";
 import { fundAuthority, loadPayer } from "./helpers/wallet";
 
 describe("SDK integration", function () {
@@ -76,6 +77,7 @@ describe("SDK integration", function () {
     const recipientAta = ctx.treasuryAta;
 
     const mintSig = await stable.mint({ recipient: ctx.authority.publicKey, amount: 1_000_000n });
+    recordTx("Mint (SDK SSS-1)", mintSig);
     console.log("Mint signature:", mintSig);
 
     const tokenAccount = await stable.getTokenAccount(recipientAta);
@@ -106,6 +108,7 @@ describe("SDK integration", function () {
       burner: ctx.authority.publicKey,
       pauser: ctx.authority.publicKey,
     });
+    recordTx("UpdateRoles", updateRolesSig);
     console.log("UpdateRoles signature:", updateRolesSig);
 
     // Burn from treasury (authority-owned; burn requires account owner == signer)
@@ -113,17 +116,21 @@ describe("SDK integration", function () {
       account: recipientAta,
       amount: 500_000n,
     });
+    recordTx("Burn", burnSig);
     console.log("Burn signature:", burnSig);
 
     // Pause / unpause
     const pauseSig = await stable.pause();
+    recordTx("Pause", pauseSig);
     console.log("Pause signature:", pauseSig);
 
     const unpauseSig = await stable.unpause();
+    recordTx("Unpause", unpauseSig);
     console.log("Unpause signature:", unpauseSig);
 
     // Transfer authority (to self for test)
     const transferAuthSig = await stable.transferAuthority(ctx.authority.publicKey);
+    recordTx("TransferAuthority", transferAuthSig);
     console.log("TransferAuthority signature:", transferAuthSig);
 
     // Update minter
@@ -132,6 +139,7 @@ describe("SDK integration", function () {
       quota: 2_000_000_000_000n,
       active: true,
     });
+    recordTx("UpdateMinter (SDK)", updateMinterSig);
     console.log("UpdateMinter signature:", updateMinterSig);
 
     // Transfer (SPL) - authority transfers from own ATA (treasury) to userB
@@ -141,6 +149,7 @@ describe("SDK integration", function () {
       owner: ctx.authority.publicKey,
       amount: 100_000n,
     });
+    recordTx("Transfer (SDK SSS-1)", transferSig);
     console.log("Transfer signature:", transferSig);
   });
 
@@ -165,17 +174,20 @@ describe("SDK integration", function () {
 
     const victimAta = ctx.userBAta;
 
-    await stable.mint({ recipient: victim.publicKey, amount: 500_000n });
+    const mintVictimSig = await stable.mint({ recipient: victim.publicKey, amount: 500_000n });
+    recordTx("Mint (SDK SSS-2 victim)", mintVictimSig);
 
     // Blacklist
     const blacklistSig = await stable.compliance.blacklistAdd(
       victim.publicKey,
       "SDK test sanctions"
     );
+    recordTx("AddToBlacklist (SDK)", blacklistSig);
     console.log("BlacklistAdd signature:", blacklistSig);
 
     // Freeze
     const freezeSig = await stable.compliance.freeze(victimAta);
+    recordTx("FreezeAccount (SDK)", freezeSig);
     console.log("Freeze signature:", freezeSig);
 
     // Seize (treasury = authority ATA from preset)
@@ -186,14 +198,17 @@ describe("SDK integration", function () {
       treasuryOwner: ctx.authority.publicKey,
       amount: 500_000n,
     });
+    recordTx("Seize (SDK)", seizeSig);
     console.log("Seize signature:", seizeSig);
 
     // Thaw (account is empty after seize, but we can still thaw)
     const thawSig = await stable.compliance.thaw(victimAta);
+    recordTx("ThawAccount (SDK)", thawSig);
     console.log("Thaw signature:", thawSig);
 
     // Remove from blacklist
     const unblacklistSig = await stable.compliance.blacklistRemove(victim.publicKey);
+    recordTx("RemoveFromBlacklist", unblacklistSig);
     console.log("BlacklistRemove signature:", unblacklistSig);
   });
 
@@ -214,7 +229,8 @@ describe("SDK integration", function () {
     console.log("SSS-2 HasTransferHook:", hasHook);
     if (!hasHook) throw new Error("Expected transfer hook on SSS-2");
 
-    await stable.mint({ recipient: ctx.authority.publicKey, amount: 1_000_000n });
+    const mintHookSig = await stable.mint({ recipient: ctx.authority.publicKey, amount: 1_000_000n });
+    recordTx("Mint (SDK SSS-2 hook test)", mintHookSig);
 
     const transferSig = await stable.transfer({
       source: ctx.treasuryAta,
@@ -222,6 +238,7 @@ describe("SDK integration", function () {
       owner: ctx.authority.publicKey,
       amount: 100_000n,
     });
+    recordTx("Transfer (with hook, SDK)", transferSig);
     console.log("Transfer (with hook) signature:", transferSig);
   });
 

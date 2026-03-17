@@ -101,7 +101,7 @@ import {
 } from "../instructions";
 
 export const STABLECOIN_PROGRAM_ADDRESS =
-  "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC" as Address<"Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC">;
+  "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r" as Address<"C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r">;
 
 export enum StablecoinAccount {
   BlacklistEntry,
@@ -334,7 +334,7 @@ export function identifyStablecoinInstruction(
 }
 
 export type ParsedStablecoinInstruction<
-  TProgram extends string = "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC",
+  TProgram extends string = "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r",
 > =
   | ({
       instructionType: StablecoinInstruction.AddToBlacklist;

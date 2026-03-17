@@ -21,6 +21,7 @@ import {
 import {
   findConfigPda,
   findExtraAccountMetaListPda,
+  findHookConfigPda,
   findMinterQuotaPda,
   findRoleConfigPda,
 } from "./pdas";
@@ -92,10 +93,12 @@ export class StablecoinClient {
           "transferHookProgramId required when creating with transfer hook"
         );
       }
+      const [hookConfigPda] = findHookConfigPda(this.transferHookProgramId);
       instructions.push(
         transferHook.createInitializeExtraAccountMetaListInstruction(
           {
             payer: this.wallet!.publicKey,
+            hookConfig: hookConfigPda,
             mint: params.mint.publicKey,
             systemProgram: SystemProgram.programId,
           },
@@ -113,22 +116,31 @@ export class StablecoinClient {
       this.stablecoinProgramId
     );
 
-    instructions.push(
-      stablecoin.createInitializeInstruction(
+    const optionalExtraAccountMetaList =
+      enableTransferHook && this.transferHookProgramId
+        ? findExtraAccountMetaListPda(
+            params.mint.publicKey,
+            this.transferHookProgramId
+          )[0]
+        : undefined;
+    const optionalHookConfig =
+      enableTransferHook && this.transferHookProgramId
+        ? findHookConfigPda(this.transferHookProgramId)[0]
+        : undefined;
+    const optionalTransferHookProgram =
+      enableTransferHook && this.transferHookProgramId
+        ? this.transferHookProgramId
+        : undefined;
+
+    const initializeIx = stablecoin.createInitializeInstruction(
         {
           authority: this.wallet!.publicKey,
           mint: params.mint.publicKey,
           config: configPda,
           roleConfig: roleConfigPda,
-          ...(enableTransferHook && this.transferHookProgramId
-            ? {
-                extraAccountMetaList: findExtraAccountMetaListPda(
-                  params.mint.publicKey,
-                  this.transferHookProgramId
-                )[0],
-                transferHookProgram: this.transferHookProgramId,
-              }
-            : {}),
+          extraAccountMetaList: optionalExtraAccountMetaList,
+          hookConfig: optionalHookConfig,
+          transferHookProgram: optionalTransferHookProgram,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
           rent: SYSVAR_RENT_PUBKEY,
@@ -144,7 +156,9 @@ export class StablecoinClient {
           defaultAccountFrozen,
         },
         this.stablecoinProgramId
-      )
+      );
+    instructions.push(
+      ensureInitializeAccountOrder(initializeIx)
     );
 
     const [minterQuotaPda] = findMinterQuotaPda(
@@ -215,4 +229,55 @@ export class StablecoinClient {
     }
     return { mint: mint.publicKey, signature: sig };
   }
+}
+
+function ensureInitializeAccountOrder(
+  instruction: TransactionInstruction
+): TransactionInstruction {
+  // Anchor expects: authority, mint, config, role_config, extra_meta_list,
+  // hook_config?, transfer_hook_program?, token_program, system_program, rent,
+  // event_authority, program. Generated order puts token_program at 4 then optional at 9+.
+  const keys = instruction.keys;
+  if (keys.length < 11) {
+    return instruction;
+  }
+  if (!keys[4].pubkey.equals(TOKEN_2022_PROGRAM_ID)) {
+    return instruction;
+  }
+
+  const reordered =
+    keys.length >= 12
+      ? [
+          keys[0],
+          keys[1],
+          keys[2],
+          keys[3],
+          keys[9],
+          keys[10],
+          keys[11],
+          keys[4],
+          keys[5],
+          keys[6],
+          keys[7],
+          keys[8],
+        ]
+      : [
+          keys[0],
+          keys[1],
+          keys[2],
+          keys[3],
+          keys[9],
+          keys[10],
+          keys[4],
+          keys[5],
+          keys[6],
+          keys[7],
+          keys[8],
+        ];
+
+  return new TransactionInstruction({
+    programId: instruction.programId,
+    keys: reordered,
+    data: instruction.data,
+  });
 }

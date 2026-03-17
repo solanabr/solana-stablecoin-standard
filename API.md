@@ -185,7 +185,7 @@ Request body:
    SSS_RUN_WORKERS=1 \
    SSS_AUTHORITY_KEYPAIR=tests/devnet/fixtures/e2e-authority.json \
    SOLANA_RPC_URL="https://devnet.helius-rpc.com/?api-key=YOUR_KEY" \
-   SSS_STABLECOIN_PROGRAM_ID=Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC \
+   SSS_STABLECOIN_PROGRAM_ID=C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r \
    cargo run -p sss-api
    ```
 

@@ -10,6 +10,7 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
+  getAddressDecoder,
   getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
@@ -36,27 +37,24 @@ import {
 } from "@solana/kit";
 import {
   getAccountMetaFactory,
-  getAddressFromResolvedInstructionAccount,
   type ResolvedInstructionAccount,
 } from "@solana/program-client-core";
 import { TRANSFER_HOOK_PROGRAM_ADDRESS } from "../programs";
 
-export const INITIALIZE_EXTRA_ACCOUNT_META_LIST_DISCRIMINATOR = new Uint8Array([
-  43, 34, 13, 49, 167, 88, 235, 235,
+export const INITIALIZE_HOOK_CONFIG_DISCRIMINATOR = new Uint8Array([
+  144, 239, 17, 85, 228, 48, 54, 43,
 ]);
 
-export function getInitializeExtraAccountMetaListDiscriminatorBytes() {
+export function getInitializeHookConfigDiscriminatorBytes() {
   return fixEncoderSize(getBytesEncoder(), 8).encode(
-    INITIALIZE_EXTRA_ACCOUNT_META_LIST_DISCRIMINATOR,
+    INITIALIZE_HOOK_CONFIG_DISCRIMINATOR,
   );
 }
 
-export type InitializeExtraAccountMetaListInstruction<
+export type InitializeHookConfigInstruction<
   TProgram extends string = typeof TRANSFER_HOOK_PROGRAM_ADDRESS,
   TAccountPayer extends string | AccountMeta<string> = string,
   TAccountHookConfig extends string | AccountMeta<string> = string,
-  TAccountExtraAccountMetaList extends string | AccountMeta<string> = string,
-  TAccountMint extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends string | AccountMeta<string> =
     "11111111111111111111111111111111",
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
@@ -69,14 +67,8 @@ export type InitializeExtraAccountMetaListInstruction<
             AccountSignerMeta<TAccountPayer>
         : TAccountPayer,
       TAccountHookConfig extends string
-        ? ReadonlyAccount<TAccountHookConfig>
+        ? WritableAccount<TAccountHookConfig>
         : TAccountHookConfig,
-      TAccountExtraAccountMetaList extends string
-        ? WritableAccount<TAccountExtraAccountMetaList>
-        : TAccountExtraAccountMetaList,
-      TAccountMint extends string
-        ? ReadonlyAccount<TAccountMint>
-        : TAccountMint,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
@@ -84,75 +76,73 @@ export type InitializeExtraAccountMetaListInstruction<
     ]
   >;
 
-export type InitializeExtraAccountMetaListInstructionData = {
+export type InitializeHookConfigInstructionData = {
   discriminator: ReadonlyUint8Array;
+  stablecoinProgramId: Address;
 };
 
-export type InitializeExtraAccountMetaListInstructionDataArgs = {};
+export type InitializeHookConfigInstructionDataArgs = {
+  stablecoinProgramId: Address;
+};
 
-export function getInitializeExtraAccountMetaListInstructionDataEncoder(): FixedSizeEncoder<InitializeExtraAccountMetaListInstructionDataArgs> {
+export function getInitializeHookConfigInstructionDataEncoder(): FixedSizeEncoder<InitializeHookConfigInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([["discriminator", fixEncoderSize(getBytesEncoder(), 8)]]),
+    getStructEncoder([
+      ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
+      ["stablecoinProgramId", getAddressEncoder()],
+    ]),
     (value) => ({
       ...value,
-      discriminator: INITIALIZE_EXTRA_ACCOUNT_META_LIST_DISCRIMINATOR,
+      discriminator: INITIALIZE_HOOK_CONFIG_DISCRIMINATOR,
     }),
   );
 }
 
-export function getInitializeExtraAccountMetaListInstructionDataDecoder(): FixedSizeDecoder<InitializeExtraAccountMetaListInstructionData> {
+export function getInitializeHookConfigInstructionDataDecoder(): FixedSizeDecoder<InitializeHookConfigInstructionData> {
   return getStructDecoder([
     ["discriminator", fixDecoderSize(getBytesDecoder(), 8)],
+    ["stablecoinProgramId", getAddressDecoder()],
   ]);
 }
 
-export function getInitializeExtraAccountMetaListInstructionDataCodec(): FixedSizeCodec<
-  InitializeExtraAccountMetaListInstructionDataArgs,
-  InitializeExtraAccountMetaListInstructionData
+export function getInitializeHookConfigInstructionDataCodec(): FixedSizeCodec<
+  InitializeHookConfigInstructionDataArgs,
+  InitializeHookConfigInstructionData
 > {
   return combineCodec(
-    getInitializeExtraAccountMetaListInstructionDataEncoder(),
-    getInitializeExtraAccountMetaListInstructionDataDecoder(),
+    getInitializeHookConfigInstructionDataEncoder(),
+    getInitializeHookConfigInstructionDataDecoder(),
   );
 }
 
-export type InitializeExtraAccountMetaListAsyncInput<
+export type InitializeHookConfigAsyncInput<
   TAccountPayer extends string = string,
   TAccountHookConfig extends string = string,
-  TAccountExtraAccountMetaList extends string = string,
-  TAccountMint extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   payer: TransactionSigner<TAccountPayer>;
   hookConfig?: Address<TAccountHookConfig>;
-  extraAccountMetaList?: Address<TAccountExtraAccountMetaList>;
-  mint: Address<TAccountMint>;
   systemProgram?: Address<TAccountSystemProgram>;
+  stablecoinProgramId: InitializeHookConfigInstructionDataArgs["stablecoinProgramId"];
 };
 
-export async function getInitializeExtraAccountMetaListInstructionAsync<
+export async function getInitializeHookConfigInstructionAsync<
   TAccountPayer extends string,
   TAccountHookConfig extends string,
-  TAccountExtraAccountMetaList extends string,
-  TAccountMint extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof TRANSFER_HOOK_PROGRAM_ADDRESS,
 >(
-  input: InitializeExtraAccountMetaListAsyncInput<
+  input: InitializeHookConfigAsyncInput<
     TAccountPayer,
     TAccountHookConfig,
-    TAccountExtraAccountMetaList,
-    TAccountMint,
     TAccountSystemProgram
   >,
   config?: { programAddress?: TProgramAddress },
 ): Promise<
-  InitializeExtraAccountMetaListInstruction<
+  InitializeHookConfigInstruction<
     TProgramAddress,
     TAccountPayer,
     TAccountHookConfig,
-    TAccountExtraAccountMetaList,
-    TAccountMint,
     TAccountSystemProgram
   >
 > {
@@ -163,18 +153,16 @@ export async function getInitializeExtraAccountMetaListInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     payer: { value: input.payer ?? null, isWritable: true },
-    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
-    extraAccountMetaList: {
-      value: input.extraAccountMetaList ?? null,
-      isWritable: true,
-    },
-    mint: { value: input.mint ?? null, isWritable: false },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
     ResolvedInstructionAccount
   >;
+
+  // Original args.
+  const args = { ...input };
 
   // Resolve default values.
   if (!accounts.hookConfig.value) {
@@ -187,22 +175,6 @@ export async function getInitializeExtraAccountMetaListInstructionAsync<
       ],
     });
   }
-  if (!accounts.extraAccountMetaList.value) {
-    accounts.extraAccountMetaList.value = await getProgramDerivedAddress({
-      programAddress,
-      seeds: [
-        getBytesEncoder().encode(
-          new Uint8Array([
-            101, 120, 116, 114, 97, 45, 97, 99, 99, 111, 117, 110, 116, 45, 109,
-            101, 116, 97, 115,
-          ]),
-        ),
-        getAddressEncoder().encode(
-          getAddressFromResolvedInstructionAccount("mint", accounts.mint.value),
-        ),
-      ],
-    });
-  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
@@ -213,58 +185,47 @@ export async function getInitializeExtraAccountMetaListInstructionAsync<
     accounts: [
       getAccountMeta("payer", accounts.payer),
       getAccountMeta("hookConfig", accounts.hookConfig),
-      getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
-      getAccountMeta("mint", accounts.mint),
       getAccountMeta("systemProgram", accounts.systemProgram),
     ],
-    data: getInitializeExtraAccountMetaListInstructionDataEncoder().encode({}),
+    data: getInitializeHookConfigInstructionDataEncoder().encode(
+      args as InitializeHookConfigInstructionDataArgs,
+    ),
     programAddress,
-  } as InitializeExtraAccountMetaListInstruction<
+  } as InitializeHookConfigInstruction<
     TProgramAddress,
     TAccountPayer,
     TAccountHookConfig,
-    TAccountExtraAccountMetaList,
-    TAccountMint,
     TAccountSystemProgram
   >);
 }
 
-export type InitializeExtraAccountMetaListInput<
+export type InitializeHookConfigInput<
   TAccountPayer extends string = string,
   TAccountHookConfig extends string = string,
-  TAccountExtraAccountMetaList extends string = string,
-  TAccountMint extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
   payer: TransactionSigner<TAccountPayer>;
   hookConfig: Address<TAccountHookConfig>;
-  extraAccountMetaList: Address<TAccountExtraAccountMetaList>;
-  mint: Address<TAccountMint>;
   systemProgram?: Address<TAccountSystemProgram>;
+  stablecoinProgramId: InitializeHookConfigInstructionDataArgs["stablecoinProgramId"];
 };
 
-export function getInitializeExtraAccountMetaListInstruction<
+export function getInitializeHookConfigInstruction<
   TAccountPayer extends string,
   TAccountHookConfig extends string,
-  TAccountExtraAccountMetaList extends string,
-  TAccountMint extends string,
   TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof TRANSFER_HOOK_PROGRAM_ADDRESS,
 >(
-  input: InitializeExtraAccountMetaListInput<
+  input: InitializeHookConfigInput<
     TAccountPayer,
     TAccountHookConfig,
-    TAccountExtraAccountMetaList,
-    TAccountMint,
     TAccountSystemProgram
   >,
   config?: { programAddress?: TProgramAddress },
-): InitializeExtraAccountMetaListInstruction<
+): InitializeHookConfigInstruction<
   TProgramAddress,
   TAccountPayer,
   TAccountHookConfig,
-  TAccountExtraAccountMetaList,
-  TAccountMint,
   TAccountSystemProgram
 > {
   // Program address.
@@ -274,18 +235,16 @@ export function getInitializeExtraAccountMetaListInstruction<
   // Original accounts.
   const originalAccounts = {
     payer: { value: input.payer ?? null, isWritable: true },
-    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
-    extraAccountMetaList: {
-      value: input.extraAccountMetaList ?? null,
-      isWritable: true,
-    },
-    mint: { value: input.mint ?? null, isWritable: false },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
     ResolvedInstructionAccount
   >;
+
+  // Original args.
+  const args = { ...input };
 
   // Resolve default values.
   if (!accounts.systemProgram.value) {
@@ -298,23 +257,21 @@ export function getInitializeExtraAccountMetaListInstruction<
     accounts: [
       getAccountMeta("payer", accounts.payer),
       getAccountMeta("hookConfig", accounts.hookConfig),
-      getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
-      getAccountMeta("mint", accounts.mint),
       getAccountMeta("systemProgram", accounts.systemProgram),
     ],
-    data: getInitializeExtraAccountMetaListInstructionDataEncoder().encode({}),
+    data: getInitializeHookConfigInstructionDataEncoder().encode(
+      args as InitializeHookConfigInstructionDataArgs,
+    ),
     programAddress,
-  } as InitializeExtraAccountMetaListInstruction<
+  } as InitializeHookConfigInstruction<
     TProgramAddress,
     TAccountPayer,
     TAccountHookConfig,
-    TAccountExtraAccountMetaList,
-    TAccountMint,
     TAccountSystemProgram
   >);
 }
 
-export type ParsedInitializeExtraAccountMetaListInstruction<
+export type ParsedInitializeHookConfigInstruction<
   TProgram extends string = typeof TRANSFER_HOOK_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
@@ -322,27 +279,25 @@ export type ParsedInitializeExtraAccountMetaListInstruction<
   accounts: {
     payer: TAccountMetas[0];
     hookConfig: TAccountMetas[1];
-    extraAccountMetaList: TAccountMetas[2];
-    mint: TAccountMetas[3];
-    systemProgram: TAccountMetas[4];
+    systemProgram: TAccountMetas[2];
   };
-  data: InitializeExtraAccountMetaListInstructionData;
+  data: InitializeHookConfigInstructionData;
 };
 
-export function parseInitializeExtraAccountMetaListInstruction<
+export function parseInitializeHookConfigInstruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
-): ParsedInitializeExtraAccountMetaListInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+): ParsedInitializeHookConfigInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 3) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 5,
+        expectedAccountMetas: 3,
       },
     );
   }
@@ -357,11 +312,9 @@ export function parseInitializeExtraAccountMetaListInstruction<
     accounts: {
       payer: getNextAccount(),
       hookConfig: getNextAccount(),
-      extraAccountMetaList: getNextAccount(),
-      mint: getNextAccount(),
       systemProgram: getNextAccount(),
     },
-    data: getInitializeExtraAccountMetaListInstructionDataDecoder().decode(
+    data: getInitializeHookConfigInstructionDataDecoder().decode(
       instruction.data,
     ),
   };

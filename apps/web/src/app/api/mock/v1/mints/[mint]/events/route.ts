@@ -4,7 +4,7 @@ const events = [
   {
     id: 1,
     event_type: "TokensMinted",
-    program_id: "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC",
+    program_id: "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r",
     mint: "Mint111111111111111111111111111111111111111",
     tx_signature: "3V3rmN3uQpP4i5q8Ka8v1qY9px1mQy91nVbs5a8Qm6Cb5x4TgWmH4gGd4Ns",
     slot: 120001,
@@ -16,7 +16,7 @@ const events = [
   {
     id: 2,
     event_type: "LifecycleRequestApproved",
-    program_id: "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC",
+    program_id: "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r",
     mint: "Mint111111111111111111111111111111111111111",
     tx_signature: "5XP6uB3R3Kc6kGJuwL2Mm5eVxG5m95uEDuQ8sZtVuCEXB3u3Yw5f2LQ8dS8",
     slot: 120050,

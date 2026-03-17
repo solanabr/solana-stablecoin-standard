@@ -8,13 +8,14 @@ use spl_token_2022::{
     state::{AccountState, Mint as Token2022Mint},
 };
 use stablecoin::{
+    self,
     instructions::initialize::InitializeParams,
     state::{RoleConfig, StablecoinConfig},
 };
 
 use sss_litesvm_tests::common::{
     config_pda, deserialize_anchor_account, extra_account_meta_list_pda, funded_keypair,
-    initialize_ix, new_svm, roles_pda, send_tx,
+    initialize_hook_config_ix, initialize_ix, new_svm, roles_pda, send_tx,
 };
 
 fn read_mint(
@@ -119,6 +120,16 @@ fn initialize_sss2_enables_permanent_delegate_hook_and_default_frozen_state() {
         default_account_frozen: true,
     };
 
+    assert!(
+        send_tx(
+            &mut svm,
+            &authority,
+            &[initialize_hook_config_ix(authority.pubkey(), stablecoin::ID)],
+            &[&authority],
+        )
+        .is_ok(),
+        "initialize_hook_config should succeed"
+    );
     let result = send_tx(
         &mut svm,
         &authority,

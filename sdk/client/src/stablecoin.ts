@@ -18,6 +18,7 @@ import {
   findBlacklistEntryPda,
   findConfigPda,
   findExtraAccountMetaListPda,
+  findHookConfigPda,
   findMinterQuotaPda,
   findRoleConfigPda,
 } from "./pdas";
@@ -330,6 +331,7 @@ export class Stablecoin {
       this.mintAddress,
       transferHookProgramId
     );
+    const [hookConfigPda] = findHookConfigPda(transferHookProgramId);
     return stablecoin.createSeizeInstruction(
       {
         authority: this.requireWallet().publicKey,
@@ -341,6 +343,7 @@ export class Stablecoin {
         blacklistEntry: blacklistEntryPda,
         stablecoinProgram: this.client.stablecoinProgramId,
         transferHookProgram: transferHookProgramId,
+        hookConfig: hookConfigPda,
         extraAccountMetaList: extraAccountMetaListPda,
         destinationBlacklist: destinationBlacklistPda,
         tokenProgram: TOKEN_2022_PROGRAM_ID,

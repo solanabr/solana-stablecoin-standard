@@ -163,3 +163,18 @@ flowchart LR
 - [SSS-2.md](/Users/pratik/development/work/solana-stablecoin-standard/SSS-2.md)
 - [COMPLIANCE.md](/Users/pratik/development/work/solana-stablecoin-standard/COMPLIANCE.md)
 - [API.md](/Users/pratik/development/work/solana-stablecoin-standard/API.md)
+
+
+DATABASE_URL="postgres://pratik@127.0.0.1:5432/sss_backend" \
+SSS_RUN_WORKERS=1 \
+SSS_AUTHORITY_KEYPAIR=~/.config/solana/id.json \
+SOLANA_RPC_URL="https://devnet.helius-rpc.com/?api-key=ff17a075-ee9d-4796-b9d5-3d0a054f017c" \
+SSS_STABLECOIN_PROGRAM_ID=C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r \
+cargo run -p sss-api
+
+
+DATABASE_URL="postgres://pratik@127.0.0.1:5432/sss_backend" \
+SOLANA_RPC_URL="https://devnet.helius-rpc.com/?api-key=ff17a075-ee9d-4796-b9d5-3d0a054f017c" \
+SSS_STABLECOIN_PROGRAM_ID=C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r \
+SSS_TRANSFER_HOOK_PROGRAM_ID=YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p \
+cargo run -p sss-indexer

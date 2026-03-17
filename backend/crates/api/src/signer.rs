@@ -28,7 +28,7 @@ const TOKEN_2022_PROGRAM_ID: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
 const SPL_ASSOCIATED_TOKEN_PROGRAM_ID: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 /// Default stablecoin program ID (matches programs/stablecoin declare_id, program-ids.json)
-const DEFAULT_STABLECOIN_PROGRAM_ID: &str = "Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC";
+const DEFAULT_STABLECOIN_PROGRAM_ID: &str = "C7k7FTRLGLB5FJS7hWrpjqRiwmj5Px9DzMQUeouAxJ9r";
 
 fn pubkey_to_address(p: &Pubkey) -> solana_address::Address {
     solana_address::Address::try_from(p.to_bytes().as_slice()).expect("address from pubkey")

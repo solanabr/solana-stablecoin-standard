@@ -25,7 +25,7 @@ impl IndexerConfig {
             stablecoin_program_id: std::env::var("SSS_STABLECOIN_PROGRAM_ID")
                 .unwrap_or_else(|_| STABLECOIN_PROGRAM_ID.to_string()),
             transfer_hook_program_id: std::env::var("SSS_TRANSFER_HOOK_PROGRAM_ID")
-                .unwrap_or_else(|_| "6QNzPyTwg2MH778GL8idYiU3teFJiuQx6R5L7xdU17KC".to_string()),
+                .unwrap_or_else(|_| "YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p".to_string()),
             start_slot: std::env::var("SSS_START_SLOT")
                 .ok()
                 .and_then(|value| value.parse().ok())

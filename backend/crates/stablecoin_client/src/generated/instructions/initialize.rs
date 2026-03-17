@@ -23,6 +23,8 @@ pub struct Initialize {
 
     pub extra_account_meta_list: Option<solana_address::Address>,
 
+    pub hook_config: Option<solana_address::Address>,
+
     pub transfer_hook_program: Option<solana_address::Address>,
 
     pub token_program: solana_address::Address,
@@ -47,7 +49,7 @@ impl Initialize {
         args: InitializeInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.authority, true));
         accounts.push(solana_instruction::AccountMeta::new(self.mint, true));
         accounts.push(solana_instruction::AccountMeta::new(self.config, false));
@@ -58,6 +60,17 @@ impl Initialize {
         if let Some(extra_account_meta_list) = self.extra_account_meta_list {
             accounts.push(solana_instruction::AccountMeta::new(
                 extra_account_meta_list,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::STABLECOIN_ID,
+                false,
+            ));
+        }
+        if let Some(hook_config) = self.hook_config {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                hook_config,
                 false,
             ));
         } else {
@@ -158,12 +171,13 @@ impl InitializeInstructionArgs {
 ///   2. `[writable]` config
 ///   3. `[writable]` role_config
 ///   4. `[writable, optional]` extra_account_meta_list
-///   5. `[optional]` transfer_hook_program
-///   6. `[optional]` token_program (default to `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`)
-///   7. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   8. `[optional]` rent (default to `SysvarRent111111111111111111111111111111111`)
-///   9. `[]` event_authority
-///   10. `[]` program
+///   5. `[optional]` hook_config
+///   6. `[optional]` transfer_hook_program
+///   7. `[optional]` token_program (default to `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`)
+///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   9. `[optional]` rent (default to `SysvarRent111111111111111111111111111111111`)
+///   10. `[]` event_authority
+///   11. `[]` program
 #[derive(Clone, Debug, Default)]
 pub struct InitializeBuilder {
     authority: Option<solana_address::Address>,
@@ -171,6 +185,7 @@ pub struct InitializeBuilder {
     config: Option<solana_address::Address>,
     role_config: Option<solana_address::Address>,
     extra_account_meta_list: Option<solana_address::Address>,
+    hook_config: Option<solana_address::Address>,
     transfer_hook_program: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
@@ -218,6 +233,12 @@ impl InitializeBuilder {
         extra_account_meta_list: Option<solana_address::Address>,
     ) -> &mut Self {
         self.extra_account_meta_list = extra_account_meta_list;
+        self
+    }
+    /// `[optional account]`
+    #[inline(always)]
+    pub fn hook_config(&mut self, hook_config: Option<solana_address::Address>) -> &mut Self {
+        self.hook_config = hook_config;
         self
     }
     /// `[optional account]`
@@ -315,6 +336,7 @@ impl InitializeBuilder {
             config: self.config.expect("config is not set"),
             role_config: self.role_config.expect("role_config is not set"),
             extra_account_meta_list: self.extra_account_meta_list,
+            hook_config: self.hook_config,
             transfer_hook_program: self.transfer_hook_program,
             token_program: self.token_program.unwrap_or(solana_address::address!(
                 "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
@@ -363,6 +385,8 @@ pub struct InitializeCpiAccounts<'a, 'b> {
 
     pub extra_account_meta_list: Option<&'b solana_account_info::AccountInfo<'a>>,
 
+    pub hook_config: Option<&'b solana_account_info::AccountInfo<'a>>,
+
     pub transfer_hook_program: Option<&'b solana_account_info::AccountInfo<'a>>,
 
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
@@ -390,6 +414,8 @@ pub struct InitializeCpi<'a, 'b> {
     pub role_config: &'b solana_account_info::AccountInfo<'a>,
 
     pub extra_account_meta_list: Option<&'b solana_account_info::AccountInfo<'a>>,
+
+    pub hook_config: Option<&'b solana_account_info::AccountInfo<'a>>,
 
     pub transfer_hook_program: Option<&'b solana_account_info::AccountInfo<'a>>,
 
@@ -419,6 +445,7 @@ impl<'a, 'b> InitializeCpi<'a, 'b> {
             config: accounts.config,
             role_config: accounts.role_config,
             extra_account_meta_list: accounts.extra_account_meta_list,
+            hook_config: accounts.hook_config,
             transfer_hook_program: accounts.transfer_hook_program,
             token_program: accounts.token_program,
             system_program: accounts.system_program,
@@ -451,7 +478,7 @@ impl<'a, 'b> InitializeCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(
             *self.authority.key,
             true,
@@ -468,6 +495,17 @@ impl<'a, 'b> InitializeCpi<'a, 'b> {
         if let Some(extra_account_meta_list) = self.extra_account_meta_list {
             accounts.push(solana_instruction::AccountMeta::new(
                 *extra_account_meta_list.key,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::STABLECOIN_ID,
+                false,
+            ));
+        }
+        if let Some(hook_config) = self.hook_config {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                *hook_config.key,
                 false,
             ));
         } else {
@@ -523,7 +561,7 @@ impl<'a, 'b> InitializeCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(13 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.authority.clone());
         account_infos.push(self.mint.clone());
@@ -531,6 +569,9 @@ impl<'a, 'b> InitializeCpi<'a, 'b> {
         account_infos.push(self.role_config.clone());
         if let Some(extra_account_meta_list) = self.extra_account_meta_list {
             account_infos.push(extra_account_meta_list.clone());
+        }
+        if let Some(hook_config) = self.hook_config {
+            account_infos.push(hook_config.clone());
         }
         if let Some(transfer_hook_program) = self.transfer_hook_program {
             account_infos.push(transfer_hook_program.clone());
@@ -561,12 +602,13 @@ impl<'a, 'b> InitializeCpi<'a, 'b> {
 ///   2. `[writable]` config
 ///   3. `[writable]` role_config
 ///   4. `[writable, optional]` extra_account_meta_list
-///   5. `[optional]` transfer_hook_program
-///   6. `[]` token_program
-///   7. `[]` system_program
-///   8. `[]` rent
-///   9. `[]` event_authority
-///   10. `[]` program
+///   5. `[optional]` hook_config
+///   6. `[optional]` transfer_hook_program
+///   7. `[]` token_program
+///   8. `[]` system_program
+///   9. `[]` rent
+///   10. `[]` event_authority
+///   11. `[]` program
 #[derive(Clone, Debug)]
 pub struct InitializeCpiBuilder<'a, 'b> {
     instruction: Box<InitializeCpiBuilderInstruction<'a, 'b>>,
@@ -581,6 +623,7 @@ impl<'a, 'b> InitializeCpiBuilder<'a, 'b> {
             config: None,
             role_config: None,
             extra_account_meta_list: None,
+            hook_config: None,
             transfer_hook_program: None,
             token_program: None,
             system_program: None,
@@ -628,6 +671,15 @@ impl<'a, 'b> InitializeCpiBuilder<'a, 'b> {
         extra_account_meta_list: Option<&'b solana_account_info::AccountInfo<'a>>,
     ) -> &mut Self {
         self.instruction.extra_account_meta_list = extra_account_meta_list;
+        self
+    }
+    /// `[optional account]`
+    #[inline(always)]
+    pub fn hook_config(
+        &mut self,
+        hook_config: Option<&'b solana_account_info::AccountInfo<'a>>,
+    ) -> &mut Self {
+        self.instruction.hook_config = hook_config;
         self
     }
     /// `[optional account]`
@@ -783,6 +835,8 @@ impl<'a, 'b> InitializeCpiBuilder<'a, 'b> {
 
             extra_account_meta_list: self.instruction.extra_account_meta_list,
 
+            hook_config: self.instruction.hook_config,
+
             transfer_hook_program: self.instruction.transfer_hook_program,
 
             token_program: self
@@ -820,6 +874,7 @@ struct InitializeCpiBuilderInstruction<'a, 'b> {
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     role_config: Option<&'b solana_account_info::AccountInfo<'a>>,
     extra_account_meta_list: Option<&'b solana_account_info::AccountInfo<'a>>,
+    hook_config: Option<&'b solana_account_info::AccountInfo<'a>>,
     transfer_hook_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,

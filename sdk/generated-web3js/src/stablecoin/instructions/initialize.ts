@@ -23,6 +23,7 @@ export interface InitializeInstructionAccounts {
   config?: PublicKey;
   roleConfig?: PublicKey;
   extraAccountMetaList?: PublicKey;
+  hookConfig?: PublicKey;
   transferHookProgram?: PublicKey;
   tokenProgram: PublicKey;
   systemProgram: PublicKey;
@@ -99,6 +100,9 @@ export function createInitializeInstruction(
             isWritable: true,
           },
         ]
+      : []),
+    ...(accounts.hookConfig
+      ? [{ pubkey: accounts.hookConfig, isSigner: false, isWritable: false }]
       : []),
     ...(accounts.transferHookProgram
       ? [

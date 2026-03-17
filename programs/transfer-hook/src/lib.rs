@@ -9,13 +9,16 @@ use spl_transfer_hook_interface::instruction::ExecuteInstruction;
 
 use sss_common::{SEED_BLACKLIST, SEED_CONFIG, SEED_EXTRA_ACCOUNT_METAS};
 
-declare_id!("6QNzPyTwg2MH778GL8idYiU3teFJiuQx6R5L7xdU17KC");
+declare_id!("YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p");
 
-const STABLECOIN_PROGRAM_ID: Pubkey = pubkey!("Gbq8ZoZ4fE2J8wywFDYgSREPWL5qhtaneAX9PwQuQyCC");
+const SEED_HOOK_CONFIG: &[u8] = b"hook_config";
+/// Index of transfer-hook program in execute accounts (first resolved = index 5); used to derive hook_config PDA.
+const TRANSFER_HOOK_PROGRAM_INDEX: u8 = 5;
 const INITIALIZE_EXTRA_ACCOUNT_META_LIST_DISCRIMINATOR: [u8; 8] =
     [43, 34, 13, 49, 167, 88, 235, 235];
 const EXECUTE_DISCRIMINATOR: [u8; 8] = [105, 37, 101, 197, 75, 251, 102, 26];
-const CORE_PROGRAM_INDEX: u8 = 5;
+/// Index of stablecoin program account in execute accounts (used for config/blacklist PDAs).
+const CORE_PROGRAM_INDEX: u8 = 7;
 const MINT_ACCOUNT_INDEX: u8 = 1;
 const SOURCE_TOKEN_ACCOUNT_INDEX: u8 = 0;
 const DESTINATION_TOKEN_ACCOUNT_INDEX: u8 = 2;
@@ -26,11 +29,22 @@ const TOKEN_ACCOUNT_OWNER_LENGTH: u8 = 32;
 pub mod transfer_hook {
     use super::*;
 
+    /// One-time init: sets the stablecoin program ID this hook will validate against.
+    /// Call after deploying the transfer-hook program, before any mint uses it.
+    pub fn initialize_hook_config(
+        ctx: Context<InitializeHookConfig>,
+        stablecoin_program_id: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.hook_config.stablecoin_program_id = stablecoin_program_id;
+        Ok(())
+    }
+
     #[instruction(discriminator = &INITIALIZE_EXTRA_ACCOUNT_META_LIST_DISCRIMINATOR)]
     pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
-        let extra_metas = build_extra_account_metas()?;
+        let stablecoin_program_id = ctx.accounts.hook_config.stablecoin_program_id;
+        let extra_metas = build_extra_account_metas(&stablecoin_program_id)?;
         let mut data = ctx.accounts.extra_account_meta_list.try_borrow_mut_data()?;
         ExtraAccountMetaList::init::<ExecuteInstruction>(&mut data, &extra_metas)
             .map_err(|_| error!(TransferHookError::InvalidExtraAccountMetaList))?;
@@ -40,13 +54,14 @@ pub mod transfer_hook {
 
     #[instruction(discriminator = &EXECUTE_DISCRIMINATOR)]
     pub fn transfer_hook(ctx: Context<TransferHook>, _amount: u64) -> Result<()> {
+        let stablecoin_program_id = ctx.accounts.hook_config.stablecoin_program_id;
         let expected_config = Pubkey::find_program_address(
             &[SEED_CONFIG, ctx.accounts.mint.key().as_ref()],
-            &STABLECOIN_PROGRAM_ID,
+            &stablecoin_program_id,
         )
         .0;
         require!(
-            ctx.accounts.stablecoin_program.key() == STABLECOIN_PROGRAM_ID,
+            ctx.accounts.stablecoin_program.key() == stablecoin_program_id,
             TransferHookError::InvalidStablecoinProgram
         );
         require!(
@@ -60,7 +75,7 @@ pub mod transfer_hook {
                 ctx.accounts.mint.key().as_ref(),
                 ctx.accounts.source.owner.as_ref(),
             ],
-            &STABLECOIN_PROGRAM_ID,
+            &stablecoin_program_id,
         )
         .0;
         let expected_destination_blacklist = Pubkey::find_program_address(
@@ -69,7 +84,7 @@ pub mod transfer_hook {
                 ctx.accounts.mint.key().as_ref(),
                 ctx.accounts.destination.owner.as_ref(),
             ],
-            &STABLECOIN_PROGRAM_ID,
+            &stablecoin_program_id,
         )
         .0;
 
@@ -114,17 +129,44 @@ pub mod transfer_hook {
     }
 }
 
+#[account]
+pub struct HookConfig {
+    pub stablecoin_program_id: Pubkey,
+}
+
+#[derive(Accounts)]
+pub struct InitializeHookConfig<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        init,
+        seeds = [SEED_HOOK_CONFIG],
+        bump,
+        payer = payer,
+        space = 8 + 32
+    )]
+    pub hook_config: Account<'info, HookConfig>,
+    pub system_program: Program<'info, System>,
+}
+
 #[derive(Accounts)]
 pub struct InitializeExtraAccountMetaList<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
+    #[account(
+        seeds = [SEED_HOOK_CONFIG],
+        bump
+    )]
+    pub hook_config: Account<'info, HookConfig>,
     /// CHECK: PDA created and owned by this program.
     #[account(
         init,
         seeds = [SEED_EXTRA_ACCOUNT_METAS, mint.key().as_ref()],
         bump,
         payer = payer,
-        space = ExtraAccountMetaList::size_of(build_extra_account_metas()?.len())?
+        space = ExtraAccountMetaList::size_of(
+            build_extra_account_metas(&hook_config.stablecoin_program_id)?.len()
+        )?
     )]
     pub extra_account_meta_list: AccountInfo<'info>,
     pub mint: InterfaceAccount<'info, Mint>,
@@ -146,6 +188,10 @@ pub struct TransferHook<'info> {
         bump
     )]
     pub extra_account_meta_list: UncheckedAccount<'info>,
+    /// CHECK: Transfer-hook program (first in extra list for PDA resolution).
+    pub transfer_hook_program: UncheckedAccount<'info>,
+    #[account(seeds = [SEED_HOOK_CONFIG], bump)]
+    pub hook_config: Account<'info, HookConfig>,
     /// CHECK: Stablecoin program id extra meta.
     pub stablecoin_program: UncheckedAccount<'info>,
     /// CHECK: Stablecoin config PDA extra meta.
@@ -174,9 +220,18 @@ pub enum TransferHookError {
     InvalidInstruction,
 }
 
-fn build_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
+fn build_extra_account_metas(stablecoin_program_id: &Pubkey) -> Result<Vec<ExtraAccountMeta>> {
     Ok(vec![
-        ExtraAccountMeta::new_with_pubkey(&STABLECOIN_PROGRAM_ID, false, false)?,
+        ExtraAccountMeta::new_with_pubkey(&crate::ID, false, false)?,
+        ExtraAccountMeta::new_external_pda_with_seeds(
+            TRANSFER_HOOK_PROGRAM_INDEX,
+            &[Seed::Literal {
+                bytes: SEED_HOOK_CONFIG.to_vec(),
+            }],
+            false,
+            false,
+        )?,
+        ExtraAccountMeta::new_with_pubkey(stablecoin_program_id, false, false)?,
         ExtraAccountMeta::new_external_pda_with_seeds(
             CORE_PROGRAM_INDEX,
             &[

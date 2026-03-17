@@ -11,37 +11,78 @@ import {
   containsBytes,
   fixEncoderSize,
   getBytesEncoder,
+  SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT,
   SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION,
   SOLANA_ERROR__PROGRAM_CLIENTS__UNRECOGNIZED_INSTRUCTION_TYPE,
   SolanaError,
   type Address,
   type ClientWithPayer,
+  type ClientWithRpc,
   type ClientWithTransactionPlanning,
   type ClientWithTransactionSending,
+  type GetAccountInfoApi,
+  type GetMultipleAccountsApi,
   type Instruction,
   type InstructionWithData,
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  addSelfFetchFunctions,
   addSelfPlanAndSendFunctions,
+  type SelfFetchFunctions,
   type SelfPlanAndSendFunctions,
 } from "@solana/program-client-core";
 import {
+  getHookConfigCodec,
+  type HookConfig,
+  type HookConfigArgs,
+} from "../accounts";
+import {
   getInitializeExtraAccountMetaListInstructionAsync,
+  getInitializeHookConfigInstructionAsync,
   getTransferHookInstructionAsync,
   parseInitializeExtraAccountMetaListInstruction,
+  parseInitializeHookConfigInstruction,
   parseTransferHookInstructionItem,
   type InitializeExtraAccountMetaListAsyncInput,
+  type InitializeHookConfigAsyncInput,
   type ParsedInitializeExtraAccountMetaListInstruction,
+  type ParsedInitializeHookConfigInstruction,
   type ParsedTransferHookInstructionItem,
   type TransferHookAsyncInput,
 } from "../instructions";
 
 export const TRANSFER_HOOK_PROGRAM_ADDRESS =
-  "6QNzPyTwg2MH778GL8idYiU3teFJiuQx6R5L7xdU17KC" as Address<"6QNzPyTwg2MH778GL8idYiU3teFJiuQx6R5L7xdU17KC">;
+  "YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p" as Address<"YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p">;
+
+export enum TransferHookAccount {
+  HookConfig,
+}
+
+export function identifyTransferHookAccount(
+  account: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+): TransferHookAccount {
+  const data = "data" in account ? account.data : account;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([137, 155, 101, 95, 138, 72, 8, 182]),
+      ),
+      0,
+    )
+  ) {
+    return TransferHookAccount.HookConfig;
+  }
+  throw new SolanaError(
+    SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT,
+    { accountData: data, programName: "transferHook" },
+  );
+}
 
 export enum TransferHookInstruction {
   InitializeExtraAccountMetaList,
+  InitializeHookConfig,
   TransferHook,
 }
 
@@ -64,6 +105,17 @@ export function identifyTransferHookInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([144, 239, 17, 85, 228, 48, 54, 43]),
+      ),
+      0,
+    )
+  ) {
+    return TransferHookInstruction.InitializeHookConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([105, 37, 101, 197, 75, 251, 102, 26]),
       ),
       0,
@@ -78,11 +130,14 @@ export function identifyTransferHookInstruction(
 }
 
 export type ParsedTransferHookInstruction<
-  TProgram extends string = "6QNzPyTwg2MH778GL8idYiU3teFJiuQx6R5L7xdU17KC",
+  TProgram extends string = "YYTBExpcbtVYTGNmbgcAr7SzEGWfLtByYUrcfzvUz8p",
 > =
   | ({
       instructionType: TransferHookInstruction.InitializeExtraAccountMetaList;
     } & ParsedInitializeExtraAccountMetaListInstruction<TProgram>)
+  | ({
+      instructionType: TransferHookInstruction.InitializeHookConfig;
+    } & ParsedInitializeHookConfigInstruction<TProgram>)
   | ({
       instructionType: TransferHookInstruction.TransferHook;
     } & ParsedTransferHookInstructionItem<TProgram>);
@@ -97,6 +152,13 @@ export function parseTransferHookInstruction<TProgram extends string>(
       return {
         instructionType: TransferHookInstruction.InitializeExtraAccountMetaList,
         ...parseInitializeExtraAccountMetaListInstruction(instruction),
+      };
+    }
+    case TransferHookInstruction.InitializeHookConfig: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: TransferHookInstruction.InitializeHookConfig,
+        ...parseInitializeHookConfigInstruction(instruction),
       };
     }
     case TransferHookInstruction.TransferHook: {
@@ -118,7 +180,13 @@ export function parseTransferHookInstruction<TProgram extends string>(
 }
 
 export type TransferHookPlugin = {
+  accounts: TransferHookPluginAccounts;
   instructions: TransferHookPluginInstructions;
+};
+
+export type TransferHookPluginAccounts = {
+  hookConfig: ReturnType<typeof getHookConfigCodec> &
+    SelfFetchFunctions<HookConfigArgs, HookConfig>;
 };
 
 export type TransferHookPluginInstructions = {
@@ -126,13 +194,20 @@ export type TransferHookPluginInstructions = {
     input: MakeOptional<InitializeExtraAccountMetaListAsyncInput, "payer">,
   ) => ReturnType<typeof getInitializeExtraAccountMetaListInstructionAsync> &
     SelfPlanAndSendFunctions;
+  initializeHookConfig: (
+    input: MakeOptional<InitializeHookConfigAsyncInput, "payer">,
+  ) => ReturnType<typeof getInitializeHookConfigInstructionAsync> &
+    SelfPlanAndSendFunctions;
   transferHook: (
     input: TransferHookAsyncInput,
   ) => ReturnType<typeof getTransferHookInstructionAsync> &
     SelfPlanAndSendFunctions;
 };
 
-export type TransferHookPluginRequirements = ClientWithPayer &
+export type TransferHookPluginRequirements = ClientWithRpc<
+  GetAccountInfoApi & GetMultipleAccountsApi
+> &
+  ClientWithPayer &
   ClientWithTransactionPlanning &
   ClientWithTransactionSending;
 
@@ -141,11 +216,22 @@ export function transferHookProgram() {
     return {
       ...client,
       transferHook: <TransferHookPlugin>{
+        accounts: {
+          hookConfig: addSelfFetchFunctions(client, getHookConfigCodec()),
+        },
         instructions: {
           initializeExtraAccountMetaList: (input) =>
             addSelfPlanAndSendFunctions(
               client,
               getInitializeExtraAccountMetaListInstructionAsync({
+                ...input,
+                payer: input.payer ?? client.payer,
+              }),
+            ),
+          initializeHookConfig: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getInitializeHookConfigInstructionAsync({
                 ...input,
                 payer: input.payer ?? client.payer,
               }),

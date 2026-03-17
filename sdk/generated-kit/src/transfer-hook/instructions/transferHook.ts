@@ -56,6 +56,8 @@ export type TransferHookInstructionItem<
   TAccountDestination extends string | AccountMeta<string> = string,
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountExtraAccountMetaList extends string | AccountMeta<string> = string,
+  TAccountTransferHookProgram extends string | AccountMeta<string> = string,
+  TAccountHookConfig extends string | AccountMeta<string> = string,
   TAccountStablecoinProgram extends string | AccountMeta<string> = string,
   TAccountConfig extends string | AccountMeta<string> = string,
   TAccountSourceBlacklist extends string | AccountMeta<string> = string,
@@ -80,6 +82,12 @@ export type TransferHookInstructionItem<
       TAccountExtraAccountMetaList extends string
         ? ReadonlyAccount<TAccountExtraAccountMetaList>
         : TAccountExtraAccountMetaList,
+      TAccountTransferHookProgram extends string
+        ? ReadonlyAccount<TAccountTransferHookProgram>
+        : TAccountTransferHookProgram,
+      TAccountHookConfig extends string
+        ? ReadonlyAccount<TAccountHookConfig>
+        : TAccountHookConfig,
       TAccountStablecoinProgram extends string
         ? ReadonlyAccount<TAccountStablecoinProgram>
         : TAccountStablecoinProgram,
@@ -136,6 +144,8 @@ export type TransferHookAsyncInput<
   TAccountDestination extends string = string,
   TAccountAuthority extends string = string,
   TAccountExtraAccountMetaList extends string = string,
+  TAccountTransferHookProgram extends string = string,
+  TAccountHookConfig extends string = string,
   TAccountStablecoinProgram extends string = string,
   TAccountConfig extends string = string,
   TAccountSourceBlacklist extends string = string,
@@ -146,6 +156,8 @@ export type TransferHookAsyncInput<
   destination: Address<TAccountDestination>;
   authority: Address<TAccountAuthority>;
   extraAccountMetaList?: Address<TAccountExtraAccountMetaList>;
+  transferHookProgram: Address<TAccountTransferHookProgram>;
+  hookConfig?: Address<TAccountHookConfig>;
   stablecoinProgram: Address<TAccountStablecoinProgram>;
   config: Address<TAccountConfig>;
   sourceBlacklist: Address<TAccountSourceBlacklist>;
@@ -159,6 +171,8 @@ export async function getTransferHookInstructionAsync<
   TAccountDestination extends string,
   TAccountAuthority extends string,
   TAccountExtraAccountMetaList extends string,
+  TAccountTransferHookProgram extends string,
+  TAccountHookConfig extends string,
   TAccountStablecoinProgram extends string,
   TAccountConfig extends string,
   TAccountSourceBlacklist extends string,
@@ -171,6 +185,8 @@ export async function getTransferHookInstructionAsync<
     TAccountDestination,
     TAccountAuthority,
     TAccountExtraAccountMetaList,
+    TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountStablecoinProgram,
     TAccountConfig,
     TAccountSourceBlacklist,
@@ -185,6 +201,8 @@ export async function getTransferHookInstructionAsync<
     TAccountDestination,
     TAccountAuthority,
     TAccountExtraAccountMetaList,
+    TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountStablecoinProgram,
     TAccountConfig,
     TAccountSourceBlacklist,
@@ -205,6 +223,11 @@ export async function getTransferHookInstructionAsync<
       value: input.extraAccountMetaList ?? null,
       isWritable: false,
     },
+    transferHookProgram: {
+      value: input.transferHookProgram ?? null,
+      isWritable: false,
+    },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
     stablecoinProgram: {
       value: input.stablecoinProgram ?? null,
       isWritable: false,
@@ -244,6 +267,16 @@ export async function getTransferHookInstructionAsync<
       ],
     });
   }
+  if (!accounts.hookConfig.value) {
+    accounts.hookConfig.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getBytesEncoder().encode(
+          new Uint8Array([104, 111, 111, 107, 95, 99, 111, 110, 102, 105, 103]),
+        ),
+      ],
+    });
+  }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
   return Object.freeze({
@@ -253,6 +286,8 @@ export async function getTransferHookInstructionAsync<
       getAccountMeta("destination", accounts.destination),
       getAccountMeta("authority", accounts.authority),
       getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
+      getAccountMeta("transferHookProgram", accounts.transferHookProgram),
+      getAccountMeta("hookConfig", accounts.hookConfig),
       getAccountMeta("stablecoinProgram", accounts.stablecoinProgram),
       getAccountMeta("config", accounts.config),
       getAccountMeta("sourceBlacklist", accounts.sourceBlacklist),
@@ -269,6 +304,8 @@ export async function getTransferHookInstructionAsync<
     TAccountDestination,
     TAccountAuthority,
     TAccountExtraAccountMetaList,
+    TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountStablecoinProgram,
     TAccountConfig,
     TAccountSourceBlacklist,
@@ -282,6 +319,8 @@ export type TransferHookInput<
   TAccountDestination extends string = string,
   TAccountAuthority extends string = string,
   TAccountExtraAccountMetaList extends string = string,
+  TAccountTransferHookProgram extends string = string,
+  TAccountHookConfig extends string = string,
   TAccountStablecoinProgram extends string = string,
   TAccountConfig extends string = string,
   TAccountSourceBlacklist extends string = string,
@@ -292,6 +331,8 @@ export type TransferHookInput<
   destination: Address<TAccountDestination>;
   authority: Address<TAccountAuthority>;
   extraAccountMetaList: Address<TAccountExtraAccountMetaList>;
+  transferHookProgram: Address<TAccountTransferHookProgram>;
+  hookConfig: Address<TAccountHookConfig>;
   stablecoinProgram: Address<TAccountStablecoinProgram>;
   config: Address<TAccountConfig>;
   sourceBlacklist: Address<TAccountSourceBlacklist>;
@@ -305,6 +346,8 @@ export function getTransferHookInstruction<
   TAccountDestination extends string,
   TAccountAuthority extends string,
   TAccountExtraAccountMetaList extends string,
+  TAccountTransferHookProgram extends string,
+  TAccountHookConfig extends string,
   TAccountStablecoinProgram extends string,
   TAccountConfig extends string,
   TAccountSourceBlacklist extends string,
@@ -317,6 +360,8 @@ export function getTransferHookInstruction<
     TAccountDestination,
     TAccountAuthority,
     TAccountExtraAccountMetaList,
+    TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountStablecoinProgram,
     TAccountConfig,
     TAccountSourceBlacklist,
@@ -330,6 +375,8 @@ export function getTransferHookInstruction<
   TAccountDestination,
   TAccountAuthority,
   TAccountExtraAccountMetaList,
+  TAccountTransferHookProgram,
+  TAccountHookConfig,
   TAccountStablecoinProgram,
   TAccountConfig,
   TAccountSourceBlacklist,
@@ -349,6 +396,11 @@ export function getTransferHookInstruction<
       value: input.extraAccountMetaList ?? null,
       isWritable: false,
     },
+    transferHookProgram: {
+      value: input.transferHookProgram ?? null,
+      isWritable: false,
+    },
+    hookConfig: { value: input.hookConfig ?? null, isWritable: false },
     stablecoinProgram: {
       value: input.stablecoinProgram ?? null,
       isWritable: false,
@@ -379,6 +431,8 @@ export function getTransferHookInstruction<
       getAccountMeta("destination", accounts.destination),
       getAccountMeta("authority", accounts.authority),
       getAccountMeta("extraAccountMetaList", accounts.extraAccountMetaList),
+      getAccountMeta("transferHookProgram", accounts.transferHookProgram),
+      getAccountMeta("hookConfig", accounts.hookConfig),
       getAccountMeta("stablecoinProgram", accounts.stablecoinProgram),
       getAccountMeta("config", accounts.config),
       getAccountMeta("sourceBlacklist", accounts.sourceBlacklist),
@@ -395,6 +449,8 @@ export function getTransferHookInstruction<
     TAccountDestination,
     TAccountAuthority,
     TAccountExtraAccountMetaList,
+    TAccountTransferHookProgram,
+    TAccountHookConfig,
     TAccountStablecoinProgram,
     TAccountConfig,
     TAccountSourceBlacklist,
@@ -413,10 +469,12 @@ export type ParsedTransferHookInstructionItem<
     destination: TAccountMetas[2];
     authority: TAccountMetas[3];
     extraAccountMetaList: TAccountMetas[4];
-    stablecoinProgram: TAccountMetas[5];
-    config: TAccountMetas[6];
-    sourceBlacklist: TAccountMetas[7];
-    destinationBlacklist: TAccountMetas[8];
+    transferHookProgram: TAccountMetas[5];
+    hookConfig: TAccountMetas[6];
+    stablecoinProgram: TAccountMetas[7];
+    config: TAccountMetas[8];
+    sourceBlacklist: TAccountMetas[9];
+    destinationBlacklist: TAccountMetas[10];
   };
   data: TransferHookInstructionData;
 };
@@ -429,12 +487,12 @@ export function parseTransferHookInstructionItem<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedTransferHookInstructionItem<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 9) {
+  if (instruction.accounts.length < 11) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 9,
+        expectedAccountMetas: 11,
       },
     );
   }
@@ -452,6 +510,8 @@ export function parseTransferHookInstructionItem<
       destination: getNextAccount(),
       authority: getNextAccount(),
       extraAccountMetaList: getNextAccount(),
+      transferHookProgram: getNextAccount(),
+      hookConfig: getNextAccount(),
       stablecoinProgram: getNextAccount(),
       config: getNextAccount(),
       sourceBlacklist: getNextAccount(),
